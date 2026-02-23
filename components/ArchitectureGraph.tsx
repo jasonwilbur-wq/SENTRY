@@ -36,7 +36,7 @@ export const ArchitectureGraph: React.FC = () => {
       .append('path')
       .attr('class', 'link')
       .attr('fill', 'none')
-      .attr('stroke', '#38bdf8')
+      .attr('stroke', '#0053E2')
       .attr('stroke-width', 2)
       .attr('d', d3.linkHorizontal()
         .x((d: any) => d.y)
@@ -54,8 +54,8 @@ export const ArchitectureGraph: React.FC = () => {
     // Node Circles
     nodes.append('circle')
       .attr('r', 8)
-      .attr('fill', (d) => d.depth === 0 ? '#4ade80' : d.depth === 1 ? '#fbbf24' : '#0f172a')
-      .attr('stroke', '#38bdf8')
+      .attr('fill', (d) => d.depth === 0 ? '#FFC220' : d.depth === 1 ? '#0053E2' : '#000B28')
+      .attr('stroke', '#4DBDF5')
       .attr('stroke-width', 2);
 
     // Node Labels

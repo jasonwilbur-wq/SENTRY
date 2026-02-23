@@ -1,148 +1,151 @@
 import React, { useMemo } from 'react';
-import { PROCESSED_VENDORS } from '../utils/dataProcessor';
-import { RiskLevel } from '../types';
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, 
-  PieChart, Pie, Cell, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar 
+import { useVendors } from '../context/VendorContext';
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
+  PieChart, Pie, Cell,
+  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
 } from 'recharts';
 import { ChatAssistant } from './ChatAssistant';
 
+const RISK_COLORS: Record<string, string> = {
+  Low:      '#22c55e',  // green — keep semantic
+  Medium:   '#FFC220',  // Spark Yellow
+  High:     '#f87171',  // red-tint — keep semantic
+  Critical: '#ef4444',  // danger red — keep semantic
+};
+
 export const CompetitorAnalysis: React.FC = () => {
-  // Prepare data for charts using PROCESSED_VENDORS
+  const { vendors, loading } = useVendors();
+
   const riskDistribution = useMemo(() => {
-    const counts = { [RiskLevel.LOW]: 0, [RiskLevel.MEDIUM]: 0, [RiskLevel.HIGH]: 0, [RiskLevel.CRITICAL]: 0 };
-    PROCESSED_VENDORS.forEach(v => {
-      if (counts[v.riskLevel] !== undefined) {
-        counts[v.riskLevel]++;
-      }
-    });
+    const counts: Record<string, number> = { Low: 0, Medium: 0, High: 0, Critical: 0 };
+    vendors.forEach(v => { counts[v.risk_level] = (counts[v.risk_level] ?? 0) + 1; });
     return Object.entries(counts).map(([name, value]) => ({ name, value }));
-  }, []);
+  }, [vendors]);
 
-  const ratingData = useMemo(() => {
-    return PROCESSED_VENDORS.map(v => ({
-      name: v.companyName.substring(0, 10),
-      rating: v.overallRating,
-      risk: v.riskLevel,
-      full: v.companyName
-    })).sort((a, b) => b.rating - a.rating);
-  }, []);
+  // Top 20 by rating — vendors are already sorted desc from backend/dataProcessor
+  const topVendors = useMemo(
+    () =>
+      [...vendors]
+        .sort((a, b) => b.overall_rating - a.overall_rating)
+        .slice(0, 20)
+        .map(v => ({
+          name: v.company_name.slice(0, 12),
+          rating: v.overall_rating,
+          full: v.company_name,
+        })),
+    [vendors],
+  );
 
-  // Mock data for Radar chart (Category Average)
+  // Category avg ratings for the radar chart
   const categoryData = useMemo(() => {
-    const cats: Record<string, {total: number, count: number}> = {};
-    PROCESSED_VENDORS.forEach(v => {
-        if (!cats[v.category]) cats[v.category] = {total: 0, count: 0};
-        cats[v.category].total += v.overallRating;
-        cats[v.category].count += 1;
+    const cats: Record<string, { total: number; count: number }> = {};
+    vendors.forEach(v => {
+      if (!cats[v.category]) cats[v.category] = { total: 0, count: 0 };
+      cats[v.category].total += v.overall_rating;
+      cats[v.category].count += 1;
     });
-    return Object.entries(cats).map(([subject, data]) => ({
-        subject: subject.split(' ')[0], // Shorten
-        A: Math.round(data.total / data.count),
-        fullCategory: subject
-    })).slice(0, 6); // Take top 6 for radar
-  }, []);
+    return Object.entries(cats)
+      .map(([subj, d]) => ({
+        subject: subj.split(' ')[0],
+        avg: +(d.total / d.count).toFixed(2),
+        fullCategory: subj,
+      }))
+      .sort((a, b) => b.avg - a.avg)
+      .slice(0, 6);
+  }, [vendors]);
 
-  const COLORS = {
-    [RiskLevel.LOW]: '#4ade80',
-    [RiskLevel.MEDIUM]: '#fbbf24',
-    [RiskLevel.HIGH]: '#f87171',
-    [RiskLevel.CRITICAL]: '#ef4444'
-  };
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="bg-sentry-card rounded-lg border border-slate-700 h-80 animate-pulse" />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 animate-fadeIn">
-      
-      {/* Left Column: Visual Analytics */}
+      {/* Left column — charts */}
       <div className="xl:col-span-2 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            
-            {/* Risk Distribution Chart */}
-            <div className="bg-sentry-card p-4 rounded-lg border border-slate-700 shadow-lg">
-              <h3 className="text-lg font-bold text-sentry-accent mb-4 border-b border-slate-700 pb-2">Risk Distribution</h3>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={riskDistribution}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={60}
-                      outerRadius={80}
-                      paddingAngle={5}
-                      dataKey="value"
-                    >
-                      {riskDistribution.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[entry.name as RiskLevel]} />
-                      ))}
-                    </Pie>
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#fff' }}
-                    />
-                    <Legend />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-            {/* Category Performance Radar */}
-            <div className="bg-sentry-card p-4 rounded-lg border border-slate-700 shadow-lg">
-              <h3 className="text-lg font-bold text-sentry-accent mb-4 border-b border-slate-700 pb-2">Category Performance</h3>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart cx="50%" cy="50%" outerRadius="80%" data={categoryData}>
-                    <PolarGrid stroke="#334155" />
-                    <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 10 }} />
-                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                    <Radar
-                      name="Avg Rating"
-                      dataKey="A"
-                      stroke="#38bdf8"
-                      fill="#38bdf8"
-                      fillOpacity={0.3}
-                    />
-                    <Tooltip contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#fff' }}/>
-                  </RadarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-          </div>
-
-          {/* Top 20 Ratings Bar Chart */}
+          {/* Risk Distribution Pie */}
           <div className="bg-sentry-card p-4 rounded-lg border border-slate-700 shadow-lg">
-            <h3 className="text-lg font-bold text-sentry-accent mb-4 border-b border-slate-700 pb-2">Top 20 Vendor Rankings</h3>
-            <div className="h-80">
+            <h3 className="text-lg font-bold text-sentry-accent mb-4 border-b border-slate-700 pb-2">Risk Distribution</h3>
+            <div style={{ height: 256 }}>
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={ratingData.slice(0, 20)} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
-                  <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} interval={0} angle={-45} textAnchor="end" height={60} />
-                  <YAxis stroke="#94a3b8" domain={[0, 100]} />
-                  <Tooltip 
-                    cursor={{fill: '#334155', opacity: 0.2}}
-                    contentStyle={{ backgroundColor: '#1e293b', borderColor: '#334155', color: '#fff' }}
-                    itemStyle={{ color: '#38bdf8' }}
-                  />
-                  <Bar dataKey="rating" fill="#38bdf8" radius={[4, 4, 0, 0]} activeBar={{ fill: '#4ade80' }} />
-                </BarChart>
+                <PieChart>
+                  <Pie
+                    data={riskDistribution}
+                    cx="50%" cy="50%"
+                    innerRadius={60} outerRadius={80}
+                    paddingAngle={5} dataKey="value"
+                  >
+                    {riskDistribution.map((entry, idx) => (
+                      <Cell key={idx} fill={RISK_COLORS[entry.name] ?? '#94a3b8'} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ backgroundColor: '#001E60', borderColor: '#002880', color: '#fff' }} />
+                  <Legend />
+                </PieChart>
               </ResponsiveContainer>
             </div>
           </div>
+
+          {/* Category Performance Radar */}
+          <div className="bg-sentry-card p-4 rounded-lg border border-slate-700 shadow-lg">
+            <h3 className="text-lg font-bold text-sentry-accent mb-4 border-b border-slate-700 pb-2">Category Performance</h3>
+            <div style={{ height: 256 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart cx="50%" cy="50%" outerRadius="75%" data={categoryData}>
+                  <PolarGrid stroke="#334155" />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                  {/* Domain 0-5 matches the actual 0-5 rating scale */}
+                  <PolarRadiusAxis angle={30} domain={[0, 5]} tick={false} axisLine={false} />
+                  <Radar name="Avg Rating" dataKey="avg" stroke="#FFC220" fill="#0053E2" fillOpacity={0.35} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#001E60', borderColor: '#002880', color: '#fff' }}
+                    formatter={(val: number) => [`${val} / 5.0`, 'Avg Rating']}
+                  />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Top 20 Bar Chart — Y-axis domain fixed to 0-5 (was wrongly 0-100) */}
+        <div className="bg-sentry-card p-4 rounded-lg border border-slate-700 shadow-lg">
+          <h3 className="text-lg font-bold text-sentry-accent mb-4 border-b border-slate-700 pb-2">Top 20 Vendor Rankings</h3>
+          <div style={{ height: 320 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={topVendors} margin={{ top: 5, right: 30, left: 20, bottom: 60 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" vertical={false} />
+                <XAxis dataKey="name" stroke="#94a3b8" fontSize={10} interval={0} angle={-45} textAnchor="end" />
+                <YAxis stroke="#94a3b8" domain={[0, 5]} ticks={[0, 1, 2, 3, 4, 5]} />
+                <Tooltip
+                  cursor={{ fill: '#002880', opacity: 0.25 }}
+                  contentStyle={{ backgroundColor: '#001E60', borderColor: '#002880', color: '#fff' }}
+                  labelFormatter={(_val, payload) => payload?.[0]?.payload?.full ?? ''}
+                  formatter={(val: number) => [`${val} / 5.0`, 'Security Rating']}
+                />
+                <Bar dataKey="rating" fill="#0053E2" radius={[4, 4, 0, 0]} activeBar={{ fill: '#FFC220' }} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
       </div>
 
-      {/* Right Column: AI Assistant */}
-      <div className="xl:col-span-1 h-full">
-         <div className="h-full flex flex-col">
-            <div className="mb-4">
-                <h3 className="text-xl font-bold text-white">AI Market Analyst</h3>
-                <p className="text-sm text-slate-400">Ask SENTRY-AI to compare specific vendors or analyze trends.</p>
-            </div>
-            <div className="flex-grow">
-               <ChatAssistant />
-            </div>
-         </div>
+      {/* Right column — SENTRY-AI */}
+      <div className="xl:col-span-1">
+        <div className="mb-4">
+          <h3 className="text-xl font-bold text-white">AI Market Analyst</h3>
+          <p className="text-sm text-slate-400">Ask SENTRY-AI to compare vendors or analyse trends.</p>
+        </div>
+        <ChatAssistant />
       </div>
-
     </div>
   );
 };

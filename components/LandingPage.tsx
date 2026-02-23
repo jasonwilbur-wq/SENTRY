@@ -16,9 +16,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
       
       {/* Background Elements */}
       <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-[128px] animate-pulse"></div>
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-600/20 rounded-full blur-[128px] animate-pulse delay-1000"></div>
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(15,23,42,0.9)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.9)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-20"></div>
+        {/* True Blue glow — top left */}
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-wmt-blue/25 rounded-full blur-[120px] animate-pulse"></div>
+        {/* Spark Yellow glow — bottom right */}
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-wmt-yellow/10 rounded-full blur-[120px] animate-pulse delay-1000"></div>
+        {/* Navy grid overlay */}
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(0,11,40,0.85)_1px,transparent_1px),linear-gradient(90deg,rgba(0,11,40,0.85)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-30"></div>
       </div>
 
       <div className={`z-10 max-w-6xl mx-auto px-6 text-center transition-all duration-1000 transform ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
@@ -29,7 +32,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sentry-success opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-sentry-success"></span>
           </span>
-          <span className="text-xs font-mono font-medium tracking-widest text-slate-400 uppercase">Walmart Internal // Restricted Access</span>
+          <span className="text-xs font-mono font-medium tracking-widest text-slate-400 uppercase">Walmart GSA&amp;I · Enterprise Security · Internal</span>
         </div>
 
         {/* Main Title */}
@@ -48,17 +51,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
         </div>
 
         {/* Description/Context */}
-        <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto mb-16 leading-relaxed border-t border-slate-800 pt-8">
-          The definitive System of Record for Emerging Technology vendor assessment. 
-          Identify risks, visualize architecture, and govern with AI-driven insights.
+        <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto mb-16 leading-relaxed border-t border-slate-700 pt-8">
+          Global Security, Aviation &amp; Investigations' definitive System of Record for
+          Emerging Technology vendor assessment — identify risks, visualize architecture,
+          and govern with AI-driven insights.
         </p>
 
         {/* CTA Button */}
         <button 
           onClick={onEnter}
-          className="group relative inline-flex items-center justify-center gap-3 px-10 py-5 bg-sentry-accent text-sentry-dark font-bold text-lg rounded-sm overflow-hidden transition-all hover:bg-white hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(56,189,248,0.3)] hover:shadow-[0_0_50px_rgba(56,189,248,0.6)]"
+          className="group relative inline-flex items-center justify-center gap-3 px-10 py-5 bg-wmt-yellow text-wmt-void font-bold text-lg rounded-sm overflow-hidden transition-all hover:bg-white hover:scale-105 active:scale-95 shadow-[0_0_24px_rgba(255,194,32,0.35)] hover:shadow-[0_0_56px_rgba(255,194,32,0.6)]"
         >
-          <span className="relative z-10 tracking-wider">ACCESS TERMINAL</span>
+          <span className="relative z-10 tracking-wider font-black">ACCESS TERMINAL</span>
           <svg className="w-5 h-5 relative z-10 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
           </svg>

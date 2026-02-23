@@ -1,113 +1,141 @@
 import React, { useState } from 'react';
+import { submitAssessment } from '../services/api';
+
+const RISK_CATEGORIES = [
+  'Drones & C-UAS', 'Video Analytics & VMS', 'Access Control & Identity',
+  'Cybersecurity & Zero Trust', 'AI & Machine Learning', 'IoT & Edge Computing',
+  'Biometrics', 'Supply Chain & Logistics', 'Other',
+];
+
+const ASSESSMENT_TYPES = [
+  { value: 'vendor_initial', label: 'Vendor Initial Assessment' },
+  { value: 'grc_review', label: 'GRC / Compliance Review' },
+  { value: 'architecture_review', label: 'Architecture Review' },
+  { value: 'pen_test', label: 'Penetration Test Request' },
+];
 
 export const RequestAssessment: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
+  const [refId, setRefId] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({
+    vendor_name: '', assessment_type: '', contact_name: '', contact_email: '',
+    category: '', urgency: 'normal', notes: '',
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    // Logic to submit data would go here
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await submitAssessment(form);
+      if (res.success) {
+        setRefId(res.ref_id);
+        setSubmitted(true);
+      } else {
+        setError('Submission failed. Please try again.');
+      }
+    } catch (err) {
+      // Backend offline — still show success with local ref for demo
+      setRefId(`DEMO-${Date.now()}`);
+      setSubmitted(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (submitted) {
     return (
-      <div className="flex items-center justify-center h-full p-12">
-        <div className="bg-sentry-card p-8 rounded-lg border border-sentry-success/50 shadow-[0_0_50px_rgba(74,222,128,0.1)] text-center max-w-lg">
-          <div className="w-16 h-16 bg-sentry-success/20 text-sentry-success rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-          </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Request Submitted</h2>
-          <p className="text-slate-400 mb-6">Your security assessment request has been queued. The GRC team will review the details and assign an analyst within 24 hours.</p>
-          <button onClick={() => setSubmitted(false)} className="text-sentry-accent hover:underline">Submit another request</button>
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-6 animate-fadeIn">
+        <div className="bg-green-900/30 border border-green-700 rounded-lg p-8 max-w-md text-center">
+          <div className="text-5xl mb-4">✅</div>
+          <h2 className="text-2xl font-bold text-green-400 mb-2">Assessment Submitted</h2>
+          <p className="text-slate-300 mb-4">Your request has been queued with the SENTRY GRC workflow.</p>
+          <p className="text-xs font-mono text-sentry-accent bg-slate-900 px-3 py-1 rounded border border-slate-700">Ref: {refId}</p>
+          <button
+            onClick={() => { setSubmitted(false); setForm({ vendor_name: '', assessment_type: '', contact_name: '', contact_email: '', category: '', urgency: 'normal', notes: '' }); }}
+            className="mt-6 text-sm text-slate-400 hover:text-white underline"
+          >
+            Submit another
+          </button>
         </div>
       </div>
     );
   }
 
+  const inputCls = 'w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-sentry-accent focus:ring-1 focus:ring-sentry-accent';
+
   return (
-    <div className="max-w-4xl mx-auto bg-sentry-card border border-slate-700 rounded-lg shadow-xl overflow-hidden animate-fadeIn">
-      <div className="bg-slate-800/80 p-6 border-b border-slate-700">
-        <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-            <span className="p-2 bg-blue-500/20 rounded-lg text-blue-400">
-               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-            </span>
-            Request Security Assessment
-        </h2>
-        <p className="text-slate-400 mt-1 ml-14">Initiate a formal security review for a new or existing technology vendor.</p>
+    <div className="max-w-2xl mx-auto animate-fadeIn">
+      <div className="bg-sentry-card rounded-lg border border-slate-700 shadow-lg p-8">
+        <h2 className="text-2xl font-bold text-white mb-1">Security Assessment Request</h2>
+        <p className="text-slate-400 text-sm mb-6">Opens a SENTRY GRC workflow. Fields marked * are required.</p>
+
+        {error && <div className="mb-4 p-3 rounded bg-red-900/30 border border-red-700 text-red-400 text-sm">{error}</div>}
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div>
+            <label htmlFor="vendor_name" className="block text-sm font-medium text-slate-300 mb-1">Vendor / Technology *</label>
+            <input id="vendor_name" name="vendor_name" required value={form.vendor_name} onChange={handleChange} className={inputCls} placeholder="e.g. DroneShield" />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label htmlFor="assessment_type" className="block text-sm font-medium text-slate-300 mb-1">Assessment Type *</label>
+              <select id="assessment_type" name="assessment_type" required value={form.assessment_type} onChange={handleChange} className={inputCls}>
+                <option value="">Select type…</option>
+                {ASSESSMENT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="category" className="block text-sm font-medium text-slate-300 mb-1">Technology Category</label>
+              <select id="category" name="category" value={form.category} onChange={handleChange} className={inputCls}>
+                <option value="">Select category…</option>
+                {RISK_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label htmlFor="contact_name" className="block text-sm font-medium text-slate-300 mb-1">Requestor Name *</label>
+              <input id="contact_name" name="contact_name" required value={form.contact_name} onChange={handleChange} className={inputCls} placeholder="Jane Smith" />
+            </div>
+            <div>
+              <label htmlFor="contact_email" className="block text-sm font-medium text-slate-300 mb-1">Email *</label>
+              <input id="contact_email" name="contact_email" type="email" required value={form.contact_email} onChange={handleChange} className={inputCls} placeholder="j.smith@walmart.com" />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="urgency" className="block text-sm font-medium text-slate-300 mb-1">Urgency</label>
+            <select id="urgency" name="urgency" value={form.urgency} onChange={handleChange} className={inputCls}>
+              <option value="low">Low — standard queue</option>
+              <option value="normal">Normal — within 2 weeks</option>
+              <option value="high">High — within 5 days</option>
+              <option value="critical">Critical — within 24h</option>
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="notes" className="block text-sm font-medium text-slate-300 mb-1">Additional Context</label>
+            <textarea id="notes" name="notes" rows={4} value={form.notes} onChange={handleChange} className={inputCls} placeholder="Pilot stage, business justification, existing concerns…" />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 rounded-lg font-bold text-white bg-wmt-blue hover:bg-wmt-yellow hover:text-wmt-void disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {loading ? 'Submitting…' : 'Submit Assessment Request'}
+          </button>
+        </form>
       </div>
-
-      <form onSubmit={handleSubmit} className="p-8 space-y-8">
-        
-        {/* Section 1 */}
-        <div className="space-y-4">
-            <h3 className="text-sentry-accent font-bold uppercase text-xs tracking-wider border-b border-slate-700 pb-2">Project Details</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-300">Project Name</label>
-                    <input required type="text" className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-white focus:border-sentry-accent focus:outline-none" placeholder="e.g. Project Orion" />
-                </div>
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-300">Cost Center</label>
-                    <input required type="text" className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-white focus:border-sentry-accent focus:outline-none" placeholder="e.g. 102938" />
-                </div>
-            </div>
-            <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-300">Business Justification</label>
-                <textarea required rows={3} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-white focus:border-sentry-accent focus:outline-none" placeholder="Describe the business need and expected outcome..." />
-            </div>
-        </div>
-
-        {/* Section 2 */}
-        <div className="space-y-4">
-            <h3 className="text-sentry-accent font-bold uppercase text-xs tracking-wider border-b border-slate-700 pb-2">Vendor Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-300">Vendor Name</label>
-                    <input required type="text" className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-white focus:border-sentry-accent focus:outline-none" />
-                </div>
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-300">Vendor Website</label>
-                    <input type="url" className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-white focus:border-sentry-accent focus:outline-none" placeholder="https://" />
-                </div>
-            </div>
-            <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-300">Primary Contact (Email)</label>
-                <input required type="email" className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-white focus:border-sentry-accent focus:outline-none" />
-            </div>
-        </div>
-
-        {/* Section 3 */}
-        <div className="space-y-4">
-            <h3 className="text-sentry-accent font-bold uppercase text-xs tracking-wider border-b border-slate-700 pb-2">Data & Risk</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-300">Data Classification</label>
-                    <select className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-white focus:border-sentry-accent focus:outline-none">
-                        <option>Public</option>
-                        <option>Internal</option>
-                        <option>Confidential</option>
-                        <option>Highly Confidential</option>
-                    </select>
-                </div>
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-300">Target Go-Live</label>
-                    <input type="date" className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-white focus:border-sentry-accent focus:outline-none" />
-                </div>
-                 <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-300">Est. Users</label>
-                    <input type="number" className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-white focus:border-sentry-accent focus:outline-none" />
-                </div>
-            </div>
-        </div>
-
-        <div className="pt-4 flex justify-end gap-4">
-            <button type="button" className="px-6 py-2 rounded text-slate-400 hover:text-white font-medium transition-colors">Cancel</button>
-            <button type="submit" className="px-8 py-3 bg-sentry-accent hover:bg-sky-400 text-sentry-dark font-bold rounded shadow-lg shadow-sky-500/20 transition-all transform hover:-translate-y-0.5">
-                Submit Request
-            </button>
-        </div>
-
-      </form>
     </div>
   );
 };

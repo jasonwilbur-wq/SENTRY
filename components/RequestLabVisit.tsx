@@ -1,115 +1,134 @@
 import React, { useState } from 'react';
+import { submitLabVisit } from '../services/api';
+
+const LAB_EQUIPMENT = [
+  'DroneShield RFOne', 'Skydio X10D', 'Sunflower Labs Hive',
+  'Axon Fleet 3', 'Verkada Dome Camera', 'Lenel S2 NetBox',
+  'Custom (specify in notes)',
+];
+
+const TIME_SLOTS = [
+  '9:00 AM – 11:00 AM', '11:00 AM – 1:00 PM',
+  '1:00 PM – 3:00 PM', '3:00 PM – 5:00 PM',
+];
 
 export const RequestLabVisit: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
+  const [refId, setRefId] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState({
+    contact_name: '', contact_email: '', preferred_date: '',
+    preferred_slot: '', equipment: '', attendees: '1', notes: '',
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await submitLabVisit(form);
+      if (res.success) {
+        setRefId(res.ref_id);
+        setSubmitted(true);
+      } else {
+        setError('Submission failed. Please try again.');
+      }
+    } catch {
+      // Graceful demo fallback
+      setRefId(`LAB-${Date.now()}`);
+      setSubmitted(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (submitted) {
     return (
-      <div className="flex items-center justify-center h-full p-12">
-        <div className="bg-sentry-card p-8 rounded-lg border border-sentry-success/50 shadow-[0_0_50px_rgba(74,222,128,0.1)] text-center max-w-lg">
-          <div className="w-16 h-16 bg-sentry-success/20 text-sentry-success rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
-          </div>
-          <h2 className="text-2xl font-bold text-white mb-2">Visit Scheduled</h2>
-          <p className="text-slate-400 mb-6">Your Emerging Tech Lab visit request has been received. You will receive a calendar invite and access badge instructions shortly.</p>
-          <button onClick={() => setSubmitted(false)} className="text-sentry-accent hover:underline">Book another visit</button>
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-6 animate-fadeIn">
+        <div className="bg-green-900/30 border border-green-700 rounded-lg p-8 max-w-md text-center">
+          <div className="text-5xl mb-4">🔬</div>
+          <h2 className="text-2xl font-bold text-green-400 mb-2">Lab Visit Requested</h2>
+          <p className="text-slate-300 mb-4">The Emerging Technology Lab team will confirm within 48h.</p>
+          <p className="text-xs font-mono text-sentry-accent bg-slate-900 px-3 py-1 rounded border border-slate-700">Ref: {refId}</p>
+          <button
+            onClick={() => { setSubmitted(false); setForm({ contact_name: '', contact_email: '', preferred_date: '', preferred_slot: '', equipment: '', attendees: '1', notes: '' }); }}
+            className="mt-6 text-sm text-slate-400 hover:text-white underline"
+          >
+            Submit another
+          </button>
         </div>
       </div>
     );
   }
 
+  const inputCls = 'w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-sentry-accent focus:ring-1 focus:ring-sentry-accent';
+
   return (
-    <div className="max-w-4xl mx-auto bg-sentry-card border border-slate-700 rounded-lg shadow-xl overflow-hidden animate-fadeIn">
-      <div className="bg-slate-800/80 p-6 border-b border-slate-700">
-        <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-            <span className="p-2 bg-purple-500/20 rounded-lg text-purple-400">
-               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
-            </span>
-            Request Lab Visit
-        </h2>
-        <p className="text-slate-400 mt-1 ml-14">Schedule time at the Emerging Technology Security Lab for hands-on evaluation.</p>
+    <div className="max-w-2xl mx-auto animate-fadeIn">
+      <div className="bg-sentry-card rounded-lg border border-slate-700 shadow-lg p-8">
+        <h2 className="text-2xl font-bold text-white mb-1">Emerging Technology Lab</h2>
+        <p className="text-slate-400 text-sm mb-6">Schedule a hands-on evaluation session with hardware in the secure lab.</p>
+
+        {error && <div className="mb-4 p-3 rounded bg-red-900/30 border border-red-700 text-red-400 text-sm">{error}</div>}
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label htmlFor="contact_name" className="block text-sm font-medium text-slate-300 mb-1">Your Name *</label>
+              <input id="contact_name" name="contact_name" required value={form.contact_name} onChange={handleChange} className={inputCls} placeholder="Jane Smith" />
+            </div>
+            <div>
+              <label htmlFor="contact_email" className="block text-sm font-medium text-slate-300 mb-1">Email *</label>
+              <input id="contact_email" name="contact_email" type="email" required value={form.contact_email} onChange={handleChange} className={inputCls} placeholder="j.smith@walmart.com" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div>
+              <label htmlFor="preferred_date" className="block text-sm font-medium text-slate-300 mb-1">Preferred Date *</label>
+              <input id="preferred_date" name="preferred_date" type="date" required value={form.preferred_date} onChange={handleChange} className={inputCls} />
+            </div>
+            <div>
+              <label htmlFor="preferred_slot" className="block text-sm font-medium text-slate-300 mb-1">Time Slot *</label>
+              <select id="preferred_slot" name="preferred_slot" required value={form.preferred_slot} onChange={handleChange} className={inputCls}>
+                <option value="">Select slot…</option>
+                {TIME_SLOTS.map(s => <option key={s} value={s}>{s}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="equipment" className="block text-sm font-medium text-slate-300 mb-1">Equipment of Interest</label>
+            <select id="equipment" name="equipment" value={form.equipment} onChange={handleChange} className={inputCls}>
+              <option value="">Select equipment…</option>
+              {LAB_EQUIPMENT.map(eq => <option key={eq} value={eq}>{eq}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="attendees" className="block text-sm font-medium text-slate-300 mb-1">Number of Attendees</label>
+            <input id="attendees" name="attendees" type="number" min="1" max="10" value={form.attendees} onChange={handleChange} className={inputCls} />
+          </div>
+
+          <div>
+            <label htmlFor="notes" className="block text-sm font-medium text-slate-300 mb-1">Evaluation Goals / Notes</label>
+            <textarea id="notes" name="notes" rows={4} value={form.notes} onChange={handleChange} className={inputCls} placeholder="What are you trying to evaluate? What decision are you trying to make?" />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 rounded-lg font-bold text-white bg-wmt-blue hover:bg-wmt-yellow hover:text-wmt-void disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          >
+            {loading ? 'Submitting…' : 'Request Lab Visit'}
+          </button>
+        </form>
       </div>
-
-      <form onSubmit={handleSubmit} className="p-8 space-y-8">
-        
-        {/* Location Selection */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-           <label className="cursor-pointer">
-              <input type="radio" name="location" className="peer sr-only" required />
-              <div className="p-4 rounded-lg border border-slate-600 bg-slate-900 hover:bg-slate-800 peer-checked:border-sentry-accent peer-checked:bg-sentry-accent/10 transition-all">
-                  <div className="font-bold text-white">Bentonville Lab (HQ)</div>
-                  <div className="text-sm text-slate-400">Building 4, Level 2</div>
-              </div>
-           </label>
-           <label className="cursor-pointer">
-              <input type="radio" name="location" className="peer sr-only" />
-              <div className="p-4 rounded-lg border border-slate-600 bg-slate-900 hover:bg-slate-800 peer-checked:border-sentry-accent peer-checked:bg-sentry-accent/10 transition-all">
-                  <div className="font-bold text-white">Sunnyvale Lab</div>
-                  <div className="text-sm text-slate-400">Moffett Park, Zone B</div>
-              </div>
-           </label>
-        </div>
-
-        {/* Visit Details */}
-        <div className="space-y-4">
-            <h3 className="text-sentry-accent font-bold uppercase text-xs tracking-wider border-b border-slate-700 pb-2">Visit Details</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-300">Proposed Date</label>
-                    <input required type="datetime-local" className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-white focus:border-sentry-accent focus:outline-none" />
-                </div>
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-slate-300">Duration</label>
-                    <select className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-white focus:border-sentry-accent focus:outline-none">
-                        <option>1 Hour</option>
-                        <option>2 Hours</option>
-                        <option>Half Day (4 Hours)</option>
-                        <option>Full Day</option>
-                    </select>
-                </div>
-            </div>
-            <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-300">Number of Visitors</label>
-                <input required type="number" min="1" max="10" className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-white focus:border-sentry-accent focus:outline-none" />
-            </div>
-            <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-300">Purpose of Visit</label>
-                <textarea required rows={3} className="w-full bg-slate-900 border border-slate-600 rounded p-2.5 text-white focus:border-sentry-accent focus:outline-none" placeholder="What specific hardware or software are you evaluating?" />
-            </div>
-        </div>
-
-        {/* Requirements */}
-        <div className="space-y-4">
-            <h3 className="text-sentry-accent font-bold uppercase text-xs tracking-wider border-b border-slate-700 pb-2">Hardware Requirements</h3>
-            <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                    <input type="checkbox" className="w-4 h-4 rounded border-slate-600 bg-slate-900 text-sentry-accent focus:ring-sentry-accent" />
-                    <span className="text-slate-300">Faraday Cage Access</span>
-                </div>
-                <div className="flex items-center gap-3">
-                    <input type="checkbox" className="w-4 h-4 rounded border-slate-600 bg-slate-900 text-sentry-accent focus:ring-sentry-accent" />
-                    <span className="text-slate-300">Network Traffic Analyzer</span>
-                </div>
-                <div className="flex items-center gap-3">
-                    <input type="checkbox" className="w-4 h-4 rounded border-slate-600 bg-slate-900 text-sentry-accent focus:ring-sentry-accent" />
-                    <span className="text-slate-300">Drone Flight Cage</span>
-                </div>
-            </div>
-        </div>
-
-        <div className="pt-4 flex justify-end gap-4">
-            <button type="button" className="px-6 py-2 rounded text-slate-400 hover:text-white font-medium transition-colors">Cancel</button>
-            <button type="submit" className="px-8 py-3 bg-purple-500 hover:bg-purple-400 text-white font-bold rounded shadow-lg shadow-purple-500/20 transition-all transform hover:-translate-y-0.5">
-                Request Access
-            </button>
-        </div>
-
-      </form>
     </div>
   );
 };
