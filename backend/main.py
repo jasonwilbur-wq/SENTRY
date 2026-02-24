@@ -207,6 +207,110 @@ def list_all_var_reports():
 
 # ── Chat (stub — returns helpful message when no LLM key configured) ─────
 
+
+@app.get("/api/vendors/{vendor_id}/tech-pipeline")
+def vendor_tech_pipeline(vendor_id: str):
+    """Return assessment pipeline summary for a vendor.
+
+    Returns per-product pipeline stage progress:
+    pre_assessment -> initial_assessment -> technical_assessment -> var_report
+    """
+    conn = get_connection()
+
+    # All highlight rows for this vendor
+    rows = conn.execute(
+        "SELECT product_name, assessment_date, source_file, "
+        "pre_assessment_decision, pre_assessment_score, maturity_level, "
+        "initial_assessment, technical_assessment "
+        "FROM vendor_highlights WHERE vendor_id = ? "
+        "ORDER BY source_file DESC",
+        (vendor_id,),
+    ).fetchall()
+
+    has_var = conn.execute(
+        "SELECT COUNT(*) FROM var_reports WHERE vendor_id = ?",
+        (vendor_id,),
+    ).fetchone()[0] > 0
+
+    conn.close()
+
+    if not rows:
+        return {"vendor_id": vendor_id, "has_pipeline_data": False, "products": []}
+
+    # Aggregate per product (take latest record per product)
+    products: dict[str, dict] = {}
+    for row in rows:
+        name = (row["product_name"] or "Unknown").strip() or "Unknown"
+        if name not in products:
+            products[name] = {
+                "product_name": name,
+                "assessment_date": row["assessment_date"],
+                "source_file": row["source_file"],
+                "pre_assessment_score": row["pre_assessment_score"],
+                "pre_assessment_decision": row["pre_assessment_decision"] or "",
+                "maturity_level": row["maturity_level"] or "",
+                "initial_assessment": row["initial_assessment"] or "",
+                "technical_assessment": row["technical_assessment"] or "",
+                "has_var": has_var,
+                # Computed pipeline stage (0-4)
+                "pipeline_stage": _pipeline_stage(
+                    row["pre_assessment_decision"],
+                    row["initial_assessment"],
+                    row["technical_assessment"],
+                    has_var,
+                ),
+            }
+
+    # Summary stats
+    stages = [p["pipeline_stage"] for p in products.values()]
+    ia_vals = [p["initial_assessment"] for p in products.values() if p["initial_assessment"]]
+    ta_vals = [p["technical_assessment"] for p in products.values() if p["technical_assessment"]]
+
+    ia_pass  = sum(1 for v in ia_vals if v.lower() in ("pass", "yes"))
+    ia_fail  = sum(1 for v in ia_vals if v.lower() in ("fail", "no"))
+    ia_pend  = len(ia_vals) - ia_pass - ia_fail
+
+    return {
+        "vendor_id": vendor_id,
+        "has_pipeline_data": True,
+        "has_var": has_var,
+        "summary": {
+            "total_products": len(products),
+            "technically_assessed": len(ta_vals),
+            "initial_pass": ia_pass,
+            "initial_fail": ia_fail,
+            "initial_pending": ia_pend,
+            "max_pipeline_stage": max(stages) if stages else 0,
+        },
+        "products": list(products.values()),
+    }
+
+
+def _pipeline_stage(
+    pre_decision: str | None,
+    initial: str | None,
+    technical: str | None,
+    has_var: bool,
+) -> int:
+    """Return 0-4 representing how far in the pipeline this product is.
+
+    0 = not started
+    1 = pre-assessment done
+    2 = initial assessment done (Pass/Yes)
+    3 = technical assessment done
+    4 = VAR complete
+    """
+    if has_var:
+        return 4
+    if technical and technical.lower() == "yes":
+        return 3
+    if initial and initial.lower() in ("pass", "yes"):
+        return 2
+    if pre_decision:
+        return 1
+    return 0
+
+
 @app.post("/api/chat", response_model=ChatResponse)
 def chat(req: ChatRequest):
     """Chat endpoint stub. Wire up to Element LLM Gateway for full AI."""

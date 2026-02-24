@@ -114,6 +114,44 @@ export async function fetchVendorHighlights(
   return request(`/api/vendors/${vendorId}/highlights`);
 }
 
+// ── Tech Pipeline ─────────────────────────────────────────────────────
+
+export interface TechProduct {
+  product_name: string;
+  assessment_date: string;
+  source_file: string;
+  pre_assessment_score: number | null;
+  pre_assessment_decision: string;
+  maturity_level: string;
+  initial_assessment: string;
+  technical_assessment: string;
+  has_var: boolean;
+  pipeline_stage: 0 | 1 | 2 | 3 | 4;
+}
+
+export interface TechPipelineSummary {
+  total_products: number;
+  technically_assessed: number;
+  initial_pass: number;
+  initial_fail: number;
+  initial_pending: number;
+  max_pipeline_stage: number;
+}
+
+export interface TechPipeline {
+  vendor_id: string;
+  has_pipeline_data: boolean;
+  has_var: boolean;
+  summary: TechPipelineSummary;
+  products: TechProduct[];
+}
+
+export async function fetchVendorTechPipeline(
+  vendorId: string,
+): Promise<TechPipeline> {
+  return request(`/api/vendors/${vendorId}/tech-pipeline`);
+}
+
 // ── Chat ─────────────────────────────────────────────────────────────────────
 
 export interface ChatMessage {

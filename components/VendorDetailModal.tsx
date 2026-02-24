@@ -1,7 +1,7 @@
 /**
  * VendorDetailModal — slide-over panel showing full vendor profile.
  *
- * Tabs: Overview | Assessment History | VAR Reports
+ * Tabs: Overview | Assessment History | Tech Pipeline | VAR Reports
  */
 import React, { useEffect, useState, useCallback } from 'react';
 import {
@@ -11,6 +11,7 @@ import {
   fetchVendorVarReports,
   fetchVendorHighlights,
 } from '../services/api';
+import { TechAssessmentTab } from './TechAssessmentTab';
 import {
   RadarChart,
   Radar,
@@ -20,7 +21,7 @@ import {
   Tooltip,
 } from 'recharts';
 
-type Tab = 'overview' | 'history' | 'var';
+type Tab = 'overview' | 'history' | 'tech' | 'var';
 
 const BAND_STYLES: Record<string, string> = {
   Advance:           'bg-green-900/30 text-green-400 border border-green-700',
@@ -138,7 +139,7 @@ function OverviewTab({ vendor }: { vendor: Vendor }) {
               : null
           }
         />
-        <DetailRow label="VAR Report" value={vendor.has_var ? '✅ Available' : '⏳ Pending Phase 2'} />
+        <DetailRow label="VAR Report" value={vendor.has_var ? '✅ Available — see VAR Reports tab' : '⏳ Not yet assessed'} />
       </dl>
 
       {/* All products */}
@@ -515,6 +516,8 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor, on
                      onClick={setActiveTab} />
           <TabButton id="history"  label="Assessment History" active={activeTab === 'history'}
                      count={highlights.length} onClick={setActiveTab} />
+          <TabButton id="tech"     label="Tech Pipeline" active={activeTab === 'tech'}
+                     onClick={setActiveTab} />
           <TabButton id="var"      label="VAR Reports" active={activeTab === 'var'}
                      count={varReports.length} onClick={setActiveTab} />
         </nav>
@@ -524,6 +527,9 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor, on
           {activeTab === 'overview' && <OverviewTab vendor={vendor} />}
           {activeTab === 'history'  && (
             <HistoryTab highlights={highlights} loading={loadingHistory} />
+          )}
+          {activeTab === 'tech' && (
+            <TechAssessmentTab vendorId={vendor.id} />
           )}
           {activeTab === 'var' && (
             <VarTab vendor={vendor} varReports={varReports} loading={loadingVar} />
