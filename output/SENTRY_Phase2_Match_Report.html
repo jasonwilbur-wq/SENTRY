@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>SENTRY Phase 2 Match Report — February 24, 2026 — 12:44</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f4f6fb;
+          color: #1a1a2e; }
+  .topbar { background: #ffc220; height: 5px; }
+  .header { background: #001E60; color: #fff; padding: 24px 32px;
+             display:flex; justify-content:space-between; align-items:center; }
+  .logo { display:flex; align-items:center; gap:12px; }
+  .logo-icon { width:40px; height:40px; background:#ffc220; border-radius:50%;
+                display:flex; align-items:center; justify-content:center;
+                font-weight:900; font-size:18px; color:#001E60; }
+  .brand h1 { font-size:1.5rem; letter-spacing:0.08em; }
+  .brand p { font-size:11px; color:#4DBDF5; margin-top:2px; }
+  .meta { font-size:12px; color:#A9DDF7; text-align:right; }
+  .container { max-width: 1300px; margin: 0 auto; padding: 24px; }
+  .kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+  .kpi { background:#fff; border-radius:12px; padding:20px;
+          box-shadow:0 1px 4px rgba(0,0,0,.08); text-align:center;
+          border-top:4px solid; }
+  .kpi-num { font-size:2.4rem; font-weight:900; }
+  .kpi-label { font-size:11px; color:#666; text-transform:uppercase;
+                letter-spacing:.08em; margin-top:4px; }
+  .section { background:#fff; border-radius:12px; padding:24px;
+              box-shadow:0 1px 4px rgba(0,0,0,.08); margin-bottom:24px; }
+  .section h2 { font-size:1rem; color:#001E60; margin-bottom:16px;
+                 border-bottom:2px solid #0053e2; padding-bottom:8px; }
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  th { background:#001E60; color:#fff; padding:8px 10px;
+        text-align:left; font-size:11px; letter-spacing:.05em; }
+  td { padding:8px 10px; border-bottom:1px solid #f0f0f0; vertical-align:middle; }
+  tr:hover td { background:#f8f9ff; }
+  .band-bar { display:flex; gap:4px; align-items:center; }
+  .band-chip { padding:4px 12px; border-radius:20px; font-size:11px;
+                font-weight:700; white-space:nowrap; }
+  .insight { border-left:4px solid #ffc220; background:#fff8e6;
+              padding:12px 16px; border-radius:0 8px 8px 0; margin-bottom:12px;
+              font-size:13px; }
+  .insight strong { color:#001E60; }
+  .progress-bar { background:#e0e0e0; border-radius:4px; height:8px; overflow:hidden; }
+  .progress-fill { height:100%; border-radius:4px; background:#0053e2; }
+  footer { text-align:center; color:#aaa; font-size:11px; padding:24px; }
+</style>
+</head>
+<body>
+<div class="topbar"></div>
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">🛡️</div>
+    <div class="brand">
+      <h1>SENTRY — Phase 2 Match Report</h1>
+      <p>VAR Matching &amp; Score Extraction — Emerging Technology Security</p>
+    </div>
+  </div>
+  <div class="meta">
+    <div>Generated: February 24, 2026 — 12:44</div>
+    <div style="color:#ffc220;">INTERNAL — Not for Distribution</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- KPIs -->
+  <div class="kpis">
+    <div class="kpi" style="border-color:#0053e2;">
+      <div class="kpi-num" style="color:#0053e2;">24</div>
+      <div class="kpi-label">VARs Linked</div>
+    </div>
+    <div class="kpi" style="border-color:#2a8703;">
+      <div class="kpi-num" style="color:#2a8703;">23</div>
+      <div class="kpi-label">Scores Extracted</div>
+    </div>
+    <div class="kpi" style="border-color:#ffc220;">
+      <div class="kpi-num" style="color:#995213;">24</div>
+      <div class="kpi-label">Vendors with VAR</div>
+    </div>
+    <div class="kpi" style="border-color:#0053e2;">
+      <div class="kpi-num" style="color:#0053e2;">3.28</div>
+      <div class="kpi-label">Avg Composite Score</div>
+    </div>
+  </div>
+
+  <!-- Insights -->
+  <div class="section">
+    <h2>⚡ Phase 2 Executive Summary</h2>
+    <div class="insight">
+      <strong>VAR Linking Complete:</strong> 24 Vendor Assessment Reports from the
+      SharePoint Vault have been matched to 24 vendors in the SENTRY database.
+      23 of those VARs now have fully extracted dimension scores available for
+      radar chart visualization.
+    </div>
+    <div class="insight">
+      <strong>Score Distribution:</strong> Of the 23 scored VARs,
+      1 are Advance / Pilot Ready (&gt;4.0),
+      16 require further research (3.0–4.0),
+      6 are deferred (2.0–3.0), and
+      0 are recommended for rejection (&lt;2.0).
+      The average composite score of 3.28 places the current cohort in the
+      "Research Further" band overall.
+    </div>
+    <div class="insight">
+      <strong>Outstanding (1 VAR):</strong>
+      WMT-SEC-VAR-20260219-InterfaceSystems has a null score due to a temporary
+      SharePoint auth token expiry during bulk extraction. Re-run
+      <code>bulk_score_extract.py</code> with a fresh URL to populate.
+    </div>
+    <div class="insight">
+      <strong>Scale Opportunity:</strong> The SharePoint Vault contains 800+ additional VAR
+      documents across Nov 2025, Dec 2025, and Jan 2026. A full bulk-link run (Phase 2 → v2)
+      could expand coverage from 24 to 200+ vendors in the SENTRY database.
+    </div>
+  </div>
+
+  <!-- Band Breakdown -->
+  <div class="section">
+    <h2>🎯 Decision Band Breakdown</h2>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;">
+
+    <div style="background:#e8f5e0;border-radius:10px;padding:16px;text-align:center;
+                border:1px solid #2a870333;">
+      <div style="font-size:2rem;font-weight:900;color:#2a8703;">1</div>
+      <div style="font-size:11px;color:#2a8703;font-weight:600;margin:4px 0;">Advance</div>
+      <div class="progress-bar" style="margin-top:8px;">
+        <div class="progress-fill" style="width:4%;background:#2a8703;"></div>
+      </div>
+      <div style="font-size:10px;color:#888;margin-top:4px;">4% of scored</div>
+    </div>
+    <div style="background:#e6f0ff;border-radius:10px;padding:16px;text-align:center;
+                border:1px solid #0053e233;">
+      <div style="font-size:2rem;font-weight:900;color:#0053e2;">16</div>
+      <div style="font-size:11px;color:#0053e2;font-weight:600;margin:4px 0;">Research Further</div>
+      <div class="progress-bar" style="margin-top:8px;">
+        <div class="progress-fill" style="width:70%;background:#0053e2;"></div>
+      </div>
+      <div style="font-size:10px;color:#888;margin-top:4px;">70% of scored</div>
+    </div>
+    <div style="background:#fff8e6;border-radius:10px;padding:16px;text-align:center;
+                border:1px solid #99521333;">
+      <div style="font-size:2rem;font-weight:900;color:#995213;">6</div>
+      <div style="font-size:11px;color:#995213;font-weight:600;margin:4px 0;">Defer</div>
+      <div class="progress-bar" style="margin-top:8px;">
+        <div class="progress-fill" style="width:26%;background:#995213;"></div>
+      </div>
+      <div style="font-size:10px;color:#888;margin-top:4px;">26% of scored</div>
+    </div>
+    <div style="background:#fde8e6;border-radius:10px;padding:16px;text-align:center;
+                border:1px solid #ea110033;">
+      <div style="font-size:2rem;font-weight:900;color:#ea1100;">0</div>
+      <div style="font-size:11px;color:#ea1100;font-weight:600;margin:4px 0;">Reject</div>
+      <div class="progress-bar" style="margin-top:8px;">
+        <div class="progress-fill" style="width:0%;background:#ea1100;"></div>
+      </div>
+      <div style="font-size:10px;color:#888;margin-top:4px;">0% of scored</div>
+    </div>
+    </div>
+  </div>
+
+  <!-- VAR Table -->
+  <div class="section">
+    <h2>📄 All Matched VARs (24 linked • 23 scored)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Company</th>
+          <th>Category</th>
+          <th>VAR Filename</th>
+          <th style="text-align:center;">Score</th>
+          <th style="text-align:center;">Band</th>
+          <th style="text-align:center;">Dimension Bars (C R M I $ V D ☁)</th>
+          <th style="text-align:center;">SharePoint</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="font-weight:600;color:#001E60;font-size:12px;">Exiger</td>
+          <td style="font-size:11px;color:#444;">Supply Chain & Asset Protection Tech</td>
+          <td style="font-size:11px;color:#666;word-break:break-all;max-width:200px;">
+            WMT-SEC-VAR-20260130-Exiger-Detailed-v1.docx...</td>
+          <td style="text-align:center;">
+            <span style="background:#e8f5e0;color:#2a8703;font-weight:700;font-size:12px;
+                         padding:2px 8px;border-radius:12px;">
+              4.01
+            </span>
+          </td>
+          <td style="text-align:center;">
+            <span style="font-size:11px;color:#2a8703;font-weight:600;">Advance</span>
+          </td>
+          <td style="text-align:center;"><div title="4.3" style="display:inline-block;width:6px;height:17px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.6" style="display:inline-block;width:6px;height:14px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.5" style="display:inline-block;width:6px;height:18px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.8" style="display:inline-block;width:6px;height:15px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.9" style="display:inline-block;width:6px;height:15px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.4" style="display:inline-block;width:6px;height:17px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.0" style="display:inline-block;width:6px;height:16px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.5" style="display:inline-block;width:6px;height:14px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div></td>
+          <td style="text-align:center;"><a href="https://teams.wal-mart.com/sites/EmergingTechnologySecurity/Vault/Solution%20and%20Report%20Data/Reports/Vendor%20Assessment%20Reports/2026/202602/WMT-SEC-VAR-20260130-Exiger-Detailed-v1.docx" target="_blank" style="color:#0053e2;text-decoration:none;font-size:11px;">Open →</a></td>
+        </tr>
+<tr>
+          <td style="font-weight:600;color:#001E60;font-size:12px;">Cyera</td>
+          <td style="font-size:11px;color:#444;">Cloud Security</td>
+          <td style="font-size:11px;color:#666;word-break:break-all;max-width:200px;">
+            WMT-SEC-VAR-20260208-Cyera-Detailed-v1.docx...</td>
+          <td style="text-align:center;">
+            <span style="background:#e6f0ff;color:#0053e2;font-weight:700;font-size:12px;
+                         padding:2px 8px;border-radius:12px;">
+              3.97
+            </span>
+          </td>
+          <td style="text-align:center;">
+            <span style="font-size:11px;color:#0053e2;font-weight:600;">Research Further</span>
+          </td>
+          <td style="text-align:center;"><div title="4.3" style="display:inline-block;width:6px;height:17px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.6" style="display:inline-block;width:6px;height:14px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.8" style="display:inline-block;width:6px;height:15px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.2" style="display:inline-block;width:6px;height:16px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.8" style="display:inline-block;width:6px;height:15px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.7" style="display:inline-block;width:6px;height:18px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.5" style="display:inline-block;width:6px;height:18px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.5" style="display:inline-block;width:6px;height:14px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div></td>
+          <td style="text-align:center;"><a href="https://teams.wal-mart.com/sites/EmergingTechnologySecurity/Vault/Solution%20and%20Report%20Data/Reports/Vendor%20Assessment%20Reports/2026/202602/WMT-SEC-VAR-20260208-Cyera-Detailed-v1.docx" target="_blank" style="color:#0053e2;text-decoration:none;font-size:11px;">Open →</a></td>
+        </tr>
+<tr>
+          <td style="font-weight:600;color:#001E60;font-size:12px;">Axis Communications</td>
+          <td style="font-size:11px;color:#444;">Video Management & Recording (VMS/NVR)</td>
+          <td style="font-size:11px;color:#666;word-break:break-all;max-width:200px;">
+            WMT-SEC-VAR-20251221-Axis-Detailed-v1.docx...</td>
+          <td style="text-align:center;">
+            <span style="background:#e6f0ff;color:#0053e2;font-weight:700;font-size:12px;
+                         padding:2px 8px;border-radius:12px;">
+              3.76
+            </span>
+          </td>
+          <td style="text-align:center;">
+            <span style="font-size:11px;color:#0053e2;font-weight:600;">Research Further</span>
+          </td>
+          <td style="text-align:center;"><div title="3.6" style="display:inline-block;width:6px;height:14px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.2" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.4" style="display:inline-block;width:6px;height:17px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.2" style="display:inline-block;width:6px;height:16px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.0" style="display:inline-block;width:6px;height:16px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.8" style="display:inline-block;width:6px;height:19px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.4" style="display:inline-block;width:6px;height:13px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.3" style="display:inline-block;width:6px;height:13px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div></td>
+          <td style="text-align:center;"><a href="https://walmart.sharepoint.com/sites/EmergingTechSec/Shared%20Documents/Reports/WMT-SEC-VAR-20251221-Axis-Detailed-v1.docx" target="_blank" style="color:#0053e2;text-decoration:none;font-size:11px;">Open →</a></td>
+        </tr>
+<tr>
+          <td style="font-weight:600;color:#001E60;font-size:12px;">March Networks</td>
+          <td style="font-size:11px;color:#444;">Video Management & Recording (VMS/NVR)</td>
+          <td style="font-size:11px;color:#666;word-break:break-all;max-width:200px;">
+            WMT-SEC-VAR-20251120-march-networks-v1.docx...</td>
+          <td style="text-align:center;">
+            <span style="background:#e6f0ff;color:#0053e2;font-weight:700;font-size:12px;
+                         padding:2px 8px;border-radius:12px;">
+              3.75
+            </span>
+          </td>
+          <td style="text-align:center;">
+            <span style="font-size:11px;color:#0053e2;font-weight:600;">Research Further</span>
+          </td>
+          <td style="text-align:center;"><div title="4.0" style="display:inline-block;width:6px;height:16px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.5" style="display:inline-block;width:6px;height:14px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.0" style="display:inline-block;width:6px;height:16px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.0" style="display:inline-block;width:6px;height:16px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="0.0" style="display:inline-block;width:6px;height:0px;background:#ea1100;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.0" style="display:inline-block;width:6px;height:16px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="0.0" style="display:inline-block;width:6px;height:0px;background:#ea1100;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div></td>
+          <td style="text-align:center;"><a href="https://my.wal-mart.com/personal/j0w16ja_homeoffice_wal-mart_com/Documents/Microsoft%20Teams%20Chat%20Files/WMT-SEC-VAR-20251120-march-networks-v1%20(2).docx" target="_blank" style="color:#0053e2;text-decoration:none;font-size:11px;">Open →</a></td>
+        </tr>
+<tr>
+          <td style="font-weight:600;color:#001E60;font-size:12px;">Suprema</td>
+          <td style="font-size:11px;color:#444;">Biometrics & Authentication</td>
+          <td style="font-size:11px;color:#666;word-break:break-all;max-width:200px;">
+            WMT-SEC-VAR-20251119-Suprema-BioStarX-v1.docx...</td>
+          <td style="text-align:center;">
+            <span style="background:#e6f0ff;color:#0053e2;font-weight:700;font-size:12px;
+                         padding:2px 8px;border-radius:12px;">
+              3.72
+            </span>
+          </td>
+          <td style="text-align:center;">
+            <span style="font-size:11px;color:#0053e2;font-weight:600;">Research Further</span>
+          </td>
+          <td style="text-align:center;"><div title="5.0" style="display:inline-block;width:6px;height:20px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.0" style="display:inline-block;width:6px;height:16px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="0.0" style="display:inline-block;width:6px;height:0px;background:#ea1100;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.0" style="display:inline-block;width:6px;height:16px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="0.0" style="display:inline-block;width:6px;height:0px;background:#ea1100;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div></td>
+          <td style="text-align:center;"><a href="https://teams.wal-mart.com/sites/EmergingTechnologySecurity/Vault/Solution%20and%20Report%20Data/Reports/Vendor%20Assessment%20Reports/2025/November%202025/WMT-SEC-VAR-20251119-Suprema-BioStarX-v1%20(1).docx" target="_blank" style="color:#0053e2;text-decoration:none;font-size:11px;">Open →</a></td>
+        </tr>
+<tr>
+          <td style="font-weight:600;color:#001E60;font-size:12px;">Shooter Detection Systems</td>
+          <td style="font-size:11px;color:#444;">Audio Analytics</td>
+          <td style="font-size:11px;color:#666;word-break:break-all;max-width:200px;">
+            WMT-SEC-VAR-20260113-shooterdetectionsystems-...</td>
+          <td style="text-align:center;">
+            <span style="background:#e6f0ff;color:#0053e2;font-weight:700;font-size:12px;
+                         padding:2px 8px;border-radius:12px;">
+              3.72
+            </span>
+          </td>
+          <td style="text-align:center;">
+            <span style="font-size:11px;color:#0053e2;font-weight:600;">Research Further</span>
+          </td>
+          <td style="text-align:center;"><div title="3.7" style="display:inline-block;width:6px;height:14px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.2" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.5" style="display:inline-block;width:6px;height:18px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.5" style="display:inline-block;width:6px;height:14px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.2" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.3" style="display:inline-block;width:6px;height:17px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.5" style="display:inline-block;width:6px;height:18px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.0" style="display:inline-block;width:6px;height:16px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div></td>
+          <td style="text-align:center;"><a href="https://my.wal-mart.com/personal/j0w16ja_homeoffice_wal-mart_com/Documents/Microsoft%20Teams%20Chat%20Files/WMT-SEC-VAR-20260113-shooterdetectionsystems-Detailed-v1.docx" target="_blank" style="color:#0053e2;text-decoration:none;font-size:11px;">Open →</a></td>
+        </tr>
+<tr>
+          <td style="font-weight:600;color:#001E60;font-size:12px;">Advancis Software (WinGuard AIM)</td>
+          <td style="font-size:11px;color:#444;">Video Management & Recording (VMS)</td>
+          <td style="font-size:11px;color:#666;word-break:break-all;max-width:200px;">
+            WMT-SEC-VAR-20260218-advancis-winguard-aim-De...</td>
+          <td style="text-align:center;">
+            <span style="background:#e6f0ff;color:#0053e2;font-weight:700;font-size:12px;
+                         padding:2px 8px;border-radius:12px;">
+              3.64
+            </span>
+          </td>
+          <td style="text-align:center;">
+            <span style="font-size:11px;color:#0053e2;font-weight:600;">Research Further</span>
+          </td>
+          <td style="text-align:center;"><div title="3.5" style="display:inline-block;width:6px;height:14px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.2" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.3" style="display:inline-block;width:6px;height:17px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.4" style="display:inline-block;width:6px;height:17px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.4" style="display:inline-block;width:6px;height:13px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.7" style="display:inline-block;width:6px;height:14px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.0" style="display:inline-block;width:6px;height:16px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div></td>
+          <td style="text-align:center;"><a href="https://my.wal-mart.com/personal/j0w16ja_homeoffice_wal-mart_com/Documents/Microsoft%20Teams%20Chat%20Files/WMT-SEC-VAR-20260218-advancis-winguard-aim-Detailed-v1.docx" target="_blank" style="color:#0053e2;text-decoration:none;font-size:11px;">Open →</a></td>
+        </tr>
+<tr>
+          <td style="font-weight:600;color:#001E60;font-size:12px;">Surveil Group</td>
+          <td style="font-size:11px;color:#444;">Video Analytics & AI</td>
+          <td style="font-size:11px;color:#666;word-break:break-all;max-width:200px;">
+            WMT-SEC-VAR-20251120-surveil-v1.docx...</td>
+          <td style="text-align:center;">
+            <span style="background:#e6f0ff;color:#0053e2;font-weight:700;font-size:12px;
+                         padding:2px 8px;border-radius:12px;">
+              3.48
+            </span>
+          </td>
+          <td style="text-align:center;">
+            <span style="font-size:11px;color:#0053e2;font-weight:600;">Research Further</span>
+          </td>
+          <td style="text-align:center;"><div title="4.0" style="display:inline-block;width:6px;height:16px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.5" style="display:inline-block;width:6px;height:14px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.0" style="display:inline-block;width:6px;height:16px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.5" style="display:inline-block;width:6px;height:14px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.5" style="display:inline-block;width:6px;height:18px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="0.0" style="display:inline-block;width:6px;height:0px;background:#ea1100;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.0" style="display:inline-block;width:6px;height:16px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="0.0" style="display:inline-block;width:6px;height:0px;background:#ea1100;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div></td>
+          <td style="text-align:center;"><a href="https://teams.wal-mart.com/sites/EmergingTechnologySecurity/Vault/Solution%20and%20Report%20Data/Reports/Vendor%20Assessment%20Reports/2025/November%202025/WMT-SEC-VAR-20251120-surveil-v1%20(1).docx" target="_blank" style="color:#0053e2;text-decoration:none;font-size:11px;">Open →</a></td>
+        </tr>
+<tr>
+          <td style="font-weight:600;color:#001E60;font-size:12px;">Trout Software</td>
+          <td style="font-size:11px;color:#444;">Cloud Security</td>
+          <td style="font-size:11px;color:#666;word-break:break-all;max-width:200px;">
+            WMT-SEC-VAR-20260205-TroutSoftware-Detailed-v...</td>
+          <td style="text-align:center;">
+            <span style="background:#e6f0ff;color:#0053e2;font-weight:700;font-size:12px;
+                         padding:2px 8px;border-radius:12px;">
+              3.46
+            </span>
+          </td>
+          <td style="text-align:center;">
+            <span style="font-size:11px;color:#0053e2;font-weight:600;">Research Further</span>
+          </td>
+          <td style="text-align:center;"><div title="3.3" style="display:inline-block;width:6px;height:13px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.1" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.4" style="display:inline-block;width:6px;height:13px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.8" style="display:inline-block;width:6px;height:15px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.8" style="display:inline-block;width:6px;height:15px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.2" style="display:inline-block;width:6px;height:16px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.5" style="display:inline-block;width:6px;height:18px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div></td>
+          <td style="text-align:center;"><a href="https://teams.wal-mart.com/sites/EmergingTechnologySecurity/Vault/Solution%20and%20Report%20Data/Reports/Vendor%20Assessment%20Reports/2026/202602/WMT-SEC-VAR-20260205-TroutSoftware-Detailed-v1.docx" target="_blank" style="color:#0053e2;text-decoration:none;font-size:11px;">Open →</a></td>
+        </tr>
+<tr>
+          <td style="font-weight:600;color:#001E60;font-size:12px;">SiteOwl</td>
+          <td style="font-size:11px;color:#444;">Command & Control / PSIM / Situational Awareness</td>
+          <td style="font-size:11px;color:#666;word-break:break-all;max-width:200px;">
+            WMT-SEC-VAR-20251219-SiteOwl-Detailed-v1.docx...</td>
+          <td style="text-align:center;">
+            <span style="background:#e6f0ff;color:#0053e2;font-weight:700;font-size:12px;
+                         padding:2px 8px;border-radius:12px;">
+              3.42
+            </span>
+          </td>
+          <td style="text-align:center;">
+            <span style="font-size:11px;color:#0053e2;font-weight:600;">Research Further</span>
+          </td>
+          <td style="text-align:center;"><div title="3.8" style="display:inline-block;width:6px;height:15px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.1" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.7" style="display:inline-block;width:6px;height:14px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="2.9" style="display:inline-block;width:6px;height:11px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.6" style="display:inline-block;width:6px;height:14px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.2" style="display:inline-block;width:6px;height:16px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.6" style="display:inline-block;width:6px;height:14px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="2.0" style="display:inline-block;width:6px;height:8px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div></td>
+          <td style="text-align:center;"><a href="https://teams.wal-mart.com/sites/EmergingTechnologySecurity/Vault/Solution%20and%20Report%20Data/Reports/Vendor%20Assessment%20Reports/2025/December%202025/WMT-SEC-VAR-20251219-SiteOwl-Detailed-v1.docx" target="_blank" style="color:#0053e2;text-decoration:none;font-size:11px;">Open →</a></td>
+        </tr>
+<tr>
+          <td style="font-weight:600;color:#001E60;font-size:12px;">Percipient AI</td>
+          <td style="font-size:11px;color:#444;">Command & Control / PSIM / Situational Awareness</td>
+          <td style="font-size:11px;color:#666;word-break:break-all;max-width:200px;">
+            WMT-SEC-VAR-20260115-Percipientai-Detailed-v1...</td>
+          <td style="text-align:center;">
+            <span style="background:#e6f0ff;color:#0053e2;font-weight:700;font-size:12px;
+                         padding:2px 8px;border-radius:12px;">
+              3.31
+            </span>
+          </td>
+          <td style="text-align:center;">
+            <span style="font-size:11px;color:#0053e2;font-weight:600;">Research Further</span>
+          </td>
+          <td style="text-align:center;"><div title="3.2" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.0" style="display:inline-block;width:6px;height:16px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.5" style="display:inline-block;width:6px;height:14px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.2" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.0" style="display:inline-block;width:6px;height:16px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div></td>
+          <td style="text-align:center;"><a href="https://my.wal-mart.com/personal/j0w16ja_homeoffice_wal-mart_com/Documents/Microsoft%20Teams%20Chat%20Files/WMT-SEC-VAR-20260115-Percipientai-Detailed-v1.docx" target="_blank" style="color:#0053e2;text-decoration:none;font-size:11px;">Open →</a></td>
+        </tr>
+<tr>
+          <td style="font-weight:600;color:#001E60;font-size:12px;">Mantacus</td>
+          <td style="font-size:11px;color:#444;">Weapon Detection</td>
+          <td style="font-size:11px;color:#666;word-break:break-all;max-width:200px;">
+            WMT-SEC-VAR-20260114-Mantacus-Detailed-v1.doc...</td>
+          <td style="text-align:center;">
+            <span style="background:#e6f0ff;color:#0053e2;font-weight:700;font-size:12px;
+                         padding:2px 8px;border-radius:12px;">
+              3.22
+            </span>
+          </td>
+          <td style="text-align:center;">
+            <span style="font-size:11px;color:#0053e2;font-weight:600;">Research Further</span>
+          </td>
+          <td style="text-align:center;"><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="2.8" style="display:inline-block;width:6px;height:11px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.6" style="display:inline-block;width:6px;height:14px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.4" style="display:inline-block;width:6px;height:13px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.2" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.4" style="display:inline-block;width:6px;height:13px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.2" style="display:inline-block;width:6px;height:16px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.8" style="display:inline-block;width:6px;height:15px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div></td>
+          <td style="text-align:center;"><a href="https://teams.wal-mart.com/sites/EmergingTechnologySecurity/Vault/Projects/Mantacus/WMT-SEC-VAR-20260114-Mantacus-Detailed-v1.docx" target="_blank" style="color:#0053e2;text-decoration:none;font-size:11px;">Open →</a></td>
+        </tr>
+<tr>
+          <td style="font-weight:600;color:#001E60;font-size:12px;">Pyramid Network Services</td>
+          <td style="font-size:11px;color:#444;">Networking & Connectivity</td>
+          <td style="font-size:11px;color:#666;word-break:break-all;max-width:200px;">
+            WMT-SEC-VAR-20260210-PyramidNS-Detailed-v1.do...</td>
+          <td style="text-align:center;">
+            <span style="background:#e6f0ff;color:#0053e2;font-weight:700;font-size:12px;
+                         padding:2px 8px;border-radius:12px;">
+              3.19
+            </span>
+          </td>
+          <td style="text-align:center;">
+            <span style="font-size:11px;color:#0053e2;font-weight:600;">Research Further</span>
+          </td>
+          <td style="text-align:center;"><div title="2.8" style="display:inline-block;width:6px;height:11px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.8" style="display:inline-block;width:6px;height:15px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.2" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.5" style="display:inline-block;width:6px;height:14px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.0" style="display:inline-block;width:6px;height:16px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.5" style="display:inline-block;width:6px;height:14px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="2.5" style="display:inline-block;width:6px;height:10px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div></td>
+          <td style="text-align:center;"><a href="https://my.wal-mart.com/personal/j0w16ja_homeoffice_wal-mart_com/Documents/Microsoft%20Teams%20Chat%20Files/WMT-SEC-VAR-20260210-PyramidNS-Detailed-v1.docx" target="_blank" style="color:#0053e2;text-decoration:none;font-size:11px;">Open →</a></td>
+        </tr>
+<tr>
+          <td style="font-weight:600;color:#001E60;font-size:12px;">Asylon</td>
+          <td style="font-size:11px;color:#444;">Counter-UAS (C-UAS)</td>
+          <td style="font-size:11px;color:#666;word-break:break-all;max-width:200px;">
+            WMT-SEC-VAR-20260202-AsylonDroneDog-Detailed-...</td>
+          <td style="text-align:center;">
+            <span style="background:#e6f0ff;color:#0053e2;font-weight:700;font-size:12px;
+                         padding:2px 8px;border-radius:12px;">
+              3.16
+            </span>
+          </td>
+          <td style="text-align:center;">
+            <span style="font-size:11px;color:#0053e2;font-weight:600;">Research Further</span>
+          </td>
+          <td style="text-align:center;"><div title="2.5" style="display:inline-block;width:6px;height:10px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="2.8" style="display:inline-block;width:6px;height:11px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.0" style="display:inline-block;width:6px;height:16px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.2" style="display:inline-block;width:6px;height:16px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.5" style="display:inline-block;width:6px;height:14px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.5" style="display:inline-block;width:6px;height:18px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="2.5" style="display:inline-block;width:6px;height:10px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div></td>
+          <td style="text-align:center;"><a href="https://my.wal-mart.com/personal/j0w16ja_homeoffice_wal-mart_com/Documents/Microsoft%20Teams%20Chat%20Files/WMT-SEC-VAR-20260202-AsylonDroneDog-Detailed-v1.docx" target="_blank" style="color:#0053e2;text-decoration:none;font-size:11px;">Open →</a></td>
+        </tr>
+<tr>
+          <td style="font-weight:600;color:#001E60;font-size:12px;">ProdataKey</td>
+          <td style="font-size:11px;color:#444;">Identity & Access Control (PAC/PIAM)</td>
+          <td style="font-size:11px;color:#666;word-break:break-all;max-width:200px;">
+            WMT-SEC-VAR-20260210-ProdataKey-Detailed-v1.d...</td>
+          <td style="text-align:center;">
+            <span style="background:#e6f0ff;color:#0053e2;font-weight:700;font-size:12px;
+                         padding:2px 8px;border-radius:12px;">
+              3.10
+            </span>
+          </td>
+          <td style="text-align:center;">
+            <span style="font-size:11px;color:#0053e2;font-weight:600;">Research Further</span>
+          </td>
+          <td style="text-align:center;"><div title="2.8" style="display:inline-block;width:6px;height:11px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="2.5" style="display:inline-block;width:6px;height:10px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.6" style="display:inline-block;width:6px;height:14px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.8" style="display:inline-block;width:6px;height:15px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.7" style="display:inline-block;width:6px;height:14px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.8" style="display:inline-block;width:6px;height:15px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.4" style="display:inline-block;width:6px;height:13px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="2.6" style="display:inline-block;width:6px;height:10px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div></td>
+          <td style="text-align:center;"><a href="https://teams.wal-mart.com/sites/EmergingTechnologySecurity/Vault/Solution%20and%20Report%20Data/Reports/Vendor%20Assessment%20Reports/2026/202602/WMT-SEC-VAR-20260210-ProdataKey-Detailed-v1%20(1).docx" target="_blank" style="color:#0053e2;text-decoration:none;font-size:11px;">Open →</a></td>
+        </tr>
+<tr>
+          <td style="font-weight:600;color:#001E60;font-size:12px;">Snap One (Luma)</td>
+          <td style="font-size:11px;color:#444;">VMS</td>
+          <td style="font-size:11px;color:#666;word-break:break-all;max-width:200px;">
+            WMT-SEC-VAR-20260119-luma-snapone-Detailed-v1...</td>
+          <td style="text-align:center;">
+            <span style="background:#e6f0ff;color:#0053e2;font-weight:700;font-size:12px;
+                         padding:2px 8px;border-radius:12px;">
+              3.06
+            </span>
+          </td>
+          <td style="text-align:center;">
+            <span style="font-size:11px;color:#0053e2;font-weight:600;">Research Further</span>
+          </td>
+          <td style="text-align:center;"><div title="3.7" style="display:inline-block;width:6px;height:14px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="2.7" style="display:inline-block;width:6px;height:10px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.2" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="2.5" style="display:inline-block;width:6px;height:10px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.4" style="display:inline-block;width:6px;height:13px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="2.8" style="display:inline-block;width:6px;height:11px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="2.5" style="display:inline-block;width:6px;height:10px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div></td>
+          <td style="text-align:center;"><a href="https://my.wal-mart.com/personal/j0w16ja_homeoffice_wal-mart_com/Documents/Microsoft%20Teams%20Chat%20Files/WMT-SEC-VAR-20260119-luma-snapone-Detailed-v1.docx" target="_blank" style="color:#0053e2;text-decoration:none;font-size:11px;">Open →</a></td>
+        </tr>
+<tr>
+          <td style="font-weight:600;color:#001E60;font-size:12px;">AuthID</td>
+          <td style="font-size:11px;color:#444;">Biometrics & Authentication</td>
+          <td style="font-size:11px;color:#666;word-break:break-all;max-width:200px;">
+            WMT-SEC-VAR-20251201-authid-Detailed-v1.docx...</td>
+          <td style="text-align:center;">
+            <span style="background:#e6f0ff;color:#0053e2;font-weight:700;font-size:12px;
+                         padding:2px 8px;border-radius:12px;">
+              3.04
+            </span>
+          </td>
+          <td style="text-align:center;">
+            <span style="font-size:11px;color:#0053e2;font-weight:600;">Research Further</span>
+          </td>
+          <td style="text-align:center;"><div title="2.5" style="display:inline-block;width:6px;height:10px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="2.8" style="display:inline-block;width:6px;height:11px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.0" style="display:inline-block;width:6px;height:16px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.5" style="display:inline-block;width:6px;height:14px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.5" style="display:inline-block;width:6px;height:18px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div></td>
+          <td style="text-align:center;"><a href="https://teams.wal-mart.com/sites/EmergingTechnologySecurity/Vault/Solution%20and%20Report%20Data/Reports/Vendor%20Assessment%20Reports/2025/December%202025/WMT-SEC-VAR-20251201-authid-Detailed-v1%20(1).docx" target="_blank" style="color:#0053e2;text-decoration:none;font-size:11px;">Open →</a></td>
+        </tr>
+<tr>
+          <td style="font-weight:600;color:#001E60;font-size:12px;">OMNIQ Corp</td>
+          <td style="font-size:11px;color:#444;">Autonomous Systems: Robotics (AMR/Patrol)</td>
+          <td style="font-size:11px;color:#666;word-break:break-all;max-width:200px;">
+            WMT-SEC-VAR-20260218-OMNIQ-Detailed-v1.docx...</td>
+          <td style="text-align:center;">
+            <span style="background:#fff8e6;color:#995213;font-weight:700;font-size:12px;
+                         padding:2px 8px;border-radius:12px;">
+              3.00
+            </span>
+          </td>
+          <td style="text-align:center;">
+            <span style="font-size:11px;color:#995213;font-weight:600;">Defer</span>
+          </td>
+          <td style="text-align:center;"><div title="2.8" style="display:inline-block;width:6px;height:11px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="2.6" style="display:inline-block;width:6px;height:10px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.0" style="display:inline-block;width:6px;height:16px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="2.5" style="display:inline-block;width:6px;height:10px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.5" style="display:inline-block;width:6px;height:14px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div></td>
+          <td style="text-align:center;"><a href="https://teams.wal-mart.com/sites/EmergingTechnologySecurity/Vault/Solution%20and%20Report%20Data/Reports/Vendor%20Assessment%20Reports/2026/202602/WMT-SEC-VAR-20260218-OMNIQ-Detailed-v1.docx" target="_blank" style="color:#0053e2;text-decoration:none;font-size:11px;">Open →</a></td>
+        </tr>
+<tr>
+          <td style="font-weight:600;color:#001E60;font-size:12px;">Monogoto</td>
+          <td style="font-size:11px;color:#444;">Sensor Fusion & Edge Compute</td>
+          <td style="font-size:11px;color:#666;word-break:break-all;max-width:200px;">
+            WMT-SEC-VAR-20251118-monogoto-v1.docx...</td>
+          <td style="text-align:center;">
+            <span style="background:#fff8e6;color:#995213;font-weight:700;font-size:12px;
+                         padding:2px 8px;border-radius:12px;">
+              2.80
+            </span>
+          </td>
+          <td style="text-align:center;">
+            <span style="font-size:11px;color:#995213;font-weight:600;">Defer</span>
+          </td>
+          <td style="text-align:center;"><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.5" style="display:inline-block;width:6px;height:14px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="0.0" style="display:inline-block;width:6px;height:0px;background:#ea1100;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.0" style="display:inline-block;width:6px;height:16px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="0.0" style="display:inline-block;width:6px;height:0px;background:#ea1100;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div></td>
+          <td style="text-align:center;"><a href="https://teams.wal-mart.com/sites/EmergingTechnologySecurity/Vault/Solution%20and%20Report%20Data/Reports/Vendor%20Assessment%20Reports/2025/November%202025/WMT-SEC-VAR-20251118-monogoto-v1%20(1).docx" target="_blank" style="color:#0053e2;text-decoration:none;font-size:11px;">Open →</a></td>
+        </tr>
+<tr>
+          <td style="font-weight:600;color:#001E60;font-size:12px;">Wegmans</td>
+          <td style="font-size:11px;color:#444;">Video Analytics/AI</td>
+          <td style="font-size:11px;color:#666;word-break:break-all;max-width:200px;">
+            WMT-SEC-VAR-20260105-Wegmans-FR-ALPR-Detailed...</td>
+          <td style="text-align:center;">
+            <span style="background:#fff8e6;color:#995213;font-weight:700;font-size:12px;
+                         padding:2px 8px;border-radius:12px;">
+              2.75
+            </span>
+          </td>
+          <td style="text-align:center;">
+            <span style="font-size:11px;color:#995213;font-weight:600;">Defer</span>
+          </td>
+          <td style="text-align:center;"><div title="2.4" style="display:inline-block;width:6px;height:9px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="2.2" style="display:inline-block;width:6px;height:8px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.6" style="display:inline-block;width:6px;height:14px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.2" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.4" style="display:inline-block;width:6px;height:13px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="2.5" style="display:inline-block;width:6px;height:10px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div></td>
+          <td style="text-align:center;"><a href="https://teams.wal-mart.com/sites/EmergingTechnologySecurity/Vault/Solution%20and%20Report%20Data/Reports/Vendor%20Assessment%20Reports/2026/202601/WMT-SEC-VAR-20260105-Wegmans-FR-ALPR-Detailed-v1.docx" target="_blank" style="color:#0053e2;text-decoration:none;font-size:11px;">Open →</a></td>
+        </tr>
+<tr>
+          <td style="font-weight:600;color:#001E60;font-size:12px;">Gatewise</td>
+          <td style="font-size:11px;color:#444;">Identity & Access Control (PAC/PIAM)</td>
+          <td style="font-size:11px;color:#666;word-break:break-all;max-width:200px;">
+            WMT-SEC-VAR-20251221-gatewise-detailed-v1.doc...</td>
+          <td style="text-align:center;">
+            <span style="background:#fff8e6;color:#995213;font-weight:700;font-size:12px;
+                         padding:2px 8px;border-radius:12px;">
+              2.70
+            </span>
+          </td>
+          <td style="text-align:center;">
+            <span style="font-size:11px;color:#995213;font-weight:600;">Defer</span>
+          </td>
+          <td style="text-align:center;"><div title="2.2" style="display:inline-block;width:6px;height:8px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="2.6" style="display:inline-block;width:6px;height:10px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.4" style="display:inline-block;width:6px;height:13px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="2.3" style="display:inline-block;width:6px;height:9px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.9" style="display:inline-block;width:6px;height:15px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="2.7" style="display:inline-block;width:6px;height:10px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="2.4" style="display:inline-block;width:6px;height:9px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div></td>
+          <td style="text-align:center;"><a href="https://teams.wal-mart.com/sites/EmergingTechnologySecurity/Vault/Solution%20and%20Report%20Data/Reports/Vendor%20Assessment%20Reports/2025/December%202025/WMT-SEC-VAR-20251221-gatewise-detailed-v1%20(1).docx" target="_blank" style="color:#0053e2;text-decoration:none;font-size:11px;">Open →</a></td>
+        </tr>
+<tr>
+          <td style="font-weight:600;color:#001E60;font-size:12px;">Specter Co</td>
+          <td style="font-size:11px;color:#444;">Aerial Systems: Drones/UAS/DFR</td>
+          <td style="font-size:11px;color:#666;word-break:break-all;max-width:200px;">
+            WMT-SEC-VAR-20260106-specter-co-Detailed-v1.d...</td>
+          <td style="text-align:center;">
+            <span style="background:#fff8e6;color:#995213;font-weight:700;font-size:12px;
+                         padding:2px 8px;border-radius:12px;">
+              2.65
+            </span>
+          </td>
+          <td style="text-align:center;">
+            <span style="font-size:11px;color:#995213;font-weight:600;">Defer</span>
+          </td>
+          <td style="text-align:center;"><div title="2.0" style="display:inline-block;width:6px;height:8px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="2.4" style="display:inline-block;width:6px;height:9px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="2.6" style="display:inline-block;width:6px;height:10px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.5" style="display:inline-block;width:6px;height:14px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="2.8" style="display:inline-block;width:6px;height:11px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="4.5" style="display:inline-block;width:6px;height:18px;background:#2a8703;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="2.8" style="display:inline-block;width:6px;height:11px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div></td>
+          <td style="text-align:center;"><a href="https://my.wal-mart.com/personal/j0w16ja_homeoffice_wal-mart_com/Documents/Microsoft%20Teams%20Chat%20Files/WMT-SEC-VAR-20260106-specter-co-Detailed-v1.docx" target="_blank" style="color:#0053e2;text-decoration:none;font-size:11px;">Open →</a></td>
+        </tr>
+<tr>
+          <td style="font-weight:600;color:#001E60;font-size:12px;">Gambit Cyber</td>
+          <td style="font-size:11px;color:#444;">Cyber-Physical & OT/Infrastructure Security</td>
+          <td style="font-size:11px;color:#666;word-break:break-all;max-width:200px;">
+            WMT-SEC-VAR-20251223-gambit-cyber-Detailed-v1...</td>
+          <td style="text-align:center;">
+            <span style="background:#fff8e6;color:#995213;font-weight:700;font-size:12px;
+                         padding:2px 8px;border-radius:12px;">
+              2.52
+            </span>
+          </td>
+          <td style="text-align:center;">
+            <span style="font-size:11px;color:#995213;font-weight:600;">Defer</span>
+          </td>
+          <td style="text-align:center;"><div title="2.0" style="display:inline-block;width:6px;height:8px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="2.0" style="display:inline-block;width:6px;height:8px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="2.5" style="display:inline-block;width:6px;height:10px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="2.5" style="display:inline-block;width:6px;height:10px;background:#ffc220;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div><div title="3.0" style="display:inline-block;width:6px;height:12px;background:#0053e2;margin:0 1px;vertical-align:bottom;border-radius:1px;"></div></td>
+          <td style="text-align:center;"><a href="https://teams.wal-mart.com/sites/EmergingTechnologySecurity/Vault/Solution%20and%20Report%20Data/Reports/Vendor%20Assessment%20Reports/2025/December%202025/WMT-SEC-VAR-20251223-gambit-cyber-Detailed-v1%20(1).docx" target="_blank" style="color:#0053e2;text-decoration:none;font-size:11px;">Open →</a></td>
+        </tr>
+<tr>
+          <td style="font-weight:600;color:#001E60;font-size:12px;">Interface Systems</td>
+          <td style="font-size:11px;color:#444;">Identity & Access Control (PAC/PIAM)</td>
+          <td style="font-size:11px;color:#666;word-break:break-all;max-width:200px;">
+            WMT-SEC-VAR-20260219-InterfaceSystems-Detaile...</td>
+          <td style="text-align:center;">
+            <span style="background:#f0f0f0;color:#666;font-weight:700;font-size:12px;
+                         padding:2px 8px;border-radius:12px;">
+              Pending
+            </span>
+          </td>
+          <td style="text-align:center;">
+            <span style="font-size:11px;color:#666;font-weight:600;">Pending</span>
+          </td>
+          <td style="text-align:center;"><span style="color:#aaa">Pending extraction</span></td>
+          <td style="text-align:center;"><a href="https://teams.wal-mart.com/sites/EmergingTechnologySecurity/Vault/Solution%20and%20Report%20Data/Reports/Vendor%20Assessment%20Reports/2026/202602/WMT-SEC-VAR-20260219-InterfaceSystems-Detailed-v1.docx" target="_blank" style="color:#0053e2;text-decoration:none;font-size:11px;">Open →</a></td>
+        </tr>
+
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Next Steps -->
+  <div class="section">
+    <h2>🚀 Next Steps (Phase 2 → Phase 3)</h2>
+    <div class="insight">
+      <strong>1. Bulk VAR Expansion:</strong> Run <code>bulk_link_vars.py --full</code> to enumerate
+      the remaining 800+ VARs on SharePoint and match them to vendors in the database using the
+      multi-pass slug matcher. Estimated impact: 200+ additional vendor-VAR links.
+    </div>
+    <div class="insight">
+      <strong>2. Interface Systems Fix:</strong> Refresh the tempauth URL for
+      WMT-SEC-VAR-20260219-InterfaceSystems-Detailed-v1.docx and re-run <code>bulk_score_extract.py</code>.
+    </div>
+    <div class="insight">
+      <strong>3. Phase 3 UI Completion:</strong> The React SENTRY frontend (sentry-v2-main)
+      now correctly displays VAR scores and decision bands in the vendor detail panel.
+      Remaining Phase 3 work: enhanced radar chart rendering and export functions.
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  SENTRY Phase 2 Match Report &bull; Emerging Technology Security &bull;
+  Generated by Atlas 🐾 (Code Puppy) &bull; February 24, 2026 — 12:44
+</footer>
+
+</body>
+</html>
