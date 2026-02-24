@@ -71,6 +71,9 @@ def _group_products(rows: list[dict], var_vendor_ids: set[str] | None = None) ->
         )
         if name in companies:
             companies[name].all_products.append(product)
+            # A later product row for same company might be the VAR-linked one
+            if not companies[name].has_var and row["id"] in var_ids:
+                companies[name].has_var = True
         else:
             companies[name] = VendorOut(
                 id=row["id"],
