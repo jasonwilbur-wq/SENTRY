@@ -1,6 +1,7 @@
 import React, { Fragment, useState, useCallback } from 'react';
 import { useVendors } from '../context/VendorContext';
 import { Vendor } from '../services/api';
+import { VendorDetailModal } from './VendorDetailModal';
 
 type RiskLabel = 'Low' | 'Medium' | 'High' | 'Critical';
 
@@ -21,7 +22,7 @@ function RatingStars({ rating }: { rating: number }) {
   );
 }
 
-function VendorCard({ vendor }: { vendor: Vendor }) {
+function VendorCard({ vendor, onClick }: { vendor: Vendor; onClick: (v: Vendor) => void }) {
   const risk = (vendor.risk_level ?? 'Medium') as RiskLabel;
   const styles = RISK_STYLES[risk] ?? RISK_STYLES.Medium;
   const hasReport =
@@ -31,7 +32,14 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
   const productCount = vendor.all_products?.length ?? 1;
 
   return (
-    <article className="bg-sentry-card rounded-lg border border-slate-700 shadow-lg hover:shadow-2xl hover:border-slate-500 transition-all duration-300 flex flex-col overflow-hidden group">
+    <article
+      className="bg-sentry-card rounded-lg border border-slate-700 shadow-lg hover:shadow-2xl hover:border-slate-500 transition-all duration-300 flex flex-col overflow-hidden group cursor-pointer"
+      onClick={() => onClick(vendor)}
+      role="button"
+      tabIndex={0}
+      aria-label={`Open details for ${vendor.company_name}`}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onClick(vendor); }}
+    >
       {/* Header */}
       <div className="p-4 bg-slate-800/50 border-b border-slate-700 flex justify-between items-start relative">
         <div className={`absolute top-0 left-0 w-1 h-full ${styles.bar}`} aria-hidden="true" />
@@ -52,6 +60,11 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
                 title={`${productCount} products assessed for this vendor`}
               >
                 {productCount} products
+              </span>
+            )}
+            {vendor.has_var && (
+              <span className="inline-block px-2 py-0.5 rounded text-[10px] bg-green-900/30 text-green-400 border border-green-700 font-bold">
+                ✓ VAR
               </span>
             )}
           </div>
@@ -90,24 +103,31 @@ function VendorCard({ vendor }: { vendor: Vendor }) {
       </div>
 
       {/* Footer */}
-      <div className="p-4 bg-slate-900/50 border-t border-slate-700">
+      <div className="p-4 bg-slate-900/50 border-t border-slate-700 flex gap-2">
         {hasReport ? (
           <a
             href={vendor.report_url}
             target="_blank"
             rel="noopener noreferrer"
-            className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded font-semibold text-sm transition-all bg-wmt-blue text-white hover:bg-wmt-yellow hover:text-wmt-void hover:shadow-[0_0_16px_rgba(255,194,32,0.4)]"
+            onClick={e => e.stopPropagation()}
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded font-semibold text-xs transition-all bg-slate-700 text-slate-300 hover:bg-wmt-blue hover:text-white"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
-            Vendor Report
+            Report
           </a>
-        ) : (
-          <span className="w-full flex items-center justify-center px-4 py-2 rounded text-sm text-slate-500 bg-slate-700 cursor-not-allowed">
-            Report Pending
-          </span>
-        )}
+        ) : null}
+        <button
+          onClick={e => { e.stopPropagation(); onClick(vendor); }}
+          className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded font-semibold text-xs transition-all bg-wmt-blue text-white hover:bg-wmt-yellow hover:text-wmt-void hover:shadow-[0_0_16px_rgba(255,194,32,0.4)]"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+          </svg>
+          View Details
+        </button>
       </div>
     </article>
   );
@@ -117,6 +137,7 @@ export const VendorDashboard: React.FC = () => {
   const { vendors, categories, loading, backendOffline, total } = useVendors();
   const [localSearch, setLocalSearch] = useState('');
   const [localCategory, setLocalCategory] = useState('All');
+  const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
 
   const filtered = vendors.filter(v => {
     const term = localSearch.toLowerCase();
@@ -133,8 +154,15 @@ export const VendorDashboard: React.FC = () => {
     setLocalCategory('All');
   }, []);
 
+  const handleOpenVendor = useCallback((v: Vendor) => setSelectedVendor(v), []);
+  const handleCloseModal = useCallback(() => setSelectedVendor(null), []);
+
 return (
     <div className="space-y-6 animate-fadeIn">
+      {/* Detail modal */}
+      {selectedVendor && (
+        <VendorDetailModal vendor={selectedVendor} onClose={handleCloseModal} />
+      )}
       {/* Header / Search */}
       <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4 bg-sentry-card p-6 rounded-lg border border-slate-700 shadow-lg sticky top-0 z-20 backdrop-blur-md bg-opacity-90">
         <div>
@@ -144,7 +172,7 @@ return (
               ? 'Loading vendors…'
               : `${filtered.length} of ${total} vendors`}
             {backendOffline && (
-              <span className="ml-2 text-yellow-400 text-xs">⚠ Backend offline — start FastAPI on :8080</span>
+              <span className="ml-2 text-yellow-400 text-xs">⚠ Backend offline — start FastAPI on :8082</span>
             )}
           </p>
         </div>
@@ -186,7 +214,7 @@ return (
       {!loading && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Fragment wrapper avoids React 19 key-as-prop TS error */}
-          {filtered.map(v => <Fragment key={v.id}><VendorCard vendor={v} /></Fragment>)}
+          {filtered.map(v => <Fragment key={v.id}><VendorCard vendor={v} onClick={handleOpenVendor} /></Fragment>)}
         </div>
       )}
 

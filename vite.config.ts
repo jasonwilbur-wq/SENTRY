@@ -1,6 +1,7 @@
 import path from 'path';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
   server: {
@@ -9,12 +10,12 @@ export default defineConfig({
     // Dev proxy: /api/* → FastAPI backend on :8080
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:8080',
+        target: 'http://127.0.0.1:8082',
         changeOrigin: true,
       },
     },
   },
-  plugins: [react()],
+  plugins: [tailwindcss(), react()],
   // API key is NOT exposed to the browser bundle.
   // All Gemini calls go through the FastAPI backend.
   resolve: {

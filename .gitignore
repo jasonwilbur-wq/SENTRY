@@ -31,4 +31,6 @@ Thumbs.db
 # Never commit SQLite DBs or sensitive data files
 *.sqlite
 *.db
+*.db-shm
+*.db-wal
 # Non-PII CSVs in backend/data are safe to commit

@@ -1,0 +1,11 @@
+Company Name,Category,Technology Product,Report URL,Overall Rating,Vendor Status,Risk Level,Last Assessed,Company URL
+DroneShield,Drones & C-UAS,RFOne Counter-Drone,https://example.com/report/droneshield,4.2,Active,Low,2025-03-15,https://www.droneshield.com
+Skydio,Drones & C-UAS,X10D Enterprise Drone,https://example.com/report/skydio,4.5,Active,Low,2025-02-28,https://www.skydio.com
+Verkada,Video Analytics & VMS,CD62 Dome Camera,https://example.com/report/verkada,3.8,Under Review,Medium,2025-01-20,https://www.verkada.com
+Axon,Video Analytics & VMS,Fleet 3 Body Camera,https://example.com/report/axon,4.1,Active,Low,2025-03-01,https://www.axon.com
+Lenel S2,Access Control & Identity,NetBox Access Platform,https://example.com/report/lenel,3.5,Active,Medium,2024-12-10,https://www.lenels2.com
+Sunflower Labs,Drones & C-UAS,Hive Autonomous Security,https://example.com/report/sunflower,3.9,Pilot,Medium,2025-02-14,https://www.sunflowerlabs.com
+Dedrone,Drones & C-UAS,DedroneTracker AI,,3.2,Under Review,High,2025-01-05,https://www.dedrone.com
+CrowdStrike,Cybersecurity & Zero Trust,Falcon XDR,https://example.com/report/crowdstrike,4.7,Active,Low,2025-03-10,https://www.crowdstrike.com
+Palo Alto Networks,Cybersecurity & Zero Trust,Prisma SASE,https://example.com/report/paloalto,4.4,Active,Low,2025-02-20,https://www.paloaltonetworks.com
+Clearview AI,AI & Machine Learning,Facial Recognition Platform,,2.1,Restricted,Critical,2025-01-30,https://www.clearview.ai

@@ -75,7 +75,7 @@ export const ChatAssistant: React.FC = () => {
         {
           id: (Date.now() + 1).toString(),
           role: 'model',
-          text: `⚠️ **SENTRY-AI unavailable:** ${msg}\n\nMake sure the FastAPI backend is running on port 8080.`,
+          text: `⚠️ **SENTRY-AI unavailable:** ${msg}\n\nMake sure the FastAPI backend is running on port 8081.`,
           timestamp: new Date(),
         },
       ]);

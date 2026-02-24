@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>SENTRY Morning Report — Tuesday, February 24 2026 — 06:04</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+  body { background: #000B28; color: #fff; font-family: system-ui, 'Segoe UI', sans-serif; }
+  .card { background: #001E60; border: 1px solid #002880; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; }
+  .badge { padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+  .badge-low { background: #16532d; color: #22c55e; }
+  .badge-med { background: #4a3000; color: #FFC220; }
+  .badge-high { background: #5c1a00; color: #f97316; }
+  .badge-crit { background: #5c0000; color: #ef4444; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; color: #4DBDF5; font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; padding: 8px; border-bottom: 1px solid #002880; }
+  td { padding: 8px; border-bottom: 1px solid #001040; font-size: 13px; color: #A9DDF7; }
+  .score { font-weight: 700; color: #fff; font-family: Consolas, monospace; }
+  .kpi { text-align: center; }
+  .kpi-num { font-size: 2.5rem; font-weight: 900; color: #FFC220; }
+  .kpi-label { font-size: 11px; color: #4DBDF5; text-transform: uppercase; letter-spacing: 0.1em; }
+  .chart-wrap { height: 300px; position: relative; }
+  .insight { background: #001040; border-left: 3px solid #FFC220; padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 12px 0; font-size: 13px; color: #A9DDF7; }
+  .accent { color: #FFC220; }
+  h1,h2,h3 { color: #fff; }
+  .topbar { background: #FFC220; height: 4px; }
+</style>
+</head>
+<body>
+<div class="topbar"></div>
+<div style="max-width:1200px; margin:0 auto; padding: 2rem;">
+
+  <!-- Header -->
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
+    <div>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <svg viewBox="0 0 32 32" width="36" height="36"><circle cx="16" cy="16" r="16" fill="#FFC220"/>
+          <g fill="#001E60"><rect x="14.5" y="2" width="3" height="12" rx="1.5"/><rect x="14.5" y="18" width="3" height="12" rx="1.5"/>
+          <rect x="2" y="14.5" width="12" height="3" rx="1.5"/><rect x="18" y="14.5" width="12" height="3" rx="1.5"/></g></svg>
+        <div>
+          <h1 style="margin:0; font-size:1.8rem; letter-spacing:0.1em;">SENTRY <span class="accent">Morning Report</span></h1>
+          <p style="margin:0; font-size:12px; color:#4DBDF5;">Global Security, Aviation &amp; Investigations • Emerging Technology Security</p>
+        </div>
+      </div>
+    </div>
+    <div style="text-align:right;">
+      <p style="color:#A9DDF7; font-size:13px; margin:0;">Tuesday, February 24 2026 — 06:04</p>
+      <p style="color:#4DBDF5; font-size:11px; margin:0;">Classification: INTERNAL</p>
+    </div>
+  </div>
+
+  <!-- KPI Row -->
+  <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:1rem; margin-bottom:1.5rem;">
+    <div class="card kpi">
+      <div class="kpi-num">1574</div>
+      <div class="kpi-label">Total Vendor-Products</div>
+    </div>
+    <div class="card kpi">
+      <div class="kpi-num">22</div>
+      <div class="kpi-label">Technology Categories</div>
+    </div>
+    <div class="card kpi">
+      <div class="kpi-num" style="color:#ef4444;">822</div>
+      <div class="kpi-label">High/Critical Risk</div>
+    </div>
+    <div class="card kpi">
+      <div class="kpi-num" style="color:#22c55e;">52</div>
+      <div class="kpi-label">Pilot Ready (&gt;4.0)</div>
+    </div>
+  </div>
+
+  <!-- Executive Insights -->
+  <div class="card">
+    <h2 style="margin-top:0;"><span class="accent">⚡</span> Executive Insights</h2>
+    <div class="insight"><strong>Market Saturation in Video & Cyber:</strong> VMS/NVR and Cyber-Physical OT/Infrastructure are the largest categories (233 and 233 entries respectively), signaling a crowded market. Average scores hover around 2.7–2.8 — most vendors in these segments need further research before advancing.</div>
+    <div class="insight"><strong>Counter-UAS Leads in Quality:</strong> With 166 entries and strong performers like Sunflower Labs (5.0), Dedrone (4.5), DroneShield (4.5), and Fortem Technologies (4.5), C-UAS is the most mature and actionable category for pilot programs.</div>
+    <div class="insight"><strong>Risk Concentration:</strong> 822 of 1574 vendor-products (52%) are rated High or Critical risk. VMS/NVR (139), Cyber-Physical (111), and C-UAS (81) carry the most risk entries.</div>
+    <div class="insight"><strong>Identity & Access Control:</strong> With an avg score of 2.97, this category has the strongest pipeline among high-volume segments. Key vendors like CyberArk (3.8), Cisco (4.0), and Alcatraz AI (4.5) are positioned for advancement.</div>
+    <div class="insight"><strong>Pipeline Health:</strong> Only 52 vendors (3.3%) are pilot-ready. 819 (52%) require deferral or rejection — indicating strong filtering rigor in the SENTRY assessment process.</div>
+  </div>
+
+  <!-- Charts Row -->
+  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+    <div class="card">
+      <h3 style="margin-top:0;">Risk Distribution</h3>
+      <div class="chart-wrap"><canvas id="riskChart"></canvas></div>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0;">SENTRY Decision Bands</h3>
+      <div class="chart-wrap"><canvas id="bandChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0;">Top 12 Categories — Volume &amp; Average Score</h3>
+    <div class="chart-wrap" style="height:350px;"><canvas id="catChart"></canvas></div>
+  </div>
+
+  <!-- Top 15 Table -->
+  <div class="card">
+    <h3 style="margin-top:0;"><span class="accent">⭐</span> Top 15 Vendors by Score</h3>
+    <table><thead><tr><th>Company</th><th>Product</th><th>Score</th><th>Category</th><th>Risk</th></tr></thead>
+    <tbody><tr>
+            <td><strong>Sunflower Labs</strong></td>
+            <td>Drone‑in‑a‑Box Security & Surveillance (LSaaS, Sky</td>
+            <td class="score">5.0</td>
+            <td>Counter-UAS (C-UAS)</td>
+            <td><span class="badge badge-low">Low</span></td>
+        </tr>
+<tr>
+            <td><strong>LVT (LiveView Technologies)</strong></td>
+            <td>Solar‑powered mobile units; cloud VMS (open API); </td>
+            <td class="score">5.0</td>
+            <td>Video Management & Recording (</td>
+            <td><span class="badge badge-low">Low</span></td>
+        </tr>
+<tr>
+            <td><strong>Zedcor</strong></td>
+            <td>MobileyeZ solar/hybrid/electric/diesel towers; in‑</td>
+            <td class="score">5.0</td>
+            <td>Supply Chain & Asset Protectio</td>
+            <td><span class="badge badge-low">Low</span></td>
+        </tr>
+<tr>
+            <td><strong>RAD (Robotic Assistance Devices)</strong></td>
+            <td>ROSA; RIO (Mini/180/360); ROAMEO; AVA; RAD Light M</td>
+            <td class="score">5.0</td>
+            <td>Autonomous Systems: Robotics (</td>
+            <td><span class="badge badge-low">Low</span></td>
+        </tr>
+<tr>
+            <td><strong>Backstreet Surveillance</strong></td>
+            <td>NDAA‑compliant IP cameras, NVRs, kits; provider is</td>
+            <td class="score">5.0</td>
+            <td>Video Management & Recording (</td>
+            <td><span class="badge badge-low">Low</span></td>
+        </tr>
+<tr>
+            <td><strong>Stallion Infrastructure Services</strong></td>
+            <td>Mobile Surveillance Trailers (MST/MSU), pole‑mount</td>
+            <td class="score">5.0</td>
+            <td>Video Management & Recording (</td>
+            <td><span class="badge badge-low">Low</span></td>
+        </tr>
+<tr>
+            <td><strong>Sun Surveillance</strong></td>
+            <td>Solstice solar power platforms (Pole/Kit/H‑Base) &</td>
+            <td class="score">5.0</td>
+            <td>Video Management & Recording (</td>
+            <td><span class="badge badge-low">Low</span></td>
+        </tr>
+<tr>
+            <td><strong>Alcatraz AI</strong></td>
+            <td>Privacy-first Facial Authentication Platform</td>
+            <td class="score">4.5</td>
+            <td>Biometrics & Authentication</td>
+            <td><span class="badge badge-low">Low</span></td>
+        </tr>
+<tr>
+            <td><strong>Leidos</strong></td>
+            <td>Biometric ID Modernization</td>
+            <td class="score">4.5</td>
+            <td>Biometrics & Authentication</td>
+            <td><span class="badge badge-low">Low</span></td>
+        </tr>
+<tr>
+            <td><strong>Oz Forensics</strong></td>
+            <td>Biometric PAD System</td>
+            <td class="score">4.5</td>
+            <td>Biometrics & Authentication</td>
+            <td><span class="badge badge-low">Low</span></td>
+        </tr>
+<tr>
+            <td><strong>Paravision</strong></td>
+            <td>Biometric Access Control & Surveillance</td>
+            <td class="score">4.5</td>
+            <td>Biometrics & Authentication</td>
+            <td><span class="badge badge-low">Low</span></td>
+        </tr>
+<tr>
+            <td><strong>Dedrone</strong></td>
+            <td>Smart Airspace Security Stack</td>
+            <td class="score">4.5</td>
+            <td>Counter-UAS (C-UAS)</td>
+            <td><span class="badge badge-low">Low</span></td>
+        </tr>
+<tr>
+            <td><strong>Dedrone + AXON</strong></td>
+            <td>Sensor Fusion Drone Detection</td>
+            <td class="score">4.5</td>
+            <td>Counter-UAS (C-UAS)</td>
+            <td><span class="badge badge-low">Low</span></td>
+        </tr>
+<tr>
+            <td><strong>DroneShield</strong></td>
+            <td>Integrated Counter-Drone System</td>
+            <td class="score">4.5</td>
+            <td>Counter-UAS (C-UAS)</td>
+            <td><span class="badge badge-low">Low</span></td>
+        </tr>
+<tr>
+            <td><strong>Fortem Technologies</strong></td>
+            <td>DroneHunter F700 with Enhanced Radar</td>
+            <td class="score">4.5</td>
+            <td>Counter-UAS (C-UAS)</td>
+            <td><span class="badge badge-low">Low</span></td>
+        </tr>
+</tbody></table>
+  </div>
+
+  <!-- Bottom 10 Table -->
+  <div class="card">
+    <h3 style="margin-top:0;"><span style="color:#ef4444;">⚠</span> Bottom 10 — Highest Risk Vendors</h3>
+    <table><thead><tr><th>Company</th><th>Product</th><th>Score</th><th>Category</th><th>Risk</th></tr></thead>
+    <tbody><tr>
+            <td><strong>Amazon Bedrock Agents</strong></td>
+            <td>Real-time video monitoring AI system</td>
+            <td class="score">1.0</td>
+            <td>Video Analytics & Computer Vis</td>
+            <td><span class="badge badge-crit">Critical</span></td>
+        </tr>
+<tr>
+            <td><strong>PRISM (US Army)</strong></td>
+            <td>AI + Facial Recognition + Sensor Fusion System</td>
+            <td class="score">1.0</td>
+            <td>Video Analytics & Computer Vis</td>
+            <td><span class="badge badge-crit">Critical</span></td>
+        </tr>
+<tr>
+            <td><strong>LifeSafety Power</strong></td>
+            <td>Unified Power Solutions with Axis integrations</td>
+            <td class="score">1.0</td>
+            <td>Identity & Access Control (PAC</td>
+            <td><span class="badge badge-crit">Critical</span></td>
+        </tr>
+<tr>
+            <td><strong>ThirdEye Systems</strong></td>
+            <td>Drone Detection Radar</td>
+            <td class="score">1.0</td>
+            <td>Counter-UAS (C-UAS)</td>
+            <td><span class="badge badge-crit">Critical</span></td>
+        </tr>
+<tr>
+            <td><strong>Armis</strong></td>
+            <td>Asset Intelligence Platform; analyst leadership</td>
+            <td class="score">1.0</td>
+            <td>Sensors, IoT & Environmental M</td>
+            <td><span class="badge badge-crit">Critical</span></td>
+        </tr>
+<tr>
+            <td><strong>Fabric</strong></td>
+            <td>Orchestra AI-Native Fulfillment Platform</td>
+            <td class="score">1.0</td>
+            <td>Supply Chain & Asset Protectio</td>
+            <td><span class="badge badge-crit">Critical</span></td>
+        </tr>
+<tr>
+            <td><strong>ECAM AI</strong></td>
+            <td>Edge AI video surveillance + access alerts</td>
+            <td class="score">1.0</td>
+            <td>Video Analytics & Computer Vis</td>
+            <td><span class="badge badge-crit">Critical</span></td>
+        </tr>
+<tr>
+            <td><strong>DJI</strong></td>
+            <td>BVLOS NPRM comments</td>
+            <td class="score">1.0</td>
+            <td>Cyber-Physical & OT/Infrastruc</td>
+            <td><span class="badge badge-crit">Critical</span></td>
+        </tr>
+<tr>
+            <td><strong>Shield AI</strong></td>
+            <td>AI pilot for drones/aircraft</td>
+            <td class="score">1.0</td>
+            <td>Aerial Systems: Drones/UAS/DFR</td>
+            <td><span class="badge badge-crit">Critical</span></td>
+        </tr>
+<tr>
+            <td><strong>Exmesh Engineering</strong></td>
+            <td>ProtEx Perimeter Fencing</td>
+            <td class="score">1.0</td>
+            <td>Barriers, Fencing & Hardening </td>
+            <td><span class="badge badge-crit">Critical</span></td>
+        </tr>
+</tbody></table>
+  </div>
+
+  <!-- High Risk Categories -->
+  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:1rem;">
+    <div class="card">
+      <h3 style="margin-top:0;">Categories with Most High/Critical Risk</h3>
+      <table><thead><tr><th>Category</th><th>Count</th></tr></thead>
+      <tbody><tr><td>Video Management & Recording (VMS/NVR)</td><td class='score'>139</td></tr>
+<tr><td>Cyber-Physical & OT/Infrastructure Security</td><td class='score'>111</td></tr>
+<tr><td>Counter-UAS (C-UAS)</td><td class='score'>81</td></tr>
+<tr><td>Autonomous Systems: Robotics (AMR/Patrol)</td><td class='score'>81</td></tr>
+<tr><td>Video Analytics & Computer Vision</td><td class='score'>62</td></tr>
+<tr><td>Sensor Fusion & Edge Compute</td><td class='score'>49</td></tr>
+<tr><td>Command & Control / PSIM / Situational Awareness</td><td class='score'>48</td></tr>
+<tr><td>Perimeter Protection & Intrusion Detection (PIDS)</td><td class='score'>43</td></tr>
+<tr><td>Identity & Access Control (PAC/PIAM)</td><td class='score'>41</td></tr>
+<tr><td>Biometrics & Authentication</td><td class='score'>37</td></tr>
+</tbody></table>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0;">Vendor Pipeline Status</h3>
+      <div class="chart-wrap"><canvas id="statusChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Recommendations -->
+  <div class="card">
+    <h2 style="margin-top:0;"><span class="accent">🎯</span> Recommendations for Leadership</h2>
+    <div class="insight"><strong>1. Prioritize C-UAS Pilots:</strong> Sunflower Labs, Dedrone, DroneShield, and Fortem all scored 4.5+ and are market-ready. Recommend scheduling Emerging Tech Lab evaluations for Q1.</div>
+    <div class="insight"><strong>2. Biometrics Fast-Track:</strong> Alcatraz AI (4.5), Leidos (4.5), Oz Forensics (4.5), and Paravision (4.5) represent a strong bench. Engage GRC for formal assessment of the top 3.</div>
+    <div class="insight"><strong>3. VMS/NVR Consolidation:</strong> With 233 entries, this category is oversaturated. Focus on the 5.0-rated vendors (LVT, Backstreet, Stallion, Sun Surveillance) and archive sub-3.0 entries to reduce noise.</div>
+    <div class="insight"><strong>4. Cybersecurity Watchlist:</strong> 111 High/Critical risk entries in Cyber-Physical OT/Infrastructure. Recommend quarterly re-assessment cadence for any vendor that received a score below 2.0.</div>
+    <div class="insight"><strong>5. Identity & Access:</strong> CyberArk (3.8) and Cisco (4.0) are strong enterprise plays. Recommend cross-referencing with existing Walmart SSO/IAM stack for integration feasibility.</div>
+  </div>
+
+  <div style="text-align:center; padding:2rem 0; color:#002880; font-size:11px;">
+    SENTRY v2.0 • Emerging Technology Security • Walmart Global Security, Aviation &amp; Investigations<br>
+    Report generated by Atlas 🐾 (Code Puppy) • Tuesday, February 24 2026 — 06:04
+  </div>
+</div>
+
+<script>
+  Chart.defaults.color = '#A9DDF7';
+  Chart.defaults.borderColor = '#002880';
+
+  // Risk Doughnut
+  new Chart(document.getElementById('riskChart'), {
+    type: 'doughnut',
+    data: { labels: ["Critical", "High", "Medium", "Low"], datasets: [{ data: [188, 634, 629, 123], backgroundColor: ["#ef4444", "#f97316", "#FFC220", "#22c55e"], borderWidth: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+  });
+
+  // Decision Bands Bar
+  new Chart(document.getElementById('bandChart'), {
+    type: 'bar',
+    data: { labels: ["Advance / Pilot Ready", "Research Further", "Defer / Remediate", "Reject"], datasets: [{ label: 'Vendors', data: [52, 700, 634, 185], backgroundColor: ["#22c55e", "#0053E2", "#FFC220", "#ef4444"], borderRadius: 4 }] },
+    options: { responsive: true, maintainAspectRatio: false, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { grid: { color: '#001040' } } } }
+  });
+
+  // Category Combo Chart
+  new Chart(document.getElementById('catChart'), {
+    type: 'bar',
+    data: {
+      labels: ["Video Management & Record", "Cyber-Physical & OT/Infra", "Counter-UAS (C-UAS)", "Autonomous Systems: Robot", "Identity & Access Control", "Command & Control / PSIM ", "Video Analytics & Compute", "Perimeter Protection & In", "Sensor Fusion & Edge Comp", "Biometrics & Authenticati", "Supply Chain & Asset Prot", "Sensors, IoT & Environmen"],
+      datasets: [
+        { label: 'Count', data: [233, 233, 166, 132, 113, 101, 98, 83, 76, 71, 48, 45], backgroundColor: '#0053E2', borderRadius: 4, yAxisID: 'y' },
+        { label: 'Avg Score', data: [2.71, 2.8, 2.8, 2.62, 2.97, 2.77, 2.62, 2.76, 2.56, 2.77, 2.93, 2.82], type: 'line', borderColor: '#FFC220', backgroundColor: '#FFC220', pointRadius: 5, pointBackgroundColor: '#FFC220', yAxisID: 'y1', tension: 0.3 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: {
+        y: { position: 'left', grid: { color: '#001040' }, title: { display: true, text: 'Count' } },
+        y1: { position: 'right', min: 0, max: 5, grid: { drawOnChartArea: false }, title: { display: true, text: 'Avg Score' } },
+        x: { ticks: { maxRotation: 45, minRotation: 30, font: { size: 10 } }, grid: { color: '#001040' } }
+      }
+    }
+  });
+
+  // Status Pie
+  new Chart(document.getElementById('statusChart'), {
+    type: 'pie',
+    data: { labels: ["Assessed", "Rejected", "Pre-Screened", "Under Review"], datasets: [{ data: [666, 593, 230, 85], backgroundColor: ['#0053E2','#ef4444','#FFC220','#22c55e','#4DBDF5'], borderWidth: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+  });
+</script>
+</body>
+</html>

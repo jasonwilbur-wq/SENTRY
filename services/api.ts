@@ -19,7 +19,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-// ── Vendors ───────────────────────────────────────────────────────────────────
+// ── Vendors ────────────────────────────────────────────────────────────────────
 
 export interface VendorProduct {
   report_url: string;
@@ -40,6 +40,7 @@ export interface Vendor {
   vendor_status: string;
   last_assessed: string;
   risk_level: 'Low' | 'Medium' | 'High' | 'Critical';
+  has_var: boolean;
   all_products: VendorProduct[];
 }
 
@@ -56,6 +57,61 @@ export async function fetchVendors(params?: {
 
 export async function fetchCategories(): Promise<{ categories: string[] }> {
   return request('/api/vendors/categories');
+}
+
+export async function fetchVendorById(vendorId: string): Promise<Vendor> {
+  return request(`/api/vendors/${vendorId}`);
+}
+
+// ── VAR Reports ────────────────────────────────────────────────────────────────
+
+export interface VarReport {
+  id: string;
+  vendor_id: string;
+  filename: string;
+  sharepoint_url: string;
+  report_date: string;
+  report_version: string;
+  report_type: string;
+  overall_score: number | null;
+  decision_band: string;
+  compliance_score: number | null;
+  risk_score: number | null;
+  maturity_score: number | null;
+  integration_score: number | null;
+  roi_score: number | null;
+  viability_score: number | null;
+  differentiation_score: number | null;
+  cloud_dep_score: number | null;
+  match_method: string;
+  created_at: string;
+}
+
+export async function fetchVendorVarReports(
+  vendorId: string,
+): Promise<{ total: number; reports: VarReport[] }> {
+  return request(`/api/vendors/${vendorId}/var-reports`);
+}
+
+// ── Assessment Highlights ───────────────────────────────────────────────────
+
+export interface Highlight {
+  id: string;
+  vendor_id: string;
+  source_file: string;
+  assessment_date: string;
+  product_name: string;
+  pre_assessment_score: number | null;
+  pre_assessment_decision: string;
+  maturity_level: string;
+  initial_assessment: string;
+  technical_assessment: string;
+}
+
+export async function fetchVendorHighlights(
+  vendorId: string,
+): Promise<{ total: number; highlights: Highlight[] }> {
+  return request(`/api/vendors/${vendorId}/highlights`);
 }
 
 // ── Chat ─────────────────────────────────────────────────────────────────────
