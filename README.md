@@ -98,7 +98,7 @@ gcloud run deploy sentry-api \
   --source ./backend \
   --region us-central1 \
   --allow-unauthenticated \
-  --set-env-vars ALLOWED_ORIGINS=https://YOUR_PROJECT.web.app
+  --set-env-vars ALLOWED_ORIGINS=https://sentry-b873a.web.app,https://sentry-b873a.firebaseapp.com
 
 # Note the Cloud Run URL: https://sentry-api-HASH-uc.a.run.app
 ```
@@ -166,6 +166,8 @@ disk or migrate to **Cloud SQL** (AlloyDB recommended per SENTRY PRD Phase I).
 
 ## Contact
 
-- **Owner:** Jason Wilbur (j0w16ja)
+- **Firebase project:** `sentry-b873a`
+- **Hosting URL:** `https://sentry-b873a.web.app`
+- **Alt URL:** `https://sentry-b873a.firebaseapp.com`
 - **Team:** Emerging Technology Security
 - **Slack:** #emerging-tech-security
