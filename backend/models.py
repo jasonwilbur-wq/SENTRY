@@ -25,6 +25,7 @@ class VendorOut(BaseModel):
     last_assessed: str = ""
     risk_level: str = "Medium"
     has_var: bool = False
+    latest_var_id: str = ""      # Phase 2 — used for download proxy
     all_products: list[VendorProduct] = Field(default_factory=list)
 
 

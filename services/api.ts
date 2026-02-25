@@ -41,6 +41,7 @@ export interface Vendor {
   last_assessed: string;
   risk_level: 'Low' | 'Medium' | 'High' | 'Critical';
   has_var: boolean;
+  latest_var_id: string;   // Phase 2 — used for /api/vars/download/{id}
   all_products: VendorProduct[];
 }
 

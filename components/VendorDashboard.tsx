@@ -103,7 +103,7 @@ function VendorCard({ vendor, onClick }: { vendor: Vendor; onClick: (v: Vendor) 
       </div>
 
       {/* Footer */}
-      <div className="p-4 bg-slate-900/50 border-t border-slate-700 flex gap-2">
+      <div className="p-4 bg-slate-900/50 border-t border-slate-700 flex gap-2 flex-wrap">
         {hasReport ? (
           <a
             href={vendor.report_url}
@@ -116,6 +116,21 @@ function VendorCard({ vendor, onClick }: { vendor: Vendor; onClick: (v: Vendor) 
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
             Report
+          </a>
+        ) : null}
+        {vendor.has_var && vendor.latest_var_id ? (
+          <a
+            href={`http://localhost:8082/api/vars/download/${vendor.latest_var_id}`}
+            download
+            onClick={e => e.stopPropagation()}
+            aria-label={`Download VAR report for ${vendor.company_name}`}
+            className="flex items-center justify-center gap-1.5 px-3 py-2 rounded font-semibold text-xs transition-all bg-green-700 text-white hover:bg-green-600"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            VAR
           </a>
         ) : null}
         <button

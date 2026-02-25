@@ -265,7 +265,7 @@ function VarCard({ report }: { report: VarReport }) {
             {report.report_date} · {report.report_type} · {report.report_version}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {report.overall_score !== null && (
             <span
               className={`text-sm font-bold px-3 py-1 rounded-full ${bandStyle(report.decision_band)}`}
@@ -273,6 +273,20 @@ function VarCard({ report }: { report: VarReport }) {
               {report.overall_score.toFixed(2)} — {report.decision_band}
             </span>
           )}
+          {/* Download via backend proxy — Graph API → .docx */}
+          <a
+            href={`http://localhost:8082/api/vars/download/${report.id}`}
+            download
+            className="inline-flex items-center gap-1.5 bg-green-700 text-white text-xs font-bold
+                       px-4 py-2 rounded-xl hover:bg-green-600 transition"
+            title={`Download ${report.filename}`}
+          >
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Download
+          </a>
           {report.sharepoint_url ? (
             <a
               href={report.sharepoint_url}
@@ -286,11 +300,9 @@ function VarCard({ report }: { report: VarReport }) {
                       d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4
                          M14 4h6m0 0v6m0-6L10 14" />
               </svg>
-              Open Report
+              Open in SharePoint
             </a>
-          ) : (
-            <span className="text-xs text-slate-500 italic">SharePoint link pending Phase 2</span>
-          )}
+          ) : null}
         </div>
       </div>
 

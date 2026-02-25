@@ -14,8 +14,10 @@ WARNING: Route order matters in FastAPI! Static paths like
 import uuid
 from contextlib import asynccontextmanager
 
+import httpx
 from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse, RedirectResponse
 
 from database import get_connection, init_db
 from models import (
@@ -31,6 +33,12 @@ from models import (
     VendorProduct,
     VendorsResponse,
 )
+
+try:
+    from sharepoint_auth import get_token, download_url_for_item
+except ImportError:
+    get_token = lambda: None
+    download_url_for_item = lambda x: ""
 
 
 @asynccontextmanager
@@ -56,9 +64,14 @@ app.add_middleware(
 
 # ── Vendors ────────────────────────────────────────────────────────────
 
-def _group_products(rows: list[dict], var_vendor_ids: set[str] | None = None) -> list[VendorOut]:
+def _group_products(
+    rows: list[dict],
+    var_vendor_ids: set[str] | None = None,
+    latest_var_ids: dict[str, str] | None = None,
+) -> list[VendorOut]:
     """Group multiple product rows for the same company into one VendorOut."""
-    var_ids = var_vendor_ids or set()
+    var_ids     = var_vendor_ids or set()
+    var_id_map  = latest_var_ids or {}   # vendor_id -> latest var_report.id
     companies: dict[str, VendorOut] = {}
     for row in rows:
         name = row["company_name"]
@@ -71,10 +84,10 @@ def _group_products(rows: list[dict], var_vendor_ids: set[str] | None = None) ->
         )
         if name in companies:
             companies[name].all_products.append(product)
-            # A later product row for same company might be the VAR-linked one
             if not companies[name].has_var and row["id"] in var_ids:
                 companies[name].has_var = True
         else:
+            has_v = row["id"] in var_ids
             companies[name] = VendorOut(
                 id=row["id"],
                 company_name=name,
@@ -86,7 +99,8 @@ def _group_products(rows: list[dict], var_vendor_ids: set[str] | None = None) ->
                 vendor_status=row["vendor_status"],
                 risk_level=row["risk_level"],
                 last_assessed=row["last_assessed"],
-                has_var=row["id"] in var_ids,
+                has_var=has_v,
+                latest_var_id=var_id_map.get(row["id"], ""),
                 all_products=[product],
             )
     return list(companies.values())
@@ -122,9 +136,17 @@ def list_vendors(
     var_ids = {
         r[0] for r in conn.execute("SELECT DISTINCT vendor_id FROM var_reports").fetchall()
     }
+    # Latest VAR id per vendor (for download proxy)
+    latest_var_ids = {
+        r[0]: r[1]
+        for r in conn.execute(
+            "SELECT vendor_id, id FROM var_reports "
+            "GROUP BY vendor_id HAVING report_date = MAX(report_date)"
+        ).fetchall()
+    }
     conn.close()
 
-    vendors = _group_products(rows, var_ids)
+    vendors = _group_products(rows, var_ids, latest_var_ids)
     return VendorsResponse(total=len(vendors), vendors=vendors)
 
 
@@ -203,6 +225,60 @@ def list_all_var_reports():
         for r in rows
     ]
     return VarReportsResponse(total=len(reports), reports=reports)
+
+
+# ── VAR Report Download Proxy ─────────────────────────────────────────
+
+@app.get("/api/vars/download/{var_id}")
+async def download_var_report(var_id: str):
+    """Proxy-download a VAR .docx from SharePoint via Graph API.
+
+    Flow:
+      1. Look up item_id + sharepoint_url from var_reports.
+      2. Try Graph API with cached MSAL token.
+      3. Fall back to SharePoint web redirect if Graph fails.
+    """
+    conn = get_connection()
+    row = conn.execute(
+        "SELECT filename, sharepoint_url, item_id FROM var_reports WHERE id = ?",
+        (var_id,),
+    ).fetchone()
+    conn.close()
+
+    if not row:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="VAR report not found")
+
+    filename  = row["filename"] or "VAR_Report.docx"
+    sp_url    = row["sharepoint_url"] or ""
+    item_id   = row["item_id"] or ""
+
+    # Try Graph API first (direct .docx byte stream)
+    token = get_token()
+    if token and item_id:
+        graph_url = download_url_for_item(item_id)
+        try:
+            async with httpx.AsyncClient(follow_redirects=True, timeout=30) as client:
+                resp = await client.get(
+                    graph_url,
+                    headers={"Authorization": f"Bearer {token}"},
+                )
+            if resp.status_code == 200:
+                content = resp.content
+                return StreamingResponse(
+                    iter([content]),
+                    media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+                )
+        except Exception:
+            pass  # Fall through to SharePoint redirect
+
+    # Fallback: redirect to SharePoint web URL
+    if sp_url:
+        return RedirectResponse(url=sp_url)
+
+    from fastapi import HTTPException
+    raise HTTPException(status_code=503, detail="Download unavailable — token expired")
 
 
 # ── Chat (stub — returns helpful message when no LLM key configured) ─────
