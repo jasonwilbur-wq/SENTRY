@@ -9,7 +9,12 @@ backend/.venv/
 **/__pycache__/
 **/*.pyc
 **/*.pyo
+# Environment files — never commit production secrets
 .env
+.env.local
+.env.production
+# .env.development is safe to commit (no secrets)
+# .env.example is safe to commit (template only)
 
 # ── Logs ───────────────────────────────────────────────────────────────────
 *.log

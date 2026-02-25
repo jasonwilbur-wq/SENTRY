@@ -1,11 +1,23 @@
 /**
  * Centralized API client for all SENTRY backend calls.
  *
- * In development the Vite proxy forwards /api/* to FastAPI on :8080.
- * In production VITE_API_URL is baked in at build time by Cloud Build.
+ * Dev  : Vite dev-server proxies /api/* → FastAPI on :8082 (see vite.config.ts).
+ *        VITE_API_URL is empty string — all calls are relative.
+ * Prod : VITE_API_URL is set to the Cloud Run backend base URL at build time.
+ *        e.g.  https://sentry-api-abc123-uc.a.run.app
+ *
+ * NEVER hardcode localhost anywhere else in the codebase — use getDownloadUrl().
  */
 
 const API_BASE: string = (import.meta as any).env?.VITE_API_URL ?? '';
+
+/**
+ * Returns the full URL for a VAR report download via the backend proxy.
+ * Works in dev (relative) and production (absolute Cloud Run URL).
+ */
+export function getDownloadUrl(varId: string): string {
+  return `${API_BASE}/api/vars/download/${varId}`;
+}
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {

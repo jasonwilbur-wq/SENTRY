@@ -11,6 +11,7 @@ Usage:
 WARNING: Route order matters in FastAPI! Static paths like
   /api/vendors/categories MUST be registered before /{vendor_id}.
 """
+import os
 import uuid
 from contextlib import asynccontextmanager
 
@@ -54,11 +55,21 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+# ── CORS origins ─────────────────────────────────────────────────────────
+# Set ALLOWED_ORIGINS env var to a comma-separated list of origins.
+# Defaults to localhost:3000 for local development.
+# Production: set on Cloud Run to your Firebase Hosting URL.
+_raw_origins = os.environ.get(
+    "ALLOWED_ORIGINS",
+    "http://localhost:3000,http://localhost:5173",
+)
+ALLOWED_ORIGINS: list[str] = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 

@@ -1,0 +1,24 @@
+# Don't bundle these into the Docker image
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+.env.*
+*.log
+
+# Exclude dev/utility scripts from production image
+bulk_*.py
+build_*.py
+import_*.py
+generate_*.py
+check_*.py
+inspect_*.py
+link_*.py
+morning_*.py
+scheduled_*.py
+run_*.bat
+var_score_extractor.py
+
+# Output files
+output/

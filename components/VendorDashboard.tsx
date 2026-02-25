@@ -1,6 +1,6 @@
 import React, { Fragment, useState, useCallback } from 'react';
 import { useVendors } from '../context/VendorContext';
-import { Vendor } from '../services/api';
+import { Vendor, getDownloadUrl } from '../services/api';
 import { VendorDetailModal } from './VendorDetailModal';
 
 type RiskLabel = 'Low' | 'Medium' | 'High' | 'Critical';
@@ -120,7 +120,7 @@ function VendorCard({ vendor, onClick }: { vendor: Vendor; onClick: (v: Vendor) 
         ) : null}
         {vendor.has_var && vendor.latest_var_id ? (
           <a
-            href={`http://localhost:8082/api/vars/download/${vendor.latest_var_id}`}
+            href={getDownloadUrl(vendor.latest_var_id)}
             download
             onClick={e => e.stopPropagation()}
             aria-label={`Download VAR report for ${vendor.company_name}`}
