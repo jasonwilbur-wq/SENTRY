@@ -75,10 +75,91 @@ sentry-v2-main/
 
 ---
 
-## GitHub → Firebase CI/CD (Recommended)
+## GitHub → Cloud (Full CI/CD)
+
+Every push to `master` does two things in sequence:
+1. **Backend** (FastAPI + SQLite) → Google Cloud Run (`sentry-api`, `us-central1`)
+2. **Frontend** (React) → Firebase Hosting (`sentry-b873a.web.app`)
+
+Firebase Hosting's `/api/**` rewrite transparently proxies the frontend
+to Cloud Run — no hardcoded URLs, no CORS issues, it just works.
+
+Pull Requests only deploy a **frontend preview** — the production API is never touched.
+
+---
+
+## Setting Up GitHub Secrets (One-Time)
 
 Every push to `master` auto-deploys to `https://sentry-b873a.web.app`.
 Pull Requests get a unique preview URL posted as a PR comment.
+
+You need **two GitHub secrets**. Add them at:
+👉 https://github.com/sdi2015/SENTRY_v2/settings/secrets/actions
+
+---
+
+### Secret 1 of 2 — `FIREBASE_SERVICE_ACCOUNT_SENTRY_B873A`
+
+This lets GitHub deploy to Firebase Hosting.
+
+```
+1. Go to: https://console.firebase.google.com/project/sentry-b873a/settings/serviceaccounts/adminsdk
+2. Click "Generate new private key" → "Generate key"
+3. A JSON file downloads — open it and copy ALL the text
+4. GitHub: New secret → Name: FIREBASE_SERVICE_ACCOUNT_SENTRY_B873A → paste JSON
+```
+
+---
+
+### Secret 2 of 2 — `GCP_SA_KEY`
+
+This lets GitHub deploy the FastAPI backend to Cloud Run.
+
+**Step A — Create a service account in GCP:**
+```
+1. Go to: https://console.cloud.google.com/iam-admin/serviceaccounts?project=sentry-b873a
+2. Click "+ Create Service Account"
+3. Name: github-deploy
+4. Description: GitHub Actions — Cloud Run deployments
+5. Click "Create and Continue"
+```
+
+**Step B — Grant it these 5 roles:**
+| Role | Why |
+|---|---|
+| Cloud Run Admin | Deploy/update Cloud Run services |
+| Service Account User | Cloud Build runs as a service account |
+| Cloud Build Service Account | Build the Docker image |
+| Storage Admin | Cloud Build artifact bucket |
+| Artifact Registry Administrator | Push Docker images |
+
+```
+6. Add all 5 roles above → Click "Continue" → Click "Done"
+```
+
+**Step C — Download the JSON key:**
+```
+7. Click the new "github-deploy" service account
+8. Go to "Keys" tab → "Add Key" → "Create new key" → JSON
+9. A JSON file downloads — copy ALL the text
+10. GitHub: New secret → Name: GCP_SA_KEY → paste JSON
+```
+
+---
+
+### That's it! Push anything to `master` to trigger the full deploy:
+
+```bash
+git push origin master
+# → Cloud Run deploys backend (~3-4 min first time, ~1-2 min after)
+# → Firebase Hosting deploys frontend (~1-2 min)
+# → https://sentry-b873a.web.app is fully live
+```
+
+**Watch the progress:**
+👉 https://github.com/sdi2015/SENTRY_v2/actions
+
+---
 
 ### One-Time Setup: Add the Firebase Secret to GitHub
 
@@ -94,7 +175,7 @@ You only need to do this **once**. After that, every `git push` deploys automati
 
 **Step 2 — Add it to GitHub:**
 ```
-1. Go to: https://github.com/sdi2015/SENTRY_v2/settings/secrets/actions
+1. Go to: https://github.com/sdi2015/SENTRY_v2/settings/secrets/actions/new
 2. Click "New repository secret"
 3. Name:  FIREBASE_SERVICE_ACCOUNT_SENTRY_B873A
 4. Value: paste the ENTIRE contents of the JSON file you downloaded

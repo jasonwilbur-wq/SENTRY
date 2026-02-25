@@ -1,13 +1,24 @@
-# Don't bundle these into the Docker image
-.venv/
+# ── Python cache ─────────────────────────────────────────────────────
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
+.Python
+
+# ── Virtual environment ───────────────────────────────────────────
+.venv/
+venv/
+env/
+
+# ── Secrets / env files ─────────────────────────────────────────
 .env
 .env.*
-*.log
 
-# Exclude dev/utility scripts from production image
+# ── Logs ───────────────────────────────────────────────────────
+*.log
+sentry_backend.log
+
+# ── Dev/utility scripts (not needed in production image) ────────────
 bulk_*.py
 build_*.py
 import_*.py
@@ -17,8 +28,14 @@ inspect_*.py
 link_*.py
 morning_*.py
 scheduled_*.py
-run_*.bat
 var_score_extractor.py
+start_backend.bat
 
-# Output files
+# ── Output files ─────────────────────────────────────────────────
 output/
+
+# ── CSV / Excel raw data files ────────────────────────────────────
+data/*.csv
+data/*.xlsx
+data/*.xls
+# data/*.db is intentionally NOT excluded — SQLite DB bundles into the image
