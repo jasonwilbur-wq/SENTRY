@@ -75,6 +75,43 @@ sentry-v2-main/
 
 ---
 
+## GitHub → Firebase CI/CD (Recommended)
+
+Every push to `master` auto-deploys to `https://sentry-b873a.web.app`.
+Pull Requests get a unique preview URL posted as a PR comment.
+
+### One-Time Setup: Add the Firebase Secret to GitHub
+
+You only need to do this **once**. After that, every `git push` deploys automatically.
+
+**Step 1 — Get the Firebase service account JSON:**
+```
+1. Go to: https://console.firebase.google.com/project/sentry-b873a/settings/serviceaccounts/adminsdk
+2. Click "Generate new private key"
+3. Click "Generate key" in the dialog
+4. A JSON file downloads to your computer — keep it safe!
+```
+
+**Step 2 — Add it to GitHub:**
+```
+1. Go to: https://github.com/sdi2015/SENTRY_v2/settings/secrets/actions
+2. Click "New repository secret"
+3. Name:  FIREBASE_SERVICE_ACCOUNT_SENTRY_B873A
+4. Value: paste the ENTIRE contents of the JSON file you downloaded
+5. Click "Add secret"
+```
+
+**Step 3 — Push anything to trigger a deploy:**
+```bash
+git push origin master
+# GitHub Actions runs: install → typecheck → build → deploy
+# Live in ~2 minutes at https://sentry-b873a.web.app
+```
+
+**That's it.** The workflow file is already in `.github/workflows/firebase-deploy.yml`.
+
+---
+
 ## Firebase + Cloud Run Deployment
 
 ### Prerequisites

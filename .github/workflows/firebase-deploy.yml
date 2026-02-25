@@ -1,0 +1,78 @@
+# ────────────────────────────────────────────────────────────────────
+# SENTRY v2 — Firebase Hosting CI/CD
+#
+# Push to master   → production deploy → https://sentry-b873a.web.app
+# Open/update PR  → preview channel   → auto-commented URL on the PR
+#
+# REQUIRED GitHub Secret (add once, never touch again):
+#   FIREBASE_SERVICE_ACCOUNT_SENTRY_B873A
+#   → See README § "Setting Up GitHub Secrets" for how to get this.
+# ────────────────────────────────────────────────────────────────────
+name: Deploy to Firebase Hosting
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  checks: write
+  contents: read
+  pull-requests: write   # lets the action post preview URLs as PR comments
+
+jobs:
+  # ──────────────────────────────────────────────────────────────
+  build_and_deploy:
+    name: Build → Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout source
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Node.js with npm cache
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # 3. Install deps
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. Type-check (catches TypeScript errors before deploy)
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      # 5. Build the React app
+      #    VITE_API_URL is empty — firebase.json rewrites /api/** → Cloud Run
+      - name: Build
+        run: npm run build
+        env:
+          VITE_API_URL: ''
+
+      # 6a. Production deploy (master branch only)
+      - name: Deploy to Firebase Hosting (production)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SENTRY_B873A }}
+          channelId: live
+          projectId: sentry-b873a
+
+      # 6b. Preview channel deploy (pull requests)
+      #     Posts a comment on the PR with a unique preview URL
+      - name: Deploy PR preview to Firebase Hosting
+        if: github.event_name == 'pull_request'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SENTRY_B873A }}
+          projectId: sentry-b873a
+          # No channelId = auto-generates a channel named pr-{PR number}
