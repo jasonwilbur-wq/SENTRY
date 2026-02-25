@@ -11,6 +11,7 @@ Usage:
 WARNING: Route order matters in FastAPI! Static paths like
   /api/vendors/categories MUST be registered before /{vendor_id}.
 """
+import math
 import os
 import uuid
 from contextlib import asynccontextmanager
@@ -120,11 +121,16 @@ def _group_products(
 @app.get("/api/vendors", response_model=VendorsResponse)
 def list_vendors(
     category: str | None = Query(None),
-    search: str | None = Query(None),
+    search:   str | None = Query(None),
+    page:      int = Query(1,  ge=1),
+    page_size: int = Query(20, ge=1, le=100),
 ):
-    """Return all vendors, optionally filtered by category or search term."""
+    """Return vendors paginated, optionally filtered by category or search term.
+
+    Grouping (multiple products per company) happens in Python after the DB
+    fetch — SQLite has ~1,931 rows so this is sub-millisecond.
+    """
     conn = get_connection()
-    query = "SELECT * FROM vendors ORDER BY overall_rating DESC"
     params: list[str] = []
     clauses: list[str] = []
 
@@ -138,8 +144,8 @@ def list_vendors(
         term = f"%{search.lower()}%"
         params.extend([term, term])
 
-    if clauses:
-        query = f"SELECT * FROM vendors WHERE {' AND '.join(clauses)} ORDER BY overall_rating DESC"
+    where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+    query = f"SELECT * FROM vendors {where} ORDER BY overall_rating DESC"
 
     rows = [dict(r) for r in conn.execute(query, params).fetchall()]
 
@@ -157,8 +163,22 @@ def list_vendors(
     }
     conn.close()
 
-    vendors = _group_products(rows, var_ids, latest_var_ids)
-    return VendorsResponse(total=len(vendors), vendors=vendors)
+    # Group multiple-product rows into logical vendors
+    all_vendors = _group_products(rows, var_ids, latest_var_ids)
+
+    total       = len(all_vendors)
+    total_pages = max(1, math.ceil(total / page_size))
+    page        = min(page, total_pages)          # clamp to valid range
+    offset      = (page - 1) * page_size
+    page_vendors = all_vendors[offset : offset + page_size]
+
+    return VendorsResponse(
+        total=total,
+        page=page,
+        page_size=page_size,
+        total_pages=total_pages,
+        vendors=page_vendors,
+    )
 
 
 # NOTE: /categories MUST be registered before /{vendor_id} to avoid shadowing

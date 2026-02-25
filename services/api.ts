@@ -57,13 +57,27 @@ export interface Vendor {
   all_products: VendorProduct[];
 }
 
-export async function fetchVendors(params?: {
+export interface VendorsParams {
   category?: string;
   search?: string;
-}): Promise<{ total: number; vendors: Vendor[] }> {
+  page?: number;
+  page_size?: number;
+}
+
+export interface VendorsResponse {
+  total: number;       // total matched vendors (across all pages)
+  page: number;        // current page (1-based)
+  page_size: number;   // vendors per page
+  total_pages: number; // ceil(total / page_size)
+  vendors: Vendor[];
+}
+
+export async function fetchVendors(params?: VendorsParams): Promise<VendorsResponse> {
   const qs = new URLSearchParams();
   if (params?.category && params.category !== 'All') qs.set('category', params.category);
-  if (params?.search) qs.set('search', params.search);
+  if (params?.search)    qs.set('search',    params.search);
+  if (params?.page)      qs.set('page',      String(params.page));
+  if (params?.page_size) qs.set('page_size', String(params.page_size));
   const query = qs.toString() ? `?${qs}` : '';
   return request(`/api/vendors${query}`);
 }

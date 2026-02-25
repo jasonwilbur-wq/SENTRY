@@ -30,7 +30,10 @@ class VendorOut(BaseModel):
 
 
 class VendorsResponse(BaseModel):
-    total: int
+    total: int          # total matched vendors (after grouping)
+    page: int           # current page (1-based)
+    page_size: int      # vendors per page
+    total_pages: int    # ceil(total / page_size)
     vendors: list[VendorOut]
 
 
