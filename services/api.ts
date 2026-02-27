@@ -216,6 +216,30 @@ export async function submitLabVisit(
   });
 }
 
+// ── Public Stats ─────────────────────────────────────────────────────────────────────────
+
+export interface CategoryStat {
+  category: string;
+  count: number;
+  avg_rating: number;
+}
+
+export interface DirectoryStats {
+  total_vendors: number;
+  total_vars: number;
+  vendors_with_var: number;
+  var_coverage_pct: number;
+  avg_rating: number;
+  recently_assessed: number;
+  risk_distribution: Record<string, number>;
+  top_categories: CategoryStat[];
+  decision_bands: Record<string, number>;
+}
+
+export async function fetchStats(): Promise<DirectoryStats> {
+  return request('/api/stats');
+}
+
 // ── Admin ────────────────────────────────────────────────────────────────────────────────
 
 export interface AdminStats {

@@ -316,6 +316,61 @@ async def download_var_report(var_id: str):
     raise HTTPException(status_code=503, detail="Download unavailable — token expired")
 
 
+# ── Public stats (used by Vendor Directory dashboard) ────────────────────
+
+@app.get("/api/stats")
+def public_stats():
+    """Aggregate stats for the Vendor Directory dashboard panel."""
+    conn = get_connection()
+
+    total_vendors = conn.execute("SELECT COUNT(*) FROM vendors").fetchone()[0]
+    total_vars = conn.execute("SELECT COUNT(*) FROM var_reports").fetchone()[0]
+    vendors_with_var = conn.execute(
+        "SELECT COUNT(DISTINCT vendor_id) FROM var_reports"
+    ).fetchone()[0]
+    avg_rating = conn.execute("SELECT AVG(overall_rating) FROM vendors").fetchone()[0] or 0
+
+    risk_rows = conn.execute(
+        "SELECT risk_level, COUNT(*) as cnt FROM vendors "
+        "WHERE risk_level IS NOT NULL AND risk_level != '' "
+        "GROUP BY risk_level"
+    ).fetchall()
+
+    category_rows = conn.execute(
+        "SELECT category, COUNT(*) as cnt, ROUND(AVG(overall_rating), 2) as avg_rating "
+        "FROM vendors GROUP BY category ORDER BY cnt DESC LIMIT 12"
+    ).fetchall()
+
+    band_rows = conn.execute(
+        "SELECT decision_band, COUNT(*) as cnt FROM var_reports "
+        "WHERE decision_band IS NOT NULL AND decision_band != '' "
+        "GROUP BY decision_band ORDER BY cnt DESC"
+    ).fetchall()
+
+    # Vendors assessed in the last 90 days (rough recency proxy)
+    recent_rows = conn.execute(
+        "SELECT COUNT(DISTINCT company_name) FROM vendors "
+        "WHERE last_assessed >= date('now', '-90 days')"
+    ).fetchone()[0]
+
+    conn.close()
+
+    return {
+        "total_vendors": total_vendors,
+        "total_vars": total_vars,
+        "vendors_with_var": vendors_with_var,
+        "var_coverage_pct": round(vendors_with_var / total_vendors * 100, 1) if total_vendors else 0,
+        "avg_rating": round(avg_rating, 2),
+        "recently_assessed": recent_rows or 0,
+        "risk_distribution": {r["risk_level"]: r["cnt"] for r in risk_rows},
+        "top_categories": [
+            {"category": r["category"], "count": r["cnt"], "avg_rating": r["avg_rating"]}
+            for r in category_rows
+        ],
+        "decision_bands": {r["decision_band"]: r["cnt"] for r in band_rows},
+    }
+
+
 # ── Chat (stub — returns helpful message when no LLM key configured) ─────
 
 

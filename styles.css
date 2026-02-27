@@ -63,6 +63,31 @@
   --animate-slideIn: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* ── Vendor card 3D entrance animation ──────────────────────────── */
+@keyframes cardRise {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+.animate-fadeIn > * > * { /* direct card children */
+  animation: cardRise 0.4s ease-out both;
+}
+.animate-fadeIn > * > *:nth-child(2)  { animation-delay: 0.05s; }
+.animate-fadeIn > * > *:nth-child(3)  { animation-delay: 0.10s; }
+.animate-fadeIn > * > *:nth-child(4)  { animation-delay: 0.12s; }
+.animate-fadeIn > * > *:nth-child(5)  { animation-delay: 0.15s; }
+.animate-fadeIn > * > *:nth-child(6)  { animation-delay: 0.17s; }
+.animate-fadeIn > * > *:nth-child(7)  { animation-delay: 0.20s; }
+.animate-fadeIn > * > *:nth-child(8)  { animation-delay: 0.22s; }
+.animate-fadeIn > * > *:nth-child(9)  { animation-delay: 0.25s; }
+.animate-fadeIn > * > *:nth-child(n+10){ animation-delay: 0.28s; }
+
+/* Score ring SVG glow pulse on first load */
+@keyframes ringGlow {
+  0%, 100% { filter: drop-shadow(0 0 4px currentColor); }
+  50%       { filter: drop-shadow(0 0 12px currentColor); }
+}
+.ring-glow { animation: ringGlow 2.5s ease-in-out 1.2s 1 forwards; }
+
 /* ── 3D depth utilities ──────────────────────────────────────── */
 .preserve-3d { transform-style: preserve-3d; }
 
