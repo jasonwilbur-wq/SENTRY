@@ -22,6 +22,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, RedirectResponse
 
 from database import get_connection, init_db
+from admin_routes import router as admin_router
 from models import (
     CategoriesResponse,
     ChatRequest,
@@ -69,9 +70,12 @@ ALLOWED_ORIGINS: list[str] = [o.strip() for o in _raw_origins.split(",") if o.st
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE"],
     allow_headers=["Content-Type", "Authorization"],
 )
+
+# ── Admin router (Phase 3) ────────────────────────────────────────────
+app.include_router(admin_router)
 
 
 # ── Vendors ────────────────────────────────────────────────────────────
