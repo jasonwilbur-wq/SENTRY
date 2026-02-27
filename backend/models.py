@@ -26,7 +26,21 @@ class VendorOut(BaseModel):
     risk_level: str = "Medium"
     has_var: bool = False
     latest_var_id: str = ""      # Phase 2 — used for download proxy
+    
+    # Extended fields
+    description: str = ""
+    founded_year: str = ""
+    hq_location: str = ""
+    business_owner: str = ""
+    sourcing_manager: str = ""
+    deployment_status: str = "Prospect"
+    hosting_type: str = ""
+    data_classification: str = "Internal"
+
     all_products: list[VendorProduct] = Field(default_factory=list)
+    
+    # VAR Data (attached if available)
+    var_scores: dict | None = None
 
 
 class VendorsResponse(BaseModel):

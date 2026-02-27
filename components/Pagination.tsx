@@ -32,14 +32,18 @@ export const Pagination: React.FC<Props> = ({
   page, totalPages, total, pageSize, onChange, loading = false,
 }) => {
   const go = useCallback((p: number) => {
-    if (p >= 1 && p <= totalPages && p !== page && !loading) onChange(p);
+    if (p >= 1 && p <= totalPages && p !== page && !loading) {
+      onChange(p);
+      // Smooth scroll back to the top of the content area
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   }, [page, totalPages, loading, onChange]);
 
   if (totalPages <= 1) return null;
 
   const startItem = (page - 1) * pageSize + 1;
   const endItem   = Math.min(page * pageSize, total);
-  const window    = pageWindow(page, totalPages);
+  const pages     = pageWindow(page, totalPages);
 
   return (
     <nav
@@ -63,8 +67,10 @@ export const Pagination: React.FC<Props> = ({
           disabled={page === 1 || loading}
           aria-label="Previous page"
           className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium
-                     text-slate-400 hover:text-white hover:bg-slate-700 transition
-                     disabled:opacity-30 disabled:cursor-not-allowed"
+                     transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+          style={{ color: '#64748b' }}
+          onMouseEnter={e => { if (page > 1 && !loading) (e.currentTarget as HTMLButtonElement).style.color = '#f1f5f9'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#64748b'; }}
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -73,9 +79,9 @@ export const Pagination: React.FC<Props> = ({
         </button>
 
         {/* Page numbers */}
-        {window.map((item, idx) =>
+        {pages.map((item, idx) =>
           item === '...' ? (
-            <span key={`ellipsis-${idx}`} className="px-2 text-slate-600" aria-hidden="true">…</span>
+            <span key={`ellipsis-${idx}`} className="px-2" style={{ color: '#334155' }} aria-hidden="true">…</span>
           ) : (
             <button
               key={item}
@@ -83,11 +89,17 @@ export const Pagination: React.FC<Props> = ({
               disabled={loading}
               aria-label={`Page ${item}`}
               aria-current={item === page ? 'page' : undefined}
-              className={`min-w-[2.25rem] h-9 rounded-lg text-sm font-semibold transition ${
-                item === page
-                  ? 'bg-wmt-blue text-white shadow-[0_0_12px_rgba(0,83,226,0.5)] cursor-default'
-                  : 'text-slate-400 hover:bg-slate-700 hover:text-white disabled:opacity-40'
-              }`}
+              className="min-w-[2.25rem] h-9 rounded-lg text-sm font-semibold transition-all"
+              style={item === page ? {
+                background: '#0053E2',
+                color: '#ffffff',
+                boxShadow: '0 0 12px rgba(0,83,226,0.5), 0 0 0 2px rgba(0,83,226,0.3)',
+                cursor: 'default',
+              } : {
+                color: '#64748b',
+              }}
+              onMouseEnter={e => { if (item !== page) { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.08)'; (e.currentTarget as HTMLButtonElement).style.color = '#f1f5f9'; } }}
+              onMouseLeave={e => { if (item !== page) { (e.currentTarget as HTMLButtonElement).style.background = ''; (e.currentTarget as HTMLButtonElement).style.color = '#64748b'; } }}
             >
               {item}
             </button>
@@ -100,8 +112,10 @@ export const Pagination: React.FC<Props> = ({
           disabled={page === totalPages || loading}
           aria-label="Next page"
           className="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium
-                     text-slate-400 hover:text-white hover:bg-slate-700 transition
-                     disabled:opacity-30 disabled:cursor-not-allowed"
+                     transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+          style={{ color: '#64748b' }}
+          onMouseEnter={e => { if (page < totalPages && !loading) (e.currentTarget as HTMLButtonElement).style.color = '#f1f5f9'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#64748b'; }}
         >
           Next
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

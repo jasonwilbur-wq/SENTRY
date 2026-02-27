@@ -85,29 +85,78 @@ export const ChatAssistant: React.FC = () => {
   };
 
   return (
-    <div className="bg-sentry-card rounded-lg border border-slate-700 shadow-lg h-[600px] flex flex-col">
-      <div className="p-4 border-b border-slate-700 bg-slate-800/50 rounded-t-lg">
-        <h3 className="text-lg font-bold text-sentry-accent flex items-center gap-2">
-          <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" aria-hidden="true" />
-          SENTRY-AI Assistant
-        </h3>
-        <p className="text-xs text-slate-400 mt-1">Powered by Google Gemini · Full context-aware conversation</p>
+    <div
+      className="rounded-xl overflow-hidden flex flex-col"
+      style={{
+        height: 600,
+        background: 'rgba(4, 8, 22, 0.92)',
+        border: '1px solid rgba(0,83,226,0.2)',
+        boxShadow: '0 0 0 1px rgba(0,83,226,0.08), inset 0 1px 0 rgba(0,83,226,0.1)',
+      }}
+    >
+      {/* Header */}
+      <div
+        className="px-4 py-3 flex items-center justify-between shrink-0"
+        style={{
+          borderBottom: '1px solid rgba(0,83,226,0.15)',
+          background: 'linear-gradient(90deg, rgba(0,83,226,0.08) 0%, transparent 100%)',
+        }}
+      >
+        <div className="flex items-center gap-3">
+          {/* Terminal monogram */}
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black"
+            style={{ background: 'rgba(0,83,226,0.2)', border: '1px solid rgba(0,83,226,0.35)', color: '#4d9fff' }}
+          >
+            AI
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+              SENTRY-AI
+              {/* Terminal cursor blink */}
+              <span
+                className="inline-block w-1.5 h-3.5 rounded-sm bg-green-400 animate-cursor-blink"
+                aria-hidden="true"
+              />
+            </h3>
+            <p className="text-[9px] uppercase tracking-widest" style={{ color: '#334155' }}>
+              Powered by Google Gemini · Context-Aware
+            </p>
+          </div>
+        </div>
+        {/* Connected status */}
+        <div className="flex items-center gap-1.5">
+          <div className="relative w-1.5 h-1.5">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
+            <div className="absolute inset-0 rounded-full bg-green-400 animate-ping-ring" />
+          </div>
+          <span className="text-[9px] uppercase tracking-wider" style={{ color: '#22c55e' }}>Connected</span>
+        </div>
       </div>
 
-      <div className="flex-grow overflow-y-auto p-4 space-y-4" role="log" aria-live="polite">
+      {/* Messages */}
+      <div className="flex-grow overflow-y-auto p-4 space-y-3" role="log" aria-live="polite">
         {messages.map(msg => (
           <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
             <div
-              className={`max-w-[85%] rounded-lg p-3 text-sm ${
-                msg.role === 'user'
-                  ? 'bg-wmt-blue text-white'
-                  : 'bg-slate-800 text-slate-200 border border-slate-700'
-              }`}
+              className="max-w-[85%] rounded-xl p-3 text-sm"
+              style={msg.role === 'user' ? {
+                background: 'linear-gradient(135deg, #0053E2, #002880)',
+                color: '#ffffff',
+                borderBottomRightRadius: '4px',
+              } : {
+                background: 'rgba(15, 23, 42, 0.85)',
+                color: '#cbd5e1',
+                border: '1px solid rgba(0,83,226,0.18)',
+                borderLeft: '2px solid rgba(0,83,226,0.5)',
+                borderBottomLeftRadius: '4px',
+              }}
             >
               <div>{msg.role === 'model' ? renderMarkdown(msg.text) : msg.text}</div>
-              <div className={`text-[10px] mt-1.5 opacity-60 ${
-                msg.role === 'user' ? 'text-slate-800' : 'text-slate-400'
-              }`}>
+              <div
+                className="text-[10px] mt-1.5 opacity-50"
+                style={{ color: msg.role === 'user' ? '#bfdbfe' : '#334155', fontFamily: 'monospace' }}
+              >
                 {msg.timestamp.toLocaleTimeString()}
               </div>
             </div>
@@ -115,36 +164,66 @@ export const ChatAssistant: React.FC = () => {
         ))}
         {isLoading && (
           <div className="flex justify-start" aria-label="SENTRY-AI is typing">
-            <div className="bg-slate-700 rounded-lg p-3 border border-slate-600 flex items-center gap-1.5">
-              <span className="w-2 h-2 bg-sentry-accent rounded-full animate-bounce" />
-              <span className="w-2 h-2 bg-sentry-accent rounded-full animate-bounce [animation-delay:0.15s]" />
-              <span className="w-2 h-2 bg-sentry-accent rounded-full animate-bounce [animation-delay:0.3s]" />
+            <div
+              className="rounded-xl p-3 flex items-center gap-1"
+              style={{ background: 'rgba(15,23,42,0.8)', border: '1px solid rgba(0,83,226,0.2)' }}
+            >
+              {/* Scanning bar instead of bounce dots */}
+              <div
+                className="relative h-3 overflow-hidden rounded-full"
+                style={{ width: 48, background: 'rgba(0,83,226,0.15)' }}
+                aria-hidden="true"
+              >
+                <div
+                  className="absolute top-0 bottom-0 w-1/3 rounded-full bg-blue-400"
+                  style={{ animation: 'shimmer 1.2s linear infinite', backgroundImage: 'linear-gradient(90deg, transparent, #4d9fff, transparent)' }}
+                />
+              </div>
+              <span className="text-[10px] ml-2" style={{ color: '#334155', fontFamily: 'monospace' }}>analysing…</span>
             </div>
           </div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      <form onSubmit={handleSendMessage} className="p-4 border-t border-slate-700 bg-slate-800/30 rounded-b-lg">
-        <div className="flex gap-2">
-          <label htmlFor="chat-input" className="sr-only">Message SENTRY-AI</label>
-          <input
-            id="chat-input"
-            type="text"
-            value={inputValue}
-            onChange={e => setInputValue(e.target.value)}
-            placeholder="Ask about Phase III controls, vendor risks…"
-            disabled={isLoading}
-            className="flex-grow bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-slate-200 focus:outline-none focus:border-sentry-accent focus:ring-1 focus:ring-sentry-accent disabled:opacity-50"
-          />
-          <button
-            type="submit"
-            disabled={isLoading || !inputValue.trim()}
-            className="px-4 py-2 rounded-lg font-semibold transition-colors bg-wmt-blue text-white hover:bg-wmt-yellow hover:text-wmt-void disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed"
-          >
-            Send
-          </button>
-        </div>
+      {/* Input */}
+      <form
+        onSubmit={handleSendMessage}
+        className="p-3 shrink-0 flex gap-2"
+        style={{ borderTop: '1px solid rgba(0,83,226,0.12)', background: 'rgba(0,0,0,0.3)' }}
+      >
+        <label htmlFor="chat-input" className="sr-only">Message SENTRY-AI</label>
+        <input
+          id="chat-input"
+          type="text"
+          value={inputValue}
+          onChange={e => setInputValue(e.target.value)}
+          placeholder="Ask about Phase III controls, vendor risks…"
+          disabled={isLoading}
+          className="flex-grow text-sm rounded-lg px-4 py-2.5 disabled:opacity-50 font-mono"
+          style={{
+            background: 'rgba(0,83,226,0.07)',
+            border: '1px solid rgba(0,83,226,0.2)',
+            color: '#cbd5e1',
+            outline: 'none',
+            transition: 'border-color 0.15s, box-shadow 0.15s',
+          }}
+          onFocus={e => {
+            (e.target as HTMLInputElement).style.borderColor = 'rgba(0,83,226,0.5)';
+            (e.target as HTMLInputElement).style.boxShadow = '0 0 0 3px rgba(0,83,226,0.15)';
+          }}
+          onBlur={e => {
+            (e.target as HTMLInputElement).style.borderColor = 'rgba(0,83,226,0.2)';
+            (e.target as HTMLInputElement).style.boxShadow = 'none';
+          }}
+        />
+        <button
+          type="submit"
+          disabled={isLoading || !inputValue.trim()}
+          className="btn-primary shrink-0"
+        >
+          Send
+        </button>
       </form>
     </div>
   );

@@ -61,21 +61,27 @@ function KpiTile({
   const count = useCountUp(value);
   return (
     <div
-      className="flex flex-col gap-1 p-4 rounded-xl border border-slate-700/60 bg-slate-900/60
-                 backdrop-blur-sm relative overflow-hidden"
-      style={{ boxShadow: `inset 0 0 40px ${color}09` }}
+      className="flex flex-col gap-1 p-4 rounded-xl relative overflow-hidden"
+      style={{
+        background: `linear-gradient(135deg, ${color}12 0%, rgba(15,23,42,0.55) 100%)`,
+        border: `1px solid ${color}20`,
+        boxShadow: `inset 0 1px 0 ${color}18`,
+      }}
     >
-      {/* Glow orb */}
+      {/* Ambient glow orb */}
       <div
-        className="absolute -top-4 -right-4 w-16 h-16 rounded-full opacity-20 blur-2xl"
-        style={{ backgroundColor: color }}
+        className="absolute -top-6 -right-6 w-20 h-20 rounded-full blur-2xl pointer-events-none"
+        style={{ backgroundColor: color, opacity: 0.18 }}
         aria-hidden
       />
-      <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">{label}</p>
-      <p className="text-2xl font-black" style={{ color }}>
+      <p className="text-[10px] uppercase tracking-widest font-bold" style={{ color: '#475569' }}>{label}</p>
+      <p
+        className="text-2xl font-black"
+        style={{ color, textShadow: `0 0 20px ${color}55` }}
+      >
         {prefix}{count.toLocaleString()}{suffix}
       </p>
-      {sub && <p className="text-[10px] text-slate-500 mt-0.5">{sub}</p>}
+      {sub && <p className="text-[10px] mt-0.5" style={{ color: '#334155' }}>{sub}</p>}
     </div>
   );
 }
@@ -224,60 +230,55 @@ export const VendorStatsPanel: React.FC<VendorStatsPanelProps> = ({ stats }) => 
 
   return (
     <section
-      className="rounded-2xl border border-slate-700/60 bg-slate-900/70 backdrop-blur-md
-                 overflow-hidden mb-6"
+      className="rounded-2xl overflow-hidden mb-6 shadow-2xl"
+      style={{
+        background: 'rgba(8, 14, 30, 0.82)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        border: '1px solid rgba(255,255,255,0.06)',
+      }}
       aria-label="Vendor directory analytics"
     >
       {/* Section header */}
-      <div className="px-6 py-3 border-b border-slate-800 flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <VendorOrb3D />
+      <div
+        className="px-6 py-3 flex items-center justify-between gap-4"
+        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+      >
+        <div className="flex items-center gap-3">
+          <div style={{ width: 72, height: 72, flexShrink: 0 }}>
+            <VendorOrb3D />
+          </div>
           <div>
-            <h2 className="text-base font-bold text-white">Directory Intelligence</h2>
-            <p className="text-xs text-slate-500">Live stats from the SENTRY vendor database</p>
+            <h2 className="text-sm font-bold text-white">Directory Intelligence</h2>
+            <p className="text-[10px]" style={{ color: '#475569' }}>Live stats from the SENTRY vendor database</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] text-slate-600 uppercase tracking-wider">Live</span>
-          <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" aria-label="Live" />
+          <span className="text-[10px] uppercase tracking-widest" style={{ color: '#334155' }}>Live</span>
+          <div className="relative w-2 h-2">
+            <div className="w-2 h-2 rounded-full bg-green-400" />
+            <div className="absolute inset-0 w-2 h-2 rounded-full bg-green-400 animate-ping-ring" />
+          </div>
         </div>
       </div>
 
       {/* KPI row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4">
-        <KpiTile
-          label="Total Vendors"     value={stats.total_vendors}
-          sub="across all categories"
-          color="#0053e2"
-        />
-        <KpiTile
-          label="VAR Reports"       value={stats.total_vars}
-          sub={`${stats.vendors_with_var} vendors covered`}
-          color="#22c55e"
-        />
-        <KpiTile
-          label="VAR Coverage"      value={Math.round(stats.var_coverage_pct)}
-          sub="of vendors assessed"
-          color="#FFC220"
-          suffix="%"
-        />
-        <KpiTile
-          label="Avg Security Score" value={Math.round(stats.avg_rating * 10) / 10}
-          sub="overall portfolio"
-          color="#a78bfa"
-          prefix=""
-        />
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-4">
+        <KpiTile label="Total Vendors"      value={stats.total_vendors}  sub="across all categories" color="#0053e2" />
+        <KpiTile label="VAR Reports"        value={stats.total_vars}     sub={`${stats.vendors_with_var} vendors covered`} color="#22c55e" />
+        <KpiTile label="VAR Coverage"       value={Math.round(stats.var_coverage_pct)} sub="of vendors assessed" color="#FFC220" suffix="%" />
+        <KpiTile label="Avg Security Score" value={Math.round(stats.avg_rating * 10) / 10} sub="overall portfolio" color="#a78bfa" />
       </div>
 
-      {/* Charts row */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-0 divide-y sm:divide-y-0 sm:divide-x divide-slate-800 px-4 pb-4">
-        <div className="py-4 sm:py-0 sm:pr-4">
+      {/* Charts row — gradient dividers */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 p-4 pt-0">
+        <div className="py-4 sm:pr-4" style={{ borderRight: '1px solid rgba(255,255,255,0.04)' }}>
           <RiskDonut data={riskData} />
         </div>
-        <div className="py-4 sm:py-0 sm:px-4">
+        <div className="py-4 sm:px-4" style={{ borderRight: '1px solid rgba(255,255,255,0.04)' }}>
           <CategoryBars cats={stats.top_categories} />
         </div>
-        <div className="py-4 sm:py-0 sm:pl-4">
+        <div className="py-4 sm:pl-4">
           <DecisionBands bands={stats.decision_bands} total={stats.total_vars} />
         </div>
       </div>

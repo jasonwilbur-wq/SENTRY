@@ -25,6 +25,7 @@ import {
   TECH_CATEGORIES, EXEC_INSIGHTS, KPIS, TIMELINE_ACTIONS,
 } from '../data/forecastData';
 import { useVendors } from '../context/VendorContext';
+import { ViewState } from '../types';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -150,7 +151,11 @@ function ChartCard({
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export const CompetitorAnalysis: React.FC = () => {
+interface Props {
+  onNavigate?: (view: ViewState) => void;
+}
+
+export const CompetitorAnalysis: React.FC<Props> = ({ onNavigate }) => {
   const { vendors } = useVendors();
   const [activeTab, setActiveTab] = useState<'forecast' | 'vendors' | 'chat'>('forecast');
 
@@ -294,20 +299,36 @@ export const CompetitorAnalysis: React.FC = () => {
       </div>
 
       {/* ── TAB NAV ─────────────────────────────────────────────── */}
-      <div className="flex gap-2 mb-6 border-b border-slate-700/60 pb-1">
-        {tabs.map(t => (
+      <div className="flex flex-wrap items-center justify-between mb-6 border-b border-slate-700/60 pb-1 gap-3">
+        <div className="flex gap-2">
+          {tabs.map(t => (
+            <button
+              key={t.key}
+              onClick={() => setActiveTab(t.key)}
+              className={`px-4 py-2 rounded-t-lg text-sm font-semibold transition-all ${
+                activeTab === t.key
+                  ? 'bg-slate-800 text-yellow-300 border border-b-slate-800 border-slate-700'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/50 border border-transparent'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Competitor Intel CTA */}
+        {onNavigate && (
           <button
-            key={t.key}
-            onClick={() => setActiveTab(t.key)}
-            className={`px-4 py-2 rounded-t-lg text-sm font-semibold transition-all ${
-              activeTab === t.key
-                ? 'bg-slate-800 text-yellow-300 border border-b-slate-800 border-slate-700'
-                : 'text-slate-400 hover:text-white'
-            }`}
+            onClick={() => onNavigate(ViewState.COMPETITOR_INTEL)}
+            className="flex items-center gap-2 px-4 py-1.5 mb-1 rounded-lg bg-blue-500/10 border border-blue-500/40
+                       text-blue-300 text-xs font-bold hover:bg-blue-600 hover:text-white transition-all
+                       hover:shadow-[0_0_15px_rgba(0,83,226,0.4)] group"
           >
-            {t.label}
+            <span className="group-hover:animate-pulse">📡</span>
+            View Competitor Intelligence
+            <span className="opacity-60">→</span>
           </button>
-        ))}
+        )}
       </div>
 
       {/* ═══════════════ FORECAST TAB ═══════════════════════════ */}

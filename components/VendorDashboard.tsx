@@ -133,7 +133,8 @@ export const VendorDashboard: React.FC = () => {
           {/* Search input */}
           <div className="relative w-full md:w-80">
             <label htmlFor="vd-search" className="sr-only">Search vendors or products</label>
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none"
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                 style={{ color: '#475569' }}
                  fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                     d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z" />
@@ -142,17 +143,33 @@ export const VendorDashboard: React.FC = () => {
               id="vd-search"
               type="search"
               placeholder="Search vendors, products…"
-              className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-9 pr-10 py-2.5
-                         text-sm text-white placeholder-slate-600 focus:border-blue-500
-                         focus:ring-1 focus:ring-blue-500/40 focus:outline-none transition"
+              className="w-full rounded-xl pl-9 pr-10 py-2.5 text-sm placeholder-slate-600"
+              style={{
+                background: 'rgba(15,23,42,0.8)',
+                border: '1px solid rgba(255,255,255,0.08)',
+                color: '#f1f5f9',
+                outline: 'none',
+                transition: 'border-color 0.15s, box-shadow 0.15s',
+              }}
+              onFocus={e => {
+                (e.target as HTMLInputElement).style.borderColor = 'rgba(0,83,226,0.5)';
+                (e.target as HTMLInputElement).style.boxShadow = '0 0 0 3px rgba(0,83,226,0.15)';
+              }}
+              onBlur={e => {
+                (e.target as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.08)';
+                (e.target as HTMLInputElement).style.boxShadow = 'none';
+              }}
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
             {search && (
               <button
                 onClick={() => setSearch('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white"
+                className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                style={{ color: '#475569' }}
                 aria-label="Clear search"
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#f1f5f9'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#475569'; }}
               >
                 ✕
               </button>
@@ -162,19 +179,31 @@ export const VendorDashboard: React.FC = () => {
 
         {/* Category pills */}
         <div className="flex flex-wrap gap-2">
-          {pinnedCategories.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setCategory(cat)}
-              className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
-                category === cat
-                  ? 'bg-blue-600 text-white border-blue-500 shadow-[0_0_12px_rgba(0,83,226,0.4)]'
-                  : 'bg-slate-800/70 text-slate-400 border-slate-700 hover:border-slate-500 hover:text-white'
-              }`}
-            >
-              {PINNED_CATS[cat] ?? cat}
-            </button>
-          ))}
+          {pinnedCategories.map(cat => {
+            const active = category === cat;
+            return (
+              <button
+                key={cat}
+                onClick={() => setCategory(cat)}
+                className="px-3 py-1 rounded-full text-xs font-semibold transition-all duration-150"
+                style={active ? {
+                  background: 'rgba(0,83,226,0.2)',
+                  color: '#ffffff',
+                  border: '1px solid rgba(0,83,226,0.6)',
+                  boxShadow: '0 0 12px rgba(0,83,226,0.35)',
+                  transform: 'scale(1.04)',
+                } : {
+                  background: 'rgba(255,255,255,0.04)',
+                  color: '#475569',
+                  border: '1px solid rgba(255,255,255,0.07)',
+                }}
+                onMouseEnter={e => { if (!active) { (e.currentTarget as HTMLButtonElement).style.color = '#cbd5e1'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.15)'; } }}
+                onMouseLeave={e => { if (!active) { (e.currentTarget as HTMLButtonElement).style.color = '#475569'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.07)'; } }}
+              >
+                {PINNED_CATS[cat] ?? cat}
+              </button>
+            );
+          })}
         </div>
 
         {/* Risk pills */}
@@ -222,7 +251,7 @@ export const VendorDashboard: React.FC = () => {
       {loading && <Skeleton />}
 
       {!loading && displayed.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 grid-stagger">
           {displayed.map(v => (
             <Fragment key={v.id}>
               <VendorCard3D vendor={v} onClick={handleOpenVendor} />
@@ -239,7 +268,7 @@ export const VendorDashboard: React.FC = () => {
           <p className="text-slate-600 text-sm mb-4">Try broadening your search or clearing the filters</p>
           <button
             onClick={handleClearFilter}
-            className="px-4 py-2 rounded-lg bg-blue-700 text-white text-sm font-semibold
+            className="px-4 py-2 rounded-lg bg-wmt-blue text-white text-sm font-semibold
                        hover:bg-blue-600 transition"
           >
             Clear Filters

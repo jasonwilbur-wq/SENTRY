@@ -14,7 +14,7 @@ export const VendorOrb3D: React.FC = () => {
   useEffect(() => {
     const el = mountRef.current;
     if (!el) return;
-    const W = 120, H = 120;
+    const W = 72, H = 72;
 
     // ── Setup ─────────────────────────────────────────────────────────
     const scene    = new THREE.Scene();
@@ -95,7 +95,7 @@ export const VendorOrb3D: React.FC = () => {
   return (
     <div
       ref={mountRef}
-      style={{ width: 120, height: 120 }}
+      style={{ width: 72, height: 72 }}
       aria-hidden="true"
     />
   );

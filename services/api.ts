@@ -41,6 +41,18 @@ export interface VendorProduct {
   last_assessed: string;
 }
 
+export interface VarScores {
+  Overall?: number;
+  Compliance?: number;
+  Risk?: number;
+  Maturity?: number;
+  Integration?: number;
+  ROI?: number;
+  Viability?: number;
+  Differentiation?: number;
+  "Cloud Dep"?: number;
+}
+
 export interface Vendor {
   id: string;
   company_name: string;
@@ -55,6 +67,17 @@ export interface Vendor {
   has_var: boolean;
   latest_var_id: string;   // Phase 2 — used for /api/vars/download/{id}
   all_products: VendorProduct[];
+  
+  // Extended Insights
+  description?: string;
+  founded_year?: string;
+  hq_location?: string;
+  business_owner?: string;
+  sourcing_manager?: string;
+  deployment_status?: string;
+  hosting_type?: string;
+  data_classification?: string;
+  var_scores?: VarScores;
 }
 
 export interface VendorsParams {
@@ -347,4 +370,109 @@ export async function searchVendorsForLinking(
   q: string,
 ): Promise<{ results: { id: string; company_name: string; category: string }[] }> {
   return request(`/api/admin/vendors/search?q=${encodeURIComponent(q)}`);
+}
+
+// ── Competitor Intelligence ───────────────────────────────────────────────────
+
+export interface CompetitorStats {
+  total: number;
+  cyber: number;
+  orc: number;
+  recall: number;
+  legal: number;
+  strategic: number;
+  competitor_count: number;
+}
+
+export interface CompetitorEntity {
+  name: string;
+  event_count: number;
+  cyber_count: number;
+  orc_count: number;
+  recall_count: number;
+  legal_count: number;
+  strategic_count: number;
+  threat_level: 'High' | 'Medium' | 'Low';
+  top_category: string | null;
+  categories_json: string;
+  monthly_json: string;
+}
+
+export interface CompetitorEvent {
+  id: number;
+  event_date: string | null;
+  competitor: string;
+  event_title: string | null;
+  event_type: string | null;
+  category: string;
+  location: string | null;
+  security_implication: string | null;
+  detailed_description: string | null;
+  analyst_notes: string | null;
+  source_link: string | null;
+  source_month: string | null;
+}
+
+export interface CompetitorEventsResponse {
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  events: CompetitorEvent[];
+}
+
+export interface CompetitorMonthly {
+  months: string[];
+  series: Record<string, number[]>;
+}
+
+export interface CompetitorHeatmap {
+  competitors: string[];
+  categories: string[];
+  matrix: number[][];
+}
+
+export async function fetchCompetitorStats(): Promise<CompetitorStats> {
+  return request('/api/competitors/stats');
+}
+
+export async function fetchCompetitorEntities(
+  limit = 20,
+): Promise<{ entities: CompetitorEntity[] }> {
+  return request(`/api/competitors/entities?limit=${limit}`);
+}
+
+export async function fetchCompetitorMonthly(
+  top = 5,
+): Promise<CompetitorMonthly> {
+  return request(`/api/competitors/monthly?top=${top}`);
+}
+
+export async function fetchCompetitorHeatmap(
+  top = 10,
+): Promise<CompetitorHeatmap> {
+  return request(`/api/competitors/heatmap?top=${top}`);
+}
+
+export async function fetchCompetitorEvents(params?: {
+  competitor?: string;
+  category?: string;
+  month?: string;
+  q?: string;
+  page?: number;
+  page_size?: number;
+}): Promise<CompetitorEventsResponse> {
+  const qs = new URLSearchParams();
+  if (params?.competitor) qs.set('competitor', params.competitor);
+  if (params?.category)   qs.set('category',   params.category);
+  if (params?.month)      qs.set('month',       params.month);
+  if (params?.q)          qs.set('q',           params.q);
+  if (params?.page)       qs.set('page',        String(params.page));
+  if (params?.page_size)  qs.set('page_size',   String(params.page_size));
+  const query = qs.toString() ? `?${qs}` : '';
+  return request(`/api/competitors/events${query}`);
+}
+
+export async function fetchCompetitorCategories(): Promise<{ categories: string[] }> {
+  return request('/api/competitors/categories');
 }

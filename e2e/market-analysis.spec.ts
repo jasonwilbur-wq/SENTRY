@@ -83,9 +83,9 @@ test.describe('Market Analysis — Q1 2026 Forecast', () => {
     await openMarketAnalysis(page);
     // Executive Intelligence section should be visible by default
     const hasExecContent = await page.locator('body').evaluate(
-      el => el.textContent?.includes('Executive Intelligence') ||
+      el => (el.textContent?.includes('Executive Intelligence') ||
              el.textContent?.includes('Telemetry') ||
-             el.textContent?.includes('Category Matrix') ?? false,
+             el.textContent?.includes('Category Matrix')) ?? false,
     );
     expect(hasExecContent).toBe(true);
   });

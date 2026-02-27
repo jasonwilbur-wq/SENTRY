@@ -214,8 +214,59 @@ def get_vendor(vendor_id: str):
         ).fetchall()
     }
     conn.close()
-    vendor = _group_products([dict(row)], var_ids)
-    return vendor[0]
+    # --- MODIFIED: Ensure we're fetching from a fresh dict to avoid row-object issues
+    row_dict = dict(row)
+    
+    # Fetch latest VAR report scores to enrich the vendor details
+    var_cursor = conn.execute("""
+        SELECT 
+            overall_score, compliance_score, risk_score, maturity_score,
+            integration_score, roi_score, viability_score, 
+            differentiation_score, cloud_dep_score
+        FROM var_reports 
+        WHERE vendor_id = ? 
+        ORDER BY report_date DESC LIMIT 1
+    """, (vendor_id,))
+    
+    var_row = var_cursor.fetchone()
+    var_scores = None
+    
+    if var_row:
+        var_scores = {
+            "Overall": var_row[0],
+            "Compliance": var_row[1],
+            "Risk": var_row[2],
+            "Maturity": var_row[3],
+            "Integration": var_row[4],
+            "ROI": var_row[5],
+            "Viability": var_row[6],
+            "Differentiation": var_row[7],
+            "Cloud Dep": var_row[8],
+        }
+    
+    # Use existing helper to form the base object
+    # Note: _group_products expects a list of dicts
+    # Need to instantiate manually because _group_products only handles base fields
+    # and doesn't know about the new extended attributes.
+    
+    # 1. Use existing helper to get the base structure (products list, etc.)
+    base_vendor = _group_products([row_dict], var_ids)[0]
+    
+    # 2. Convert to dict and enrich
+    enriched_data = base_vendor.dict()
+    enriched_data.update({
+        "var_scores": var_scores,
+        "description": str(row_dict.get("description") or ""),
+        "founded_year": str(row_dict.get("founded_year") or ""),
+        "hq_location": str(row_dict.get("hq_location") or ""),
+        "business_owner": str(row_dict.get("business_owner") or ""),
+        "sourcing_manager": str(row_dict.get("sourcing_manager") or ""),
+        "deployment_status": str(row_dict.get("deployment_status") or "Prospect"),
+        "hosting_type": str(row_dict.get("hosting_type") or ""),
+        "data_classification": str(row_dict.get("data_classification") or "Internal"),
+    })
+    
+    return VendorOut(**enriched_data)
 
 
 @app.get("/api/vendors/{vendor_id}/highlights", response_model=HighlightsResponse)
@@ -504,3 +555,171 @@ def submit_lab_visit(data: dict):
     """Accept a lab visit request."""
     ref = f"SENTRY-LAB-{uuid.uuid4().hex[:8].upper()}"
     return FormResponse(success=True, ref_id=ref, message="Lab visit requested.")
+
+
+# ── Competitor Intelligence API ─────────────────────────────────────────────
+# NOTE: all /api/competitors/* routes must be registered before the generic
+#       /{vendor_id} route if that ever becomes a concern.
+
+MONTHS_ORDERED = [
+    "Sep 2025", "Oct 2025", "Nov 2025",
+    "Dec 2025", "Jan 2026", "Feb 2026",
+]
+
+
+@app.get("/api/competitors/stats")
+def competitor_stats():
+    """KPI totals across all competitor events."""
+    conn = get_connection()
+    row = conn.execute("""
+        SELECT
+          COUNT(*)  AS total,
+          SUM(CASE WHEN category='Cyber'     THEN 1 ELSE 0 END) AS cyber,
+          SUM(CASE WHEN category='ORC/Theft' THEN 1 ELSE 0 END) AS orc,
+          SUM(CASE WHEN category='Recall'    THEN 1 ELSE 0 END) AS recall,
+          SUM(CASE WHEN category='Legal'     THEN 1 ELSE 0 END) AS legal,
+          SUM(CASE WHEN category='Strategic' THEN 1 ELSE 0 END) AS strategic
+        FROM competitor_events
+    """).fetchone()
+    comp_count = conn.execute(
+        "SELECT COUNT(*) FROM competitor_entities WHERE event_count >= 3"
+    ).fetchone()[0]
+    conn.close()
+    d = dict(row)
+    d["competitor_count"] = comp_count
+    return d
+
+
+@app.get("/api/competitors/entities")
+def competitor_entities(
+    limit: int = Query(20, ge=1, le=135),
+    min_events: int = Query(3, ge=0),
+):
+    """Return ranked competitor entities for card grid + orbital scene."""
+    conn = get_connection()
+    rows = conn.execute("""
+        SELECT name, event_count, cyber_count, orc_count, recall_count,
+               legal_count, strategic_count, threat_level, top_category,
+               categories_json, monthly_json
+        FROM competitor_entities
+        WHERE event_count >= ?
+        ORDER BY event_count DESC
+        LIMIT ?
+    """, (min_events, limit)).fetchall()
+    conn.close()
+    return {"entities": [dict(r) for r in rows]}
+
+
+@app.get("/api/competitors/monthly")
+def competitor_monthly(top: int = Query(5, ge=1, le=10)):
+    """Monthly event counts for the top-N competitors."""
+    conn = get_connection()
+    top_names = [
+        r[0] for r in conn.execute(
+            "SELECT name FROM competitor_entities "
+            "WHERE event_count >= 3 ORDER BY event_count DESC LIMIT ?",
+            (top,)
+        ).fetchall()
+    ]
+    result = {}
+    for name in top_names:
+        monthly = []
+        for month in MONTHS_ORDERED:
+            cnt = conn.execute(
+                "SELECT COUNT(*) FROM competitor_events "
+                "WHERE competitor=? AND source_month LIKE ?",
+                (name, f"%{month}%")
+            ).fetchone()[0]
+            monthly.append(cnt)
+        result[name] = monthly
+    conn.close()
+    return {"months": MONTHS_ORDERED, "series": result}
+
+
+@app.get("/api/competitors/heatmap")
+def competitor_heatmap(top: int = Query(10, ge=1, le=20)):
+    """Competitor × category event-count matrix."""
+    HEAT_CATS = [
+        "Cyber", "ORC/Theft", "Recall", "Legal", "Strategic",
+        "Operational", "Compliance", "Fraud", "Technology", "Other",
+    ]
+    conn = get_connection()
+    top_names = [
+        r[0] for r in conn.execute(
+            "SELECT name FROM competitor_entities "
+            "WHERE event_count >= 3 ORDER BY event_count DESC LIMIT ?",
+            (top,)
+        ).fetchall()
+    ]
+    matrix = []
+    for name in top_names:
+        row_counts = []
+        for cat in HEAT_CATS:
+            cnt = conn.execute(
+                "SELECT COUNT(*) FROM competitor_events "
+                "WHERE competitor=? AND category=?",
+                (name, cat)
+            ).fetchone()[0]
+            row_counts.append(cnt)
+        matrix.append(row_counts)
+    conn.close()
+    return {"competitors": top_names, "categories": HEAT_CATS, "matrix": matrix}
+
+
+@app.get("/api/competitors/events")
+def competitor_events(
+    competitor: str | None = Query(None),
+    category:   str | None = Query(None),
+    month:      str | None = Query(None),
+    q:          str | None = Query(None),
+    page:       int = Query(1,  ge=1),
+    page_size:  int = Query(25, ge=1, le=100),
+):
+    """Paginated, filterable competitor events feed."""
+    conn = get_connection()
+    clauses, params = [], []
+    if competitor:
+        clauses.append("competitor = ?")
+        params.append(competitor)
+    if category:
+        clauses.append("category = ?")
+        params.append(category)
+    if month:
+        clauses.append("source_month LIKE ?")
+        params.append(f"%{month}%")
+    if q:
+        clauses.append("(event_title LIKE ? OR detailed_description LIKE ?)")
+        params.extend([f"%{q}%", f"%{q}%"])
+    where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+    total = conn.execute(
+        f"SELECT COUNT(*) FROM competitor_events {where}", params
+    ).fetchone()[0]
+    offset = (page - 1) * page_size
+    rows = conn.execute(
+        f"SELECT id, event_date, competitor, event_title, event_type, "
+        f"category, location, security_implication, detailed_description, "
+        f"analyst_notes, source_link, source_month "
+        f"FROM competitor_events {where} "
+        f"ORDER BY event_date DESC LIMIT ? OFFSET ?",
+        params + [page_size, offset]
+    ).fetchall()
+    conn.close()
+    return {
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": max(1, math.ceil(total / page_size)),
+        "events": [dict(r) for r in rows],
+    }
+
+
+@app.get("/api/competitors/categories")
+def competitor_categories():
+    """Distinct categories used across all events."""
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT DISTINCT category FROM competitor_events "
+        "WHERE category IS NOT NULL ORDER BY category"
+    ).fetchall()
+    conn.close()
+    return {"categories": [r[0] for r in rows]}

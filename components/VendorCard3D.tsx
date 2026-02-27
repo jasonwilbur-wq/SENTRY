@@ -122,7 +122,7 @@ export const VendorCard3D: React.FC<VendorCard3DProps> = ({ vendor, onClick, dec
       glowColor={risk.glow}
       intensity={7}
       className="group relative flex flex-col rounded-2xl overflow-hidden cursor-pointer
-                 border border-slate-700/60 bg-slate-900/80"
+                 border border-white/5 bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-md"
       style={{
         backdropFilter: 'blur(14px)',
         borderTopColor: risk.glow,
@@ -139,18 +139,32 @@ export const VendorCard3D: React.FC<VendorCard3DProps> = ({ vendor, onClick, dec
         onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onClick(vendor); }}
       />
 
+      {/* ── Top glow stripe (inset shadow = no layout impact) ── */}
+      <div
+        className="absolute top-0 inset-x-0 h-px"
+        style={{ background: `linear-gradient(90deg, transparent, ${risk.glow}cc, transparent)` }}
+        aria-hidden="true"
+      />
+
       {/* ── Header ───────────────────────────────────────────────── */}
       <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-3">
-        {/* Category dot + name */}
-        <div className="flex items-start gap-2 min-w-0">
+        {/* Brand initial badge + name */}
+        <div className="flex items-start gap-2.5 min-w-0">
+          {/* Monogram badge */}
           <div
-            className="w-2.5 h-2.5 rounded-full mt-1.5 shrink-0"
-            style={{ backgroundColor: color, boxShadow: `0 0 8px ${color}88` }}
-          />
+            className="w-9 h-9 rounded-lg shrink-0 flex items-center justify-center text-xs font-black text-white"
+            style={{
+              background: `linear-gradient(135deg, ${color}33, ${color}18)`,
+              border: `1px solid ${color}44`,
+              boxShadow: `0 0 12px ${color}22`,
+            }}
+          >
+            {vendor.company_name.substring(0, 2).toUpperCase()}
+          </div>
           <div className="min-w-0">
             <h3
               className="font-bold text-white text-sm leading-snug line-clamp-2
-                         group-hover:text-yellow-300 transition-colors duration-200"
+                         group-hover:text-wmt-yellow transition-colors duration-200"
               title={vendor.company_name}
             >
               {vendor.company_name}
@@ -197,39 +211,37 @@ export const VendorCard3D: React.FC<VendorCard3DProps> = ({ vendor, onClick, dec
 
       {/* ── Top product ──────────────────────────────────────────── */}
       <div className="px-4 mb-3">
-        <p className="text-[9px] uppercase tracking-widest text-slate-600 mb-0.5">Top Product</p>
+        <p className="text-[9px] uppercase tracking-widest mb-0.5" style={{ color: '#334155' }}>Top Product</p>
         <p className="text-xs text-slate-300 line-clamp-2">{vendor.technology_product}</p>
       </div>
 
       {/* ── Score progress bar ───────────────────────────────────── */}
-      <div className="px-4 mb-4">
-        <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
+      <div className="px-4 mb-3">
+        <div className="h-[3px] w-full bg-slate-800 rounded-full overflow-hidden">
           <div
             className="h-full rounded-full transition-all duration-1000 ease-out"
             style={{
               width: `${(vendor.overall_rating / 5) * 100}%`,
-              background: `linear-gradient(90deg, ${color}88, ${color})`,
-              boxShadow: `0 0 8px ${color}55`,
+              background: `linear-gradient(90deg, ${color}66, ${color})`,
+              boxShadow: `0 0 6px ${color}44`,
             }}
           />
         </div>
         <div className="flex justify-between mt-1">
-          <span className="text-[9px] text-slate-600">0</span>
-          <span className="text-[9px] text-slate-500">Last: {vendor.last_assessed}</span>
-          <span className="text-[9px] text-slate-600">5.0</span>
+          <span className="text-[9px]" style={{ color: '#1e293b' }}>0</span>
+          <span className="text-[9px]" style={{ color: '#475569' }}>assessed {vendor.last_assessed}</span>
+          <span className="text-[9px]" style={{ color: '#1e293b' }}>5.0</span>
         </div>
       </div>
 
       {/* ── Action buttons — z-20 so they're clickable above the overlay ── */}
-      <div className="px-3 pb-3 flex gap-2 relative z-20">
+      <div className="px-3 pb-3 pt-1 flex gap-1.5 relative z-20">
         {vendor.has_var && vendor.latest_var_id && (
           <a
             href={getDownloadUrl(vendor.latest_var_id)}
             download
             onClick={e => e.stopPropagation()}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold
-                       bg-green-800/60 text-green-300 border border-green-700
-                       hover:bg-green-700 transition-colors"
+            className="btn-ghost"
             aria-label={`Download VAR for ${vendor.company_name}`}
           >
             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -245,9 +257,7 @@ export const VendorCard3D: React.FC<VendorCard3DProps> = ({ vendor, onClick, dec
             target="_blank"
             rel="noopener noreferrer"
             onClick={e => e.stopPropagation()}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px] font-semibold
-                       bg-slate-700/80 text-slate-300 border border-slate-600
-                       hover:bg-slate-600 transition-colors"
+            className="btn-ghost"
           >
             <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -259,8 +269,13 @@ export const VendorCard3D: React.FC<VendorCard3DProps> = ({ vendor, onClick, dec
         <button
           onClick={e => { e.stopPropagation(); onClick(vendor); }}
           className="ml-auto flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[10px]
-                     font-semibold bg-blue-800/60 text-blue-300 border border-blue-700
-                     hover:bg-blue-600 hover:text-white transition-colors"
+                     font-semibold transition-all duration-150
+                     hover:text-white"
+          style={{
+            background: `rgba(0,83,226,0.14)`,
+            border: `1px solid rgba(0,83,226,0.3)`,
+            color: '#4d9fff',
+          }}
         >
           <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
