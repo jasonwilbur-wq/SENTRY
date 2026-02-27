@@ -11,7 +11,12 @@
     "deploy": "npm run build && firebase deploy --only hosting",
     "deploy:preview": "npm run build && firebase hosting:channel:deploy preview",
     "backend:start": "cd backend && uvicorn main:app --port 8082 --reload",
-    "backend:docker": "docker build -t sentry-api ./backend && docker run -p 8082:8082 sentry-api"
+    "backend:docker": "docker build -t sentry-api ./backend && docker run -p 8082:8082 sentry-api",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:smoke": "playwright test e2e/smoke.spec.ts",
+    "test:e2e:report": "playwright show-report e2e/reports"
   },
   "dependencies": {
     "@types/three": "^0.183.1",
@@ -22,6 +27,7 @@
     "three": "^0.183.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/vite": "^4.2.1",
     "@types/node": "^22.14.0",
     "@types/react": "^19.0.0",

@@ -63,6 +63,33 @@
   --animate-slideIn: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* ── 3D depth utilities ──────────────────────────────────────── */
+.preserve-3d { transform-style: preserve-3d; }
+
+/* Animated gradient border around chart sections */
+@keyframes borderGlow {
+  0%, 100% { border-color: rgba(0,83,226,0.30); box-shadow: 0 0 0 0 rgba(0,83,226,0); }
+  50%       { border-color: rgba(0,83,226,0.65); box-shadow: 0 0 24px 2px rgba(0,83,226,0.18); }
+}
+.border-glow-blue { animation: borderGlow 4s ease-in-out infinite; }
+
+@keyframes borderGlowYellow {
+  0%, 100% { border-color: rgba(255,194,32,0.25); }
+  50%       { border-color: rgba(255,194,32,0.60); box-shadow: 0 0 24px 2px rgba(255,194,32,0.15); }
+}
+.border-glow-yellow { animation: borderGlowYellow 4s ease-in-out infinite; }
+
+/* Particle float used on hero stats */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-6px); }
+}
+.float-anim { animation: float 3.5s ease-in-out infinite; }
+
+/* line-clamp shim (Tailwind v4 includes it but let's be safe) */
+.line-clamp-2 { overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.line-clamp-3 { overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+
 /* ── Scrollbar — Walmart navy ─────────────────────────────────── */
 ::-webkit-scrollbar       { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: #000B28; }

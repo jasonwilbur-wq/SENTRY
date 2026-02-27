@@ -65,9 +65,9 @@ export function MarketGlobe({ className = '' }: { className?: string }) {
     const el = mountRef.current;
     if (!el) return;
 
-    const W = el.clientWidth;
-    const H = el.clientHeight;
-    const R = Math.min(W, H) * 0.34;
+    const W = el.clientWidth  || 320;
+    const H = el.clientHeight || 380;
+    const R = Math.min(W, H) * 0.36;
 
     // ── Renderer ───────────────────────────────────────────────────────────
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -89,35 +89,37 @@ export function MarketGlobe({ className = '' }: { className?: string }) {
     pt2.position.set(-R, -R, R);
     scene.add(pt2);
 
-    // ── Globe sphere ────────────────────────────────────────────────────────
-    const sphereGeo = new THREE.SphereGeometry(R, 48, 48);
+    // ── Globe sphere — multi-layer for depth ────────────────────────────────
+    const sphereGeo = new THREE.SphereGeometry(R, 64, 64);
     const sphereMat = new THREE.MeshPhongMaterial({
       color: 0x001e60,
-      emissive: 0x002880,
-      emissiveIntensity: 0.25,
+      emissive: 0x003090,
+      emissiveIntensity: 0.30,
+      specular: 0x0053e2,
+      shininess: 40,
       transparent: true,
-      opacity: 0.85,
-      wireframe: false,
+      opacity: 0.90,
     });
     scene.add(new THREE.Mesh(sphereGeo, sphereMat));
 
-    // ── Wireframe overlay ───────────────────────────────────────────────────
-    const wireGeo = new THREE.SphereGeometry(R * 1.002, 24, 24);
+    // ── Wireframe lat/lon grid ──────────────────────────────────────────────
+    const wireGeo = new THREE.SphereGeometry(R * 1.003, 28, 28);
     const wireMat = new THREE.MeshBasicMaterial({
-      color: 0x0053e2,
-      wireframe: true,
-      transparent: true,
-      opacity: 0.10,
+      color: 0x1a5ce2, wireframe: true, transparent: true, opacity: 0.12,
     });
     scene.add(new THREE.Mesh(wireGeo, wireMat));
 
-    // ── Outer glow shell ────────────────────────────────────────────────────
-    const glowGeo = new THREE.SphereGeometry(R * 1.08, 32, 32);
+    // ── Outer atmosphere glow (large, BackSide) ─────────────────────────────
+    const atmosGeo = new THREE.SphereGeometry(R * 1.12, 32, 32);
+    const atmosMat = new THREE.MeshBasicMaterial({
+      color: 0x0053e2, transparent: true, opacity: 0.06, side: THREE.BackSide,
+    });
+    scene.add(new THREE.Mesh(atmosGeo, atmosMat));
+
+    // ── Inner glow shell ────────────────────────────────────────────────────
+    const glowGeo = new THREE.SphereGeometry(R * 1.06, 32, 32);
     const glowMat = new THREE.MeshBasicMaterial({
-      color: 0x0053e2,
-      transparent: true,
-      opacity: 0.045,
-      side: THREE.BackSide,
+      color: 0x0a8aff, transparent: true, opacity: 0.035, side: THREE.BackSide,
     });
     scene.add(new THREE.Mesh(glowGeo, glowMat));
 
@@ -169,23 +171,41 @@ export function MarketGlobe({ className = '' }: { className?: string }) {
     });
     scene.add(new THREE.Points(starGeo, starMat));
 
-    // ── Mouse drag ─────────────────────────────────────────────────────────
+    // ── Equatorial ring ─────────────────────────────────────────────────────
+    const ringGeoEq = new THREE.TorusGeometry(R * 1.15, R * 0.008, 8, 80);
+    const ringMatEq = new THREE.MeshBasicMaterial({
+      color: 0xffc220, transparent: true, opacity: 0.25,
+    });
+    const equatorRing = new THREE.Mesh(ringGeoEq, ringMatEq);
+    equatorRing.rotation.x = Math.PI / 2;
+    scene.add(equatorRing);
+
+    // ── Mouse/touch drag ────────────────────────────────────────────────────
     let isDragging = false;
     let prevMouse = { x: 0, y: 0 };
     let velX = 0.0015;
     let velY = 0.0003;
 
-    const onDown = (e: MouseEvent) => { isDragging = true; prevMouse = { x: e.clientX, y: e.clientY }; };
+    const getXY = (e: MouseEvent | TouchEvent) =>
+      'touches' in e
+        ? { x: e.touches[0].clientX, y: e.touches[0].clientY }
+        : { x: (e as MouseEvent).clientX, y: (e as MouseEvent).clientY };
+
+    const onDown = (e: MouseEvent | TouchEvent) => { isDragging = true; prevMouse = getXY(e); };
     const onUp   = () => { isDragging = false; };
-    const onMove = (e: MouseEvent) => {
+    const onMove = (e: MouseEvent | TouchEvent) => {
       if (!isDragging) return;
-      velX = (e.clientX - prevMouse.x) * 0.003;
-      velY = (e.clientY - prevMouse.y) * 0.002;
-      prevMouse = { x: e.clientX, y: e.clientY };
+      const { x, y } = getXY(e);
+      velX = (x - prevMouse.x) * 0.003;
+      velY = (y - prevMouse.y) * 0.002;
+      prevMouse = { x, y };
     };
-    renderer.domElement.addEventListener('mousedown', onDown);
+    renderer.domElement.addEventListener('mousedown', onDown as any);
+    renderer.domElement.addEventListener('touchstart', onDown as any, { passive: true });
     window.addEventListener('mouseup', onUp);
-    window.addEventListener('mousemove', onMove);
+    window.addEventListener('touchend', onUp);
+    window.addEventListener('mousemove', onMove as any);
+    window.addEventListener('touchmove',  onMove as any, { passive: true });
 
     // ── Animation loop ──────────────────────────────────────────────────────
     let rafId: number;
@@ -216,7 +236,9 @@ export function MarketGlobe({ className = '' }: { className?: string }) {
     return () => {
       cancelAnimationFrame(rafId);
       window.removeEventListener('mouseup', onUp);
-      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('touchend', onUp);
+      window.removeEventListener('mousemove', onMove as any);
+      window.removeEventListener('touchmove',  onMove as any);
       window.removeEventListener('resize', onResize);
       renderer.dispose();
       if (el.contains(renderer.domElement)) el.removeChild(renderer.domElement);
