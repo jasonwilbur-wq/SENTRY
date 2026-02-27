@@ -34,6 +34,8 @@ export default defineConfig({
           'vendor-react':    ['react', 'react-dom'],
           // Charting libs (heavy — recharts pulls in d3)
           'vendor-charts':   ['recharts', 'd3'],
+          // Three.js (3D globe)
+          'vendor-three':    ['three'],
         },
       },
     },

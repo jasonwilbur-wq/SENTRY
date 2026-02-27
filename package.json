@@ -4,29 +4,31 @@
   "version": "2.1.0",
   "type": "module",
   "scripts": {
-    "dev":              "vite",
-    "build":            "vite build",
-    "preview":          "vite preview",
-    "typecheck":        "tsc --noEmit",
-    "deploy":           "npm run build && firebase deploy --only hosting",
-    "deploy:preview":   "npm run build && firebase hosting:channel:deploy preview",
-    "backend:start":    "cd backend && uvicorn main:app --port 8082 --reload",
-    "backend:docker":   "docker build -t sentry-api ./backend && docker run -p 8082:8082 sentry-api"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "deploy": "npm run build && firebase deploy --only hosting",
+    "deploy:preview": "npm run build && firebase hosting:channel:deploy preview",
+    "backend:start": "cd backend && uvicorn main:app --port 8082 --reload",
+    "backend:docker": "docker build -t sentry-api ./backend && docker run -p 8082:8082 sentry-api"
   },
   "dependencies": {
-    "d3":         "^7.9.0",
-    "react":      "^19.2.3",
-    "react-dom":  "^19.2.3",
-    "recharts":   "^3.6.0"
+    "@types/three": "^0.183.1",
+    "d3": "^7.9.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "recharts": "^3.6.0",
+    "three": "^0.183.1"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.2.1",
-    "@types/node":        "^22.14.0",
-    "@types/react":       "^19.0.0",
-    "@types/react-dom":   "^19.0.0",
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^5.0.0",
-    "tailwindcss":  "^4.2.1",
-    "typescript":   "~5.8.2",
-    "vite":         "^6.2.0"
+    "tailwindcss": "^4.2.1",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
   }
 }
