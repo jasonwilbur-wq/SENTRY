@@ -73,10 +73,10 @@ const App: React.FC = () => {
             <header
               className="shrink-0 px-8 py-4 flex items-center justify-between gap-4 border-b"
               style={{
-                background: 'rgba(0,11,40,0.72)',
+                background: 'var(--s-header)',
                 backdropFilter: 'blur(20px) saturate(160%)',
                 WebkitBackdropFilter: 'blur(20px) saturate(160%)',
-                borderColor: 'rgba(255,255,255,0.07)',
+                borderColor: 'var(--s-border)',
               }}
             >
               {/* Left: accent + title */}

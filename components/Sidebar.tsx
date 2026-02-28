@@ -104,10 +104,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => 
     <aside
       className="w-64 shrink-0 flex flex-col overflow-y-auto relative scan-lines"
       style={{
-        background: 'rgba(0,6,22,0.88)',
+        background: 'var(--s-sidebar)',
         backdropFilter: 'blur(24px) saturate(160%)',
         WebkitBackdropFilter: 'blur(24px) saturate(160%)',
-        borderRight: '1px solid rgba(255,255,255,0.06)',
+        borderRight: '1px solid var(--s-border)',
       }}
       aria-label="Main navigation"
     >
@@ -119,7 +119,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => 
       />
 
       {/* Brand block */}
-      <div className="px-5 pt-5 pb-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      <div className="px-5 pt-5 pb-4" style={{ borderBottom: '1px solid var(--s-border-light)' }}>
         {/* Walmart row */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -155,7 +155,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => 
         {/* Product name */}
         <h1
           className="text-2xl font-black tracking-[0.18em] leading-none"
-          style={{ color: '#ffffff', letterSpacing: '0.18em' }}
+          style={{ color: 'var(--s-text)', letterSpacing: '0.18em' }}
         >
           SENTRY
         </h1>
@@ -165,7 +165,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => 
           <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: '#4DBDF5' }}>
             Global Security, Aviation &amp; Investigations
           </p>
-          <p className="text-[9px] uppercase tracking-wider" style={{ color: '#475569' }}>
+          <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--s-text-dim)' }}>
             Enterprise Security
           </p>
         </div>
@@ -207,7 +207,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => 
               {!active && (
                 <div
                   className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200 rounded-lg"
-                  style={{ background: 'rgba(255,255,255,0.04)' }}
+                  style={{ background: 'var(--s-hover-over)' }}
                   aria-hidden="true"
                 />
               )}
@@ -224,9 +224,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => 
       </nav>
 
       {/* Footer */}
-      <div className="px-5 py-4" style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+      <div className="px-5 py-4" style={{ borderTop: '1px solid var(--s-border-light)' }}>
         <div className="flex items-center justify-between">
-          <p className="text-[9px] uppercase tracking-widest" style={{ color: '#334155' }}>
+          <p className="text-[9px] uppercase tracking-widest" style={{ color: 'var(--s-text-dim)' }}>
             SENTRY v2.0
           </p>
           {/* Backend status dot */}

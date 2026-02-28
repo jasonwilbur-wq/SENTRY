@@ -145,8 +145,8 @@ export const ChatAssistant: React.FC = () => {
                 color: '#ffffff',
                 borderBottomRightRadius: '4px',
               } : {
-                background: 'rgba(15, 23, 42, 0.85)',
-                color: '#cbd5e1',
+                background: 'var(--s-ai-bubble)',
+                color: 'var(--s-text-muted)',
                 border: '1px solid rgba(0,83,226,0.18)',
                 borderLeft: '2px solid rgba(0,83,226,0.5)',
                 borderBottomLeftRadius: '4px',
@@ -202,9 +202,9 @@ export const ChatAssistant: React.FC = () => {
           disabled={isLoading}
           className="flex-grow text-sm rounded-lg px-4 py-2.5 disabled:opacity-50 font-mono"
           style={{
-            background: 'rgba(0,83,226,0.07)',
+            background: 'var(--s-input-bg)',
             border: '1px solid rgba(0,83,226,0.2)',
-            color: '#cbd5e1',
+            color: 'var(--s-text)',
             outline: 'none',
             transition: 'border-color 0.15s, box-shadow 0.15s',
           }}

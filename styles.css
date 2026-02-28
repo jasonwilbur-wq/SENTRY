@@ -5,34 +5,71 @@
    Walmart Global Security · Emerging Technology
    ═══════════════════════════════════════════════════════════════════════ */
 
-/* ── 1. Raw CSS properties (not Tailwind) ────────────────────── */
+/* ── 1. Design token layer (raw CSS — not Tailwind) ─────────── */
+/* ALL surface/text/border values live here. Components reference
+   these vars via inline styles or Tailwind via @theme below.
+   Theme switching = just flipping these vars. Nothing else. */
 :root {
-  /* Dark mode (default) */
-  --sentry-bg:       #000B28;
-  --sentry-surface:  rgba(15, 23, 42, 0.65);
-  --sentry-border:   rgba(255, 255, 255, 0.08);
-  --sentry-text:     #f1f5f9;
-  --sentry-subtext:  #94a3b8;
-  --sentry-card:     rgba(15, 23, 42, 0.7);
+  /* ── Surfaces ── */
+  --s-bg:           #000B28;
+  --s-sidebar:      rgba(0,   6,  22, 0.93);
+  --s-header:       rgba(0,  11,  40, 0.84);
+  --s-card:         rgba(12, 18,  36, 0.88);
+  --s-panel:        rgba(8,  14,  30, 0.86);
+  --s-modal-back:   rgba(0,   6,  20, 0.80);
+  --s-modal-card:   rgba(8,  14,  32, 0.97);
+  --s-modal-inner:  rgba(4,   8,  20, 0.35);
+  --s-modal-tabs:   rgba(0,   0,   0, 0.20);
+  --s-chat:         rgba(4,   8,  22, 0.95);
+  --s-chat-footer:  rgba(0,   0,   0, 0.28);
+  --s-ai-bubble:    rgba(15, 23,  42, 0.85);
+  --s-input-bg:     rgba(15, 23,  42, 0.80);
+  --s-hover-over:   rgba(255,255,255, 0.04);
 
-  /* Brand constants (never change with theme) */
-  --wmt-blue:    #0053E2;
-  --wmt-yellow:  #FFC220;
-  --wmt-navy:    #001E60;
+  /* ── Borders ── */
+  --s-border:       rgba(255,255,255, 0.07);
+  --s-border-light: rgba(255,255,255, 0.04);
+  --s-border-mid:   rgba(255,255,255, 0.11);
 
-  /* Semantic */
-  --color-success: #22c55e;
-  --color-warning: #FFC220;
-  --color-danger:  #ef4444;
+  /* ── Text ── */
+  --s-text:         #f1f5f9;
+  --s-text-muted:   #94a3b8;
+  --s-text-dim:     #64748b;
+  --s-text-faint:   #475569;
+
+  /* Brand constants — never change */
+  --wmt-blue:   #0053E2;
+  --wmt-yellow: #FFC220;
+  --wmt-navy:   #001E60;
 }
 
 :root[data-theme="light"] {
-  --sentry-bg:      #f0f4f8;
-  --sentry-surface: rgba(255, 255, 255, 0.92);
-  --sentry-border:  rgba(15, 23, 42, 0.12);
-  --sentry-text:    #0f172a;
-  --sentry-subtext: #475569;
-  --sentry-card:    rgba(255, 255, 255, 0.85);
+  /* ── Surfaces ── */
+  --s-bg:           #eef2f7;
+  --s-sidebar:      rgba(255,255,255, 0.97);
+  --s-header:       rgba(238,242,247, 0.94);
+  --s-card:         rgba(255,255,255, 0.96);
+  --s-panel:        rgba(255,255,255, 0.97);
+  --s-modal-back:   rgba(15,  23,  42, 0.60);
+  --s-modal-card:   rgba(255,255,255, 0.99);
+  --s-modal-inner:  rgba(248,250,252, 0.60);
+  --s-modal-tabs:   rgba(241,245,249, 0.85);
+  --s-chat:         rgba(255,255,255, 0.98);
+  --s-chat-footer:  rgba(241,245,249, 0.92);
+  --s-ai-bubble:    rgba(241,245,249, 0.96);
+  --s-input-bg:     rgba(255,255,255, 0.90);
+  --s-hover-over:   rgba(0,  0,   0,  0.04);
+
+  /* ── Borders ── */
+  --s-border:       rgba(15, 23,  42, 0.10);
+  --s-border-light: rgba(15, 23,  42, 0.06);
+  --s-border-mid:   rgba(15, 23,  42, 0.15);
+
+  /* ── Text ── */
+  --s-text:         #0f172a;
+  --s-text-muted:   #334155;
+  --s-text-dim:     #475569;
+  --s-text-faint:   #64748b;
 }
 
 /* ── 2. Tailwind @theme tokens ───────────────────────────── */
@@ -46,15 +83,18 @@
   --color-wmt-void:     #000B28;
   --color-wmt-lift:     #002880;
 
-  /* Sentry semantic — reference the raw CSS vars */
-  --color-sentry-dark:    #000B28;
-  --color-sentry-card:    rgba(14, 22, 41, 0.9);
-  --color-sentry-surface: rgba(15, 23, 42, 0.65);
+  /* Sentry semantic — NOW referencing CSS vars so they theme-swap */
+  --color-sentry-bg:      var(--s-bg);
+  --color-sentry-dark:    var(--s-bg);
+  --color-sentry-card:    var(--s-card);
+  --color-sentry-surface: var(--s-panel);
   --color-sentry-accent:  #FFC220;
   --color-sentry-blue:    #0053E2;
   --color-sentry-success: #22c55e;
   --color-sentry-warning: #FFC220;
   --color-sentry-danger:  #ef4444;
+  --color-sentry-text:    var(--s-text);
+  --color-sentry-muted:   var(--s-text-muted);
 
   /* Slate scale — static, NOT theme-swapped via CSS vars */
   --color-slate-50:  #f8fafc;
@@ -166,8 +206,8 @@
 
 body {
   font-family: 'Inter', system-ui, 'Segoe UI', sans-serif;
-  background-color: var(--sentry-bg);
-  color: var(--sentry-text);
+  background-color: var(--s-bg);
+  color: var(--s-text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   transition: background-color 0.3s ease, color 0.3s ease;
@@ -194,17 +234,17 @@ body {
 
 /* Glass surface — opt-in, not imposed globally */
 .glass {
-  background: var(--sentry-surface);
+  background: var(--s-panel);
   backdrop-filter: blur(16px) saturate(160%);
   -webkit-backdrop-filter: blur(16px) saturate(160%);
-  border: 1px solid var(--sentry-border);
+  border: 1px solid var(--s-border);
 }
 
 .glass-heavy {
-  background: rgba(10, 16, 36, 0.82);
+  background: var(--s-card);
   backdrop-filter: blur(32px) saturate(180%);
   -webkit-backdrop-filter: blur(32px) saturate(180%);
-  border: 1px solid rgba(255,255,255,0.07);
+  border: 1px solid var(--s-border);
 }
 
 /* Neon text utilities */
@@ -252,16 +292,16 @@ body {
   justify-content: center;
   gap: 0.375rem;
   padding: 0.4rem 0.75rem;
-  background: rgba(255,255,255,0.06);
-  color: #94a3b8;
+  background: var(--s-hover-over);
+  color: var(--s-text-muted);
   font-weight: 600;
   font-size: 0.75rem;
   border-radius: 0.5rem;
-  border: 1px solid rgba(255,255,255,0.1);
+  border: 1px solid var(--s-border-mid);
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
-.btn-ghost:hover { background: rgba(255,255,255,0.12); color: #f1f5f9; border-color: rgba(255,255,255,0.2); }
+.btn-ghost:hover { background: var(--s-border); color: var(--s-text); }
 
 /* Loading shimmer */
 .shimmer {
@@ -318,50 +358,74 @@ body {
 .grid-stagger > *:nth-child(9)  { animation-delay: 0.24s; }
 .grid-stagger > *:nth-child(n+10){ animation-delay: 0.26s; }
 
-/* ── 7. Light mode overrides (clean, single block) ───────────── */
-[data-theme="light"] body {
-  background-color: var(--sentry-bg);
-  color: var(--sentry-text);
-}
+/* ── 7. Light mode overrides ────────────────────────────────── */
+/*
+  Strategy: CSS vars in :root swap automatically (--s-* vars).
+  Tailwind utility classes bake in hex at build time, so we need
+  explicit selector overrides for any remaining Tailwind classes.
+  Components should use var(--s-*) inline styles wherever possible.
+*/
 
-/* Text that was white in dark mode should be dark in light mode */
-[data-theme="light"] .text-white   { color: #0f172a !important; }
+/* Body picks up --s-bg automatically. Belts AND suspenders: */
+[data-theme="light"] body { background-color: var(--s-bg); color: var(--s-text); }
+
+/* ── Text inversions ── */
+[data-theme="light"] .text-white     { color: #0f172a !important; }
+[data-theme="light"] .text-slate-100 { color: #1e293b !important; }
+[data-theme="light"] .text-slate-200 { color: #334155 !important; }
 [data-theme="light"] .text-slate-300 { color: #334155 !important; }
 [data-theme="light"] .text-slate-400 { color: #475569 !important; }
 [data-theme="light"] .text-slate-500 { color: #64748b !important; }
 [data-theme="light"] .text-slate-600 { color: #475569 !important; }
 
-/* But preserve white text on colored backgrounds */
-[data-theme="light"] .bg-wmt-blue   .text-white,
-[data-theme="light"] .bg-wmt-blue   .always-white,
+/* Preserve white text on intentionally-coloured surfaces */
+[data-theme="light"] .always-white,
 [data-theme="light"] .btn-primary,
-[data-theme="light"] .always-white { color: #ffffff !important; }
+[data-theme="light"] .bg-wmt-blue .text-white { color: #ffffff !important; }
 
-/* Dark cards become light cards */
-[data-theme="light"] .bg-slate-900  { background-color: #ffffff !important; }
-[data-theme="light"] .bg-slate-800  { background-color: #f1f5f9 !important; }
-[data-theme="light"] .bg-slate-700  { background-color: #e2e8f0 !important; }
-[data-theme="light"] .bg-slate-950  { background-color: #f8fafc !important; }
-[data-theme="light"] .glass         { background: var(--sentry-surface); border-color: var(--sentry-border); }
-[data-theme="light"] .glass-heavy   { background: rgba(255,255,255,0.95); border-color: rgba(0,0,0,0.1); }
+/* ── Background inversions ── */
+[data-theme="light"] .bg-slate-950,
+[data-theme="light"] .bg-sentry-dark { background-color: #eef2f7   !important; }
+[data-theme="light"] .bg-slate-900   { background-color: #ffffff   !important; }
+[data-theme="light"] .bg-slate-800   { background-color: #f1f5f9   !important; }
+[data-theme="light"] .bg-slate-700   { background-color: #e2e8f0   !important; }
+[data-theme="light"] .bg-sentry-card { background-color: #ffffff   !important; }
+[data-theme="light"] .bg-sentry-surface { background-color: rgba(255,255,255,0.95) !important; }
 
-/* Border colors */
-[data-theme="light"] .border-slate-700 { border-color: #e2e8f0 !important; }
-[data-theme="light"] .border-slate-800 { border-color: #f1f5f9 !important; }
-[data-theme="light"] .border-white\/5  { border-color: rgba(0,0,0,0.08) !important; }
-[data-theme="light"] .border-white\/10 { border-color: rgba(0,0,0,0.10) !important; }
+/* ── Border inversions ── */
+[data-theme="light"] .border-slate-700  { border-color: #cbd5e1 !important; }
+[data-theme="light"] .border-slate-800  { border-color: #e2e8f0 !important; }
+[data-theme="light"] .divide-slate-800 > * + * { border-color: #e2e8f0 !important; }
+[data-theme="light"] .border-white\/5   { border-color: rgba(0,0,0,0.08) !important; }
+[data-theme="light"] .border-white\/10  { border-color: rgba(0,0,0,0.12) !important; }
 
-/* Scrollbar in light mode */
-[data-theme="light"] ::-webkit-scrollbar-thumb { background: rgba(0,83,226,0.25); }
+/* ── Vendor card gradient — baked static values need explicit override ── */
+[data-theme="light"] .from-slate-800\/40 { --tw-gradient-from: rgba(241,245,249,0.9)  !important; }
+[data-theme="light"] .from-slate-800\/60 { --tw-gradient-from: rgba(241,245,249,0.95) !important; }
+[data-theme="light"] .to-slate-900\/40  { --tw-gradient-to:   rgba(226,232,240,0.9)  !important; }
+[data-theme="light"] .to-slate-900\/20  { --tw-gradient-to:   rgba(226,232,240,0.6)  !important; }
+[data-theme="light"] .to-slate-950\/30  { --tw-gradient-to:   rgba(226,232,240,0.7)  !important; }
 
-/* Backdrop blur — keep it in light mode but lighten the surface */
-[data-theme="light"] .backdrop-blur-xl,
-[data-theme="light"] .backdrop-blur-md {
-  background-color: rgba(255,255,255,0.88) !important;
+/* ── Skeleton / pulse loading state ── */
+[data-theme="light"] .bg-slate-800\/60 { background-color: rgba(226,232,240,0.6) !important; }
+[data-theme="light"] .border-slate-700\/40 { border-color: rgba(203,213,225,0.4) !important; }
+
+/* ── Backdrop blur panels (sticky header etc.) ── */
+/* bg-sentry-bg/90 handled via @theme var chain automatically. */
+/* But backdrop-blur-md by itself doesn't imply a surface color. */
+
+/* ── Glass surfaces pick up --s-panel / --s-border automatically ── */
+/* (The .glass class already uses var(--s-*) so nothing needed here) */
+
+/* ── Shimmer skeleton ── */
+[data-theme="light"] .shimmer {
+  background: linear-gradient(90deg, rgba(0,0,0,0.03) 25%, rgba(0,0,0,0.08) 50%, rgba(0,0,0,0.03) 75%);
 }
 
-/* Charts */
+/* ── Scrollbar ── */
+[data-theme="light"] ::-webkit-scrollbar-thumb { background: rgba(0,83,226,0.22); }
+
+/* ── Recharts chart grid lines ── */
 [data-theme="light"] .recharts-cartesian-grid-horizontal line,
-[data-theme="light"] .recharts-cartesian-grid-vertical line {
-  stroke: #e2e8f0;
-}
+[data-theme="light"] .recharts-cartesian-grid-vertical   line { stroke: #e2e8f0; }
+[data-theme="light"] .recharts-text { fill: #475569 !important; }

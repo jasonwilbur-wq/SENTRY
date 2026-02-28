@@ -354,7 +354,7 @@ export const CompetitorOrbital3D: React.FC<Props> = ({ entities, onHover }) => {
           display: 'none',
           position: 'absolute',
           pointerEvents: 'none',
-          background: 'rgba(0,11,40,0.95)',
+          background: 'var(--s-card)',
           border: '1px solid rgba(0,83,226,0.5)',
           borderRadius: '10px',
           padding: '10px 14px',

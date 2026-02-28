@@ -48,7 +48,7 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor, on
         onClick={onClose}
         aria-hidden="true"
         style={{
-          background: 'rgba(0,6,20,0.75)',
+          background: 'var(--s-modal-back)',
           backdropFilter: 'blur(24px) saturate(160%)',
           WebkitBackdropFilter: 'blur(24px) saturate(160%)',
         }}
@@ -58,8 +58,8 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor, on
       <div
         className="relative w-full max-w-5xl h-[85vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
         style={{
-          background: 'rgba(8, 14, 32, 0.96)',
-          border: '1px solid rgba(255,255,255,0.08)',
+          background: 'var(--s-modal-card)',
+          border: '1px solid var(--s-border-mid)',
           boxShadow: '0 0 0 1px rgba(0,83,226,0.12), 0 32px 80px rgba(0,0,0,0.7)',
         }}
       >
@@ -68,7 +68,7 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor, on
         <div
           className="shrink-0 px-8 py-6 flex items-start justify-between relative overflow-hidden"
           style={{
-            borderBottom: '1px solid rgba(255,255,255,0.06)',
+            borderBottom: '1px solid var(--s-border-light)',
             background: `linear-gradient(135deg, ${riskColor}10 0%, rgba(0,83,226,0.06) 50%, transparent 100%)`,
           }}
         >
@@ -135,7 +135,7 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor, on
         {/* ── Tabs Navigation ─────────────────────────────────────────────── */}
         <div
           className="shrink-0 px-8 flex gap-8"
-          style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', background: 'rgba(0,0,0,0.2)' }}
+          style={{ borderBottom: '1px solid var(--s-border)', background: 'var(--s-modal-tabs)' }}
         >
           {TABS.map(tab => (
             <button
@@ -165,7 +165,7 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor, on
         </div>
 
         {/* ── Scrollable Content Area ───────────────────────────────────────────── */}
-        <div className="flex-1 overflow-y-auto p-8" style={{ background: 'rgba(4, 8, 20, 0.4)' }}>
+        <div className="flex-1 overflow-y-auto p-8" style={{ background: 'var(--s-modal-inner)' }}>
           
           {/* ── TAB: OVERVIEW ───────────────────────────────────────────────── */}
           {activeTab === 'overview' && (

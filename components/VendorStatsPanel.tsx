@@ -63,7 +63,7 @@ function KpiTile({
     <div
       className="flex flex-col gap-1 p-4 rounded-xl relative overflow-hidden"
       style={{
-        background: `linear-gradient(135deg, ${color}12 0%, rgba(15,23,42,0.55) 100%)`,
+        background: `linear-gradient(135deg, ${color}12 0%, var(--s-card) 100%)`,
         border: `1px solid ${color}20`,
         boxShadow: `inset 0 1px 0 ${color}18`,
       }}
@@ -74,7 +74,7 @@ function KpiTile({
         style={{ backgroundColor: color, opacity: 0.18 }}
         aria-hidden
       />
-      <p className="text-[10px] uppercase tracking-widest font-bold" style={{ color: '#475569' }}>{label}</p>
+      <p className="text-[10px] uppercase tracking-widest font-bold" style={{ color: 'var(--s-text-faint)' }}>{label}</p>
       <p
         className="text-2xl font-black"
         style={{ color, textShadow: `0 0 20px ${color}55` }}

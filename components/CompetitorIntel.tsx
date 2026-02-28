@@ -182,10 +182,10 @@ export const CompetitorIntel: React.FC = () => {
   }, [monthly]);
 
   const tooltipStyle = {
-    backgroundColor: 'rgba(0,11,40,0.95)',
-    borderColor: '#1e3a5f',
+    backgroundColor: 'var(--s-card)',
+    borderColor: 'var(--s-border-mid)',
     borderRadius: '10px',
-    color: '#fff',
+    color: 'var(--s-text)',
     fontSize: '12px',
   };
 
