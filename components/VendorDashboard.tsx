@@ -156,7 +156,7 @@ export const VendorDashboard: React.FC = () => {
                 (e.target as HTMLInputElement).style.boxShadow = '0 0 0 3px rgba(0,83,226,0.15)';
               }}
               onBlur={e => {
-                (e.target as HTMLInputElement).style.borderColor = 'rgba(255,255,255,0.08)';
+                (e.target as HTMLInputElement).style.borderColor = 'var(--s-border-mid)';
                 (e.target as HTMLInputElement).style.boxShadow = 'none';
               }}
               value={search}
@@ -168,7 +168,7 @@ export const VendorDashboard: React.FC = () => {
                 className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
                 style={{ color: '#475569' }}
                 aria-label="Clear search"
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = '#f1f5f9'; }}
+                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--s-text)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#475569'; }}
               >
                 ✕
@@ -188,17 +188,17 @@ export const VendorDashboard: React.FC = () => {
                 className="px-3 py-1 rounded-full text-xs font-semibold transition-all duration-150"
                 style={active ? {
                   background: 'rgba(0,83,226,0.2)',
-                  color: '#ffffff',
+                  color: '#0053e2',
                   border: '1px solid rgba(0,83,226,0.6)',
                   boxShadow: '0 0 12px rgba(0,83,226,0.35)',
                   transform: 'scale(1.04)',
                 } : {
-                  background: 'rgba(255,255,255,0.04)',
-                  color: '#475569',
-                  border: '1px solid rgba(255,255,255,0.07)',
+                  background: 'var(--s-input-bg)',
+                  color: 'var(--s-text-dim)',
+                  border: '1px solid var(--s-border-mid)',
                 }}
-                onMouseEnter={e => { if (!active) { (e.currentTarget as HTMLButtonElement).style.color = '#cbd5e1'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.15)'; } }}
-                onMouseLeave={e => { if (!active) { (e.currentTarget as HTMLButtonElement).style.color = '#475569'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.07)'; } }}
+                onMouseEnter={e => { if (!active) { (e.currentTarget as HTMLButtonElement).style.color = 'var(--s-text)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--s-border)'; } }}
+                onMouseLeave={e => { if (!active) { (e.currentTarget as HTMLButtonElement).style.color = 'var(--s-text-dim)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--s-border-mid)'; } }}
               >
                 {PINNED_CATS[cat] ?? cat}
               </button>
@@ -214,16 +214,18 @@ export const VendorDashboard: React.FC = () => {
               key={p.value}
               onClick={() => setRiskFilter(p.value)}
               className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
-                riskFilter === p.value
-                  ? 'text-white'
-                  : 'bg-slate-800/70 text-slate-400 border-slate-700 hover:text-white'
+                riskFilter === p.value ? 'text-white' : ''
               }`}
               style={riskFilter === p.value ? {
                 backgroundColor: p.color + '33',
                 borderColor: p.color,
                 boxShadow: `0 0 10px ${p.color}55`,
                 color: p.color,
-              } : {}}
+              } : {
+                background: 'var(--s-input-bg)',
+                color: 'var(--s-text-dim)',
+                borderColor: 'var(--s-border)',
+              }}
             >
               {p.label}
             </button>

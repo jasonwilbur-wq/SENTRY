@@ -35,7 +35,7 @@ const BAND_COLORS: Record<string, string> = {
 function BandBadge({ band }: { band: string }) {
   const cls = BAND_COLORS[band] ?? 'bg-slate-700 text-slate-400 border-slate-600';
   return (
-    <span className={`px-2 py-0.5 rounded text-xs font-semibold border ${cls}`}>
+    <span className={`px-2 py-0.5 rounded text-xs font-semibold border whitespace-nowrap ${cls}`}>
       {band || '—'}
     </span>
   );
@@ -376,12 +376,12 @@ export const AdminPanel: React.FC = () => {
           <table className="w-full text-sm" role="table">
             <thead>
               <tr className="border-b border-slate-700 bg-slate-800/50">
-                <th className="text-left px-4 py-3 text-slate-400 font-semibold">Filename</th>
-                <th className="text-left px-4 py-3 text-slate-400 font-semibold">Vendor</th>
-                <th className="text-left px-4 py-3 text-slate-400 font-semibold">Score</th>
-                <th className="text-left px-4 py-3 text-slate-400 font-semibold">Band</th>
-                <th className="text-left px-4 py-3 text-slate-400 font-semibold">Method</th>
-                <th className="text-right px-4 py-3 text-slate-400 font-semibold">Actions</th>
+                <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--s-text-dim)' }}>Filename</th>
+                <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--s-text-dim)' }}>Vendor</th>
+                <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--s-text-dim)' }}>Score</th>
+                <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--s-text-dim)' }}>Band</th>
+                <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--s-text-dim)' }}>Method</th>
+                <th className="text-right px-4 py-3 font-semibold" style={{ color: 'var(--s-text-dim)' }}>Actions</th>
               </tr>
             </thead>
             <tbody>

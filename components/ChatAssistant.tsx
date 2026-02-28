@@ -89,7 +89,7 @@ export const ChatAssistant: React.FC = () => {
       className="rounded-xl overflow-hidden flex flex-col"
       style={{
         height: 600,
-        background: 'rgba(4, 8, 22, 0.92)',
+        background: 'var(--s-chat)',
         border: '1px solid rgba(0,83,226,0.2)',
         boxShadow: '0 0 0 1px rgba(0,83,226,0.08), inset 0 1px 0 rgba(0,83,226,0.1)',
       }}
@@ -119,7 +119,7 @@ export const ChatAssistant: React.FC = () => {
                 aria-hidden="true"
               />
             </h3>
-            <p className="text-[9px] uppercase tracking-widest" style={{ color: '#334155' }}>
+            <p className="text-[9px] uppercase tracking-widest" style={{ color: 'var(--s-text-dim)' }}>
               Powered by Google Gemini · Context-Aware
             </p>
           </div>

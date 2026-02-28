@@ -44,10 +44,10 @@ const BAND_COLORS: Record<string, string> = {
 };
 
 const TOOLTIP_STYLE = {
-  backgroundColor: '#0f172a',
-  border: '1px solid #334155',
+  backgroundColor: 'var(--s-card)',
+  border: '1px solid var(--s-border-mid)',
   borderRadius: 8,
-  color: '#e2e8f0',
+  color: 'var(--s-text)',
   fontSize: 12,
 };
 
@@ -232,17 +232,17 @@ export const VendorStatsPanel: React.FC<VendorStatsPanelProps> = ({ stats }) => 
     <section
       className="rounded-2xl overflow-hidden mb-6 shadow-2xl"
       style={{
-        background: 'rgba(8, 14, 30, 0.82)',
+        background: 'var(--s-panel)',
         backdropFilter: 'blur(24px)',
         WebkitBackdropFilter: 'blur(24px)',
-        border: '1px solid rgba(255,255,255,0.06)',
+        border: '1px solid var(--s-border)',
       }}
       aria-label="Vendor directory analytics"
     >
       {/* Section header */}
       <div
         className="px-6 py-3 flex items-center justify-between gap-4"
-        style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}
+        style={{ borderBottom: '1px solid var(--s-border)' }}
       >
         <div className="flex items-center gap-3">
           <div style={{ width: 72, height: 72, flexShrink: 0 }}>
@@ -272,10 +272,10 @@ export const VendorStatsPanel: React.FC<VendorStatsPanelProps> = ({ stats }) => 
 
       {/* Charts row — gradient dividers */}
       <div className="grid grid-cols-1 sm:grid-cols-3 p-4 pt-0">
-        <div className="py-4 sm:pr-4" style={{ borderRight: '1px solid rgba(255,255,255,0.04)' }}>
+        <div className="py-4 sm:pr-4" style={{ borderRight: '1px solid var(--s-border)' }}>
           <RiskDonut data={riskData} />
         </div>
-        <div className="py-4 sm:px-4" style={{ borderRight: '1px solid rgba(255,255,255,0.04)' }}>
+        <div className="py-4 sm:px-4" style={{ borderRight: '1px solid var(--s-border)' }}>
           <CategoryBars cats={stats.top_categories} />
         </div>
         <div className="py-4 sm:pl-4">

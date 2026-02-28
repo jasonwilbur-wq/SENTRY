@@ -87,16 +87,16 @@ function ScatterTooltipContent({ active, payload }: any) {
     <div
       className="rounded-xl p-3 text-xs shadow-2xl max-w-[220px] pointer-events-none"
       style={{
-        background: 'rgba(2,8,23,0.95)',
+        background: 'var(--s-card)',
         border: `1px solid ${d.color}66`,
         backdropFilter: 'blur(16px)',
       }}
     >
       <p className="font-bold mb-1.5" style={{ color: d.color }}>{d.name}</p>
-      <p className="text-slate-300">Deployability: <span className="text-white">{d.deployLabel}</span></p>
-      <p className="text-slate-300">Sensitivity: <span className="text-white">{d.sensitivityLabel}</span></p>
-      <p className="text-slate-300">Timeline: <span style={{ color: '#FFC220' }}>{d.timeToValue}</span></p>
-      <p className="text-slate-300">
+      <p style={{ color: 'var(--s-text-muted)' }}>Deployability: <span style={{ color: 'var(--s-text)' }}>{d.deployLabel}</span></p>
+      <p style={{ color: 'var(--s-text-muted)' }}>Sensitivity: <span style={{ color: 'var(--s-text)' }}>{d.sensitivityLabel}</span></p>
+      <p style={{ color: 'var(--s-text-muted)' }}>Timeline: <span style={{ color: '#FFC220' }}>{d.timeToValue}</span></p>
+      <p style={{ color: 'var(--s-text-muted)' }}>
         Investment: <span className="text-green-400">
           ${d.minCostK}k – ${d.maxCostK >= 1000 ? `${(d.maxCostK / 1000).toFixed(1)}M` : `${d.maxCostK}k`}
         </span>
@@ -136,11 +136,15 @@ function ChartCard({
     <GlassCard3D
       glowColor={glowColor}
       intensity={4}
-      className="bg-slate-900/70 border border-slate-700 rounded-2xl p-5 flex flex-col"
-      style={{ backdropFilter: 'blur(12px)', overflow: 'visible' }}
+      className="border border-slate-700 rounded-2xl p-5 flex flex-col"
+      style={{
+        background: 'var(--s-card)',
+        backdropFilter: 'blur(12px)',
+        overflow: 'visible',
+      }}
     >
-      <h4 className="text-white font-bold text-sm mb-0.5">{title}</h4>
-      {subtitle && <p className="text-slate-400 text-xs mb-4 leading-relaxed">{subtitle}</p>}
+      <h4 className="font-bold text-sm mb-0.5" style={{ color: 'var(--s-text)' }}>{title}</h4>
+      {subtitle && <p className="text-xs mb-4 leading-relaxed" style={{ color: 'var(--s-text-muted)' }}>{subtitle}</p>}
       {/* overflow:visible lets Recharts tooltips escape the card boundary */}
       <div style={{ height, overflow: 'visible', position: 'relative' }}>
         {children}
