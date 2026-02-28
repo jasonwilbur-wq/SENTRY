@@ -1,77 +1,218 @@
 import React, { useEffect, useState } from 'react';
+import { LandingBackground3D } from './LandingBackground3D';
 
 interface LandingPageProps {
   onEnter: () => void;
 }
 
+// Each letter of SENTRY gets its own reveal with a staggered delay
+const SENTRY_LETTERS = ['S', 'E', 'N', 'T', 'R', 'Y'];
+
+// Acronym words revealed one by one after title appears
+const ACRONYM = [
+  { letter: 'S', rest: 'ecurity,' },
+  { letter: 'E', rest: 'valuation &' },
+  { letter: 'R', rest: 'isk' },
+  { letter: 'T', rest: 'ransparency for' },
+  { letter: 'Y', rest: 'ou' },
+];
+
 export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
-  const [mounted, setMounted] = useState(false);
+  const [mounted, setMounted]           = useState(false);
+  const [acronymIndex, setAcronymIndex] = useState(-1);
 
   useEffect(() => {
-    setMounted(true);
+    // Trigger mount animation
+    const t1 = setTimeout(() => setMounted(true), 60);
+
+    // Cascade the acronym words one-by-one, 160ms apart, starting after 800ms
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    ACRONYM.forEach((_, i) => {
+      timers.push(setTimeout(() => setAcronymIndex(i), 900 + i * 160));
+    });
+
+    return () => {
+      clearTimeout(t1);
+      timers.forEach(clearTimeout);
+    };
   }, []);
 
   return (
-    <div className="min-h-screen bg-sentry-dark flex flex-col items-center justify-center relative overflow-hidden text-white font-sans selection:bg-sentry-accent selection:text-sentry-dark">
-      
-      {/* Background Elements */}
+    <div className="min-h-screen bg-sentry-dark flex flex-col items-center justify-center relative overflow-hidden text-white">
+
+      {/* Three.js starfield */}
+      <LandingBackground3D />
+
+      {/* Ambient glow orbs */}
       <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-[128px] animate-pulse"></div>
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-600/20 rounded-full blur-[128px] animate-pulse delay-1000"></div>
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(15,23,42,0.9)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.9)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-20"></div>
+        <div
+          className="absolute top-0 left-1/4 w-[500px] h-[500px] rounded-full blur-[140px] animate-pulse"
+          style={{ background: 'rgba(0,83,226,0.18)' }}
+        />
+        <div
+          className="absolute bottom-0 right-1/4 w-[500px] h-[500px] rounded-full blur-[140px]"
+          style={{ background: 'rgba(255,194,32,0.08)', animationDelay: '1s', animation: 'pulse-slow 4s ease-in-out infinite' }}
+        />
+        {/* Grid overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.07]"
+          style={{
+            backgroundImage: 'linear-gradient(rgba(0,83,226,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(0,83,226,0.6) 1px, transparent 1px)',
+            backgroundSize: '60px 60px',
+            maskImage: 'radial-gradient(ellipse 70% 60% at 50% 50%, black 40%, transparent 100%)',
+            WebkitMaskImage: 'radial-gradient(ellipse 70% 60% at 50% 50%, black 40%, transparent 100%)',
+          }}
+        />
       </div>
 
-      <div className={`z-10 max-w-6xl mx-auto px-6 text-center transition-all duration-1000 transform ${mounted ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
-        
-        {/* Internal Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-800/50 border border-slate-700 backdrop-blur-sm mb-8 hover:border-sentry-accent/50 transition-colors cursor-default">
+      {/* Main content */}
+      <div
+        className="relative z-10 max-w-5xl mx-auto px-6 text-center"
+        style={{
+          transition: 'opacity 0.8s ease, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1)',
+          opacity:   mounted ? 1 : 0,
+          transform: mounted ? 'none' : 'translateY(24px)',
+        }}
+      >
+        {/* Status badge */}
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full mb-10 border-glow-blue"
+          style={{
+            background: 'rgba(0,83,226,0.08)',
+            border: '1px solid rgba(0,83,226,0.3)',
+            backdropFilter: 'blur(8px)',
+          }}
+        >
           <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sentry-success opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-sentry-success"></span>
+            <span className="animate-ping absolute inset-0 rounded-full bg-green-400 opacity-60" />
+            <span className="relative rounded-full h-2 w-2 bg-green-400" />
           </span>
-          <span className="text-xs font-mono font-medium tracking-widest text-slate-400 uppercase">Walmart Internal // Restricted Access</span>
+          <span className="text-[10px] font-mono font-semibold tracking-[0.2em] text-slate-400 uppercase">
+            Walmart GSA&amp;I · Enterprise Security · Internal
+          </span>
         </div>
 
-        {/* Main Title */}
-        <h1 className="text-8xl md:text-9xl font-black tracking-tighter text-white mb-8 relative drop-shadow-2xl">
-          SENTRY
-          <div className="absolute -inset-1 text-sentry-accent blur-3xl opacity-20 pointer-events-none"></div>
+        {/* SENTRY title — letter-by-letter reveal, fixed glow */}
+        <h1 className="relative mb-8 leading-none select-none" style={{ perspective: '600px' }}>
+          <div className="flex items-center justify-center gap-1 md:gap-2">
+            {SENTRY_LETTERS.map((letter, i) => (
+              <span
+                key={letter + i}
+                className="text-8xl md:text-[9rem] font-black"
+                style={{
+                  display: 'inline-block',
+                  color: '#ffffff',
+                  textShadow: '0 0 40px rgba(0,83,226,0.5), 0 0 80px rgba(0,83,226,0.2)',
+                  transition: 'opacity 0.4s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+                  transitionDelay: `${i * 0.07 + 0.1}s`,
+                  opacity:   mounted ? 1 : 0,
+                  transform: mounted ? 'none' : 'translateY(40px) rotateX(40deg)',
+                }}
+              >
+                {letter}
+              </span>
+            ))}
+          </div>
+          {/* Glow backdrop — actually contains content now, positioned behind */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background: 'radial-gradient(ellipse 60% 40% at 50% 50%, rgba(0,83,226,0.15) 0%, transparent 70%)',
+              zIndex: -1,
+            }}
+            aria-hidden="true"
+          />
         </h1>
 
-        {/* Acronym Breakdown */}
-        <div className="flex flex-col md:flex-row flex-wrap justify-center items-center gap-2 md:gap-4 text-2xl md:text-4xl font-light text-slate-300 mb-12 max-w-5xl mx-auto leading-tight">
-          <span className="inline-block whitespace-nowrap"><span className="text-sentry-accent font-bold">S</span>ecurity,</span>
-          <span className="inline-block whitespace-nowrap"><span className="text-sentry-accent font-bold">E</span>valuation, &</span>
-          <span className="inline-block whitespace-nowrap"><span className="text-sentry-accent font-bold">R</span>isk</span>
-          <span className="inline-block whitespace-nowrap"><span className="text-sentry-accent font-bold">T</span>ransparency for</span>
-          <span className="inline-block whitespace-nowrap"><span className="text-sentry-accent font-bold">Y</span>ou</span>
+        {/* Acronym breakdown — cascading word reveal */}
+        <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 mb-12 min-h-[2.5rem]">
+          {ACRONYM.map((item, i) => (
+            <span
+              key={i}
+              className="text-xl md:text-3xl font-light"
+              style={{
+                transition: 'opacity 0.4s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+                opacity:   acronymIndex >= i ? 1 : 0,
+                transform: acronymIndex >= i ? 'none' : 'translateY(10px)',
+                color: '#94a3b8',
+              }}
+            >
+              <span style={{ color: '#FFC220', fontWeight: 800 }}>{item.letter}</span>
+              {item.rest}
+            </span>
+          ))}
         </div>
 
-        {/* Description/Context */}
-        <p className="text-slate-400 text-lg md:text-xl max-w-2xl mx-auto mb-16 leading-relaxed border-t border-slate-800 pt-8">
-          The definitive System of Record for Emerging Technology vendor assessment. 
-          Identify risks, visualize architecture, and govern with AI-driven insights.
+        {/* Description */}
+        <p
+          className="text-slate-400 text-base md:text-lg max-w-2xl mx-auto mb-14 leading-relaxed"
+          style={{
+            borderTop: '1px solid rgba(255,255,255,0.06)',
+            paddingTop: '2rem',
+            transition: 'opacity 0.6s ease 1.2s',
+            opacity: mounted ? 1 : 0,
+          }}
+        >
+          Global Security, Aviation &amp; Investigations' definitive System of Record for
+          Emerging Technology vendor assessment — identify risks, visualize architecture,
+          and govern with AI-driven insights.
         </p>
 
-        {/* CTA Button */}
-        <button 
+        {/* CTA button */}
+        <button
           onClick={onEnter}
-          className="group relative inline-flex items-center justify-center gap-3 px-10 py-5 bg-sentry-accent text-sentry-dark font-bold text-lg rounded-sm overflow-hidden transition-all hover:bg-white hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(56,189,248,0.3)] hover:shadow-[0_0_50px_rgba(56,189,248,0.6)]"
+          className="group relative inline-flex items-center justify-center gap-3 px-10 py-5 font-black text-lg rounded-sm overflow-hidden always-white"
+          style={{
+            background: '#FFC220',
+            color: '#000B28',
+            boxShadow: '0 0 28px rgba(255,194,32,0.4)',
+            transition: 'background 0.2s, box-shadow 0.2s, transform 0.1s',
+          }}
+          onMouseEnter={e => {
+            (e.currentTarget as HTMLButtonElement).style.background = '#ffffff';
+            (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 0 56px rgba(255,194,32,0.65)';
+          }}
+          onMouseLeave={e => {
+            (e.currentTarget as HTMLButtonElement).style.background = '#FFC220';
+            (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 0 28px rgba(255,194,32,0.4)';
+          }}
+          onMouseDown={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.96)'; }}
+          onMouseUp={e => { (e.currentTarget as HTMLButtonElement).style.transform = ''; }}
         >
-          <span className="relative z-10 tracking-wider">ACCESS TERMINAL</span>
-          <svg className="w-5 h-5 relative z-10 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          {/* Shine — CSS ::after approach via inline pseudo-equivalent div */}
+          <div
+            className="absolute top-0 h-full w-1/3 -skew-x-12 bg-white/30 opacity-0 group-hover:opacity-100 pointer-events-none"
+            style={{ left: '-40%', transition: 'left 0.4s ease, opacity 0.2s' }}
+            onTransitionEnd={e => {
+              const el = e.currentTarget as HTMLDivElement;
+              if (el.style.left === '140%') el.style.left = '-40%';
+            }}
+            ref={el => {
+              if (!el) return;
+              // Trigger shine on parent hover
+              const parent = el.parentElement;
+              if (!parent) return;
+              const enter = () => { el.style.left = '140%'; };
+              const leave = () => { setTimeout(() => { el.style.left = '-40%'; }, 400); };
+              parent.addEventListener('mouseenter', enter);
+              parent.addEventListener('mouseleave', leave);
+            }}
+            aria-hidden="true"
+          />
+          <span className="relative z-10 tracking-[0.12em]" style={{ color: '#000B28' }}>ACCESS TERMINAL</span>
+          <svg
+            className="w-5 h-5 relative z-10 transition-transform group-hover:translate-x-1"
+            style={{ color: '#000B28' }}
+            fill="none" viewBox="0 0 24 24" stroke="currentColor"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
           </svg>
-          {/* Button Shine Effect */}
-          <div className="absolute top-0 -inset-full h-full w-1/2 z-5 block transform -skew-x-12 bg-gradient-to-r from-transparent to-white opacity-40 group-hover:animate-shine" />
         </button>
-
       </div>
 
-      {/* Footer Details */}
-      <div className="absolute bottom-6 left-0 right-0 text-center px-4">
-        <p className="text-[10px] md:text-xs font-mono text-slate-600 uppercase tracking-widest">
-          Secure Connection :: Encrypted via Google Cloud IAP :: Zero Trust Enforced
+      {/* Footer */}
+      <div className="absolute bottom-6 inset-x-0 text-center">
+        <p className="text-[10px] font-mono uppercase tracking-[0.2em]" style={{ color: '#1e293b' }}>
+          Secure Connection ∷ Encrypted via Google Cloud IAP ∷ Zero Trust Enforced
         </p>
       </div>
     </div>

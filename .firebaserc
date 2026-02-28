@@ -1,1 +1,7 @@
-﻿{ "projects": { "default": "sentry-b873a" } }
+{
+  "projects": {
+    "default": "sentry-b873a"
+  },
+  "targets": {},
+  "etags": {}
+}

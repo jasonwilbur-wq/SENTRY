@@ -1,0 +1,139 @@
+TABLE 0 (9r x 5c)
+Dimension | Weight (%) | Score (0–5) | Weighted Contribution | Key Commentary
+Compliance | 25 | 2.5 | 0.62 | No public evidence of SOC 2 / ISO audits
+Risk | 25 | 2.8 | 0.70 | Combined cyber-physical risk surface: co
+Maturity | 15 | 4.0 | 0.60 | Deployed across logistics, manufacturing
+Integration | 10 | 3.0 | 0.30 | Advertised integrations with alarms, VMS
+ROI | 10 | 4.2 | 0.42 | Case studies cite strong labor substitut
+Viability | 5 | 3.5 | 0.17 | Founded 2015; Series B funding with cred
+Differentiation | 5 | 4.5 | 0.23 | Few competitors offer fully managed, int
+CloudDep | 5 | 2.5 | 0.12 | Architecture is heavily cloud- and RSOC-
+
+TABLE 1 (8r x 5c)
+Hard-Gate Area | Walmart Requirement | Current Assessment | Risk Level | RFI Reference
+Enterprise Identity & Access Management | Mandatory integration with Entra ID for  | Unknown. Public materials reference secu | High | P1-RFI-01
+Cloud Architecture & Tenant Isolation | Documented multi-tenant architecture wit | Unknown. DroneIQ and RSOC clearly multi- | High | P1-RFI-02
+Data Protection & Residency | End-to-end encryption in transit and at  | Partial. Product page references AES-256 | High | P1-RFI-03
+Vulnerability Management & Secure Update | Standard patching and vulnerability mana | Unknown. No public description of update | Medium-High | P1-RFI-04
+Logging, Monitoring, and Incident Respon | Comprehensive logging of operator action | Partial. Missions and analytics are logg | Medium | P1-RFI-05
+Safety Engineering & Kinetic Risk | Defined safety case covering collision a | Partial. Long mission history and high-p | Medium-High | P1-RFI-06
+Labor, Privacy, and Ethics Impacts | Impact assessment for associate and cust | Unknown. Marketing emphasizes augmenting | Medium | P1-RFI-07
+
+TABLE 2 (6r x 6c)
+Customer / Profile | Industry & Regulatory Context | Region | Deployment Model & Scale | Notable Outcomes / Incidents | Implications for Walmart
+GXO Logistics (publicly named) | Global contract logistics provider opera | North America (primary), potentially glo | Fleet of DroneDogs and Guardian drones a | Reported increased security presence, re | Strong signal that the platform can oper
+Global Supply Chain Management Company ( | Supply chain management and asset protec | North America | Integrated air and ground robotic perime | Case study emphasizes improved risk dete | Demonstrates ability to run 24/7 robotic
+U.S. Auto Manufacturer Facility | Automotive manufacturing; high-value inv | United States | Site of the 100,000th DroneDog mission;  | Robots reportedly walked ~73,000 miles a | Indicates operational robustness in heav
+Mercedes-Benz Stadium | Professional sports stadium; crowd-heavy | United States | Full-service DroneDog deployment integra | Reported >2,000 patrols and >80 security | Provides a strong reference for mixed pu
+Indianapolis 500 / RNC and other major e | Large-scale public events with law enfor | United States | Gas-sniffing robots and integrated secur | No security breaches associated with the | Shows that Asylon can operate under law-
+
+TABLE 3 (21r x 4c)
+NIST CSF ID | Control Name | Walmart Requirement | Vendor Status (Current View)
+ID.AM-1 | Physical devices and systems within the  | Walmart requires near-real-time inventor | Assumed partially met for Asylon interna
+ID.AM-2 | Software platforms and applications with | Walmart requires near-real-time inventor | Assumed partially met for Asylon interna
+ID.GV-3 | Legal and regulatory requirements regard | Vendor must maintain a formal compliance | Evidence of FAA regulatory awareness and
+ID.RA-3 | Threats, vulnerabilities, likelihoods, a | Vendor must operate a documented risk as | Operational milestones and product evolu
+PR.AC-1 | Identities and credentials are issued, m | Strong identity and access management sp | IAM design is not documented. Public mat
+PR.AC-3 | Remote access is managed and controlled. | Strong identity and access management sp | IAM design is not documented. Public mat
+PR.AC-6 | Access to assets and devices is limited  | Strong identity and access management sp | IAM design is not documented. Public mat
+PR.DS-1 | Data-at-rest is protected. | Robust data protection, including encryp | Product page references AES-256 encrypti
+PR.DS-2 | Data-in-transit is protected. | Robust data protection, including encryp | Product page references AES-256 encrypti
+PR.DS-5 | Protections against data leaks are imple | Robust data protection, including encryp | Product page references AES-256 encrypti
+PR.IP-1 | A baseline configuration of information  | Documented secure baseline configuration | Asylon likely maintains internal baselin
+PR.IP-3 | Configuration change control processes a | Documented secure baseline configuration | Asylon likely maintains internal baselin
+PR.MA-1 | Maintenance and repairs of assets are pe | All maintenance activities (remote and o | Marketing references proactive maintenan
+PR.PT-1 | Audit/log records are determined, docume | Comprehensive logging and monitoring wit | DroneIQ logs missions and events, and RS
+PR.PT-3 | Least functionality principle is applied | Comprehensive logging and monitoring wit | DroneIQ logs missions and events, and RS
+DE.AE-2 | Detected events are analyzed to understa | Continuous monitoring for anomalous or u | RSOC and analytics clearly perform event
+DE.CM-7 | Monitoring for unauthorized personnel, c | Continuous monitoring for anomalous or u | RSOC and analytics clearly perform event
+RS.RP-1 | Response plan is executed during or afte | Documented and tested incident response  | No public incident response playbooks sp
+RS.MI-1 | Incidents are contained and mitigated. | Documented and tested incident response  | No public incident response playbooks sp
+RC.IM-1 | Recovery plans incorporate lessons learn | Post-incident reviews must drive tangibl | Product iterations (e.g., DroneDog-2) an
+
+=== PARAGRAPHS ===
+  0: [Normal] Walmart Security – Vendor Assessment Report (VAR)
+  2: [Normal] Vendor: Asylon Robotics – DroneDog™
+  3: [Normal] Date: February 02, 2026
+  4: [Normal] Reviewer: Jason Wilbur, Sr. Security Manager, Emerging Security Technology
+  6: [Heading 1] 1. Executive Summary
+  7: [Normal] This Vendor Assessment Report (VAR) evaluates Asylon Robotics’ DroneDog™ robotic perimeter security 
+  8: [Normal] Asylon positions DroneDog as a turnkey, security-as-a-service offering: the vendor provides the robo
+  9: [Normal] Using the gradient scoring model defined for this VAR, DroneDog achieves a weighted composite score 
+ 10: [Normal] Compliance, Cloud Dependency, and overall Cyber/Physical Risk remain partially unknown and therefore
+ 11: [Normal] From a business and operational perspective, DroneDog is compelling. Case studies cite annual saving
+ 12: [Normal] Given the current evidence base and the unknowns called out in this report, the recommended decision
+ 13: [Heading 1] 2. Scorecard & Decision
+ 14: [Normal] This section summarizes the quantitative scoring and qualitative rationale for Asylon DroneDog again
+ 16: [Normal] Dimension Score Visualization
+ 18: [Normal] Composite Weighted Score: 3.17 / 5.0 – Decision Band: Research Further / Conditional.
+ 19: [Normal] Several hard-gate controls remain unknown (enterprise identity integration, detailed cloud architect
+ 20: [Heading 1] 3. Detailed Threat Analysis & Threat Model
+ 21: [Normal] DroneDog is best understood as a cyber-physical, cloud-managed security platform rather than a stand
+ 22: [Normal] From a data perspective, DroneDog manipulates and transports multiple sensitive data types. These in
+ 23: [Normal] The primary attack surface is the cloud and connectivity stack. DroneDog relies on DroneIQ, LTE/mesh
+ 24: [Normal] The second major attack surface is the robot and DogHouse hardware itself. Each DroneDog is effectiv
+ 25: [Normal] A third, equally important axis is safety and kinetic risk. DroneDog is a moving robot with meaningf
+ 26: [Normal] Current deployments and mission statistics partially derisk this threat model but do not eliminate i
+ 27: [Normal] From a threat actor standpoint, DroneDog and DroneIQ are attractive targets for multiple classes of 
+ 28: [Normal] In summary, DroneDog introduces a non-trivial but manageable threat surface for Walmart if paired wi
+ 30: [Heading 1] 4. Risks & Hard Gates
+ 31: [Normal] This section summarizes key risk themes and explicitly identifies hard-gate controls where informati
+ 32: [Normal] In aggregate, these hard-gate unknowns justify a cautious stance. DroneDog’s strong operational trac
+ 33: [Heading 1] 5. Current Deployments & Customers
+ 34: [Normal] Asylon’s public materials and partner case studies provide a useful, if incomplete, picture of Drone
+ 35: [Normal] The following table summarizes notable reference deployments and their implications for Maturity, Ri
+ 36: [Normal] No publicly documented cybersecurity breaches or catastrophic safety incidents tied directly to Dron
+ 37: [Heading 1] 6. Use Case Analysis for Walmart
+ 38: [Normal] Based on current deployments and Walmart’s operating model, the most plausible initial use cases for
+ 39: [Normal] For DCs and logistics yards, DroneDog could be tasked with routine patrols of trailer lines, dock do
+ 40: [Normal] For large-format stores with extensive parking lots or attached yards, the value proposition is more
+ 41: [Normal] From a technical standpoint, successful Walmart deployments will depend heavily on robust, segmented
+ 42: [Normal] Overall, DroneDog appears well-matched to high-value perimeter and yard-security use cases, with str
+ 43: [Heading 1] A. Appendix A – Architecture (Conceptual)
+ 44: [Normal] This appendix provides a conceptual architecture for DroneDog in a Walmart deployment. It is intenti
+ 45: [Normal] A1. Logical Components:
+- DroneDog Robot: Boston Dynamics Spot hardware with PupPack payload (camera
+ 46: [Normal] A2. Data Flows (Conceptual):
+- Telemetry and Video: Robots stream encrypted telemetry and video via 
+ 47: [Normal] A3. Integration Points (To Be Confirmed):
+- Identity: Integration with Entra ID for Walmart operator
+ 48: [Normal] As part of the next phase, Asylon should supply detailed architecture diagrams (network, data, ident
+ 50: [Heading 1] B. Appendix B – Requests for Information (RFIs)
+ 51: [Normal] The following RFIs should be issued to Asylon as part of any due diligence or pilot planning. Priori
+ 52: [Normal] Priority 1 – Security Architecture & Cloud
+ 53: [List Number] P1-RFI-01 (Identity): Provide a detailed description of how administrators, RSOC operators, and cust
+ 54: [List Number] P1-RFI-02 (Cloud Architecture): Supply reference architecture diagrams for DroneIQ and RSOC, includi
+ 55: [List Number] P1-RFI-03 (Data Protection & Residency): Document encryption mechanisms in transit and at rest, key 
+ 56: [List Number] P1-RFI-04 (Vulnerability Management): Describe the vulnerability management and patching program for
+ 57: [Normal] Priority 1 – Logging, Safety, and Incident Response
+ 58: [List Number] P1-RFI-05 (Logging & SIEM): Provide a log schema and examples of log export for missions, operator a
+ 59: [List Number] P1-RFI-06 (Safety Engineering): Supply documentation of hazard analyses, safety requirements, fail-s
+ 60: [List Number] P1-RFI-07 (Incident Response): Describe the security incident response process for events affecting 
+ 61: [Normal] Priority 2 – Customer Deployments & References
+ 62: [List Number] P2-RFI-01: Provide at least three customer references operating DroneDog in production at a scale an
+ 63: [List Number] P2-RFI-02: Provide one or more references for deployments in mixed public/associate environments (e.
+ 64: [List Number] P2-RFI-03: Share anonymized metrics on security incidents detected, false positives, and any robot-r
+ 65: [Normal] Priority 2 – Integration & Operations
+ 66: [List Number] P2-RFI-04: Detail existing integrations with common VMS, access control, and PSIM platforms. Indicat
+ 67: [List Number] P2-RFI-05: Describe operational runbooks for RSOC operators handling Walmart sites, including escala
+ 68: [List Number] P2-RFI-06: Provide deployment prerequisites for a new site, including network requirements, physical
+ 69: [Normal] Priority 3 – Privacy, Ethics, and Labor
+ 70: [List Number] P3-RFI-01: Provide any existing privacy impact assessments or data protection impact assessments (DP
+ 71: [List Number] P3-RFI-02: Describe default and optional privacy controls (e.g., masking, blurring, retention limits
+ 72: [List Number] P3-RFI-03: Summarize how current customers have communicated robotic deployments to employees and th
+ 74: [Heading 1] C. Appendix C – NIST CSF Top 20 Control Map
+ 75: [Normal] This appendix maps DroneDog, DroneIQ, and RSOC conceptually against a curated set of twenty NIST Cyb
+ 77: [Heading 1] D. Appendix D – Scoring Methodology
+ 78: [Normal] This VAR uses a quantitative–qualitative hybrid scoring model tailored for emerging security technol
+ 79: [Normal] D1. Dimensions and Weights:
+- Compliance (25): Alignment with Walmart security, privacy, and regulat
+ 80: [Normal] D2. Scoring Scale:
+Each dimension is scored from 0.0 to 5.0 in 0.1 increments based on available evi
+ 81: [Normal] D3. Weighted Score Calculation:
+The composite weighted score is computed as:
+  WeightedScore = (Σ (d
+ 82: [Normal] D4. Gradient Decision Logic:
+- > 4.0 (Advance / Pilot Ready): Vendor is mature; remaining gaps are p
+ 83: [Normal] D5. Treatment of Unknowns and Hard Gates:
+- Unknown information for non-gating controls contributes 
+ 84: [Normal] This methodology is designed to balance innovation with prudence: it recognizes the potential of eme

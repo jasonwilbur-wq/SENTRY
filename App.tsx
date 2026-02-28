@@ -1,10 +1,52 @@
 import React, { useState } from 'react';
 import { ViewState } from './types';
+import { VendorProvider } from './context/VendorContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { VendorDashboard } from './components/VendorDashboard';
 import { LandingPage } from './components/LandingPage';
 import { RequestAssessment } from './components/RequestAssessment';
 import { RequestLabVisit } from './components/RequestLabVisit';
 import { CompetitorAnalysis } from './components/CompetitorAnalysis';
+import { ArchitectureGraph } from './components/ArchitectureGraph';
+import { AdminPanel } from './components/AdminPanel';
+import { CompetitorIntel } from './components/CompetitorIntel';
+import { Sidebar } from './components/Sidebar';
+import { PageTransition } from './components/PageTransition';
+
+// ── View metadata ────────────────────────────────────────────────────────────
+
+const VIEW_META: Record<ViewState, { title: string; subtitle: string }> = {
+  [ViewState.DIRECTORY]: {
+    title: 'Vendor Directory',
+    subtitle: 'Centralized record of all assessed Emerging Technology vendors.',
+  },
+  [ViewState.REQUEST_ASSESSMENT]: {
+    title: 'Security Assessment',
+    subtitle: 'Initiate a GRC workflow for a new technology review.',
+  },
+  [ViewState.COMPETITOR_ANALYSIS]: {
+    title: 'Market Analysis',
+    subtitle: 'Visualise risk metrics and compare vendor performance.',
+  },
+  [ViewState.REQUEST_LAB_VISIT]: {
+    title: 'Emerging Tech Lab',
+    subtitle: 'Schedule hands-on evaluation time in the secure lab.',
+  },
+  [ViewState.COMPETITOR_INTEL]: {
+    title: 'Competitor Intelligence',
+    subtitle: 'Live threat tracking across retail competitors — 1,113 analyst-enriched events.',
+  },
+  [ViewState.ARCHITECTURE]: {
+    title: 'SENTRY Architecture',
+    subtitle: 'GCP four-phase framework hierarchy.',
+  },
+  [ViewState.ADMIN]: {
+    title: 'VAR Administration',
+    subtitle: 'Manage VAR reports, extract scores, and fix vendor linkage.',
+  },
+};
+
+// ── Main app ─────────────────────────────────────────────────────────────────
 
 const App: React.FC = () => {
   const [showLanding, setShowLanding] = useState(true);
@@ -14,98 +56,75 @@ const App: React.FC = () => {
     return <LandingPage onEnter={() => setShowLanding(false)} />;
   }
 
-  const NavButton = ({ view, label, icon }: { view: ViewState, label: string, icon: React.ReactNode }) => (
-    <button
-      onClick={() => setCurrentView(view)}
-      className={`flex items-center gap-3 px-4 py-3 w-full text-left rounded-lg transition-all duration-200 ${
-        currentView === view
-          ? 'bg-sentry-accent/10 text-sentry-accent border-r-2 border-sentry-accent'
-          : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-      }`}
-    >
-      {icon}
-      <span className="font-medium">{label}</span>
-    </button>
-  );
+  const meta = VIEW_META[currentView];
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row font-sans bg-sentry-dark text-slate-200">
-      {/* Sidebar Navigation */}
-      <aside className="w-full md:w-64 bg-slate-900 border-r border-slate-800 flex flex-col sticky top-0 md:h-screen z-10">
-        <div className="p-6 border-b border-slate-800">
-          <h1 className="text-2xl font-black tracking-tighter text-white flex items-center gap-2">
-            <div className="w-8 h-8 rounded bg-gradient-to-br from-sentry-accent to-blue-600 flex items-center justify-center text-slate-900 font-bold">S</div>
-            SENTRY
-          </h1>
-          <p className="text-[10px] text-slate-500 mt-1 font-mono tracking-widest uppercase">Internal v2.0</p>
+    <ThemeProvider>
+      <VendorProvider>
+        <div className="flex h-screen bg-sentry-dark text-slate-300 overflow-hidden">
+
+          {/* ── Sidebar ─────────────────────────────────────────────── */}
+          <Sidebar currentView={currentView} onNavigate={setCurrentView} />
+
+          {/* ── Main content ──────────────────────────────────────── */}
+          <main className="flex-1 flex flex-col overflow-hidden">
+
+            {/* Glassmorphic command bar header */}
+            <header
+              className="shrink-0 px-8 py-4 flex items-center justify-between gap-4 border-b"
+              style={{
+                background: 'var(--s-header)',
+                backdropFilter: 'blur(20px) saturate(160%)',
+                WebkitBackdropFilter: 'blur(20px) saturate(160%)',
+                borderColor: 'var(--s-border)',
+              }}
+            >
+              {/* Left: accent + title */}
+              <div className="flex items-center gap-4">
+                <div
+                  className="w-0.5 h-9 rounded-full shrink-0"
+                  style={{ background: 'linear-gradient(to bottom, #FFC220, #0053E2)' }}
+                  aria-hidden="true"
+                />
+                <div>
+                  <h2 className="text-xl font-extrabold text-white leading-tight tracking-tight">
+                    {meta.title}
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5 leading-none">{meta.subtitle}</p>
+                </div>
+              </div>
+
+              {/* Right: status pill */}
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full"
+                style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}
+              >
+                <div className="relative flex items-center justify-center">
+                  <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
+                  <div
+                    className="absolute w-1.5 h-1.5 rounded-full bg-green-400 animate-ping-ring"
+                    style={{ opacity: 0.5 }}
+                  />
+                </div>
+                <span className="text-[10px] font-bold text-green-400 uppercase tracking-widest">System Online</span>
+              </div>
+            </header>
+
+            {/* Page body with animated view transitions */}
+            <div className="flex-1 overflow-y-auto p-8">
+              <PageTransition viewKey={currentView}>
+                {currentView === ViewState.DIRECTORY          && <VendorDashboard />}
+                {currentView === ViewState.REQUEST_ASSESSMENT && <RequestAssessment />}
+                {currentView === ViewState.COMPETITOR_ANALYSIS && <CompetitorAnalysis onNavigate={setCurrentView} />}
+                {currentView === ViewState.COMPETITOR_INTEL   && <CompetitorIntel />}
+                {currentView === ViewState.REQUEST_LAB_VISIT  && <RequestLabVisit />}
+                {currentView === ViewState.ARCHITECTURE       && <ArchitectureGraph />}
+                {currentView === ViewState.ADMIN              && <AdminPanel />}
+              </PageTransition>
+            </div>
+          </main>
         </div>
-
-        <nav className="flex-grow p-4 space-y-2">
-          <NavButton 
-            view={ViewState.DIRECTORY} 
-            label="Directory" 
-            icon={
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
-            } 
-          />
-          <NavButton 
-            view={ViewState.REQUEST_ASSESSMENT} 
-            label="Request Assessment" 
-            icon={
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-            } 
-          />
-          <NavButton 
-            view={ViewState.COMPETITOR_ANALYSIS} 
-            label="Competitor Analysis" 
-            icon={
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-            } 
-          />
-          <NavButton 
-            view={ViewState.REQUEST_LAB_VISIT} 
-            label="Request Lab Visit" 
-            icon={
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" /></svg>
-            } 
-          />
-        </nav>
-
-        <div className="p-4 border-t border-slate-800">
-           <div className="bg-slate-800/50 rounded p-3 text-[10px] text-slate-500 font-mono">
-             <div className="flex justify-between items-center mb-1">
-               <span>SYS.STATUS</span>
-               <span className="text-green-500">ONLINE</span>
-             </div>
-             <div>UPTIME: 99.99%</div>
-           </div>
-        </div>
-      </aside>
-
-      {/* Main Content */}
-      <main className="flex-1 p-6 md:p-8 overflow-y-auto">
-        <header className="mb-6 pb-6 border-b border-slate-800">
-          <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">
-            {currentView === ViewState.DIRECTORY && "Vendor Directory"}
-            {currentView === ViewState.REQUEST_ASSESSMENT && "Security Assessment"}
-            {currentView === ViewState.COMPETITOR_ANALYSIS && "Competitor & Market Analysis"}
-            {currentView === ViewState.REQUEST_LAB_VISIT && "Emerging Tech Lab"}
-          </h2>
-          <p className="text-slate-400 max-w-3xl">
-            {currentView === ViewState.DIRECTORY && "Search and filter the centralized record of Emerging Technology vendors."}
-            {currentView === ViewState.REQUEST_ASSESSMENT && "Initiate GRC workflows for new technology reviews."}
-            {currentView === ViewState.COMPETITOR_ANALYSIS && "Visualize risk metrics and compare vendor performance against market standards."}
-            {currentView === ViewState.REQUEST_LAB_VISIT && "Schedule hands-on evaluation time with specific hardware in the secure lab."}
-          </p>
-        </header>
-
-        {currentView === ViewState.DIRECTORY && <VendorDashboard />}
-        {currentView === ViewState.REQUEST_ASSESSMENT && <RequestAssessment />}
-        {currentView === ViewState.COMPETITOR_ANALYSIS && <CompetitorAnalysis />}
-        {currentView === ViewState.REQUEST_LAB_VISIT && <RequestLabVisit />}
-
-      </main>
-    </div>
+      </VendorProvider>
+    </ThemeProvider>
   );
 };
 

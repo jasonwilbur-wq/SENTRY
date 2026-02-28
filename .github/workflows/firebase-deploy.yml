@@ -1,0 +1,140 @@
+# ───────────────────────────────────────────────────────────────────
+# SENTRY v2 — Full CI/CD: Cloud Run (backend) + Firebase Hosting (frontend)
+#
+# Push to master   → 1. FastAPI → Cloud Run (sentry-api, us-central1)
+#                    2. React   → Firebase Hosting (sentry-b873a.web.app)
+#
+# Pull Request     → React preview channel (unique URL posted as PR comment)
+#                    Backend is NOT redeployed on PRs (prod stays stable)
+#
+# REQUIRED GitHub Secrets (Settings → Secrets → Actions):
+#   GCP_SA_KEY                              ← Cloud Run + Cloud Build
+#   FIREBASE_SERVICE_ACCOUNT_SENTRY_B873A   ← Firebase Hosting
+#
+# See README § "Setting Up GitHub Secrets" for step-by-step instructions.
+# ───────────────────────────────────────────────────────────────────
+name: SENTRY CI/CD
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+permissions:
+  checks: write
+  contents: read
+  pull-requests: write   # needed for PR preview URL comments
+
+# ───────────────────────────────────────────────────────────────────
+jobs:
+
+  # ══ JOB 1: FastAPI → Google Cloud Run ════════════════════════════════
+  # Only runs on pushes to master — PRs never touch the production API.
+  deploy-backend:
+    name: "Backend → Cloud Run"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Authenticate with GCP using the deploy service account
+      - name: Authenticate with GCP
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      # Install gcloud CLI (pre-built action, ~10s)
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
+      # Enable required APIs (idempotent — safe to run every deploy)
+      - name: Enable GCP APIs
+        run: |
+          gcloud services enable \
+            run.googleapis.com \
+            cloudbuild.googleapis.com \
+            artifactregistry.googleapis.com \
+            --project sentry-b873a --quiet
+
+      # Deploy from source: Cloud Build builds the Dockerfile, pushes the
+      # image to Artifact Registry, then creates/updates the Cloud Run service.
+      # SQLite DB is bundled inside the container via COPY data/ ./data/
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy sentry-api \
+            --source ./backend \
+            --region us-central1 \
+            --platform managed \
+            --allow-unauthenticated \
+            --project sentry-b873a \
+            --memory 512Mi \
+            --min-instances 0 \
+            --max-instances 5 \
+            --set-env-vars "ALLOWED_ORIGINS=https://sentry-b873a.web.app,https://sentry-b873a.firebaseapp.com" \
+            --quiet
+
+      - name: Print Cloud Run URL
+        run: |
+          echo "✅ Cloud Run service deployed:"
+          gcloud run services describe sentry-api \
+            --region us-central1 \
+            --project sentry-b873a \
+            --format='value(status.url)'
+
+  # ══ JOB 2: React → Firebase Hosting ════════════════════════════════
+  # Runs on both master pushes (after backend) AND pull requests (preview).
+  # `needs: deploy-backend` + `if: always()` means:
+  #   → master: waits for backend job to finish, then deploys frontend
+  #   → PR:     backend job is skipped, but frontend runs immediately
+  deploy-frontend:
+    name: "Frontend → Firebase Hosting"
+    runs-on: ubuntu-latest
+    needs: deploy-backend
+    if: always()
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # TypeScript errors block the deploy — ship quality or don't ship
+      - name: TypeScript check
+        run: npx tsc --noEmit
+
+      # VITE_API_URL is intentionally empty:
+      # firebase.json rewrites /api/** → Cloud Run transparently
+      - name: Build
+        run: npm run build
+        env:
+          VITE_API_URL: ''
+
+      # ─ Production deploy (master push only) ──────────────────────────
+      - name: Deploy to Firebase Hosting (production)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SENTRY_B873A }}
+          channelId: live
+          projectId: sentry-b873a
+
+      # ─ PR preview deploy ─────────────────────────────────────────
+      - name: Deploy PR preview to Firebase Hosting
+        if: github.event_name == 'pull_request'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_SENTRY_B873A }}
+          projectId: sentry-b873a
+          # No channelId → auto-named pr-{number}, expires in 7 days

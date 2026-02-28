@@ -1,0 +1,530 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SENTRY Design System — 2026 Edition
+   Walmart Global Security · Emerging Technology
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Design token layer (raw CSS — not Tailwind) ─────────── */
+/* ALL surface/text/border values live here. Components reference
+   these vars via inline styles or Tailwind via @theme below.
+   Theme switching = just flipping these vars. Nothing else. */
+:root {
+  /* ── Surfaces ── */
+  --s-bg:           #000B28;
+  --s-sidebar:      rgba(0,   6,  22, 0.93);
+  --s-header:       rgba(0,  11,  40, 0.84);
+  --s-card:         rgba(12, 18,  36, 0.88);
+  --s-panel:        rgba(8,  14,  30, 0.86);
+  --s-modal-back:   rgba(0,   6,  20, 0.80);
+  --s-modal-card:   rgba(8,  14,  32, 0.97);
+  --s-modal-inner:  rgba(4,   8,  20, 0.35);
+  --s-modal-tabs:   rgba(0,   0,   0, 0.20);
+  --s-chat:         rgba(4,   8,  22, 0.95);
+  --s-chat-footer:  rgba(0,   0,   0, 0.28);
+  --s-ai-bubble:    rgba(15, 23,  42, 0.85);
+  --s-input-bg:     rgba(15, 23,  42, 0.80);
+  --s-hover-over:   rgba(255,255,255, 0.04);
+
+  /* ── Borders ── */
+  --s-border:       rgba(255,255,255, 0.07);
+  --s-border-light: rgba(255,255,255, 0.04);
+  --s-border-mid:   rgba(255,255,255, 0.11);
+
+  /* ── Text ── */
+  --s-text:         #f1f5f9;
+  --s-text-muted:   #94a3b8;
+  --s-text-dim:     #64748b;
+  --s-text-faint:   #475569;
+
+  /* Brand constants — never change */
+  --wmt-blue:   #0053E2;
+  --wmt-yellow: #FFC220;
+  --wmt-navy:   #001E60;
+}
+
+:root[data-theme="light"] {
+  /* ── Surfaces ── */
+  --s-bg:           #eef2f7;
+  --s-sidebar:      rgba(255,255,255, 0.97);
+  --s-header:       rgba(238,242,247, 0.94);
+  --s-card:         rgba(255,255,255, 0.96);
+  --s-panel:        rgba(255,255,255, 0.97);
+  --s-modal-back:   rgba(15,  23,  42, 0.60);
+  --s-modal-card:   rgba(255,255,255, 0.99);
+  --s-modal-inner:  rgba(248,250,252, 0.60);
+  --s-modal-tabs:   rgba(241,245,249, 0.85);
+  --s-chat:         rgba(255,255,255, 0.98);
+  --s-chat-footer:  rgba(241,245,249, 0.92);
+  --s-ai-bubble:    rgba(241,245,249, 0.96);
+  --s-input-bg:     rgba(255,255,255, 0.90);
+  --s-hover-over:   rgba(0,  0,   0,  0.04);
+
+  /* ── Borders ── */
+  --s-border:       rgba(15, 23,  42, 0.10);
+  --s-border-light: rgba(15, 23,  42, 0.06);
+  --s-border-mid:   rgba(15, 23,  42, 0.15);
+
+  /* ── Text ── */
+  --s-text:         #0f172a;
+  --s-text-muted:   #334155;
+  --s-text-dim:     #475569;
+  --s-text-faint:   #64748b;
+}
+
+/* ── 2. Tailwind @theme tokens ───────────────────────────── */
+@theme {
+  /* Walmart brand */
+  --color-wmt-blue:     #0053E2;
+  --color-wmt-yellow:   #FFC220;
+  --color-wmt-navy:     #001E60;
+  --color-wmt-everyday: #4DBDF5;
+  --color-wmt-sky:      #A9DDF7;
+  --color-wmt-void:     #000B28;
+  --color-wmt-lift:     #002880;
+
+  /* Sentry semantic — NOW referencing CSS vars so they theme-swap */
+  --color-sentry-bg:      var(--s-bg);
+  --color-sentry-dark:    var(--s-bg);
+  --color-sentry-card:    var(--s-card);
+  --color-sentry-surface: var(--s-panel);
+  --color-sentry-accent:  #FFC220;
+  --color-sentry-blue:    #0053E2;
+  --color-sentry-success: #22c55e;
+  --color-sentry-warning: #FFC220;
+  --color-sentry-danger:  #ef4444;
+  --color-sentry-text:    var(--s-text);
+  --color-sentry-muted:   var(--s-text-muted);
+
+  /* Slate scale — static, NOT theme-swapped via CSS vars */
+  --color-slate-50:  #f8fafc;
+  --color-slate-100: #f1f5f9;
+  --color-slate-200: #e2e8f0;
+  --color-slate-300: #cbd5e1;
+  --color-slate-400: #94a3b8;
+  --color-slate-500: #64748b;
+  --color-slate-600: #475569;
+  --color-slate-700: #334155;
+  --color-slate-800: #1e293b;
+  --color-slate-900: #0f172a;
+  --color-slate-950: #020617;
+
+  /* Typography */
+  --font-sans: 'Inter', system-ui, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', Consolas, Menlo, monospace;
+
+  /* ── Keyframe animations ───────────────────────────────── */
+  @keyframes pulse-slow {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.4; }
+  }
+  @keyframes shine {
+    0%   { left: -75%; }
+    100% { left: 125%; }
+  }
+  @keyframes fadeIn {
+    0%   { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slideIn {
+    0%   { opacity: 0; transform: translateX(100%); }
+    100% { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes slideUp {
+    0%   { opacity: 0; transform: translateY(24px) scale(0.98); }
+    100% { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes slideDown {
+    0%   { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-16px) scale(0.98); }
+  }
+  @keyframes cardRise {
+    from { opacity: 0; transform: translateY(20px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  @keyframes shimmer {
+    0%   { background-position: -400px 0; }
+    100% { background-position: 400px 0; }
+  }
+  @keyframes scan-line {
+    0%   { top: -5%; }
+    100% { top: 105%; }
+  }
+  @keyframes ringGlow {
+    0%, 100% { filter: drop-shadow(0 0 4px currentColor); }
+    50%       { filter: drop-shadow(0 0 14px currentColor); }
+  }
+  @keyframes borderGlow {
+    0%, 100% { border-color: rgba(0,83,226,0.28); box-shadow: 0 0 0 0 rgba(0,83,226,0); }
+    50%       { border-color: rgba(0,83,226,0.65); box-shadow: 0 0 28px 2px rgba(0,83,226,0.16); }
+  }
+  @keyframes borderGlowYellow {
+    0%, 100% { border-color: rgba(255,194,32,0.22); }
+    50%       { border-color: rgba(255,194,32,0.60); box-shadow: 0 0 24px 2px rgba(255,194,32,0.14); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50%       { transform: translateY(-6px); }
+  }
+  @keyframes ping-ring {
+    0%   { transform: scale(1); opacity: 0.8; }
+    100% { transform: scale(2.2); opacity: 0; }
+  }
+  @keyframes reveal-letter {
+    0%   { opacity: 0; transform: translateY(40px) rotateX(40deg); }
+    100% { opacity: 1; transform: translateY(0) rotateX(0deg); }
+  }
+  @keyframes cursor-blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
+  }
+  @keyframes tab-slide {
+    from { transform: scaleX(0); }
+    to   { transform: scaleX(1); }
+  }
+  @keyframes check-draw {
+    from { stroke-dashoffset: 100; }
+    to   { stroke-dashoffset: 0; }
+  }
+
+  /* Animation utility tokens */
+  --animate-pulse-slow:    pulse-slow 3s ease-in-out infinite;
+  --animate-shine:         shine 0.75s ease-in-out;
+  --animate-fadeIn:        fadeIn 0.4s ease-out both;
+  --animate-slideIn:       slideIn 0.3s cubic-bezier(0.16,1,0.3,1) both;
+  --animate-slideUp:       slideUp 0.35s cubic-bezier(0.16,1,0.3,1) both;
+  --animate-float:         float 3.5s ease-in-out infinite;
+  --animate-ping-ring:     ping-ring 1.4s ease-out infinite;
+  --animate-cursor-blink:  cursor-blink 1s step-end infinite;
+  --animate-check-draw:    check-draw 0.5s ease-out both;
+}
+
+/* ── 3. Base styles ─────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', system-ui, 'Segoe UI', sans-serif;
+  background-color: var(--s-bg);
+  color: var(--s-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+::selection {
+  background-color: #FFC220;
+  color: #000B28;
+}
+
+:focus-visible {
+  outline: 2px solid #0053E2;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── 4. Scrollbar ────────────────────────────────────────── */
+::-webkit-scrollbar       { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(0,83,226,0.35); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #0053E2; }
+
+/* ── 5. Composable utility classes ───────────────────────── */
+
+/* Glass surface — opt-in, not imposed globally */
+.glass {
+  background: var(--s-panel);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid var(--s-border);
+}
+
+.glass-heavy {
+  background: var(--s-card);
+  backdrop-filter: blur(32px) saturate(180%);
+  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  border: 1px solid var(--s-border);
+}
+
+/* Neon text utilities */
+.neon-blue  { color: #4d9fff; text-shadow: 0 0 12px rgba(0,83,226,0.8), 0 0 32px rgba(0,83,226,0.4); }
+.neon-yellow{ color: #FFC220; text-shadow: 0 0 12px rgba(255,194,32,0.8), 0 0 32px rgba(255,194,32,0.4); }
+
+/* Gradient text */
+.gradient-text-blue {
+  background: linear-gradient(135deg, #4d9fff 0%, #0053E2 50%, #001E60 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.gradient-text-brand {
+  background: linear-gradient(135deg, #ffffff 0%, #A9DDF7 40%, #4d9fff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Primary button */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background-color: #0053E2;
+  color: #ffffff !important;
+  font-weight: 700;
+  font-size: 0.875rem;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+}
+.btn-primary:hover  { background-color: #0047c7; box-shadow: 0 0 20px rgba(0,83,226,0.45); }
+.btn-primary:active { transform: scale(0.97); }
+.btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* Ghost button */
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.4rem 0.75rem;
+  background: var(--s-hover-over);
+  color: var(--s-text-muted);
+  font-weight: 600;
+  font-size: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--s-border-mid);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.btn-ghost:hover { background: var(--s-border); color: var(--s-text); }
+
+/* Loading shimmer */
+.shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
+  background-size: 800px 100%;
+  animation: shimmer 1.6s infinite linear;
+}
+
+/* Scan line overlay (terminal effect) */
+.scan-lines::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 83, 226, 0.015) 0px,
+    rgba(0, 83, 226, 0.015) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 3D preserve */
+.preserve-3d { transform-style: preserve-3d; }
+
+/* Animation class utilities */
+.animate-ping-ring  { animation: ping-ring  1.4s ease-out infinite; }
+.animate-float      { animation: float      3.5s ease-in-out infinite; }
+.border-glow-blue   { animation: borderGlow 4s ease-in-out infinite; }
+.border-glow-yellow { animation: borderGlowYellow 4s ease-in-out infinite; }
+.ring-glow          { animation: ringGlow 2.5s ease-in-out 1.2s 1 forwards; }
+.animate-cursor-blink { animation: cursor-blink 1s step-end infinite; }
+.animate-check-draw { animation: check-draw 0.5s ease-out 0.2s both; }
+
+/* Line clamp */
+.line-clamp-1 { overflow:hidden; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:1; }
+.line-clamp-2 { overflow:hidden; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:2; }
+.line-clamp-3 { overflow:hidden; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:3; }
+
+/* ── 6. Staggered card entrance ──────────────────────────── */
+.grid-stagger > * {
+  animation: cardRise 0.38s ease-out both;
+}
+.grid-stagger > *:nth-child(1)  { animation-delay: 0.00s; }
+.grid-stagger > *:nth-child(2)  { animation-delay: 0.04s; }
+.grid-stagger > *:nth-child(3)  { animation-delay: 0.08s; }
+.grid-stagger > *:nth-child(4)  { animation-delay: 0.11s; }
+.grid-stagger > *:nth-child(5)  { animation-delay: 0.14s; }
+.grid-stagger > *:nth-child(6)  { animation-delay: 0.17s; }
+.grid-stagger > *:nth-child(7)  { animation-delay: 0.20s; }
+.grid-stagger > *:nth-child(8)  { animation-delay: 0.22s; }
+.grid-stagger > *:nth-child(9)  { animation-delay: 0.24s; }
+.grid-stagger > *:nth-child(n+10){ animation-delay: 0.26s; }
+
+/* ── 7. Light mode overrides ────────────────────────────────── */
+/*
+  Strategy: CSS vars in :root swap automatically (--s-* vars).
+  Tailwind utility classes bake in hex at build time, so we need
+  explicit selector overrides for any remaining Tailwind classes.
+  Components should use var(--s-*) inline styles wherever possible.
+*/
+
+/* Body picks up --s-bg automatically. Belts AND suspenders: */
+[data-theme="light"] body { background-color: var(--s-bg); color: var(--s-text); }
+
+/* ── Text inversions ── */
+[data-theme="light"] .text-white     { color: #0f172a !important; }
+[data-theme="light"] .text-slate-100 { color: #1e293b !important; }
+[data-theme="light"] .text-slate-200 { color: #334155 !important; }
+[data-theme="light"] .text-slate-300 { color: #334155 !important; }
+[data-theme="light"] .text-slate-400 { color: #475569 !important; }
+[data-theme="light"] .text-slate-500 { color: #64748b !important; }
+[data-theme="light"] .text-slate-600 { color: #475569 !important; }
+
+/* Preserve white text on intentionally-coloured surfaces */
+[data-theme="light"] .always-white,
+[data-theme="light"] .btn-primary,
+[data-theme="light"] .bg-wmt-blue .text-white { color: #ffffff !important; }
+
+/* ── Background inversions ── */
+[data-theme="light"] .bg-slate-950,
+[data-theme="light"] .bg-sentry-dark { background-color: #eef2f7   !important; }
+[data-theme="light"] .bg-slate-900   { background-color: #ffffff   !important; }
+[data-theme="light"] .bg-slate-800   { background-color: #f1f5f9   !important; }
+[data-theme="light"] .bg-slate-700   { background-color: #e2e8f0   !important; }
+[data-theme="light"] .bg-sentry-card { background-color: #ffffff   !important; }
+[data-theme="light"] .bg-sentry-surface { background-color: rgba(255,255,255,0.95) !important; }
+
+/* ── Border inversions ── */
+[data-theme="light"] .border-slate-700  { border-color: #cbd5e1 !important; }
+[data-theme="light"] .border-slate-800  { border-color: #e2e8f0 !important; }
+[data-theme="light"] .divide-slate-800 > * + * { border-color: #e2e8f0 !important; }
+[data-theme="light"] .border-white\/5   { border-color: rgba(0,0,0,0.08) !important; }
+[data-theme="light"] .border-white\/10  { border-color: rgba(0,0,0,0.12) !important; }
+
+/* ── Vendor card gradient — baked static values need explicit override ── */
+[data-theme="light"] .from-slate-800\/40 { --tw-gradient-from: rgba(241,245,249,0.9)  !important; }
+[data-theme="light"] .from-slate-800\/60 { --tw-gradient-from: rgba(241,245,249,0.95) !important; }
+[data-theme="light"] .to-slate-900\/40  { --tw-gradient-to:   rgba(226,232,240,0.9)  !important; }
+[data-theme="light"] .to-slate-900\/20  { --tw-gradient-to:   rgba(226,232,240,0.6)  !important; }
+[data-theme="light"] .to-slate-950\/30  { --tw-gradient-to:   rgba(226,232,240,0.7)  !important; }
+
+/* ── Skeleton / pulse loading state ── */
+[data-theme="light"] .bg-slate-800\/60 { background-color: rgba(226,232,240,0.6) !important; }
+[data-theme="light"] .border-slate-700\/40 { border-color: rgba(203,213,225,0.4) !important; }
+
+/* ── Backdrop blur panels (sticky header etc.) ── */
+/* bg-sentry-bg/90 handled via @theme var chain automatically. */
+/* But backdrop-blur-md by itself doesn't imply a surface color. */
+
+/* ── Glass surfaces pick up --s-panel / --s-border automatically ── */
+/* (The .glass class already uses var(--s-*) so nothing needed here) */
+
+/* ── Shimmer skeleton ── */
+[data-theme="light"] .shimmer {
+  background: linear-gradient(90deg, rgba(0,0,0,0.03) 25%, rgba(0,0,0,0.08) 50%, rgba(0,0,0,0.03) 75%);
+}
+
+/* ── Scrollbar ── */
+[data-theme="light"] ::-webkit-scrollbar-thumb { background: rgba(0,83,226,0.22); }
+
+/* ── Recharts chart grid lines ── */
+[data-theme="light"] .recharts-cartesian-grid-horizontal line,
+[data-theme="light"] .recharts-cartesian-grid-vertical   line { stroke: #e2e8f0; }
+[data-theme="light"] .recharts-text { fill: #475569 !important; }
+[data-theme="light"] .recharts-legend-item-text { color: #475569 !important; }
+[data-theme="light"] .recharts-tooltip-wrapper .recharts-default-tooltip {
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   COMPREHENSIVE CARD + BADGE LIGHT-MODE OVERRIDES
+   These cover Tailwind opacity variants that can't be hoisted into @theme
+═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Card / Panel containers (opacity variants) ── */
+[data-theme="light"] .bg-slate-900\/70 { background-color: rgba(255,255,255,0.92) !important; }
+[data-theme="light"] .bg-slate-900\/60 { background-color: rgba(255,255,255,0.88) !important; }
+[data-theme="light"] .bg-slate-900\/80 { background-color: rgba(255,255,255,0.95) !important; }
+[data-theme="light"] .bg-slate-900\/40 { background-color: rgba(248,250,252,0.80) !important; }
+[data-theme="light"] .bg-slate-900\/30 { background-color: rgba(248,250,252,0.70) !important; }
+[data-theme="light"] .bg-slate-900\/20 { background-color: rgba(248,250,252,0.60) !important; }
+[data-theme="light"] .bg-slate-900    { background-color: #f8fafc !important; }
+[data-theme="light"] .bg-slate-800\/50 { background-color: #f1f5f9 !important; }  /* table thead */
+[data-theme="light"] .bg-slate-800\/30 { background-color: rgba(226,232,240,0.5) !important; } /* row hover */
+[data-theme="light"] .bg-slate-800\/70 { background-color: rgba(241,245,249,0.9) !important; } /* pills etc */
+[data-theme="light"] .bg-slate-800\/80 { background-color: rgba(241,245,249,0.95) !important; }
+[data-theme="light"] .bg-slate-800\/40 { background-color: rgba(226,232,240,0.6) !important; }
+[data-theme="light"] .bg-gray-700      { background-color: #e2e8f0 !important; }
+[data-theme="light"] .bg-gray-800      { background-color: #f1f5f9 !important; }
+[data-theme="light"] .bg-gray-800\/50  { background-color: rgba(226,232,240,0.5) !important; }
+[data-theme="light"] .border-gray-800  { border-color: #e2e8f0 !important; }
+[data-theme="light"] .border-gray-600  { border-color: #cbd5e1 !important; }
+[data-theme="light"] .text-gray-200    { color: #1e293b !important; }
+[data-theme="light"] .text-gray-400    { color: #64748b !important; }
+[data-theme="light"] .text-gray-500    { color: #64748b !important; }
+[data-theme="light"] .text-gray-600    { color: #475569 !important; }
+[data-theme="light"] .hover\:bg-gray-800\/50:hover { background-color: rgba(226,232,240,0.5) !important; }
+
+/* ── Border opacity variants ── */
+[data-theme="light"] .border-slate-700\/50 { border-color: rgba(203,213,225,0.6) !important; }
+[data-theme="light"] .border-slate-700\/60 { border-color: rgba(203,213,225,0.7) !important; }
+[data-theme="light"] .border-slate-600      { border-color: #cbd5e1 !important; }
+
+/* ── Semantic badge backgrounds: keep hue, go light ── */
+[data-theme="light"] .bg-green-900\/30   { background-color: rgba(220,252,231,0.8) !important; }
+[data-theme="light"] .bg-green-900\/40   { background-color: rgba(220,252,231,0.8) !important; }
+[data-theme="light"] .bg-yellow-900\/30  { background-color: rgba(254,249,195,0.8) !important; }
+[data-theme="light"] .bg-yellow-900\/40  { background-color: rgba(254,249,195,0.8) !important; }
+[data-theme="light"] .bg-orange-900\/30  { background-color: rgba(255,237,213,0.8) !important; }
+[data-theme="light"] .bg-red-900\/30     { background-color: rgba(254,226,226,0.8) !important; }
+[data-theme="light"] .bg-blue-900\/60    { background-color: rgba(219,234,254,0.8) !important; }
+[data-theme="light"] .bg-blue-900\/40    { background-color: rgba(219,234,254,0.7) !important; }
+[data-theme="light"] .bg-blue-900        { background-color: #dbeafe !important; }
+[data-theme="light"] .bg-emerald-900\/40 { background-color: rgba(209,250,229,0.8) !important; }
+[data-theme="light"] .bg-purple-900\/40  { background-color: rgba(243,232,255,0.8) !important; }
+[data-theme="light"] .bg-purple-900      { background-color: #f3e8ff !important; }
+[data-theme="light"] .bg-yellow-900      { background-color: #fef9c3 !important; }
+[data-theme="light"] .bg-orange-900      { background-color: #ffedd5 !important; }
+[data-theme="light"] .bg-green-900       { background-color: #dcfce7 !important; }
+
+/* ── Semantic badge borders ── */
+[data-theme="light"] .border-green-700   { border-color: #86efac !important; }
+[data-theme="light"] .border-yellow-700  { border-color: #fde047 !important; }
+[data-theme="light"] .border-orange-700  { border-color: #fdba74 !important; }
+[data-theme="light"] .border-red-700     { border-color: #fca5a5 !important; }
+[data-theme="light"] .border-blue-700    { border-color: #93c5fd !important; }
+[data-theme="light"] .border-emerald-700 { border-color: #6ee7b7 !important; }
+[data-theme="light"] .border-purple-700  { border-color: #d8b4fe !important; }
+
+/* ── Semantic badge text — dark enough to read on light bg ── */
+[data-theme="light"] .text-blue-300     { color: #1d4ed8 !important; }
+[data-theme="light"] .text-yellow-300   { color: #92400e !important; }
+[data-theme="light"] .text-emerald-300  { color: #065f46 !important; }
+[data-theme="light"] .text-green-300    { color: #15803d !important; }
+[data-theme="light"] .text-purple-300   { color: #6d28d9 !important; }
+[data-theme="light"] .text-orange-400   { color: #9a3412 !important; }
+[data-theme="light"] .text-green-400    { color: #15803d !important; }
+[data-theme="light"] .text-yellow-400   { color: #92400e !important; }
+[data-theme="light"] .text-red-400      { color: #b91c1c !important; }
+
+/* ── D3/SVG text labels (ArchitectureGraph) ── */
+.sentry-arch-svg .arch-label        { fill: #f8fafc; }
+[data-theme="light"] .sentry-arch-svg .arch-label { fill: #0f172a !important; }
+[data-theme="light"] .sentry-arch-svg text        { fill: #0f172a !important; }
+
+/* ── Hover states ── */
+[data-theme="light"] .hover\:bg-slate-800\/30:hover { background-color: rgba(226,232,240,0.5) !important; }
+[data-theme="light"] .hover\:bg-slate-700:hover      { background-color: #e2e8f0 !important; }
+[data-theme="light"] .hover\:text-white:hover         { color: #0f172a !important; }
+
+/* ── Competitor/Admin secondary button ── */
+[data-theme="light"] .bg-slate-800\/80.text-slate-300 { color: #334155 !important; }
+
+/* ── Progress bar track ── */
+[data-theme="light"] .h-3.bg-slate-700.rounded-full  { background-color: #e2e8f0 !important; }
+[data-theme="light"] .h-1\.5.bg-slate-800.rounded-full { background-color: #e2e8f0 !important; }
+
+/* ── VendorDetailModal inner tab sections ── */
+[data-theme="light"] .bg-slate-900.rounded-xl.p-4     { background-color: #f8fafc !important; }
+[data-theme="light"] .bg-slate-900.rounded-lg.p-4     { background-color: #f8fafc !important; }
+[data-theme="light"] .bg-slate-900.rounded-xl.border  { background-color: #f8fafc !important; }

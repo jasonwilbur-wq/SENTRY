@@ -1,0 +1,41 @@
+# ── Python cache ─────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# ── Virtual environment ───────────────────────────────────────────
+.venv/
+venv/
+env/
+
+# ── Secrets / env files ─────────────────────────────────────────
+.env
+.env.*
+
+# ── Logs ───────────────────────────────────────────────────────
+*.log
+sentry_backend.log
+
+# ── Dev/utility scripts (not needed in production image) ────────────
+bulk_*.py
+build_*.py
+import_*.py
+generate_*.py
+check_*.py
+inspect_*.py
+link_*.py
+morning_*.py
+scheduled_*.py
+var_score_extractor.py
+start_backend.bat
+
+# ── Output files ─────────────────────────────────────────────────
+output/
+
+# ── CSV / Excel raw data files ────────────────────────────────────
+data/*.csv
+data/*.xlsx
+data/*.xls
+# data/*.db is intentionally NOT excluded — SQLite DB bundles into the image

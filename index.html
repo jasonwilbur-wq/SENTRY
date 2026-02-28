@@ -1,55 +1,37 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SENTRY Framework</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <meta name="description" content="SENTRY — Walmart Global Security's definitive system of record for Emerging Technology vendor assessment, risk transparency, and AI-driven governance." />
+  <meta name="theme-color" content="#000B28" />
+  <meta property="og:title" content="SENTRY | Emerging Technology Security" />
+  <meta property="og:description" content="Identify risks. Visualize architecture. Govern with AI-driven insights." />
+  <meta property="og:type" content="website" />
+  <title>SENTRY | Global Security, Aviation &amp; Investigations</title>
+
+  <!-- Inter — premium legibility at every weight -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>" />
+
+  <!-- Anti-FOUC: apply saved theme before first paint -->
   <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            sentry: {
-              dark: '#0f172a',
-              card: '#1e293b',
-              accent: '#38bdf8',
-              success: '#4ade80',
-              warning: '#fbbf24',
-              danger: '#f87171',
-            }
-          }
-        }
+    (function() {
+      var t = localStorage.getItem('sentry-theme');
+      if (t === 'light' || t === 'dark') {
+        document.documentElement.setAttribute('data-theme', t);
+        if (t === 'dark') document.documentElement.classList.add('dark');
       }
-    }
+    })();
   </script>
-  <style>
-    /* Custom scrollbar for cyber aesthetic */
-    ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: #0f172a;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: #334155;
-      border-radius: 4px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: #475569;
-    }
-
-    body {
-      background-color: #0f172a;
-      color: #f8fafc;
-    }
-  </style>
-
 </head>
 
 <body>
