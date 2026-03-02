@@ -11,6 +11,7 @@ import { ArchitectureGraph } from './components/ArchitectureGraph';
 import { AdminPanel } from './components/AdminPanel';
 import { CompetitorIntelligence } from './components/CompetitorIntelligence';
 import { CSOIntelligence } from './components/CSOIntelligence';
+import { RegulatoryIntelligence } from './components/RegulatoryIntelligence';
 import ProjectDashboard3D from './components/ProjectDashboard3D';
 import { Sidebar } from './components/Sidebar';
 import { PageTransition } from './components/PageTransition';
@@ -45,6 +46,10 @@ const VIEW_META: Record<ViewState, { title: string; subtitle: string }> = {
   [ViewState.CSO_INTELLIGENCE]: {
     title: 'CSO Intelligence',
     subtitle: 'Executive security leadership analysis — Amazon, Target, Costco, Kroger competitive positioning.',
+  },
+  [ViewState.REGULATORY_INTEL]: {
+    title: 'Regulatory Intelligence',
+    subtitle: '362 obligations across AI, Biometrics, ALPR, UAS & Data Privacy — 85 Red, 186 Amber.',
   },
   [ViewState.ARCHITECTURE]: {
     title: 'SENTRY Architecture',
@@ -128,6 +133,7 @@ const App: React.FC = () => {
                 {currentView === ViewState.COMPETITOR_ANALYSIS && <CompetitorAnalysis onNavigate={setCurrentView} />}
                 {currentView === ViewState.COMPETITOR_INTEL   && <CompetitorIntelligence />}
                 {currentView === ViewState.CSO_INTELLIGENCE   && <CSOIntelligence />}
+                {currentView === ViewState.REGULATORY_INTEL   && <RegulatoryIntelligence />}
                 {currentView === ViewState.REQUEST_LAB_VISIT  && <RequestLabVisit />}
                 {currentView === ViewState.ARCHITECTURE       && <ArchitectureGraph />}
                 {currentView === ViewState.ADMIN              && <AdminPanel />}

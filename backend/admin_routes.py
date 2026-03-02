@@ -792,3 +792,268 @@ def delete_competitor_event(event_id: int) -> dict:
         "competitor": row["competitor"],
         "event_title": row["event_title"],
     }
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# COMPETITOR PUBLIC API (for frontend intelligence hub)
+# ══════════════════════════════════════════════════════════════════════════════
+
+from fastapi import APIRouter
+
+competitor_router = APIRouter(prefix="/api/competitors", tags=["competitors"])
+
+
+class CompetitorStats(BaseModel):
+    total: int
+    cyber: int
+    orc: int
+    recall: int
+    legal: int
+    strategic: int
+    competitor_count: int
+
+
+class CompetitorEntity(BaseModel):
+    name: str
+    event_count: int
+    cyber_count: int
+    orc_count: int
+    recall_count: int
+    legal_count: int
+    strategic_count: int
+    threat_level: str
+    top_category: str | None
+    categories_json: str
+    monthly_json: str
+
+
+class CompetitorMonthly(BaseModel):
+    months: list[str]
+    series: dict[str, list[int]]
+
+
+class CompetitorHeatmap(BaseModel):
+    competitors: list[str]
+    categories: list[str]
+    matrix: list[list[int]]
+
+
+@competitor_router.get("/stats", response_model=CompetitorStats)
+def get_competitor_stats() -> CompetitorStats:
+    """Public: Get competitor intelligence KPIs."""
+    conn = get_connection()
+    row = conn.execute("""
+        SELECT COUNT(*) as total,
+               SUM(CASE WHEN category='Cyber'    THEN 1 ELSE 0 END) as cyber,
+               SUM(CASE WHEN category='ORC/Theft'THEN 1 ELSE 0 END) as orc,
+               SUM(CASE WHEN category='Recall'   THEN 1 ELSE 0 END) as recall,
+               SUM(CASE WHEN category='Legal'    THEN 1 ELSE 0 END) as legal,
+               SUM(CASE WHEN category='Strategic'THEN 1 ELSE 0 END) as strategic
+        FROM competitor_events
+    """).fetchone()
+    comp_count = conn.execute("""
+        SELECT COUNT(*) FROM competitor_entities WHERE event_count >= 3
+    """).fetchone()[0]
+    conn.close()
+    return CompetitorStats(
+        total=row["total"] or 0,
+        cyber=row["cyber"] or 0,
+        orc=row["orc"] or 0,
+        recall=row["recall"] or 0,
+        legal=row["legal"] or 0,
+        strategic=row["strategic"] or 0,
+        competitor_count=comp_count or 0,
+    )
+
+
+@competitor_router.get("/entities", response_model=dict)
+def get_competitor_entities(
+    limit: int = Query(20, ge=1, le=100),
+) -> dict[str, list[CompetitorEntity]]:
+    """Public: Get competitor entity profiles."""
+    conn = get_connection()
+    rows = conn.execute("""
+        SELECT name, event_count, cyber_count, orc_count, recall_count,
+               legal_count, strategic_count, threat_level, top_category,
+               categories_json, monthly_json
+        FROM competitor_entities
+        WHERE event_count >= 3
+        ORDER BY event_count DESC
+        LIMIT ?
+    """, (limit,)).fetchall()
+    conn.close()
+    entities = [
+        CompetitorEntity(
+            name=r["name"],
+            event_count=r["event_count"],
+            cyber_count=r["cyber_count"],
+            orc_count=r["orc_count"],
+            recall_count=r["recall_count"],
+            legal_count=r["legal_count"],
+            strategic_count=r["strategic_count"],
+            threat_level=r["threat_level"],
+            top_category=r["top_category"],
+            categories_json=r["categories_json"] or "{}",
+            monthly_json=r["monthly_json"] or "{}",
+        )
+        for r in rows
+    ]
+    return {"entities": entities}
+
+
+@competitor_router.get("/monthly", response_model=CompetitorMonthly)
+def get_competitor_monthly(
+    top: int = Query(5, ge=1, le=20),
+) -> CompetitorMonthly:
+    """Public: Get monthly trend data for top N competitors."""
+    MONTHS = ["Sep 2025", "Oct 2025", "Nov 2025", "Dec 2025", "Jan 2026", "Feb 2026"]
+    conn = get_connection()
+    top_names = [
+        r["name"]
+        for r in conn.execute("""
+            SELECT name FROM competitor_entities
+            WHERE event_count >= 3
+            ORDER BY event_count DESC
+            LIMIT ?
+        """, (top,)).fetchall()
+    ]
+    series: dict[str, list[int]] = {}
+    for name in top_names:
+        counts = []
+        for month in MONTHS:
+            cnt = conn.execute("""
+                SELECT COUNT(*) FROM competitor_events
+                WHERE competitor = ? AND source_month LIKE ?
+            """, (name, f"%{month}%")).fetchone()[0]
+            counts.append(cnt or 0)
+        series[name] = counts
+    conn.close()
+    return CompetitorMonthly(months=MONTHS, series=series)
+
+
+@competitor_router.get("/heatmap", response_model=CompetitorHeatmap)
+def get_competitor_heatmap(
+    top: int = Query(10, ge=1, le=20),
+) -> CompetitorHeatmap:
+    """Public: Get category heatmap for top N competitors."""
+    HEAT_CATS = [
+        "Cyber", "ORC/Theft", "Recall", "Legal", "Strategic",
+        "Operational", "Compliance", "Fraud", "Technology",
+        "Disruption", "Expansion", "Financial", "Labor", "Major Incident", "Other",
+    ]
+    conn = get_connection()
+    top_names = [
+        r["name"]
+        for r in conn.execute("""
+            SELECT name FROM competitor_entities
+            WHERE event_count >= 3
+            ORDER BY event_count DESC
+            LIMIT ?
+        """, (top,)).fetchall()
+    ]
+    matrix: list[list[int]] = []
+    for name in top_names:
+        row_counts = []
+        for cat in HEAT_CATS:
+            cnt = conn.execute("""
+                SELECT COUNT(*) FROM competitor_events
+                WHERE competitor = ? AND category = ?
+            """, (name, cat)).fetchone()[0]
+            row_counts.append(cnt or 0)
+        matrix.append(row_counts)
+    conn.close()
+    return CompetitorHeatmap(
+        competitors=top_names,
+        categories=HEAT_CATS,
+        matrix=matrix,
+    )
+
+
+@competitor_router.get("/events", response_model=CompetitorEventsListResponse)
+def get_competitor_events(
+    competitor: str | None = Query(None),
+    category: str | None = Query(None),
+    month: str | None = Query(None),
+    q: str | None = Query(None),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+) -> CompetitorEventsListResponse:
+    """Public: List competitor events with filters and pagination."""
+    conn = get_connection()
+    params: list[Any] = []
+    clauses: list[str] = []
+
+    if competitor:
+        clauses.append("competitor = ?")
+        params.append(competitor)
+    if category:
+        clauses.append("category = ?")
+        params.append(category)
+    if month:
+        clauses.append("source_month = ?")
+        params.append(month)
+    if q:
+        clauses.append(
+            "(LOWER(event_title) LIKE ? OR LOWER(detailed_description) LIKE ? "
+            "OR LOWER(competitor) LIKE ?)"
+        )
+        term = f"%{q.lower()}%"
+        params.extend([term, term, term])
+
+    where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+    total = conn.execute(
+        f"SELECT COUNT(*) FROM competitor_events {where}", params
+    ).fetchone()[0]
+
+    offset = (page - 1) * page_size
+    rows = conn.execute(
+        f"""
+        SELECT * FROM competitor_events {where}
+        ORDER BY event_date DESC
+        LIMIT ? OFFSET ?
+        """,
+        params + [page_size, offset],
+    ).fetchall()
+    conn.close()
+
+    events = [
+        CompetitorEventOut(
+            id=r["id"],
+            event_date=r["event_date"],
+            competitor=r["competitor"],
+            event_title=r["event_title"],
+            event_type=r["event_type"],
+            detailed_description=r["detailed_description"],
+            category=r["category"],
+            location=r["location"],
+            security_implication=r["security_implication"],
+            operational_impact=r["operational_impact"],
+            financial_impact=r["financial_impact"],
+            reputational_impact=r["reputational_impact"],
+            source_link=r["source_link"],
+            analyst_notes=r["analyst_notes"],
+            source_month=r["source_month"],
+        )
+        for r in rows
+    ]
+
+    return CompetitorEventsListResponse(
+        total=total,
+        page=page,
+        page_size=page_size,
+        total_pages=math.ceil(total / page_size) if total > 0 else 0,
+        events=events,
+    )
+
+
+@competitor_router.get("/categories", response_model=dict)
+def get_competitor_categories() -> dict[str, list[str]]:
+    """Public: Get distinct event categories."""
+    conn = get_connection()
+    rows = conn.execute("""
+        SELECT DISTINCT category FROM competitor_events
+        WHERE category IS NOT NULL
+        ORDER BY category
+    """).fetchall()
+    conn.close()
+    return {"categories": [r["category"] for r in rows]}

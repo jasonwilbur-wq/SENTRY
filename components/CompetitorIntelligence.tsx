@@ -36,6 +36,8 @@ const COMPETITOR_LOGOS: { [key: string]: string } = {
   'Wegmans': '/logos/Wegmans.jpg',
   'Whole Foods': '/logos/Whole Foods.png',
   'Ahold Delhaize / Carrefour': '/logos/carrefour.png',
+  'Amazon (AWS)': '/logos/Amazon AWS.jpg',
+  'AWS': '/logos/Amazon AWS.jpg',
 };
 
 // Color palette for letter avatars (fallback)

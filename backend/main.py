@@ -76,6 +76,10 @@ app.add_middleware(
 
 # ── Admin router (Phase 3) ────────────────────────────────────────────
 app.include_router(admin_router)
+from admin_routes import competitor_router
+app.include_router(competitor_router)
+from regulatory_routes import ROUTER as regulatory_router
+app.include_router(regulatory_router)
 
 
 # ── Vendors ────────────────────────────────────────────────────────────
