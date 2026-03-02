@@ -27,6 +27,7 @@ interface CompetitorEvent {
 const COMPETITOR_LOGOS: { [key: string]: string } = {
   'Amazon': '/logos/Amazon.png',
   'ALDI': '/logos/ALDI.jpg',
+  'Costco': '/logos/Costco.png',
   'Coupang': '/logos/COUPANG.jpg',
   'Home Depot': '/logos/Home Depot.png',
   'Kroger': '/logos/Kroger.png',
