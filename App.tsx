@@ -9,7 +9,7 @@ import { RequestLabVisit } from './components/RequestLabVisit';
 import { CompetitorAnalysis } from './components/CompetitorAnalysis';
 import { ArchitectureGraph } from './components/ArchitectureGraph';
 import { AdminPanel } from './components/AdminPanel';
-import { CompetitorIntel } from './components/CompetitorIntel';
+import { CompetitorIntelligence } from './components/CompetitorIntelligence';
 import { CSOIntelligence } from './components/CSOIntelligence';
 import ProjectDashboard3D from './components/ProjectDashboard3D';
 import { Sidebar } from './components/Sidebar';
@@ -126,7 +126,7 @@ const App: React.FC = () => {
                 {currentView === ViewState.PROJECTS           && <ProjectDashboard3D />}
                 {currentView === ViewState.REQUEST_ASSESSMENT && <RequestAssessment />}
                 {currentView === ViewState.COMPETITOR_ANALYSIS && <CompetitorAnalysis onNavigate={setCurrentView} />}
-                {currentView === ViewState.COMPETITOR_INTEL   && <CompetitorIntel />}
+                {currentView === ViewState.COMPETITOR_INTEL   && <CompetitorIntelligence />}
                 {currentView === ViewState.CSO_INTELLIGENCE   && <CSOIntelligence />}
                 {currentView === ViewState.REQUEST_LAB_VISIT  && <RequestLabVisit />}
                 {currentView === ViewState.ARCHITECTURE       && <ArchitectureGraph />}
