@@ -56,7 +56,7 @@ export function CSOIntelligence() {
         {
           id: 'f1',
           type: 'thought_leadership',
-          headline: 'Schmidt details Amazon's "no exceptions" internal authentication standard (Midway) and U2F-first posture',
+          headline: 'Schmidt details Amazon\'s "no exceptions" internal authentication standard (Midway) and U2F-first posture',
           date: '2026-01-23',
           impactScore: 16,
           riskColor: 'ORANGE',
