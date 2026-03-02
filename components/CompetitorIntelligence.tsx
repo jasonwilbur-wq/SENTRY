@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { fetchCompetitorStats, fetchCompetitorEntities, fetchCompetitorEvents } from '../services/api';
+import { CompetitorThreat3D, type ThreatNode } from './CompetitorThreat3D';
 
 interface CompetitorProfile {
   name: string;
@@ -171,18 +172,78 @@ export function CompetitorIntelligence() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-8">
-      {/* Header */}
+      {/* ═══ 3D HERO — Competitor Threat Constellation ══════════════════ */}
       <div className="max-w-7xl mx-auto mb-8">
-        <div className="bg-gradient-to-r from-blue-600 to-yellow-500 p-1 rounded-lg">
-          <div className="bg-gray-900 p-6 rounded-lg">
-            <h1 className="text-4xl font-bold mb-2">🏢 Competitor Intelligence Hub</h1>
-            <p className="text-gray-300">Live threat tracking across {competitors.length} competitors — {stats?.total ?? 337} events indexed</p>
-            <div className="mt-4 flex gap-4 text-sm flex-wrap">
-              <span className="px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full border border-blue-500/50">📊 {stats?.total ?? 337} Total Events</span>
-              <span className="px-3 py-1 bg-red-500/20 text-red-300 rounded-full border border-red-500/50">🔴 {stats?.cyber ?? 33} Cyber</span>
-              <span className="px-3 py-1 bg-yellow-500/20 text-yellow-300 rounded-full border border-yellow-500/50">🟡 {stats?.orc ?? 52} ORC/Theft</span>
-              <span className="px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full border border-purple-500/50">🟣 {stats?.recall ?? 18} Recalls</span>
-              <span className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full">📅 Jan–Feb 2026</span>
+        <div
+          className="relative rounded-2xl overflow-hidden border border-slate-700"
+          style={{ height: '400px', background: 'radial-gradient(ellipse at center, #00071a 0%, #000208 100%)' }}
+        >
+          {/* Grid overlay */}
+          <div
+            className="absolute inset-0 opacity-[0.05] pointer-events-none"
+            style={{
+              backgroundImage:
+                'linear-gradient(rgba(0,83,226,0.5) 1px,transparent 1px),'
+                + 'linear-gradient(90deg,rgba(0,83,226,0.5) 1px,transparent 1px)',
+              backgroundSize: '52px 52px',
+            }}
+          />
+
+          {/* 3D constellation */}
+          <div className="absolute inset-0 z-0">
+            <CompetitorThreat3D
+              nodes={competitors.slice(0, 20).map((c): ThreatNode => ({
+                name: c.name,
+                eventCount: c.totalEvents,
+                threatLevel: c.threatLevel,
+              }))}
+            />
+          </div>
+
+          {/* Threat legend (bottom-left) */}
+          <div className="absolute bottom-5 left-6 z-10 flex flex-col gap-1.5">
+            {[
+              { label: 'HIGH THREAT',   color: '#ff6b6b' },
+              { label: 'MEDIUM THREAT', color: '#FFC220' },
+              { label: 'LOW THREAT',    color: '#4ade80' },
+            ].map(({ label, color }) => (
+              <div key={label} className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: color, boxShadow: `0 0 6px ${color}` }} />
+                <span className="text-[10px] font-bold tracking-wider" style={{ color }}>{label}</span>
+              </div>
+            ))}
+            <span className="text-[10px] text-slate-500 mt-1">Node size ∝ event count</span>
+          </div>
+
+          {/* Hover hint */}
+          <div className="absolute bottom-5 right-6 z-10">
+            <span className="text-[10px] text-slate-500">Hover nodes to inspect competitors</span>
+          </div>
+
+          {/* Title overlay */}
+          <div className="relative z-10 h-full flex flex-col items-center justify-start pt-8 text-center px-6">
+            <p className="text-[10px] font-bold text-wmt-yellow tracking-[0.2em] uppercase mb-2">
+              Enterprise Security &nbsp;•&nbsp; Competitor Threat Landscape
+            </p>
+            <h1
+              className="text-4xl lg:text-5xl font-black mb-2 leading-tight"
+              style={{
+                background: 'linear-gradient(135deg, #60a5fa 0%, #0053E2 50%, #FFC220 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
+              Competitor Intelligence
+            </h1>
+            <p className="text-slate-400 text-sm max-w-lg mb-5">
+              Live threat tracking across {competitors.length} competitors &mdash; {(stats?.total ?? 0).toLocaleString()} events indexed and analyst-enriched.
+            </p>
+            <div className="flex flex-wrap gap-2 justify-center">
+              <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(0,83,226,0.15)', color: '#60a5fa', borderColor: 'rgba(0,83,226,0.4)' }}>{stats?.total ?? 0} Events</span>
+              <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(234,17,0,0.15)', color: '#ff6b6b', borderColor: 'rgba(234,17,0,0.4)' }}>{stats?.cyber ?? 0} Cyber</span>
+              <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(255,194,32,0.15)', color: '#FFC220', borderColor: 'rgba(255,194,32,0.4)' }}>{stats?.orc ?? 0} ORC/Theft</span>
+              <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(139,92,246,0.15)', color: '#a78bfa', borderColor: 'rgba(139,92,246,0.4)' }}>{stats?.recall ?? 0} Recalls</span>
+              <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', borderColor: 'rgba(34,197,94,0.4)' }}>Jan–Feb 2026</span>
             </div>
           </div>
         </div>

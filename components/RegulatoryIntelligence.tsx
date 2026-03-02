@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { RegObligation, RegSummary, RegTopAction } from '../types';
 import { RegulatoryObligationModal } from './RegulatoryObligationModal';
+import { RegulatoryGlobe3D } from './RegulatoryGlobe3D';
 
 const API = (window as any).__SENTRY_API__ ?? 'http://127.0.0.1:8082';
 
@@ -179,7 +180,81 @@ export const RegulatoryIntelligence: React.FC = () => {
   return (
     <div className="space-y-6">
 
-      {/* ── Hero KPIs */}
+      {/* ═══ 3D HERO — Regulatory Globe ═══════════════════════════════ */}
+      <div
+        className="relative rounded-2xl overflow-hidden border border-slate-700"
+        style={{ height: '400px', background: 'radial-gradient(ellipse at center, #00091e 0%, #000208 100%)' }}
+      >
+        {/* Grid overlay */}
+        <div
+          className="absolute inset-0 opacity-[0.05] pointer-events-none"
+          style={{
+            backgroundImage:
+              'linear-gradient(rgba(0,83,226,0.5) 1px,transparent 1px),'
+              + 'linear-gradient(90deg,rgba(0,83,226,0.5) 1px,transparent 1px)',
+            backgroundSize: '52px 52px',
+          }}
+        />
+        {/* Globe */}
+        <div className="absolute inset-0 z-0">
+          <RegulatoryGlobe3D
+            red={stats?.red ?? 0}
+            amber={stats?.amber ?? 0}
+            yellow={stats?.yellow ?? 0}
+            green={stats?.green ?? 0}
+          />
+        </div>
+
+        {/* RAG legend (bottom-left) */}
+        <div className="absolute bottom-5 left-6 z-10 flex flex-col gap-1.5">
+          {[
+            { label: 'RED — Critical Risk (19-25)',    color: '#ff6b6b', count: stats?.red ?? 0 },
+            { label: 'AMBER — High Risk (13-18)',       color: '#fb923c', count: stats?.amber ?? 0 },
+            { label: 'YELLOW — Medium Risk (7-12)',     color: '#FFC220', count: stats?.yellow ?? 0 },
+            { label: 'GREEN — Low Risk (1-6)',          color: '#4ade80', count: stats?.green ?? 0 },
+          ].map(({ label, color, count }) => (
+            <div key={label} className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color, boxShadow: `0 0 5px ${color}` }} />
+              <span className="text-[10px] font-semibold" style={{ color }}>{label}</span>
+              <span className="text-[10px] font-bold text-white ml-1">{count}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Hover hint */}
+        <div className="absolute bottom-5 right-6 z-10">
+          <span className="text-[10px] text-slate-500">Hover nodes to inspect jurisdictions</span>
+        </div>
+
+        {/* Title overlay (top-center) */}
+        <div className="relative z-10 h-full flex flex-col items-center justify-start pt-8 text-center px-6">
+          <p className="text-[10px] font-bold text-wmt-yellow tracking-[0.2em] uppercase mb-2">
+            Enterprise Security &nbsp;•&nbsp; Global Regulatory Intelligence
+          </p>
+          <h1
+            className="text-4xl lg:text-5xl font-black mb-2 leading-tight"
+            style={{
+              background: 'linear-gradient(135deg, #60a5fa 0%, #0053E2 50%, #FFC220 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+            }}
+          >
+            Regulatory Intelligence
+          </h1>
+          <p className="text-slate-400 text-sm max-w-lg mb-5">
+            {stats?.total_obligations ?? '—'} obligations across {summary?.jurisdictions.length ?? '—'} jurisdictions — real-time RAG risk mapping.
+          </p>
+          <div className="flex flex-wrap gap-2 justify-center">
+            <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(234,17,0,0.15)', color: '#ff6b6b', borderColor: 'rgba(234,17,0,0.4)' }}>{stats?.red ?? '—'} Red</span>
+            <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(249,115,22,0.15)', color: '#fb923c', borderColor: 'rgba(249,115,22,0.4)' }}>{stats?.amber ?? '—'} Amber</span>
+            <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(255,194,32,0.15)', color: '#FFC220', borderColor: 'rgba(255,194,32,0.4)' }}>{stats?.yellow ?? '—'} Yellow</span>
+            <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(42,135,3,0.15)', color: '#4ade80', borderColor: 'rgba(42,135,3,0.4)' }}>{stats?.green ?? '—'} Green</span>
+            <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(0,83,226,0.15)', color: '#60a5fa', borderColor: 'rgba(0,83,226,0.4)' }}>{stats?.enacted ?? '—'} Enacted</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ══ Hero KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
         <KpiCard label="Total Obligations" value={stats?.total_obligations ?? 0} sub="unique obligations" />
         <KpiCard label="Red" value={stats?.red ?? 0} sub="Risk 19-25" rag="Red" />

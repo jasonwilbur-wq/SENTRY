@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { CSORadar3D } from './CSORadar3D';
 
 interface ExecutiveProfile {
   id: string;
@@ -226,16 +227,65 @@ export function CSOIntelligence() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-8">
-      {/* Header */}
+      {/* ═══ 3D HERO — CSO Radar ══════════════════════════════════════ */}
       <div className="max-w-7xl mx-auto mb-8">
-        <div className="bg-gradient-to-r from-blue-600 to-yellow-500 p-1 rounded-lg">
-          <div className="bg-gray-900 p-6 rounded-lg">
-            <h1 className="text-4xl font-bold mb-2">🎯 CSO Intelligence Command Center</h1>
-            <p className="text-gray-300">Live competitor executive tracking — Amazon security leadership analysis</p>
-            <div className="mt-4 flex gap-4 text-sm">
-              <span className="px-3 py-1 bg-red-500/20 text-red-300 rounded-full border border-red-500/50">🔴 CRITICAL Threats: 2</span>
-              <span className="px-3 py-1 bg-orange-500/20 text-orange-300 rounded-full border border-orange-500/50">🟠 HIGH Threats: 4</span>
-              <span className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full">📅 Last Updated: March 2, 2026</span>
+        <div
+          className="relative rounded-2xl overflow-hidden border border-slate-700"
+          style={{ height: '400px', background: 'radial-gradient(ellipse at center, #000d2e 0%, #000510 100%)' }}
+        >
+          {/* Grid overlay */}
+          <div
+            className="absolute inset-0 opacity-[0.05] pointer-events-none"
+            style={{
+              backgroundImage:
+                'linear-gradient(rgba(0,83,226,0.6) 1px,transparent 1px),'
+                + 'linear-gradient(90deg,rgba(0,83,226,0.6) 1px,transparent 1px)',
+              backgroundSize: '48px 48px',
+            }}
+          />
+
+          {/* 3D Radar scene */}
+          <div className="absolute inset-0 z-0">
+            <CSORadar3D />
+          </div>
+
+          {/* Threat ring legend (bottom-left) */}
+          <div className="absolute bottom-5 left-6 z-10 flex flex-col gap-1.5">
+            {[
+              { label: 'CRITICAL', color: '#ff6b6b' },
+              { label: 'HIGH',     color: '#fb923c' },
+              { label: 'MEDIUM',   color: '#FFC220' },
+              { label: 'LOW',      color: '#4ade80' },
+            ].map(({ label, color }) => (
+              <div key={label} className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: color, boxShadow: `0 0 6px ${color}` }} />
+                <span className="text-[10px] font-bold tracking-wider" style={{ color }}>{label}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Text overlay (top-center) */}
+          <div className="relative z-10 h-full flex flex-col items-center justify-start pt-8 text-center px-6">
+            <p className="text-[10px] font-bold text-wmt-yellow tracking-[0.2em] uppercase mb-2">
+              Enterprise Security &nbsp;•&nbsp; Executive Threat Intelligence
+            </p>
+            <h1
+              className="text-4xl lg:text-5xl font-black mb-2 leading-tight"
+              style={{
+                background: 'linear-gradient(135deg, #60a5fa 0%, #0053E2 50%, #FFC220 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
+              CSO Intelligence
+            </h1>
+            <p className="text-slate-400 text-sm max-w-lg mb-5">
+              Competitor executive tracking — Amazon security leadership, threat posture, and strategic risk.
+            </p>
+            <div className="flex flex-wrap gap-2 justify-center">
+              <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(234,17,0,0.15)', color: '#ff6b6b', borderColor: 'rgba(234,17,0,0.4)' }}>CRITICAL Threats: 2</span>
+              <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(249,115,22,0.15)', color: '#fb923c', borderColor: 'rgba(249,115,22,0.4)' }}>HIGH Threats: 4</span>
+              <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(0,83,226,0.15)', color: '#60a5fa', borderColor: 'rgba(0,83,226,0.4)' }}>Updated: Mar 2, 2026</span>
             </div>
           </div>
         </div>
