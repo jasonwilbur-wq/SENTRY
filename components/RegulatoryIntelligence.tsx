@@ -3,7 +3,10 @@ import { RegObligation, RegSummary, RegTopAction } from '../types';
 import { RegulatoryObligationModal } from './RegulatoryObligationModal';
 import { RegulatoryGlobe3D } from './RegulatoryGlobe3D';
 
-const API = (window as any).__SENTRY_API__ ?? 'http://127.0.0.1:8082';
+// Use relative paths so requests go through Vite's proxy (/api → :8082).
+// A hardcoded absolute URL (127.0.0.1:8082) was causing browsers to block
+// the cross-origin fetch with "TypeError: Failed to fetch".
+const API = (window as any).__SENTRY_API__ ?? '';
 
 // ── RAG colour helpers ───────────────────────────────────────────────────
 const RAG_COLORS: Record<string, { bg: string; text: string; border: string; dot: string }> = {

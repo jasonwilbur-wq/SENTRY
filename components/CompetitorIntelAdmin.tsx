@@ -18,7 +18,8 @@ import type {
 
 // ── API Client Functions ──────────────────────────────────────────────────────
 
-const API_BASE = 'http://localhost:8082/api/admin';
+// Use relative path → Vite proxy forwards /api/* to :8082.
+const API_BASE = '/api/admin';
 
 async function fetchCompetitorEvents(
   page: number,
