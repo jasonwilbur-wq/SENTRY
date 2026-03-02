@@ -41,6 +41,15 @@ class VendorOut(BaseModel):
     
     # VAR Data (attached if available)
     var_scores: dict | None = None
+    
+    # Enhanced vendor details (Phase 2.5 — 202601/202602 import)
+    vendor_highlight: str = ""
+    pros: str = ""
+    cons: str = ""
+    concerns: str = ""
+    use_cases: str = ""
+    value_to_walmart: str = ""
+    maturity_level: str = ""
 
 
 class VendorsResponse(BaseModel):

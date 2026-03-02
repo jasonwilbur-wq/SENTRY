@@ -10,6 +10,8 @@ import { CompetitorAnalysis } from './components/CompetitorAnalysis';
 import { ArchitectureGraph } from './components/ArchitectureGraph';
 import { AdminPanel } from './components/AdminPanel';
 import { CompetitorIntel } from './components/CompetitorIntel';
+import { CSOIntelligence } from './components/CSOIntelligence';
+import ProjectDashboard3D from './components/ProjectDashboard3D';
 import { Sidebar } from './components/Sidebar';
 import { PageTransition } from './components/PageTransition';
 
@@ -19,6 +21,10 @@ const VIEW_META: Record<ViewState, { title: string; subtitle: string }> = {
   [ViewState.DIRECTORY]: {
     title: 'Vendor Directory',
     subtitle: 'Centralized record of all assessed Emerging Technology vendors.',
+  },
+  [ViewState.PROJECTS]: {
+    title: 'Project Portfolio',
+    subtitle: '3D visualization of all EST projects — 14 active projects, $5.05M portfolio value.',
   },
   [ViewState.REQUEST_ASSESSMENT]: {
     title: 'Security Assessment',
@@ -35,6 +41,10 @@ const VIEW_META: Record<ViewState, { title: string; subtitle: string }> = {
   [ViewState.COMPETITOR_INTEL]: {
     title: 'Competitor Intelligence',
     subtitle: 'Live threat tracking across retail competitors — 1,113 analyst-enriched events.',
+  },
+  [ViewState.CSO_INTELLIGENCE]: {
+    title: 'CSO Intelligence',
+    subtitle: 'Executive security leadership analysis — Amazon, Target, Costco, Kroger competitive positioning.',
   },
   [ViewState.ARCHITECTURE]: {
     title: 'SENTRY Architecture',
@@ -113,9 +123,11 @@ const App: React.FC = () => {
             <div className="flex-1 overflow-y-auto p-8">
               <PageTransition viewKey={currentView}>
                 {currentView === ViewState.DIRECTORY          && <VendorDashboard />}
+                {currentView === ViewState.PROJECTS           && <ProjectDashboard3D />}
                 {currentView === ViewState.REQUEST_ASSESSMENT && <RequestAssessment />}
                 {currentView === ViewState.COMPETITOR_ANALYSIS && <CompetitorAnalysis onNavigate={setCurrentView} />}
                 {currentView === ViewState.COMPETITOR_INTEL   && <CompetitorIntel />}
+                {currentView === ViewState.CSO_INTELLIGENCE   && <CSOIntelligence />}
                 {currentView === ViewState.REQUEST_LAB_VISIT  && <RequestLabVisit />}
                 {currentView === ViewState.ARCHITECTURE       && <ArchitectureGraph />}
                 {currentView === ViewState.ADMIN              && <AdminPanel />}

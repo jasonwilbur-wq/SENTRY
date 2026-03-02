@@ -10,11 +10,12 @@ interface VendorDetailModalProps {
   onClose: () => void;
 }
 
-// ── Tabs ─────────────────────────────────────────────────────────────────────
-type Tab = 'overview' | 'risk' | 'tech' | 'docs';
+// ── Tabs ──────────────────────────────────────────────────────────────────
+type Tab = 'overview' | 'insights' | 'risk' | 'tech' | 'docs';
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'overview', label: 'Overview' },
+  { id: 'insights', label: 'Insights' },
   { id: 'risk',     label: 'Risk & Scores' },
   { id: 'tech',     label: 'Technology' },
   { id: 'docs',     label: 'Documents' },
@@ -244,7 +245,173 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor, on
             </div>
           )}
 
-          {/* ── TAB: RISK & SCORES ──────────────────────────────────────────── */}
+          {/* ── TAB: INSIGHTS ───────────────────────────────────── */}
+          {activeTab === 'insights' && (
+            <div className="space-y-6">
+              {/* Vendor Highlight Banner */}
+              {vendor.vendor_highlight && (
+                <div 
+                  className="p-5 rounded-xl relative overflow-hidden"
+                  style={{
+                    background: 'linear-gradient(135deg, rgba(0,83,226,0.08) 0%, rgba(255,194,32,0.06) 100%)',
+                    border: '1px solid rgba(0,83,226,0.2)',
+                  }}
+                >
+                  <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl" 
+                       style={{ background: 'rgba(255,194,32,0.1)' }} aria-hidden />
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-2 mb-2">
+                      <svg className="w-4 h-4 text-wmt-yellow" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                      <h3 className="text-sm font-bold text-wmt-yellow uppercase tracking-widest">Key Highlight</h3>
+                    </div>
+                    <p className="text-white text-sm leading-relaxed">{vendor.vendor_highlight}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Two Column Layout */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left Column */}
+                <div className="space-y-6">
+                  {/* Use Cases */}
+                  {vendor.use_cases && (
+                    <div className="p-5 rounded-xl bg-slate-900/50 border border-slate-800">
+                      <div className="flex items-center gap-2 mb-3">
+                        <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                        </svg>
+                        <h4 className="text-sm font-bold text-slate-300 uppercase tracking-widest">Use Cases</h4>
+                      </div>
+                      <div className="space-y-2">
+                        {vendor.use_cases.split('|').map((useCase, idx) => (
+                          <div key={idx} className="flex items-start gap-2">
+                            <span className="text-wmt-blue text-sm mt-0.5">•</span>
+                            <p className="text-slate-300 text-sm leading-relaxed">{useCase.trim()}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Value to Walmart */}
+                  {vendor.value_to_walmart && (
+                    <div className="p-5 rounded-xl bg-slate-900/50 border border-green-900/30">
+                      <div className="flex items-center gap-2 mb-3">
+                        <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h4 className="text-sm font-bold text-green-400 uppercase tracking-widest">Value to Walmart</h4>
+                      </div>
+                      <div className="space-y-2">
+                        {vendor.value_to_walmart.split('|').map((value, idx) => (
+                          <div key={idx} className="flex items-start gap-2">
+                            <span className="text-green-400 text-sm mt-0.5">✓</span>
+                            <p className="text-slate-300 text-sm leading-relaxed">{value.trim()}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Maturity Level */}
+                  {vendor.maturity_level && (
+                    <div className="p-5 rounded-xl bg-slate-900/50 border border-slate-800">
+                      <h4 className="text-xs text-slate-500 uppercase tracking-widest mb-2">Maturity Level</h4>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-gradient-to-r from-yellow-500 to-green-500 rounded-full"
+                            style={{ width: vendor.maturity_level.toLowerCase().includes('early') ? '33%' : vendor.maturity_level.toLowerCase().includes('growth') ? '66%' : '100%' }}
+                          />
+                        </div>
+                        <span className="text-sm font-bold text-white">{vendor.maturity_level}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Right Column */}
+                <div className="space-y-6">
+                  {/* Pros */}
+                  {vendor.pros && (
+                    <div className="p-5 rounded-xl bg-green-900/10 border border-green-900/30">
+                      <div className="flex items-center gap-2 mb-3">
+                        <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+                        </svg>
+                        <h4 className="text-sm font-bold text-green-400 uppercase tracking-widest">Strengths</h4>
+                      </div>
+                      <div className="space-y-2">
+                        {vendor.pros.split('|').map((pro, idx) => (
+                          <div key={idx} className="flex items-start gap-2">
+                            <span className="text-green-400 text-sm mt-0.5">+</span>
+                            <p className="text-slate-300 text-sm leading-relaxed">{pro.trim()}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Cons */}
+                  {vendor.cons && (
+                    <div className="p-5 rounded-xl bg-orange-900/10 border border-orange-900/30">
+                      <div className="flex items-center gap-2 mb-3">
+                        <svg className="w-4 h-4 text-orange-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5" />
+                        </svg>
+                        <h4 className="text-sm font-bold text-orange-400 uppercase tracking-widest">Challenges</h4>
+                      </div>
+                      <div className="space-y-2">
+                        {vendor.cons.split('|').map((con, idx) => (
+                          <div key={idx} className="flex items-start gap-2">
+                            <span className="text-orange-400 text-sm mt-0.5">−</span>
+                            <p className="text-slate-300 text-sm leading-relaxed">{con.trim()}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Concerns */}
+                  {vendor.concerns && (
+                    <div className="p-5 rounded-xl bg-red-900/10 border border-red-900/30">
+                      <div className="flex items-center gap-2 mb-3">
+                        <svg className="w-4 h-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <h4 className="text-sm font-bold text-red-400 uppercase tracking-widest">Security Concerns</h4>
+                      </div>
+                      <div className="space-y-2">
+                        {vendor.concerns.split('|').map((concern, idx) => (
+                          <div key={idx} className="flex items-start gap-2">
+                            <span className="text-red-400 text-sm mt-0.5">⚠</span>
+                            <p className="text-slate-300 text-sm leading-relaxed">{concern.trim()}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Empty State */}
+              {!vendor.vendor_highlight && !vendor.use_cases && !vendor.value_to_walmart && 
+               !vendor.pros && !vendor.cons && !vendor.concerns && (
+                <div className="py-16 text-center rounded-xl border border-dashed border-slate-700 bg-slate-900/30">
+                  <div className="text-5xl mb-3">📊</div>
+                  <p className="text-slate-400 font-semibold mb-1">No Vendor Insights Available</p>
+                  <p className="text-slate-600 text-sm">This vendor hasn't been analyzed in the 202601/202602 tracker updates yet.</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── TAB: RISK & SCORES ────────────────────────────────────── */}
           {activeTab === 'risk' && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
               <div className="flex flex-col items-center justify-center bg-slate-900/50 rounded-2xl border border-slate-800 p-6 relative">

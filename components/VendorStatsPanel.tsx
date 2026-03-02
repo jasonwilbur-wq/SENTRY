@@ -218,7 +218,7 @@ function DecisionBands({ bands, total }: { bands: Record<string, number>; total:
   );
 }
 
-// ── Main Panel ───────────────────────────────────────────────────────────────
+// ── Main Panel ────────────────────────────────────────────────────────────
 interface VendorStatsPanelProps {
   stats: DirectoryStats;
 }
@@ -227,6 +227,13 @@ export const VendorStatsPanel: React.FC<VendorStatsPanelProps> = ({ stats }) => 
   const riskData = Object.entries(stats.risk_distribution)
     .filter(([k]) => k && k !== 'Unknown')
     .map(([name, value]) => ({ name, value }));
+
+  // Calculate category percentages
+  const totalVendors = stats.total_vendors;
+  const categoryPercentages = stats.top_categories.map(cat => ({
+    ...cat,
+    percentage: totalVendors > 0 ? Math.round((cat.count / totalVendors) * 100 * 10) / 10 : 0,
+  }));
 
   return (
     <section
@@ -270,13 +277,38 @@ export const VendorStatsPanel: React.FC<VendorStatsPanelProps> = ({ stats }) => 
         <KpiTile label="Avg Security Score" value={Math.round(stats.avg_rating * 10) / 10} sub="overall portfolio" color="#a78bfa" />
       </div>
 
-      {/* Charts row — gradient dividers */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 p-4 pt-0">
+      {/* Charts row — gradient dividers + Category Percentages */}
+      <div className="grid grid-cols-1 sm:grid-cols-4 p-4 pt-0">
         <div className="py-4 sm:pr-4" style={{ borderRight: '1px solid var(--s-border)' }}>
           <RiskDonut data={riskData} />
         </div>
         <div className="py-4 sm:px-4" style={{ borderRight: '1px solid var(--s-border)' }}>
           <CategoryBars cats={stats.top_categories} />
+        </div>
+        <div className="py-4 sm:px-4" style={{ borderRight: '1px solid var(--s-border)' }}>
+          <div>
+            <p className="text-xs uppercase tracking-widest text-slate-500 font-bold mb-3">
+              Category Distribution
+            </p>
+            <div className="space-y-2 max-h-[180px] overflow-y-auto pr-2 custom-scrollbar">
+              {categoryPercentages.slice(0, 8).map((cat, idx) => (
+                <div key={cat.category} className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div 
+                      className="w-2 h-2 rounded-full shrink-0"
+                      style={{ backgroundColor: `hsl(${210 + idx * 18}, 80%, ${55 - idx * 2}%)` }}
+                    />
+                    <span className="text-[10px] text-slate-400 truncate">
+                      {SHORT_NAMES[cat.category] ?? cat.category.slice(0, 12)}
+                    </span>
+                  </div>
+                  <span className="text-xs font-bold text-wmt-blue shrink-0">
+                    {cat.percentage}%
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
         <div className="py-4 sm:pl-4">
           <DecisionBands bands={stats.decision_bands} total={stats.total_vars} />

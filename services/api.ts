@@ -78,6 +78,15 @@ export interface Vendor {
   hosting_type?: string;
   data_classification?: string;
   var_scores?: VarScores;
+  
+  // Enhanced Vendor Details (Phase 2.5 — 202601/202602 import)
+  vendor_highlight?: string;
+  pros?: string;
+  cons?: string;
+  concerns?: string;
+  use_cases?: string;
+  value_to_walmart?: string;
+  maturity_level?: string;
 }
 
 export interface VendorsParams {
@@ -407,13 +416,58 @@ export interface CompetitorEvent {
   category: string;
   location: string | null;
   security_implication: string | null;
+  operational_impact: string | null;
+  financial_impact: string | null;
+  reputational_impact: string | null;
   detailed_description: string | null;
   analyst_notes: string | null;
   source_link: string | null;
   source_month: string | null;
 }
 
+export interface CompetitorEventCreate {
+  event_date: string;
+  competitor: string;
+  event_title: string;
+  event_type?: string;
+  category: string;
+  location?: string;
+  security_implication?: string;
+  operational_impact?: string;
+  financial_impact?: string;
+  reputational_impact?: string;
+  detailed_description?: string;
+  analyst_notes?: string;
+  source_link?: string;
+  source_month?: string;
+}
+
+export interface CompetitorEventUpdate {
+  event_date?: string;
+  competitor?: string;
+  event_title?: string;
+  event_type?: string;
+  category?: string;
+  location?: string;
+  security_implication?: string;
+  operational_impact?: string;
+  financial_impact?: string;
+  reputational_impact?: string;
+  detailed_description?: string;
+  analyst_notes?: string;
+  source_link?: string;
+  source_month?: string;
+}
+
 export interface CompetitorEventsResponse {
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  events: CompetitorEvent[];
+}
+
+export interface CompetitorEventsListResponse {
   total: number;
   page: number;
   page_size: number;

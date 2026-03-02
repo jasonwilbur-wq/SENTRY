@@ -22,6 +22,7 @@ import {
   linkVarToVendor,
   searchVendorsForLinking,
 } from '../services/api';
+import { CompetitorIntelAdmin } from './CompetitorIntelAdmin';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────────
 
@@ -192,6 +193,7 @@ function BatchResultDrawer({ res, onClose }: { res: BatchExtractResponse; onClos
 // ── Main AdminPanel ──────────────────────────────────────────────────────────────────
 
 export const AdminPanel: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'vars' | 'competitor'>('vars');
   const [stats, setStats]         = useState<AdminStats | null>(null);
   const [varList, setVarList]     = useState<VarListResponse | null>(null);
   const [page, setPage]           = useState(1);
@@ -274,7 +276,33 @@ export const AdminPanel: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Tab Navigation */}
+      <div className="flex gap-2 border-b border-slate-700 pb-1">
+        <button
+          onClick={() => setActiveTab('vars')}
+          className={`px-4 py-2 rounded-t-lg text-sm font-semibold transition-all ${
+            activeTab === 'vars'
+              ? 'bg-slate-800 text-yellow-300 border border-b-slate-800 border-slate-700'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/50 border border-transparent'
+          }`}
+        >
+          📊 VAR Management
+        </button>
+        <button
+          onClick={() => setActiveTab('competitor')}
+          className={`px-4 py-2 rounded-t-lg text-sm font-semibold transition-all ${
+            activeTab === 'competitor'
+              ? 'bg-slate-800 text-yellow-300 border border-b-slate-800 border-slate-700'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/50 border border-transparent'
+          }`}
+        >
+          📡 Competitor Intel
+        </button>
+      </div>
 
+      {/* VAR Management Tab */}
+      {activeTab === 'vars' && (
+        <>
       {/* Stats cards */}
       {stats && (
         <>
@@ -506,6 +534,11 @@ export const AdminPanel: React.FC = () => {
           onClose={() => setBatchResult(null)}
         />
       )}
+        </>
+      )}
+
+      {/* Competitor Intel Tab */}
+      {activeTab === 'competitor' && <CompetitorIntelAdmin />}
     </div>
   );
 };

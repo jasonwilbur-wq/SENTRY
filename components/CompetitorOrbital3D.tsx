@@ -8,6 +8,8 @@
  *  · Animated pulse arcs from satellites toward the core
  *  · Mouse drag + inertia; hover tooltip
  *  · Starfield particle cloud
+ *
+ * v2.0 - Enhanced with PBR materials, professional lighting, and visual effects
  */
 import React, { useEffect, useRef, useCallback } from 'react';
 import * as THREE from 'three';
@@ -44,56 +46,124 @@ export const CompetitorOrbital3D: React.FC<Props> = ({ entities, onHover }) => {
     const W = el.clientWidth  || 900;
     const H = el.clientHeight || 440;
 
-    // ── Renderer ─────────────────────────────────────────────────────
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    // ── Renderer (Enhanced Quality) ──────────────────────────────────────────
+    const renderer = new THREE.WebGLRenderer({ 
+      antialias: true, 
+      alpha: true,
+      powerPreference: 'high-performance',
+      precision: 'highp',
+    });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(W, H);
     renderer.setClearColor(0x000000, 0);
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.1;
     el.appendChild(renderer.domElement);
 
-    // ── Scene + Camera ────────────────────────────────────────────────
+    // ── Scene + Camera ─────────────────────────────────────────────────────
     const scene  = new THREE.Scene();
+    scene.fog = new THREE.FogExp2(0x000000, 0.0015); // Depth fog
     const camera = new THREE.PerspectiveCamera(52, W / H, 0.1, 2000);
     camera.position.set(0, 22, 105);
     camera.lookAt(0, 0, 0);
 
-    // ── Lighting ──────────────────────────────────────────────────────
-    scene.add(new THREE.AmbientLight(0x0a1a3a, 1.4));
-    const coreLight = new THREE.PointLight(WM_BLUE, 3.5, 220);
+    // ── Enhanced Lighting (4-Point Setup) ───────────────────────────────────────
+    scene.add(new THREE.AmbientLight(0x0a1a3a, 0.9));
+    
+    // Core light (Walmart blue - main illumination)
+    const coreLight = new THREE.PointLight(WM_BLUE, 4.5, 250);
     coreLight.position.set(0, 0, 0);
     scene.add(coreLight);
-    const sparkLight = new THREE.PointLight(WM_YELLOW, 0.9, 120);
+    
+    // Spark light (accent)
+    const sparkLight = new THREE.PointLight(WM_YELLOW, 1.2, 140);
     sparkLight.position.set(40, 30, 30);
     scene.add(sparkLight);
+    
+    // Rim light (edge definition)
+    const rimLight = new THREE.PointLight(0x22c55e, 0.8, 120);
+    rimLight.position.set(-30, -20, 40);
+    scene.add(rimLight);
+    
+    // Fill light (subtle)
+    const fillLight = new THREE.PointLight(0x60a5fa, 0.6, 100);
+    fillLight.position.set(0, 50, -30);
+    scene.add(fillLight);
 
-    // ── Walmart core sphere ───────────────────────────────────────────
-    const coreGeo = new THREE.SphereGeometry(8.5, 64, 64);
-    const coreMat = new THREE.MeshPhongMaterial({
-      color: WM_BLUE, emissive: 0x001a55, emissiveIntensity: 0.6,
-      shininess: 120, transparent: true, opacity: 0.95,
+    // ── Walmart core sphere (PBR Material) ─────────────────────────────────────
+    const coreGeo = new THREE.SphereGeometry(8.5, 96, 96); // Higher resolution
+    const coreMat = new THREE.MeshStandardMaterial({
+      color: WM_BLUE, 
+      emissive: 0x002060, 
+      emissiveIntensity: 0.7,
+      metalness: 0.5,
+      roughness: 0.2,
+      transparent: true, 
+      opacity: 0.96,
     });
     const coreMesh = new THREE.Mesh(coreGeo, coreMat);
     scene.add(coreMesh);
 
-    // Core wireframe shell
+    // Core wireframe shell (dual-layer)
     scene.add(new THREE.Mesh(
-      new THREE.SphereGeometry(8.7, 18, 18),
-      new THREE.MeshBasicMaterial({ color: 0x1a5ce2, wireframe: true, transparent: true, opacity: 0.12 }),
+      new THREE.SphereGeometry(8.8, 24, 24),
+      new THREE.MeshBasicMaterial({ color: 0x2080ff, wireframe: true, transparent: true, opacity: 0.16 }),
+    ));
+    scene.add(new THREE.Mesh(
+      new THREE.SphereGeometry(9.0, 20, 20),
+      new THREE.MeshBasicMaterial({ color: 0x1a5ce2, wireframe: true, transparent: true, opacity: 0.10 }),
     ));
 
-    // Atmosphere glow
+    // Multi-layer atmosphere glow
     scene.add(new THREE.Mesh(
-      new THREE.SphereGeometry(12, 32, 32),
-      new THREE.MeshBasicMaterial({ color: WM_BLUE, transparent: true, opacity: 0.07, side: THREE.BackSide }),
+      new THREE.SphereGeometry(13.5, 48, 48),
+      new THREE.MeshBasicMaterial({ 
+        color: WM_BLUE, 
+        transparent: true, 
+        opacity: 0.08, 
+        side: THREE.BackSide,
+        blending: THREE.AdditiveBlending,
+      }),
+    ));
+    scene.add(new THREE.Mesh(
+      new THREE.SphereGeometry(11, 48, 48),
+      new THREE.MeshBasicMaterial({ 
+        color: 0x0099ff, 
+        transparent: true, 
+        opacity: 0.05, 
+        side: THREE.BackSide,
+        blending: THREE.AdditiveBlending,
+      }),
     ));
 
-    // Spark Yellow equatorial ring
+    // Spark Yellow equatorial ring (dual-layer)
     const eqRing = new THREE.Mesh(
-      new THREE.TorusGeometry(13.5, 0.28, 8, 100),
-      new THREE.MeshBasicMaterial({ color: WM_YELLOW, transparent: true, opacity: 0.55 }),
+      new THREE.TorusGeometry(13.5, 0.32, 12, 120),
+      new THREE.MeshStandardMaterial({ 
+        color: WM_YELLOW, 
+        emissive: WM_YELLOW,
+        emissiveIntensity: 0.6,
+        metalness: 0.7,
+        roughness: 0.2,
+        transparent: true, 
+        opacity: 0.65,
+      }),
     );
     eqRing.rotation.x = Math.PI / 2;
     scene.add(eqRing);
+    
+    // Ring glow layer
+    const eqRingGlow = new THREE.Mesh(
+      new THREE.TorusGeometry(13.5, 0.45, 8, 100),
+      new THREE.MeshBasicMaterial({ 
+        color: WM_YELLOW, 
+        transparent: true, 
+        opacity: 0.25,
+        blending: THREE.AdditiveBlending,
+      }),
+    );
+    eqRingGlow.rotation.x = Math.PI / 2;
+    scene.add(eqRingGlow);
 
     // ── Satellites ────────────────────────────────────────────────────
     const TOP     = Math.min(entities.length, 12);
@@ -113,18 +183,28 @@ export const CompetitorOrbital3D: React.FC<Props> = ({ entities, onHover }) => {
       const size    = Math.max(1.5, Math.min(4.2, 1.3 + comp.event_count / 100));
       const colHex  = THREAT_COLOR[comp.threat_level] ?? 0x64748b;
 
-      // Orbit ring (decorative)
-      const orbitGeo = new THREE.TorusGeometry(radius, 0.14, 8, 128);
-      const orbitMat = new THREE.MeshBasicMaterial({ color: 0x1e3a5f, transparent: true, opacity: 0.22 });
+      // Orbit ring (decorative, enhanced)
+      const orbitGeo = new THREE.TorusGeometry(radius, 0.16, 10, 140);
+      const orbitMat = new THREE.MeshBasicMaterial({ 
+        color: 0x2060a0, 
+        transparent: true, 
+        opacity: 0.28,
+        blending: THREE.AdditiveBlending,
+      });
       const orbitRing = new THREE.Mesh(orbitGeo, orbitMat);
       orbitRing.rotation.x = Math.PI / 2 + TILTS[i] * 0.5;
       scene.add(orbitRing);
 
-      // Satellite body
-      const satGeo  = new THREE.SphereGeometry(size, 32, 32);
-      const satMat  = new THREE.MeshPhongMaterial({
-        color: colHex, emissive: colHex, emissiveIntensity: 0.3,
-        shininess: 80, transparent: true, opacity: 0.92,
+      // Satellite body (PBR material)
+      const satGeo  = new THREE.SphereGeometry(size, 48, 48); // Higher resolution
+      const satMat  = new THREE.MeshStandardMaterial({
+        color: colHex, 
+        emissive: colHex, 
+        emissiveIntensity: 0.5,
+        metalness: 0.3,
+        roughness: 0.4,
+        transparent: true, 
+        opacity: 0.94,
       });
       const satMesh = new THREE.Mesh(satGeo, satMat);
       const angle0  = (i / TOP) * Math.PI * 2;
@@ -135,10 +215,16 @@ export const CompetitorOrbital3D: React.FC<Props> = ({ entities, onHover }) => {
       );
       scene.add(satMesh);
 
-      // Satellite glow halo
+      // Satellite glow halo (enhanced)
       satMesh.add(new THREE.Mesh(
-        new THREE.SphereGeometry(size * 1.6, 16, 16),
-        new THREE.MeshBasicMaterial({ color: colHex, transparent: true, opacity: 0.06, side: THREE.BackSide }),
+        new THREE.SphereGeometry(size * 1.8, 20, 20),
+        new THREE.MeshBasicMaterial({ 
+          color: colHex, 
+          transparent: true, 
+          opacity: 0.08, 
+          side: THREE.BackSide,
+          blending: THREE.AdditiveBlending,
+        }),
       ));
 
       satMeshes.push(satMesh);
@@ -149,15 +235,29 @@ export const CompetitorOrbital3D: React.FC<Props> = ({ entities, onHover }) => {
       });
     });
 
-    // ── Starfield ─────────────────────────────────────────────────────
-    const STAR_COUNT = 320;
+    // ── Starfield (Enhanced) ──────────────────────────────────────────────────
+    const STAR_COUNT = 500; // More stars
     const starPos    = new Float32Array(STAR_COUNT * 3);
-    for (let i = 0; i < STAR_COUNT * 3; i++)
-      starPos[i] = (Math.random() - 0.5) * 420;
+    const starSizes  = new Float32Array(STAR_COUNT);
+    for (let i = 0; i < STAR_COUNT; i++) {
+      const idx = i * 3;
+      starPos[idx]     = (Math.random() - 0.5) * 500;
+      starPos[idx + 1] = (Math.random() - 0.5) * 500;
+      starPos[idx + 2] = (Math.random() - 0.5) * 500;
+      starSizes[i] = Math.random() * 1.2 + 0.4;
+    }
     const starGeo = new THREE.BufferGeometry();
     starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+    starGeo.setAttribute('size', new THREE.BufferAttribute(starSizes, 1));
     scene.add(new THREE.Points(starGeo,
-      new THREE.PointsMaterial({ size: 0.8, color: 0x94a3b8, transparent: true, opacity: 0.45 })));
+      new THREE.PointsMaterial({ 
+        size: 1.0, 
+        color: 0xaaccff, 
+        transparent: true, 
+        opacity: 0.55,
+        sizeAttenuation: true,
+        blending: THREE.AdditiveBlending,
+      })));
 
     // ── Pulse arcs ────────────────────────────────────────────────────
     const pulses: { line: THREE.Line; life: number }[] = [];
@@ -170,15 +270,20 @@ export const CompetitorOrbital3D: React.FC<Props> = ({ entities, onHover }) => {
       const mid    = origin.clone().add(dest).multiplyScalar(0.5);
       mid.normalize().multiplyScalar(mid.length() + origin.distanceTo(dest) * 0.35);
       const curve  = new THREE.QuadraticBezierCurve3(origin, mid, dest);
-      const pts    = curve.getPoints(40);
+      const pts    = curve.getPoints(50); // Smoother arcs
       const geo    = new THREE.BufferGeometry().setFromPoints(pts);
       const col    = THREAT_COLOR[sat.threat] ?? 0x0053e2;
-      const mat    = new THREE.LineBasicMaterial({ color: col, transparent: true, opacity: 0.7 });
+      const mat    = new THREE.LineBasicMaterial({ 
+        color: col, 
+        transparent: true, 
+        opacity: 0.75,
+        blending: THREE.AdditiveBlending,
+      });
       const line   = new THREE.Line(geo, mat);
       galaxy.add(line);
       pulses.push({ line, life: 1.0 });
     }
-    const pulseTimer = setInterval(spawnPulse, 1100);
+    const pulseTimer = setInterval(spawnPulse, 1000); // Slightly faster
 
     // ── Raycaster for hover ────────────────────────────────────────────
     const raycaster = new THREE.Raycaster();
@@ -217,14 +322,14 @@ export const CompetitorOrbital3D: React.FC<Props> = ({ entities, onHover }) => {
     // ── Galaxy group (orbitable content lives here for drag rotation) ──
     const galaxy = new THREE.Group();
     scene.add(galaxy);
-    // Re-parent core + atmosphere + ring + satellites + orbit rings into galaxy
-    [coreMesh, eqRing, ...satMeshes].forEach(m => {
+    // Re-parent core + atmosphere + rings + satellites + orbit rings into galaxy
+    [coreMesh, eqRing, eqRingGlow, ...satMeshes].forEach(m => {
       scene.remove(m);
       galaxy.add(m);
     });
-    // Also move the wireframe shell and atmosphere glow (children 3,4 after lights)
+    // Also move the wireframe shells and atmosphere glows
     const toMove = scene.children.filter(
-      c => c !== galaxy && c !== coreLight && c !== sparkLight
+      c => c !== galaxy && c !== coreLight && c !== sparkLight && c !== rimLight && c !== fillLight
         && !(c instanceof THREE.Points)
     );
     toMove.forEach(c => { scene.remove(c); galaxy.add(c); });
@@ -245,8 +350,13 @@ export const CompetitorOrbital3D: React.FC<Props> = ({ entities, onHover }) => {
       rafId = requestAnimationFrame(animate);
       t += 0.007;
 
-      // Core pulse
-      coreMat.emissiveIntensity = 0.5 + Math.sin(t * 1.5) * 0.15;
+      // Core pulse (enhanced)
+      coreMat.emissiveIntensity = 0.6 + Math.sin(t * 1.4) * 0.2;
+      
+      // Ring glow pulse
+      if (eqRingGlow.material instanceof THREE.MeshBasicMaterial) {
+        eqRingGlow.material.opacity = 0.2 + Math.sin(t * 1.8) * 0.08;
+      }
 
       // Scene-level drag rotation via galaxy group
       if (!isDragging) {
@@ -265,9 +375,17 @@ export const CompetitorOrbital3D: React.FC<Props> = ({ entities, onHover }) => {
           Math.sin(sat.angle) * sat.radius,
         );
         sat.mesh.rotation.y += 0.012;
+        
+        // Pulse satellite halos
+        const halo = sat.mesh.children[0];
+        if (halo && halo instanceof THREE.Mesh && halo.material instanceof THREE.MeshBasicMaterial) {
+          halo.material.opacity = 0.06 + Math.sin(t * 2 + sat.angle) * 0.03;
+        }
       });
+      
       coreMesh.rotation.y += 0.004;
       eqRing.rotation.y   += 0.003;
+      eqRingGlow.rotation.y += 0.003;
 
       // Camera gentle drift
       camera.position.x = Math.sin(t * 0.05) * 10;
