@@ -1,415 +1,454 @@
-import React from 'react';
+import { useState } from 'react';
 
-interface CSOProfile {
+interface ExecutiveProfile {
+  id: string;
   name: string;
   title: string;
   company: string;
   threatLevel: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
-  focusAreas: string[];
-  initiatives: string[];
-  threatAssessment: string;
-  lastActivity: string;
-  status: 'Active' | 'Vacant' | 'Interim';
+  profileImage: string;
+  bio: string;
+  keyFindings: Finding[];
+  recentActivity: Activity[];
+  strategicThreats: string[];
+  recommendations: string[];
 }
 
-const CSO_PROFILES: CSOProfile[] = [
-  {
-    name: 'Stephen Schmidt',
-    title: 'SVP & Chief Security Officer',
-    company: 'Amazon',
-    threatLevel: 'CRITICAL',
-    focusAreas: ['Passwordless Auth', 'AI Security', 'Insider Risk', 'Identity'],
-    initiatives: [
-      '"Midway" - Universal U2F auth, zero exceptions',
-      'DPRK Detection - Blocked 1,800+ infiltration attempts',
-      'ATA Agents - Autonomous threat analysis AI',
-      'MadPot - Threat intel honeypot network'
-    ],
-    threatAssessment: 'Amazon is setting industry standards for passwordless authentication, AI-driven security automation, and insider risk detection. Their "no exceptions" philosophy and public disclosure of advanced capabilities (Midway, ATA, DPRK screening) raise the competitive bar.',
-    lastActivity: 'Feb 12, 2026 (CyberScoop Safe Mode)',
-    status: 'Active'
-  },
-  {
-    name: 'Amy Herzog',
-    title: 'VP & Chief Information Security Officer',
-    company: 'Amazon Web Services (AWS)',
-    threatLevel: 'HIGH',
-    focusAreas: ['Cloud Security', 'Security at Scale', 'Customer Trust'],
-    initiatives: [
-      'AWS re:Inforce 2025 - Keynote on security simplification',
-      'Security Services - Customer-facing security portfolio',
-      'Global Cloud Sec - Leading AWS security org'
-    ],
-    threatAssessment: 'Herzog positions AWS as security-by-default. Her public keynotes emphasize "simplifying security at scale" and customer-facing security services, influencing enterprise expectations.',
-    lastActivity: 'AWS Security Blog, re:Inforce 2025',
-    status: 'Active'
-  },
-  {
-    name: 'Rich Agostino',
-    title: 'SVP, Chief Information Security Officer',
-    company: 'Target',
-    threatLevel: 'HIGH',
-    focusAreas: ['Cyber Fusion Center', 'NIST CSF', 'Threat Intel'],
-    initiatives: [
-      '24/7 Cyber Fusion Center - Centralized threat ops',
-      'NIST CSF Maturity - Disclosed in 10-K governance',
-      'Threat-Driven Strategy - RSAC speaker/advisor',
-      'Infrastructure Security - SVP dual role'
-    ],
-    threatAssessment: 'Target\'s Cyber Fusion Center and NIST CSF alignment show mature, threat-driven operations. Agostino\'s dual CISO/Infrastructure role suggests tight integration of cyber and physity.',
-    lastActivity: 'Target 10-K (Item 1C), RSAC Bio',
-    status: 'Active'
-  },
-  {
-    name: 'CISO Position',
-    title: 'VACANT (Interim Coverage)',
-    company: 'Costco',
-    threatLevel: 'MEDIUM',
-    focusAreas: [],
-    initiatives: [
-      'Former CISO departed June 2025',
-      'Deputy CISO managing responsibilities',
-      'Replacement search in progress (unconfirmed timeline)',
-      'CISO reports to CIDO → CEO (per 10-K)'
-    ],
-    threatAssessment: 'STRATEGIC OPPORTUNITY: Costco\'s extended CISO vacancy (9+ months) suggests potential gaps in cyber program leadership, strategic initiatives, and vendor relationships. Walmart can accelerate competitive advantage during this transition period.',
-    lastActivity: 'Costco SEC 10-K (Item 1C), March 2026',
-    status: 'Vacant'
-  },
-  {
-    name: 'Interim CISO',
-    title: 'Name Not Disclosed',
-    company: 'Kroger',
-    threatLevel: 'MEDIUM',
-    focusAreas: [],
-    initiatives: [
-      'Interim CISO managing cybersecurity program',
-      'Individual not named in public 10-K filing',
-      'Audit Committee oversight structure',
-      'Quarterly updates + NIST CSF scorecards to Board'
-    ],
-    threatAssessment: 'COMPETITIVE OPENING: Interim CISO status suggests Kroger may have reduced strategic security agility. Opportunity for Walmart to demonstrate leadership stability and attract top talent.',
-    lastActivity: 'Kroger SEC 10-K (Item 1C), Feb 2026',
-    status: 'Interim'
-  }
-];
+interface Finding {
+  id: string;
+  type: 'thought_leadership' | 'incident_response' | 'partnership' | 'decision' | 'org_change';
+  headline: string;
+  date: string;
+  impactScore: number;
+  riskColor: 'ORANGE' | 'YELLOW' | 'GREEN' | 'RED';
+  summary: string;
+  whyItMatters: string;
+  sources: Source[];
+}
 
-const ThreatBadge: React.FC<{ level: string }> = ({ level }) => {
-  const colors = {
-    CRITICAL: 'bg-red-500/10 text-red-400 border-red-500/30',
-    HIGH: 'bg-orange-500/10 text-orange-400 border-orange-500/30',
-    MEDIUM: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
-    LOW: 'bg-green-500/10 text-green-400 border-green-500/30'
-  };
-  
+interface Source {
+  publisher: string;
+  url: string;
+  date: string;
+}
+
+interface Activity {
+  date: string;
+  title: string;
+  type: string;
+  impact: string;
+}
+
+export function CSOIntelligence() {
+  const [selectedExecutive, setSelectedExecutive] = useState<string | null>(null);
+  const [selectedFinding, setSelectedFinding] = useState<Finding | null>(null);
+
+  const executives: ExecutiveProfile[] = [
+    {
+      id: 'stephen-schmidt',
+      name: 'Stephen Schmidt',
+      title: 'SVP & Chief Security Officer',
+      company: 'Amazon',
+      threatLevel: 'CRITICAL',
+      profileImage: '/images/executives/stephen-schmidt.jpg',
+      bio: 'Amazon CSO driving passwordless authentication, AI-powered security, and industry standard-setting. Leading 1,800+ DPRK infiltration blocks. Most aggressive competitor CSO.',
+      keyFindings: [
+        {
+          id: 'f1',
+          type: 'thought_leadership',
+          headline: 'Schmidt details Amazon's "no exceptions" internal authentication standard (Midway) and U2F-first posture',
+          date: '2026-01-23',
+          impactScore: 16,
+          riskColor: 'ORANGE',
+          summary: 'Schmidt argues strong authentication is the single most important security control. Describes Amazon\'s internal authentication system ("Midway") with universal adoption across environments, including legacy applications, with U2F security keys, device health checks, and continuous session revalidation.',
+          whyItMatters: 'Direct signal of Amazon\'s identity program maturity and bias toward eliminating exceptions—reducing lateral-movement opportunities. Details indicate investment priorities (device posture + phishing-resistant MFA + continuous verification) that can raise the competitive bar for enterprise identity.',
+          sources: [
+            {
+              publisher: 'LinkedIn (Stephen Schmidt)',
+              url: 'https://www.linkedin.com/pulse/why-strong-authentication-your-most-important-security-schmidt-unm0e',
+              date: '2026-01-23'
+            }
+          ]
+        },
+        {
+          id: 'f2',
+          type: 'incident_response',
+          headline: 'Amazon publicizes scale of DPRK-linked hiring fraud detection and its AI + human verification model',
+          date: '2026-01-02',
+          impactScore: 12,
+          riskColor: 'YELLOW',
+          summary: 'Amazon blocked more than 1,800 suspected DPRK-linked attempts to obtain remote IT roles since April 2024. Approach combines AI-powered screening (institutional links, application anomalies, geographic inconsistencies) with human verification steps.',
+          whyItMatters: 'Concrete insider-risk / identity signal: Amazon treating hiring pipelines as an attack surface with measurable, high-volume adversary activity. Suggests ongoing investment in recruitment fraud analytics, cross-signal correlation, and post-hire anomaly monitoring.',
+          sources: [
+            {
+              publisher: 'Dataconomy',
+              url: 'https://dataconomy.com/2026/01/02/amazon-blocks-1800-north-korean-operatives-from-remote-jobs/',
+              date: '2026-01-02'
+            },
+            {
+              publisher: 'LinkedIn (Stephen Schmidt)',
+              url: 'https://www.linkedin.com/posts/stephenschmidt1_over-the-past-few-years-north-korean-dprk-activity-7407485036142276610-dot7',
+              date: '2025-12-18'
+            }
+          ]
+        },
+        {
+          id: 'f3',
+          type: 'thought_leadership',
+          headline: 'Amazon discloses \'Autonomous Threat Analysis\' agentic AI approach to scale bug hunting and defenses',
+          date: '2025-11-24',
+          impactScore: 12,
+          riskColor: 'YELLOW',
+          summary: 'Amazon publicly described an internal system (Autonomous Threat Analysis, ATA) using multiple specialized AI agents to identify weaknesses, perform variant analysis, and propose remediations and detections with human review. System intended to reduce analysis cycles from weeks to hours.',
+          whyItMatters: 'Context for Amazon\'s AI/security automation posture and continued investment in agentic security testing, detection engineering, and accelerated remediation. Signals competitive pressure to modernize secure SDLC and automated analysis capabilities to match machine-speed threat evolution.',
+          sources: [
+            {
+              publisher: 'WIRED',
+              url: 'https://www.wired.com/story/amazon-autonomous-threat-analysis/',
+              date: '2025-11-24'
+            },
+            {
+              publisher: 'Amazon Science',
+              url: 'https://www.amazon.science/blog/how-amazon-uses-ai-agents-to-anticipate-and-counter-cyber-threats',
+              date: '2025-11-24'
+            }
+          ]
+        }
+      ],
+      recentActivity: [
+        { date: '2026-02-12', title: 'CyberScoop Safe Mode: How Amazon Killed the Password', type: 'Media Appearance', impact: 'High visibility thought leadership on passwordless + identity unification' },
+        { date: '2026-01-23', title: 'LinkedIn Article: Why Strong Authentication Is Your Most Important Security Control', type: 'Thought Leadership', impact: 'Direct disclosure of Midway authentication system and U2F enforcement' },
+        { date: '2026-01-02', title: 'DPRK Hiring Fraud Disclosure', type: 'Incident Response', impact: '1,800+ blocked attempts - sets industry standard for insider risk detection' },
+        { date: '2025-11-24', title: 'ATA (Autonomous Threat Analysis) Launch', type: 'Product Innovation', impact: 'Agentic AI for bug hunting - weeks to hours acceleration' }
+      ],
+      strategicThreats: [
+        '🔥 CRITICAL: Setting industry standards for passwordless auth and eliminating password-based lateral movement',
+        '🔥 CRITICAL: 1,800+ DPRK hiring blocks demonstrate advanced insider-risk detection - raising competitive bar',
+        '⚠️ HIGH: Autonomous Threat Analysis (ATA) AI agents accelerating security testing - machine-speed defense',
+        '⚠️ HIGH: "No exceptions" Midway authentication - universal phishing-resistant MFA across all environments',
+        '⚠️ HIGH: Public thought leadership via LinkedIn, CyberScoop - influencing enterprise security standards'
+      ],
+      recommendations: [
+        '🔥 IMMEDIATE: Benchmark Walmart\'s identity coverage vs Amazon\'s "no exceptions" Midway model',
+        '🔥 IMMEDIATE: Review DPRK screening protocols - Amazon blocking 1,800+ vs Walmart\'s current posture',
+        '⚡ 30-DAY: Launch CSO thought leadership campaign to counter Amazon\'s standard-setting narrative',
+        '⚡ 30-DAY: Accelerate passwordless MFA rollout - Amazon is eliminating passwords entirely',
+        '⚡ 90-DAY: Evaluate agentic AI for security testing to match ATA\'s weeks-to-hours acceleration',
+        '🎯 6-MONTH: Position Jerrad as industry voice on identity, AI security, and insider-risk detection'
+      ]
+    },
+    {
+      id: 'amy-herzog',
+      name: 'Amy Herzog',
+      title: 'VP & Chief Information Security Officer',
+      company: 'AWS (Amazon Web Services)',
+      threatLevel: 'HIGH',
+      profileImage: '/images/executives/amy-herzog.jpg',
+      bio: 'AWS CISO (appointed June 2025) driving AI-powered SOC automation, AWS Security Agent rollout, and "security-as-enabler" messaging. 11-minute vulnerability detection (from 27 hours). Influencing enterprise expectations.',
+      keyFindings: [
+        {
+          id: 'f4',
+          type: 'thought_leadership',
+          headline: 'Herzog cites major GenAI efficiency gains for vulnerability identification and SOC alert contexting',
+          date: '2026-01-07',
+          impactScore: 12,
+          riskColor: 'YELLOW',
+          summary: 'GenAI reduced time to identify potentially vulnerable systems to ~11 minutes on average (from ~27 hours), and reduced time to assemble context on key SOC alerts to ~11 minutes (from ~four hours). Emphasizes applying \'security basics\' when managing identity for agentic AI.',
+          whyItMatters: 'Indicates AWS has operationalized GenAI in core security workflows (vuln identification and SOC triage), suggesting maturity beyond pilots. Shifts the competitive benchmark for security operations automation and influences customer demand for measurable time-to-context/time-to-fix improvements.',
+          sources: [
+            {
+              publisher: 'AI Leaders Council (citing WSJ)',
+              url: 'https://aileaderscouncil.org/how-ai-is-reinventing-cybersecurity-for-2026/',
+              date: '2026-01-07'
+            }
+          ]
+        },
+        {
+          id: 'f5',
+          type: 'partnership',
+          headline: 'AWS Security Agent adds GitHub Enterprise Cloud connectivity and automated remediation PR workflows',
+          date: '2026-01-22',
+          impactScore: 16,
+          riskColor: 'ORANGE',
+          summary: 'AWS announced customers can connect GitHub Enterprise Cloud organizations to AWS Security Agent via a GitHub app. Features: automated code reviews on pull requests, use of private repository code during penetration testing, and optional automated remediation via agent-submitted pull requests.',
+          whyItMatters: 'Concrete integration move toward developer workflow embedding (pull requests) and closed-loop remediation, reducing AppSec friction and increasing coverage at scale. Ecosystem strategy: meeting enterprises where code lives (GitHub Enterprise) and pushing security controls upstream.',
+          sources: [
+            {
+              publisher: 'AWS (What\'s New)',
+              url: 'https://aws.amazon.com/about-aws/whats-new/2026/01/aws-security-agent-ghe-support/',
+              date: '2026-01-22'
+            }
+          ]
+        },
+        {
+          id: 'f6',
+          type: 'thought_leadership',
+          headline: 'AWS publishes technical disclosure on Security Agent\'s multi-agent penetration testing architecture',
+          date: '2026-02-26',
+          impactScore: 12,
+          riskColor: 'YELLOW',
+          summary: 'AWS Security Blog published technical post detailing a multi-agent architecture for automated penetration testing within AWS Security Agent. Emphasizes orchestration of specialized agents, adaptive task generation, and assertion-based validation. Discusses mitigating LLM non-determinism (multiple runs, consolidating findings).',
+          whyItMatters: 'Technical disclosure suggests AWS is investing in credible, repeatable agentic security workflows, not just marketing claims. Focus on validation and non-determinism mitigations is a key maturity signal. AWS will market Security Agent as both scalable and defensible (repeatability/validation).',
+          sources: [
+            {
+              publisher: 'AWS Security Blog',
+              url: 'https://aws.amazon.com/blogs/security/inside-aws-security-agent-a-multi-agent-architecture-for-automated-penetration-testing/',
+              date: '2026-02-26'
+            }
+          ]
+        }
+      ],
+      recentActivity: [
+        { date: '2026-02-26', title: 'AWS Security Agent Multi-Agent Architecture Disclosure', type: 'Technical Publication', impact: 'Detailed agentic AI penetration testing approach - credibility building' },
+        { date: '2026-02-09', title: 'AWS Security Agent IAM/API Migration Announcement', type: 'Product Decision', impact: 'Preparing for public API/SDK support - enabling enterprise automation' },
+        { date: '2026-01-22', title: 'GitHub Enterprise Cloud Integration Launch', type: 'Partnership', impact: 'Developer workflow embedding - automated remediation PRs' },
+        { date: '2026-01-07', title: 'WSJ Feature: GenAI SOC Efficiency Metrics', type: 'Media Coverage', impact: '11-minute vuln detection (from 27 hours) - operational proof points' },
+        { date: '2026-01-05', title: 'Continuous Observability Messaging', type: 'Thought Leadership', impact: 'Framing SOC modernization as urgent requirement' }
+      ],
+      strategicThreats: [
+        '🔥 CRITICAL: 11-minute vulnerability detection (from 27 hours) via GenAI - operational AI security leadership',
+        '⚠️ HIGH: AWS Security Agent GitHub integration - embedding security in developer workflows',
+        '⚠️ HIGH: Multi-agent penetration testing disclosure - technical credibility for agentic AI approach',
+        '⚠️ HIGH: "Security-as-enabler" messaging at re:Inforce - influencing enterprise AI adoption narratives',
+        '⚠️ MEDIUM: Continuous observability + automation advocacy - setting SOC modernization standards'
+      ],
+      recommendations: [
+        '🔥 IMMEDIATE: Benchmark Walmart SOC automation vs AWS\'s 11-minute detection metrics',
+        '🔥 IMMEDIATE: Evaluate AWS Security Agent competitive positioning vs Walmart\'s AppSec tooling',
+        '⚡ 30-DAY: Launch measurable AI security metrics to counter AWS\'s operational proof points',
+        '⚡ 90-DAY: Develop developer-embedded security workflow to match AWS\'s GitHub integration strategy',
+        '🎯 6-MONTH: Position Walmart security as AI enabler (counter Herzog\'s "security-as-catalyst" messaging)'
+      ]
+    }
+  ];
+
+  const getExecutive = (id: string) => executives.find(e => e.id === id);
+
   return (
-    <span className={`px-2 py-1 rounded-full text-xs font-bold border ${colors[level as keyof typeof colors]}`}>
-      {level}
-    </span>
-  );
-};
-
-const CSOCard: React.FC<{ profile: CSOProfile }> = ({ profile }) => {
-  const borderColors = {
-    CRITICAL: 'border-l-red-500',
-    HIGH: 'border-l-orange-500',
-    MEDIUM: 'border-l-yellow-500',
-    LOW: 'border-l-green-500'
-  };
-
-  return (
-    <div className={`bg-gradient-to-br from-slate-800/40 to-slate-900/40 rounded-lg border border-slate-700/50 ${borderColors[profile.threatLevel]} border-l-4 p-6 hover:border-slate-600 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10`}>
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-8">
       {/* Header */}
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <h3 className="text-xl font-bold text-white">{profile.name}</h3>
-          <p className="text-sm text-slate-400 mt-1">{profile.title}</p>
-          <p className="text-xs font-medium mt-1" style={{ color: profile.company === 'Amazon' ? '#FF9900' : profile.company.includes('AWS') ? '#FF9900' : profile.company === 'Target' ? '#CC0000' : '#0053e2' }}>
-            {profile.company}
-          </p>
+      <div className="max-w-7xl mx-auto mb-8">
+        <div className="bg-gradient-to-r from-blue-600 to-yellow-500 p-1 rounded-lg">
+          <div className="bg-gray-900 p-6 rounded-lg">
+            <h1 className="text-4xl font-bold mb-2">🎯 CSO Intelligence Command Center</h1>
+            <p className="text-gray-300">Live competitor executive tracking — Amazon security leadership analysis</p>
+            <div className="mt-4 flex gap-4 text-sm">
+              <span className="px-3 py-1 bg-red-500/20 text-red-300 rounded-full border border-red-500/50">🔴 CRITICAL Threats: 2</span>
+              <span className="px-3 py-1 bg-orange-500/20 text-orange-300 rounded-full border border-orange-500/50">🟠 HIGH Threats: 4</span>
+              <span className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full">📅 Last Updated: March 2, 2026</span>
+            </div>
+          </div>
         </div>
-        <ThreatBadge level={profile.threatLevel} />
       </div>
 
-      {/* Focus Areas */}
-      {profile.focusAreas.length > 0 && (
-        <div className="mb-4">
-          <div className="text-sm font-semibold text-slate-300 mb-2">Key Focus Areas:</div>
-          <div className="flex flex-wrap gap-1.5">
-            {profile.focusAreas.map((area, idx) => (
-              <span key={idx} className="px-2 py-1 rounded bg-blue-500/10 text-blue-400 text-xs border border-blue-500/20">
-                {area}
-              </span>
-            ))}
+      {/* Executive Cards Grid */}
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        {executives.map(exec => (
+          <div
+            key={exec.id}
+            onClick={() => setSelectedExecutive(selectedExecutive === exec.id ? null : exec.id)}
+            className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg border border-gray-700 hover:border-blue-500 transition-all duration-300 cursor-pointer transform hover:scale-105 shadow-2xl"
+          >
+            {/* Card Header */}
+            <div className="p-6 border-b border-gray-700">
+              <div className="flex items-start gap-4">
+                {/* Profile Image */}
+                <div className="w-24 h-24 rounded-full border-4 border-blue-500 overflow-hidden flex-shrink-0 bg-gray-800">
+                  <img 
+                    src={exec.profileImage} 
+                    alt={exec.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Fallback to initials if image fails to load
+                      e.currentTarget.style.display = 'none';
+                      e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                    }}
+                  />
+                  <div className="hidden w-full h-full flex items-center justify-center text-4xl font-bold bg-gradient-to-br from-blue-500 to-purple-600">
+                    {exec.name.split(' ').map(n => n[0]).join('')}
+                  </div>
+                </div>
+
+                {/* Executive Info */}
+                <div className="flex-1">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <h2 className="text-2xl font-bold mb-1">{exec.name}</h2>
+                      <p className="text-gray-400 text-sm">{exec.title}</p>
+                      <p className="text-blue-400 font-semibold">{exec.company}</p>
+                    </div>
+                    <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+                      exec.threatLevel === 'CRITICAL' ? 'bg-red-500/20 text-red-300 border border-red-500' :
+                      exec.threatLevel === 'HIGH' ? 'bg-orange-500/20 text-orange-300 border border-orange-500' :
+                      exec.threatLevel === 'MEDIUM' ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500' :
+                      'bg-green-500/20 text-green-300 border border-green-500'
+                    }`}>
+                      {exec.threatLevel} THREAT
+                    </div>
+                  </div>
+                  <p className="text-gray-300 text-sm leading-relaxed">{exec.bio}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Stats */}
+            <div className="grid grid-cols-3 gap-4 p-4 bg-gray-900/50">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-400">{exec.keyFindings.length}</div>
+                <div className="text-xs text-gray-400">Key Findings</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-yellow-400">{exec.recentActivity.length}</div>
+                <div className="text-xs text-gray-400">Recent Activities</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-red-400">{exec.strategicThreats.length}</div>
+                <div className="text-xs text-gray-400">Strategic Threats</div>
+              </div>
+            </div>
+
+            {/* Expand Indicator */}
+            <div className="p-4 text-center text-sm text-gray-400 border-t border-gray-700">
+              {selectedExecutive === exec.id ? '🔽 Click to collapse' : '🔼 Click to expand full intelligence'}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Expanded Executive Detail */}
+      {selectedExecutive && (
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg border-2 border-blue-500 shadow-2xl overflow-hidden">
+            <div className="p-8">
+              <h2 className="text-3xl font-bold mb-6 border-b border-gray-700 pb-4">🔍 Detailed Intelligence: {getExecutive(selectedExecutive)?.name}</h2>
+
+              {/* Strategic Threats */}
+              <div className="mb-8">
+                <h3 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                  <span>⚠️</span>
+                  <span>Strategic Threats to Walmart</span>
+                </h3>
+                <div className="space-y-3">
+                  {getExecutive(selectedExecutive)?.strategicThreats.map((threat, i) => (
+                    <div key={i} className="bg-gray-900/70 p-4 rounded-lg border-l-4 border-red-500">
+                      <p className="text-gray-200">{threat}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Key Findings */}
+              <div className="mb-8">
+                <h3 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                  <span>📊</span>
+                  <span>Key Intelligence Findings</span>
+                </h3>
+                <div className="space-y-4">
+                  {getExecutive(selectedExecutive)?.keyFindings.map(finding => (
+                    <div
+                      key={finding.id}
+                      onClick={() => setSelectedFinding(selectedFinding?.id === finding.id ? null : finding)}
+                      className="bg-gray-900/70 p-5 rounded-lg border border-gray-700 hover:border-blue-500 transition-all cursor-pointer"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                              finding.riskColor === 'RED' ? 'bg-red-500/20 text-red-300 border border-red-500' :
+                              finding.riskColor === 'ORANGE' ? 'bg-orange-500/20 text-orange-300 border border-orange-500' :
+                              finding.riskColor === 'YELLOW' ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500' :
+                              'bg-green-500/20 text-green-300 border border-green-500'
+                            }`}>
+                              {finding.riskColor} | Impact: {finding.impactScore}/25
+                            </span>
+                            <span className="text-xs text-gray-400">{finding.date}</span>
+                            <span className="px-2 py-1 bg-blue-500/20 text-blue-300 rounded text-xs">{finding.type}</span>
+                          </div>
+                          <h4 className="font-bold text-lg text-blue-300 mb-2">{finding.headline}</h4>
+                        </div>
+                      </div>
+
+                      {/* Expandable Finding Detail */}
+                      {selectedFinding?.id === finding.id && (
+                        <div className="mt-4 pt-4 border-t border-gray-700 space-y-4">
+                          <div>
+                            <h5 className="font-semibold text-yellow-400 mb-2">📝 Summary:</h5>
+                            <p className="text-gray-300 text-sm leading-relaxed">{finding.summary}</p>
+                          </div>
+                          <div>
+                            <h5 className="font-semibold text-red-400 mb-2">💡 Why It Matters:</h5>
+                            <p className="text-gray-300 text-sm leading-relaxed">{finding.whyItMatters}</p>
+                          </div>
+                          <div>
+                            <h5 className="font-semibold text-blue-400 mb-2">🔗 Sources:</h5>
+                            <div className="space-y-2">
+                              {finding.sources.map((source, i) => (
+                                <div key={i} className="bg-gray-800 p-3 rounded border border-gray-700">
+                                  <a
+                                    href={source.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-blue-400 hover:text-blue-300 text-sm font-medium block mb-1"
+                                  >
+                                    📰 {source.publisher}
+                                  </a>
+                                  <span className="text-xs text-gray-500">{source.date}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="mt-3 text-xs text-gray-500">
+                        {selectedFinding?.id === finding.id ? '🔽 Click to collapse' : '🔼 Click for full details & sources'}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Recent Activity Timeline */}
+              <div className="mb-8">
+                <h3 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                  <span>📅</span>
+                  <span>Recent Activity Timeline</span>
+                </h3>
+                <div className="space-y-3">
+                  {getExecutive(selectedExecutive)?.recentActivity.map((activity, i) => (
+                    <div key={i} className="flex gap-4">
+                      <div className="flex-shrink-0 w-24 text-right">
+                        <span className="text-sm text-gray-400">{activity.date}</span>
+                      </div>
+                      <div className="flex-shrink-0 w-1 bg-blue-500 rounded-full"></div>
+                      <div className="flex-1 bg-gray-900/70 p-4 rounded-lg border border-gray-700">
+                        <h4 className="font-bold text-white mb-1">{activity.title}</h4>
+                        <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-300 rounded">{activity.type}</span>
+                        <p className="text-sm text-gray-400 mt-2">{activity.impact}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Recommended Actions */}
+              <div>
+                <h3 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                  <span>🎯</span>
+                  <span>Recommended Actions for Jerrad</span>
+                </h3>
+                <div className="space-y-3">
+                  {getExecutive(selectedExecutive)?.recommendations.map((rec, i) => (
+                    <div key={i} className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 p-4 rounded-lg border-l-4 border-yellow-500">
+                      <p className="text-gray-200">{rec}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
-
-      {/* Initiatives */}
-      <div className="mb-4 bg-slate-950/30 p-3 rounded border border-slate-700/30">
-        <div className="text-xs font-semibold text-slate-300 mb-2">
-          {profile.status === 'Vacant' ? '⚠️ LEADERSHIP TRANSITION:' : profile.status === 'Interim' ? '⚠️ INTERIM LEADERSHIP:' : 'RECENT INITIATIVES:'}
-        </div>
-        <ul className="text-xs space-y-1.5 text-slate-400">
-          {profile.initiatives.map((init, idx) => (
-            <li key={idx} className="flex items-start">
-              <span className="mr-2">{profile.status === 'Active' ? '✅' : '•'}</span>
-              <span dangerouslySetInnerHTML={{ __html: init.replace(/"(.*?)"/g, '<strong>"$1"</strong>') }} />
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Threat Assessment */}
-      <div className="mb-3">
-        <div className="text-xs font-semibold text-slate-300 mb-1.5">
-          {profile.status === 'Active' ? 'THREAT ASSESSMENT:' : 'OPPORTUNITY ASSESSMENT:'}
-        </div>
-        <div className="text-xs text-slate-400 leading-relaxed">
-          {profile.threatAssessment}
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className="pt-3 border-t border-slate-700/50">
-        <div className="text-xs text-slate-500">Last Activity: {profile.lastActivity}</div>
-      </div>
     </div>
   );
-};
-
-export const CSOIntelligence: React.FC = () => {
-  return (
-    <div className="space-y-6">
-      
-      {/* Executive Summary */}
-      <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 rounded-lg border border-slate-700/50 p-6">
-        <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
-          <svg className="w-6 h-6 mr-2 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-            <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
-            <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd"/>
-          </svg>
-          Executive Summary
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-blue-500/5 p-4 rounded-lg border border-blue-500/20">
-            <div className="text-sm font-medium text-blue-300">Amazon (Stephen Schmidt)</div>
-            <div className="text-2xl font-bold text-blue-400 mt-1">Most Aggressive</div>
-            <div className="text-sm text-slate-400 mt-2">Leading in passwordless auth, AI-driven security, and insider risk detection</div>
-          </div>
-          <div className="bg-yellow-500/5 p-4 rounded-lg border border-yellow-500/20">
-            <div className="text-sm font-medium text-yellow-300">Target (Rich Agostino)</div>
-            <div className="text-2xl font-bold text-yellow-400 mt-1">Strong Position</div>
-            <div className="text-sm text-slate-400 mt-2">24/7 Cyber Fusion Center, NIST CSF maturity, threat-driven ops</div>
-          </div>
-          <div className="bg-red-500/5 p-4 rounded-lg border border-red-500/20">
-            <div className="text-sm font-medium text-red-300">Costco & Kroger</div>
-            <div className="text-2xl font-bold text-red-400 mt-1">Leadership Gaps</div>
-            <div className="text-sm text-slate-400 mt-2">CISO vacancies present strategic opportunity for Walmart</div>
-          </div>
-        </div>
-      </div>
-
-      {/* CSO Profiles */}
-      <div>
-        <h2 className="text-2xl font-bold text-white mb-4">Competitor CSO/CISO Profiles</h2>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {CSO_PROFILES.map((profile, idx) => (
-            <CSOCard key={idx} profile={profile} />
-          ))}
-          
-          {/* Walmart Card */}
-          <div className="bg-gradient-to-br from-blue-900/30 to-blue-800/20 rounded-lg border-l-4 border-l-blue-500 border border-blue-700/50 p-6 hover:border-blue-600 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/20">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <h3 className="text-xl font-bold text-white">Jerrad Crabtree</h3>
-                <p className="text-sm text-blue-300 font-semibold mt-1">SVP, Global Security & Chief Security Officer</p>
-                <p className="text-xs text-blue-400 font-bold mt-1">Walmart (YOU)</p>
-              </div>
-              <span className="px-2 py-1 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                INCUMBENT
-              </span>
-            </div>
-
-            <div className="mb-4">
-              <div className="text-sm font-semibold text-slate-300 mb-2">Your Scope:</div>
-              <div className="flex flex-wrap gap-1.5">
-                {['Enterprise Protection', 'Threat Mgmt', 'Risk Intel', 'GSOC 24/7', 'Crisis Response'].map((area, idx) => (
-                  <span key={idx} className="px-2 py-1 rounded bg-blue-500/20 text-blue-300 text-xs border border-blue-500/30">
-                    {area}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="mb-4 bg-slate-950/30 p-3 rounded border border-blue-700/30">
-              <div className="text-xs font-semibold text-blue-300 mb-2">YOUR COMPETITIVE POSITION:</div>
-              <ul className="text-xs space-y-1.5 text-slate-400">
-                <li className="flex items-start"><span className="mr-2">✅</span><strong>Scale Advantage</strong> - Largest retail security org globally</li>
-                <li className="flex items-start"><span className="mr-2">✅</span><strong>GSOC Operations</strong> - 24/7 enterprise-wide monitoring</li>
-                <li className="flex items-start"><span className="mr-2">✅</span><strong>Convergence Model</strong> - Physical + cyber + resilience</li>
-                <li className="flex items-start"><span className="mr-2">✅</span><strong>Global Reach</strong> - International security operations</li>
-              </ul>
-            </div>
-
-            <div className="mb-3 bg-green-500/5 p-3 rounded border border-green-500/20">
-              <div className="text-xs font-semibold text-green-300 mb-1.5">📊 COMPETITIVE GAPS TO CLOSE:</div>
-              <div className="text-xs text-slate-400 space-y-1">
-                <div><strong>1. Public Thought Leadership</strong> - Amazon CSO dominates industry narrative</div>
-                <div><strong>2. Passwordless Auth</strong> - Midway-style "no exceptions" identity program</div>
-                <div><strong>3. AI-Driven Security</strong> - Autonomous threat analysis capabilities</div>
-                <div><strong>4. Insider Risk Detection</strong> - DPRK-level hiring fraud defenses</div>
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-blue-700/50">
-              <div className="text-xs text-blue-400 font-medium">Opportunity: Lead during competitor transitions</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Strategic Intelligence */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Threats */}
-        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 rounded-lg border border-slate-700/50 p-6">
-          <h3 className="text-xl font-bold text-red-400 mb-4 flex items-center">
-            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
-            </svg>
-            Key Threats
-          </h3>
-          <div className="space-y-3">
-            <div className="border-l-4 border-red-500 pl-3 py-2 bg-red-500/5 rounded">
-              <div className="text-sm font-bold text-red-300">Amazon Setting Industry Standards</div>
-              <div className="text-xs text-slate-400 mt-1">
-                Stephen Schmidt's public disclosure of Midway (passwordless), ATA (AI agents), and DPRK screening raises the bar for enterprise security.
-              </div>
-            </div>
-            <div className="border-l-4 border-orange-500 pl-3 py-2 bg-orange-500/5 rounded">
-              <div className="text-sm font-bold text-orange-300">Target's Cyber Fusion Center Maturity</div>
-              <div className="text-xs text-slate-400 mt-1">
-                Rich Agostino's 24/7 Cyber Fusion Center demonstrates threat-driven ops at retail scale.
-              </div>
-            </div>
-            <div className="border-l-4 border-yellow-500 pl-3 py-2 bg-yellow-500/5 rounded">
-              <div className="text-sm font-bold text-yellow-300">Thought Leadership Gap</div>
-              <div className="text-xs text-slate-400 mt-1">
-                Amazon CSO dominates public narrative. Walmart has limited external visibility.
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Opportunities */}
-        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 rounded-lg border border-slate-700/50 p-6">
-          <h3 className="text-xl font-bold text-green-400 mb-4 flex items-center">
-            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-            </svg>
-            Opportunities
-          </h3>
-          <div className="space-y-3">
-            <div className="border-l-4 border-green-500 pl-3 py-2 bg-green-500/5 rounded">
-              <div className="text-sm font-bold text-green-300">Costco & Kroger Leadership Gaps</div>
-              <div className="text-xs text-slate-400 mt-1">
-                <strong className="text-green-400">CRITICAL WINDOW:</strong> Extended vacancies enable Walmart to accelerate partnerships and talent acquisition.
-              </div>
-            </div>
-            <div className="border-l-4 border-blue-500 pl-3 py-2 bg-blue-500/5 rounded">
-              <div className="text-sm font-bold text-blue-300">Public Thought Leadership</div>
-              <div className="text-xs text-slate-400 mt-1">
-                <strong className="text-blue-400">RECOMMENDATION:</strong> Launch CSO campaign via LinkedIn, podcasts, conferences on physical-cyber convergence.
-              </div>
-            </div>
-            <div className="border-l-4 border-purple-500 pl-3 py-2 bg-purple-500/5 rounded">
-              <div className="text-sm font-bold text-purple-300">AI & Automation Investment</div>
-              <div className="text-xs text-slate-400 mt-1">
-                <strong className="text-purple-400">STRATEGIC PLAY:</strong> Develop Walmart-equivalent of ATA and Midway. Public disclosure positions us as innovators.
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Recommended Actions */}
-      <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 rounded-lg border border-slate-700/50 p-6">
-        <h3 className="text-2xl font-bold text-white mb-4 flex items-center">
-          <svg className="w-6 h-6 mr-2 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"/>
-          </svg>
-          Recommended Actions for Jerrad Crabtree
-        </h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Immediate */}
-          <div className="bg-red-500/5 p-4 rounded-lg border-l-4 border-red-500">
-            <div className="font-bold text-red-300 mb-2 text-sm">🔥 IMMEDIATE (30 days)</div>
-            <ol className="text-xs space-y-2 text-slate-400 list-decimal list-inside">
-              <li><strong>Launch Thought Leadership:</strong> Publish LinkedIn article</li>
-              <li><strong>Accelerate Vendor Deals:</strong> Leverage competitor gaps</li>
-              <li><strong>Benchmark Midway:</strong> Assess passwordless auth posture</li>
-              <li><strong>DPRK Screening:</strong> Review hiring fraud detection</li>
-            </ol>
-          </div>
-
-          {/* Near-term */}
-          <div className="bg-yellow-500/5 p-4 rounded-lg border-l-4 border-yellow-500">
-            <div className="font-bold text-yellow-300 mb-2 text-sm">⚡ NEAR-TERM (90 days)</div>
-            <ol className="text-xs space-y-2 text-slate-400 list-decimal list-inside">
-              <li><strong>Conference Circuit:</strong> RSA, Black Hat speaking slots</li>
-              <li><strong>AI Security POC:</strong> Agentic threat analysis pilot</li>
-              <li><strong>Fusion Center Upgrade:</strong> Assess vs Target capabilities</li>
-              <li><strong>Industry Partnerships:</strong> Join CISA NSTAC</li>
-            </ol>
-          </div>
-
-          {/* Strategic */}
-          <div className="bg-green-500/5 p-4 rounded-lg border-l-4 border-green-500">
-            <div className="font-bold text-green-300 mb-2 text-sm">🎯 STRATEGIC (6-12 months)</div>
-            <ol className="text-xs space-y-2 text-slate-400 list-decimal list-inside">
-              <li><strong>Security Brand:</strong> Position Walmart as thought leader</li>
-              <li><strong>Zero Trust Rollout:</strong> "No exceptions" identity program</li>
-              <li><strong>Talent Magnet:</strong> Attract from Amazon/Target</li>
-              <li><strong>Regulatory Influence:</strong> Shape regulations via testimony</li>
-            </ol>
-          </div>
-        </div>
-      </div>
-
-      {/* Intelligence Sources */}
-      <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 rounded-lg border border-slate-700/50 p-6">
-        <h3 className="text-lg font-bold text-white mb-4">Intelligence Sources & Verification</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-          <div>
-            <div className="font-semibold text-slate-300 mb-2">Primary Sources:</div>
-            <ul className="space-y-1 text-slate-400">
-              <li>✅ Stephen Schmidt LinkedIn (Jan 23, 2026)</li>
-              <li>✅ CyberScoop Safe Mode (Feb 12, 2026)</li>
-              <li>✅ Amazon Science Blog (Nov 24, 2025)</li>
-              <li>✅ WIRED (Nov 24, 2025)</li>
-              <li>✅ AWS Executive Insights (Feb 2025)</li>
-            </ul>
-          </div>
-          <div>
-            <div className="font-semibold text-slate-300 mb-2">Regulatory Filings:</div>
-            <ul className="space-y-1 text-slate-400">
-              <li>✅ Target SEC 10-K (Item 1C)</li>
-              <li>✅ Costco SEC 10-K (Item 1C)</li>
-              <li>✅ Kroger SEC 10-K (Item 1C)</li>
-              <li>✅ CISA NSTAC Fact Sheet</li>
-            </ul>
-          </div>
-        </div>
-        <div className="mt-4 pt-4 border-t border-slate-700">
-          <div className="text-xs text-slate-500">
-            <strong>Prepared by:</strong> Enterprise Security - Emerging Technology | Jason Wilbur (j0w16ja)<br/>
-            <strong>Classification:</strong> Internal Use Only | <strong>Distribution:</strong> Jerrad Crabtree, CSO<br/>
-            <strong>Next Update:</strong> April 1, 2026 (Monthly intelligence cycle)
-          </div>
-        </div>
-      </div>
-
-    </div>
-  );
-};
+}
