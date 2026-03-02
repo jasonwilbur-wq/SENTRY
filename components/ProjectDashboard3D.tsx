@@ -614,6 +614,34 @@ const ProjectCard3D: React.FC<ProjectCard3DProps> = ({ project, onClick }) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════════
+// RFC 4180-compliant CSV parser
+// The naive line.split(',') breaks whenever a field contains a comma
+// inside quotes — e.g. the UAS summary "Deploy DiaB UAS at retail, home
+// office..." shifts every subsequent field right by 1, zeroing progress_pct.
+// ═══════════════════════════════════════════════════════════════════════
+function parseCSVLine(line: string): string[] {
+  const fields: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') { current += '"'; i++; } // escaped ""
+      else { inQuotes = !inQuotes; }
+    } else if (ch === ',' && !inQuotes) {
+      fields.push(current.trim());
+      current = '';
+    } else if ((ch === '\r' || ch === '\n') && !inQuotes) {
+      break; // end of line
+    } else {
+      current += ch;
+    }
+  }
+  fields.push(current.trim());
+  return fields;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // Main Dashboard Component
 // ═══════════════════════════════════════════════════════════════════════
 
@@ -628,26 +656,31 @@ const ProjectDashboard3D: React.FC = () => {
   useEffect(() => {
     const loadProjects = async () => {
       try {
-        const response = await fetch('/data/projects.csv'); // Update path as needed
+        const response = await fetch('/data/projects.csv');
         const text = await response.text();
         const lines = text.split('\n');
-        const headers = lines[0].split(',');
-        
+        const headers = parseCSVLine(lines[0]);
+
         const parsed = lines.slice(1)
           .filter(line => line.trim())
           .map(line => {
-            const values = line.split(',');
+            const values = parseCSVLine(line);
             const obj: any = {};
             headers.forEach((header, idx) => {
-              obj[header.trim()] = values[idx]?.trim() || '';
+              obj[header.trim()] = values[idx]?.trim() ?? '';
             });
+            // Coerce numeric fields so progress bars / risk badges work
+            obj.progress_pct    = Number(obj.progress_pct)    || 0;
+            obj.risk_score      = Number(obj.risk_score)      || 0;
+            obj.blockers_count  = Number(obj.blockers_count)  || 0;
             return obj as Project;
-          });
+          })
+          // Drop empty sentinel rows Excel sometimes appends
+          .filter(p => p.project_id);
 
         setProjects(parsed);
       } catch (error) {
         console.error('Error loading projects:', error);
-        // Fallback to hardcoded data if needed
         setProjects(FALLBACK_PROJECTS);
       }
     };
