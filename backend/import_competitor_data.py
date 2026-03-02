@@ -26,6 +26,7 @@ DB_PATH = "data/sentry.db"
 EXCLUDE_ENTITIES = [
     "Walmart",
     "Walmart (Vicinity)",
+    "Sam's Club",  # Walmart subsidiary
     "Industry",
     "Retail Industry",
     "CISA",

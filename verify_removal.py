@@ -5,7 +5,7 @@ conn = sqlite3.connect('data/sentry.db')
 print('\n=== VERIFICATION: Removed Entities Check ===')
 print('\nSearching for removed entities (should return 0 results):')
 
-removed = ['Axon', 'CISA', 'California', 'Walmart', 'Federal Govt', 'NIST', 'General Retail']
+removed = ['Axon', 'CISA', 'California', 'Walmart', 'Sam\'s Club', 'Federal Govt', 'NIST', 'General Retail']
 
 for entity in removed:
     count = conn.execute('''
