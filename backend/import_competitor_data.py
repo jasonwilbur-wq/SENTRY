@@ -32,6 +32,17 @@ EXCLUDE_ENTITIES = [
     "Cyber Threat",
     "Organized Retail Crime (Multiple)",
     "Competitor",  # Generic placeholder
+    "Axon",  # Technology vendor, not retail competitor
+    "California",  # State/location, not a company
+    "Federal Govt",  # Government, not competitor
+    "NIST",  # Government agency
+    "Global (General)",  # Generic category
+    "Logistics (General)",  # Generic category
+    "Logistics Sector",  # Generic category
+    "Retail (General)",  # Generic category
+    "Retailers (General)",  # Generic category
+    "Tech Sector",  # Generic category
+    "General Retail",  # Generic category
 ]
 
 # Legitimate competitors (whitelist for clarity)
