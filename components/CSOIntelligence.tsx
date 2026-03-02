@@ -1,501 +1,287 @@
 import { useState } from 'react';
 import { CSORadar3D } from './CSORadar3D';
+import { CSO_PROFILES, THREAT_COUNTS, type Finding, type ExecutiveProfile } from '../data/csoProfiles';
 
-interface ExecutiveProfile {
-  id: string;
-  name: string;
-  title: string;
-  company: string;
-  threatLevel: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
-  profileImage: string;
-  bio: string;
-  keyFindings: Finding[];
-  recentActivity: Activity[];
-  strategicThreats: string[];
-  recommendations: string[];
+// ── Risk colour helpers ───────────────────────────────────────────────────────
+const RISK_STYLES: Record<string, { bg: string; text: string; border: string }> = {
+  RED:    { bg: 'rgba(234,17,0,0.18)',    text: '#ff6b6b', border: 'rgba(234,17,0,0.5)'    },
+  ORANGE: { bg: 'rgba(249,115,22,0.18)', text: '#fb923c', border: 'rgba(249,115,22,0.5)'  },
+  YELLOW: { bg: 'rgba(255,194,32,0.18)', text: '#FFC220', border: 'rgba(255,194,32,0.5)'  },
+  GREEN:  { bg: 'rgba(42,135,3,0.18)',   text: '#4ade80', border: 'rgba(42,135,3,0.5)'    },
+};
+const THREAT_STYLES: Record<string, { bg: string; text: string; border: string }> = {
+  CRITICAL: { bg: 'rgba(234,17,0,0.18)',    text: '#ff6b6b', border: 'rgba(234,17,0,0.5)'    },
+  HIGH:     { bg: 'rgba(249,115,22,0.18)', text: '#fb923c', border: 'rgba(249,115,22,0.5)'  },
+  MEDIUM:   { bg: 'rgba(255,194,32,0.18)', text: '#FFC220', border: 'rgba(255,194,32,0.5)'  },
+  LOW:      { bg: 'rgba(42,135,3,0.18)',   text: '#4ade80', border: 'rgba(42,135,3,0.5)'    },
+};
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+function ProfileAvatar({ src, name }: { src: string; name: string }) {
+  const [broken, setBroken] = useState(false);
+  const initials = name.split(' ').map(n => n[0]).join('');
+  if (broken) {
+    return (
+      <div className="w-20 h-20 rounded-full border-4 flex items-center justify-center text-2xl font-black shrink-0"
+        style={{ borderColor: '#0053e2', background: 'linear-gradient(135deg,#0053e2,#7c3aed)' }}>
+        {initials}
+      </div>
+    );
+  }
+  return (
+    <img src={src} alt={name} onError={() => setBroken(true)}
+      className="w-20 h-20 rounded-full border-4 object-cover object-top shrink-0"
+      style={{ borderColor: '#0053e2' }} />
+  );
 }
 
-interface Finding {
-  id: string;
-  type: 'thought_leadership' | 'incident_response' | 'partnership' | 'decision' | 'org_change';
-  headline: string;
-  date: string;
-  impactScore: number;
-  riskColor: 'ORANGE' | 'YELLOW' | 'GREEN' | 'RED';
-  summary: string;
-  whyItMatters: string;
-  sources: Source[];
+function ThreatBadge({ level }: { level: string }) {
+  const s = THREAT_STYLES[level] ?? THREAT_STYLES.LOW;
+  return (
+    <span className="px-2.5 py-1 rounded-full text-[10px] font-black tracking-wider shrink-0"
+      style={{ background: s.bg, color: s.text, border: `1px solid ${s.border}` }}>
+      {level}
+    </span>
+  );
 }
 
-interface Source {
-  publisher: string;
-  url: string;
-  date: string;
+function FindingCard({ finding, isOpen, onToggle }: { finding: Finding; isOpen: boolean; onToggle: () => void }) {
+  const rs = RISK_STYLES[finding.riskColor] ?? RISK_STYLES.GREEN;
+  return (
+    <div onClick={onToggle}
+      className="rounded-xl border transition-all duration-200 cursor-pointer"
+      style={{ background: 'rgba(0,0,0,0.3)', borderColor: isOpen ? '#0053e2' : 'rgba(51,65,85,0.6)' }}>
+      <div className="p-4">
+        <div className="flex flex-wrap items-center gap-2 mb-2">
+          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold"
+            style={{ background: rs.bg, color: rs.text, border: `1px solid ${rs.border}` }}>
+            {finding.riskColor} · {finding.impactScore}/25
+          </span>
+          <span className="px-2 py-0.5 rounded text-[10px]" style={{ background: 'rgba(0,83,226,0.18)', color: '#60a5fa' }}>
+            {finding.type.replace(/_/g, ' ')}
+          </span>
+          <span className="text-[10px] text-slate-500">{finding.date}</span>
+        </div>
+        <p className="text-sm font-semibold text-blue-300 leading-snug">{finding.headline}</p>
+      </div>
+      {isOpen && (
+        <div className="px-4 pb-4 pt-0 space-y-3 border-t border-slate-700/60">
+          <div className="pt-3">
+            <p className="text-[10px] font-bold text-wmt-yellow uppercase tracking-widest mb-1">Summary</p>
+            <p className="text-xs text-slate-300 leading-relaxed">{finding.summary}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-1">Why It Matters</p>
+            <p className="text-xs text-slate-300 leading-relaxed">{finding.whyItMatters}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">Sources</p>
+            <div className="space-y-1">
+              {finding.sources.map((s, i) => (
+                <a key={i} href={s.url} target="_blank" rel="noopener noreferrer"
+                  onClick={e => e.stopPropagation()}
+                  className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-200 transition-colors">
+                  <span className="shrink-0">↗</span>
+                  <span className="truncate">{s.publisher}</span>
+                  <span className="shrink-0 text-slate-600">· {s.date}</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+      <div className="px-4 pb-2 text-[10px] text-slate-600">{isOpen ? '▲ collapse' : '▼ expand'}</div>
+    </div>
+  );
 }
 
-interface Activity {
-  date: string;
-  title: string;
-  type: string;
-  impact: string;
+function ExecutiveCard({ exec, isSelected, onToggle }: {
+  exec: ExecutiveProfile; isSelected: boolean; onToggle: () => void;
+}) {
+  const ts = THREAT_STYLES[exec.threatLevel] ?? THREAT_STYLES.LOW;
+  const orangeCount = exec.keyFindings.filter(f => f.riskColor === 'ORANGE' || f.riskColor === 'RED').length;
+  return (
+    <div onClick={onToggle} className="rounded-2xl border cursor-pointer transition-all duration-300 hover:scale-[1.01] shadow-xl overflow-hidden"
+      style={{
+        background: 'linear-gradient(135deg,rgba(2,8,23,0.95),rgba(7,15,40,0.95))',
+        borderColor: isSelected ? '#0053e2' : 'rgba(51,65,85,0.6)',
+        boxShadow: isSelected ? '0 0 30px rgba(0,83,226,0.2)' : undefined,
+      }}>
+      {/* Header */}
+      <div className="p-5 flex items-start gap-4">
+        <ProfileAvatar src={exec.profileImage} name={exec.name} />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2 mb-1">
+            <div>
+              <h2 className="text-lg font-black text-white leading-tight">{exec.name}</h2>
+              <p className="text-xs text-slate-400 mt-0.5">{exec.title}</p>
+              <p className="text-xs font-semibold mt-0.5" style={{ color: '#60a5fa' }}>{exec.company}</p>
+            </div>
+            <ThreatBadge level={exec.threatLevel} />
+          </div>
+          <p className="text-xs text-slate-300 leading-relaxed mt-2">{exec.bio}</p>
+        </div>
+      </div>
+      {/* Stats bar */}
+      <div className="grid grid-cols-3 border-t px-5 py-3 gap-2" style={{ borderColor: 'rgba(51,65,85,0.4)', background: 'rgba(0,0,0,0.2)' }}>
+        <div className="text-center">
+          <div className="text-xl font-black" style={{ color: '#60a5fa' }}>{exec.keyFindings.length}</div>
+          <div className="text-[9px] text-slate-500 uppercase tracking-wider">Findings</div>
+        </div>
+        <div className="text-center">
+          <div className="text-xl font-black" style={{ color: orangeCount > 0 ? '#fb923c' : '#64748b' }}>{orangeCount}</div>
+          <div className="text-[9px] text-slate-500 uppercase tracking-wider">High-Impact</div>
+        </div>
+        <div className="text-center">
+          <div className="text-xl font-black" style={{ color: ts.text }}>{exec.recentActivity.length}</div>
+          <div className="text-[9px] text-slate-500 uppercase tracking-wider">Activities</div>
+        </div>
+      </div>
+      <div className="text-center py-2 text-[10px] text-slate-600" style={{ borderTop: '1px solid rgba(51,65,85,0.3)' }}>
+        {isSelected ? '▲ collapse' : '▼ expand full intelligence'}
+      </div>
+    </div>
+  );
 }
 
+// ── Main component ────────────────────────────────────────────────────────────
 export function CSOIntelligence() {
-  const [selectedExecutive, setSelectedExecutive] = useState<string | null>(null);
-  const [selectedFinding, setSelectedFinding] = useState<Finding | null>(null);
+  const [selectedExec, setSelectedExec]       = useState<string | null>(null);
+  const [openFinding, setOpenFinding]         = useState<string | null>(null);
 
-  const executives: ExecutiveProfile[] = [
-    {
-      id: 'stephen-schmidt',
-      name: 'Stephen Schmidt',
-      title: 'SVP & Chief Security Officer',
-      company: 'Amazon',
-      threatLevel: 'CRITICAL',
-      profileImage: '/images/executives/stephen-schmidt.jpg',
-      bio: 'Amazon CSO driving passwordless authentication, AI-powered security, and industry standard-setting. Leading 1,800+ DPRK infiltration blocks. Most aggressive competitor CSO.',
-      keyFindings: [
-        {
-          id: 'f1',
-          type: 'thought_leadership',
-          headline: 'Schmidt details Amazon\'s "no exceptions" internal authentication standard (Midway) and U2F-first posture',
-          date: '2026-01-23',
-          impactScore: 16,
-          riskColor: 'ORANGE',
-          summary: 'Schmidt argues strong authentication is the single most important security control. Describes Amazon\'s internal authentication system ("Midway") with universal adoption across environments, including legacy applications, with U2F security keys, device health checks, and continuous session revalidation.',
-          whyItMatters: 'Direct signal of Amazon\'s identity program maturity and bias toward eliminating exceptions—reducing lateral-movement opportunities. Details indicate investment priorities (device posture + phishing-resistant MFA + continuous verification) that can raise the competitive bar for enterprise identity.',
-          sources: [
-            {
-              publisher: 'LinkedIn (Stephen Schmidt)',
-              url: 'https://www.linkedin.com/pulse/why-strong-authentication-your-most-important-security-schmidt-unm0e',
-              date: '2026-01-23'
-            }
-          ]
-        },
-        {
-          id: 'f2',
-          type: 'incident_response',
-          headline: 'Amazon publicizes scale of DPRK-linked hiring fraud detection and its AI + human verification model',
-          date: '2026-01-02',
-          impactScore: 12,
-          riskColor: 'YELLOW',
-          summary: 'Amazon blocked more than 1,800 suspected DPRK-linked attempts to obtain remote IT roles since April 2024. Approach combines AI-powered screening (institutional links, application anomalies, geographic inconsistencies) with human verification steps.',
-          whyItMatters: 'Concrete insider-risk / identity signal: Amazon treating hiring pipelines as an attack surface with measurable, high-volume adversary activity. Suggests ongoing investment in recruitment fraud analytics, cross-signal correlation, and post-hire anomaly monitoring.',
-          sources: [
-            {
-              publisher: 'Dataconomy',
-              url: 'https://dataconomy.com/2026/01/02/amazon-blocks-1800-north-korean-operatives-from-remote-jobs/',
-              date: '2026-01-02'
-            },
-            {
-              publisher: 'LinkedIn (Stephen Schmidt)',
-              url: 'https://www.linkedin.com/posts/stephenschmidt1_over-the-past-few-years-north-korean-dprk-activity-7407485036142276610-dot7',
-              date: '2025-12-18'
-            }
-          ]
-        },
-        {
-          id: 'f3',
-          type: 'thought_leadership',
-          headline: 'Amazon discloses \'Autonomous Threat Analysis\' agentic AI approach to scale bug hunting and defenses',
-          date: '2025-11-24',
-          impactScore: 12,
-          riskColor: 'YELLOW',
-          summary: 'Amazon publicly described an internal system (Autonomous Threat Analysis, ATA) using multiple specialized AI agents to identify weaknesses, perform variant analysis, and propose remediations and detections with human review. System intended to reduce analysis cycles from weeks to hours.',
-          whyItMatters: 'Context for Amazon\'s AI/security automation posture and continued investment in agentic security testing, detection engineering, and accelerated remediation. Signals competitive pressure to modernize secure SDLC and automated analysis capabilities to match machine-speed threat evolution.',
-          sources: [
-            {
-              publisher: 'WIRED',
-              url: 'https://www.wired.com/story/amazon-autonomous-threat-analysis/',
-              date: '2025-11-24'
-            },
-            {
-              publisher: 'Amazon Science',
-              url: 'https://www.amazon.science/blog/how-amazon-uses-ai-agents-to-anticipate-and-counter-cyber-threats',
-              date: '2025-11-24'
-            }
-          ]
-        }
-      ],
-      recentActivity: [
-        { date: '2026-02-12', title: 'CyberScoop Safe Mode: How Amazon Killed the Password', type: 'Media Appearance', impact: 'High visibility thought leadership on passwordless + identity unification' },
-        { date: '2026-01-23', title: 'LinkedIn Article: Why Strong Authentication Is Your Most Important Security Control', type: 'Thought Leadership', impact: 'Direct disclosure of Midway authentication system and U2F enforcement' },
-        { date: '2026-01-02', title: 'DPRK Hiring Fraud Disclosure', type: 'Incident Response', impact: '1,800+ blocked attempts - sets industry standard for insider risk detection' },
-        { date: '2025-11-24', title: 'ATA (Autonomous Threat Analysis) Launch', type: 'Product Innovation', impact: 'Agentic AI for bug hunting - weeks to hours acceleration' }
-      ],
-      strategicThreats: [
-        '🔥 CRITICAL: Setting industry standards for passwordless auth and eliminating password-based lateral movement',
-        '🔥 CRITICAL: 1,800+ DPRK hiring blocks demonstrate advanced insider-risk detection - raising competitive bar',
-        '⚠️ HIGH: Autonomous Threat Analysis (ATA) AI agents accelerating security testing - machine-speed defense',
-        '⚠️ HIGH: "No exceptions" Midway authentication - universal phishing-resistant MFA across all environments',
-        '⚠️ HIGH: Public thought leadership via LinkedIn, CyberScoop - influencing enterprise security standards'
-      ],
-      recommendations: [
-        '🔥 IMMEDIATE: Benchmark Walmart\'s identity coverage vs Amazon\'s "no exceptions" Midway model',
-        '🔥 IMMEDIATE: Review DPRK screening protocols - Amazon blocking 1,800+ vs Walmart\'s current posture',
-        '⚡ 30-DAY: Launch CSO thought leadership campaign to counter Amazon\'s standard-setting narrative',
-        '⚡ 30-DAY: Accelerate passwordless MFA rollout - Amazon is eliminating passwords entirely',
-        '⚡ 90-DAY: Evaluate agentic AI for security testing to match ATA\'s weeks-to-hours acceleration',
-        '🎯 6-MONTH: Position Jerrad as industry voice on identity, AI security, and insider-risk detection'
-      ]
-    },
-    {
-      id: 'amy-herzog',
-      name: 'Amy Herzog',
-      title: 'VP & Chief Information Security Officer',
-      company: 'AWS (Amazon Web Services)',
-      threatLevel: 'HIGH',
-      profileImage: '/images/executives/amy-herzog.jpg',
-      bio: 'AWS CISO (appointed June 2025) driving AI-powered SOC automation, AWS Security Agent rollout, and "security-as-enabler" messaging. 11-minute vulnerability detection (from 27 hours). Influencing enterprise expectations.',
-      keyFindings: [
-        {
-          id: 'f4',
-          type: 'thought_leadership',
-          headline: 'Herzog cites major GenAI efficiency gains for vulnerability identification and SOC alert contexting',
-          date: '2026-01-07',
-          impactScore: 12,
-          riskColor: 'YELLOW',
-          summary: 'GenAI reduced time to identify potentially vulnerable systems to ~11 minutes on average (from ~27 hours), and reduced time to assemble context on key SOC alerts to ~11 minutes (from ~four hours). Emphasizes applying \'security basics\' when managing identity for agentic AI.',
-          whyItMatters: 'Indicates AWS has operationalized GenAI in core security workflows (vuln identification and SOC triage), suggesting maturity beyond pilots. Shifts the competitive benchmark for security operations automation and influences customer demand for measurable time-to-context/time-to-fix improvements.',
-          sources: [
-            {
-              publisher: 'AI Leaders Council (citing WSJ)',
-              url: 'https://aileaderscouncil.org/how-ai-is-reinventing-cybersecurity-for-2026/',
-              date: '2026-01-07'
-            }
-          ]
-        },
-        {
-          id: 'f5',
-          type: 'partnership',
-          headline: 'AWS Security Agent adds GitHub Enterprise Cloud connectivity and automated remediation PR workflows',
-          date: '2026-01-22',
-          impactScore: 16,
-          riskColor: 'ORANGE',
-          summary: 'AWS announced customers can connect GitHub Enterprise Cloud organizations to AWS Security Agent via a GitHub app. Features: automated code reviews on pull requests, use of private repository code during penetration testing, and optional automated remediation via agent-submitted pull requests.',
-          whyItMatters: 'Concrete integration move toward developer workflow embedding (pull requests) and closed-loop remediation, reducing AppSec friction and increasing coverage at scale. Ecosystem strategy: meeting enterprises where code lives (GitHub Enterprise) and pushing security controls upstream.',
-          sources: [
-            {
-              publisher: 'AWS (What\'s New)',
-              url: 'https://aws.amazon.com/about-aws/whats-new/2026/01/aws-security-agent-ghe-support/',
-              date: '2026-01-22'
-            }
-          ]
-        },
-        {
-          id: 'f6',
-          type: 'thought_leadership',
-          headline: 'AWS publishes technical disclosure on Security Agent\'s multi-agent penetration testing architecture',
-          date: '2026-02-26',
-          impactScore: 12,
-          riskColor: 'YELLOW',
-          summary: 'AWS Security Blog published technical post detailing a multi-agent architecture for automated penetration testing within AWS Security Agent. Emphasizes orchestration of specialized agents, adaptive task generation, and assertion-based validation. Discusses mitigating LLM non-determinism (multiple runs, consolidating findings).',
-          whyItMatters: 'Technical disclosure suggests AWS is investing in credible, repeatable agentic security workflows, not just marketing claims. Focus on validation and non-determinism mitigations is a key maturity signal. AWS will market Security Agent as both scalable and defensible (repeatability/validation).',
-          sources: [
-            {
-              publisher: 'AWS Security Blog',
-              url: 'https://aws.amazon.com/blogs/security/inside-aws-security-agent-a-multi-agent-architecture-for-automated-penetration-testing/',
-              date: '2026-02-26'
-            }
-          ]
-        }
-      ],
-      recentActivity: [
-        { date: '2026-02-26', title: 'AWS Security Agent Multi-Agent Architecture Disclosure', type: 'Technical Publication', impact: 'Detailed agentic AI penetration testing approach - credibility building' },
-        { date: '2026-02-09', title: 'AWS Security Agent IAM/API Migration Announcement', type: 'Product Decision', impact: 'Preparing for public API/SDK support - enabling enterprise automation' },
-        { date: '2026-01-22', title: 'GitHub Enterprise Cloud Integration Launch', type: 'Partnership', impact: 'Developer workflow embedding - automated remediation PRs' },
-        { date: '2026-01-07', title: 'WSJ Feature: GenAI SOC Efficiency Metrics', type: 'Media Coverage', impact: '11-minute vuln detection (from 27 hours) - operational proof points' },
-        { date: '2026-01-05', title: 'Continuous Observability Messaging', type: 'Thought Leadership', impact: 'Framing SOC modernization as urgent requirement' }
-      ],
-      strategicThreats: [
-        '🔥 CRITICAL: 11-minute vulnerability detection (from 27 hours) via GenAI - operational AI security leadership',
-        '⚠️ HIGH: AWS Security Agent GitHub integration - embedding security in developer workflows',
-        '⚠️ HIGH: Multi-agent penetration testing disclosure - technical credibility for agentic AI approach',
-        '⚠️ HIGH: "Security-as-enabler" messaging at re:Inforce - influencing enterprise AI adoption narratives',
-        '⚠️ MEDIUM: Continuous observability + automation advocacy - setting SOC modernization standards'
-      ],
-      recommendations: [
-        '🔥 IMMEDIATE: Benchmark Walmart SOC automation vs AWS\'s 11-minute detection metrics',
-        '🔥 IMMEDIATE: Evaluate AWS Security Agent competitive positioning vs Walmart\'s AppSec tooling',
-        '⚡ 30-DAY: Launch measurable AI security metrics to counter AWS\'s operational proof points',
-        '⚡ 90-DAY: Develop developer-embedded security workflow to match AWS\'s GitHub integration strategy',
-        '🎯 6-MONTH: Position Walmart security as AI enabler (counter Herzog\'s "security-as-catalyst" messaging)'
-      ]
-    }
-  ];
+  const active = CSO_PROFILES.find(e => e.id === selectedExec);
 
-  const getExecutive = (id: string) => executives.find(e => e.id === id);
+  const toggleExec = (id: string) => {
+    setSelectedExec(prev => prev === id ? null : id);
+    setOpenFinding(null);
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-8">
-      {/* ═══ 3D HERO — CSO Radar ══════════════════════════════════════ */}
+    <div className="min-h-screen text-white p-4 sm:p-8"
+      style={{ background: 'radial-gradient(ellipse at 50% 0%,#020c2a 0%,#000510 70%)' }}>
+
+      {/* ── 3D Hero ──────────────────────────────────────────────────────── */}
       <div className="max-w-7xl mx-auto mb-8">
-        <div
-          className="relative rounded-2xl overflow-hidden border border-slate-700"
-          style={{ height: '400px', background: 'radial-gradient(ellipse at center, #000d2e 0%, #000510 100%)' }}
-        >
+        <div className="relative rounded-2xl overflow-hidden border border-slate-700"
+          style={{ height: 400, background: 'radial-gradient(ellipse at center,#000d2e 0%,#000510 100%)' }}>
           {/* Grid overlay */}
-          <div
-            className="absolute inset-0 opacity-[0.05] pointer-events-none"
-            style={{
-              backgroundImage:
-                'linear-gradient(rgba(0,83,226,0.6) 1px,transparent 1px),'
-                + 'linear-gradient(90deg,rgba(0,83,226,0.6) 1px,transparent 1px)',
-              backgroundSize: '48px 48px',
-            }}
-          />
-
-          {/* 3D Radar scene */}
-          <div className="absolute inset-0 z-0">
-            <CSORadar3D />
-          </div>
-
-          {/* Threat ring legend (bottom-left) */}
+          <div className="absolute inset-0 pointer-events-none"
+            style={{ opacity: 0.05,
+              backgroundImage: 'linear-gradient(rgba(0,83,226,.6) 1px,transparent 1px),linear-gradient(90deg,rgba(0,83,226,.6) 1px,transparent 1px)',
+              backgroundSize: '48px 48px' }} />
+          <div className="absolute inset-0 z-0"><CSORadar3D /></div>
+          {/* Threat ring legend */}
           <div className="absolute bottom-5 left-6 z-10 flex flex-col gap-1.5">
-            {[
-              { label: 'CRITICAL', color: '#ff6b6b' },
-              { label: 'HIGH',     color: '#fb923c' },
-              { label: 'MEDIUM',   color: '#FFC220' },
-              { label: 'LOW',      color: '#4ade80' },
-            ].map(({ label, color }) => (
-              <div key={label} className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: color, boxShadow: `0 0 6px ${color}` }} />
-                <span className="text-[10px] font-bold tracking-wider" style={{ color }}>{label}</span>
+            {(['CRITICAL','HIGH','MEDIUM','LOW'] as const).map(l => (
+              <div key={l} className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full shrink-0"
+                  style={{ background: THREAT_STYLES[l].text, boxShadow: `0 0 6px ${THREAT_STYLES[l].text}` }} />
+                <span className="text-[10px] font-bold tracking-wider" style={{ color: THREAT_STYLES[l].text }}>{l}</span>
               </div>
             ))}
           </div>
-
-          {/* Text overlay (top-center) */}
+          {/* Hero text */}
           <div className="relative z-10 h-full flex flex-col items-center justify-start pt-8 text-center px-6">
             <p className="text-[10px] font-bold text-wmt-yellow tracking-[0.2em] uppercase mb-2">
               Enterprise Security &nbsp;•&nbsp; Executive Threat Intelligence
             </p>
-            <h1
-              className="text-4xl lg:text-5xl font-black mb-2 leading-tight"
-              style={{
-                background: 'linear-gradient(135deg, #60a5fa 0%, #0053E2 50%, #FFC220 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
+            <h1 className="text-4xl lg:text-5xl font-black mb-2 leading-tight"
+              style={{ background: 'linear-gradient(135deg,#60a5fa 0%,#0053E2 50%,#FFC220 100%)',
+                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               CSO Intelligence
             </h1>
-            <p className="text-slate-400 text-sm max-w-lg mb-5">
-              Competitor executive tracking — Amazon security leadership, threat posture, and strategic risk.
+            <p className="text-slate-400 text-sm max-w-xl mb-5">
+              Competitor executive tracking — security leadership threat posture, org changes &amp; strategic risk.
             </p>
             <div className="flex flex-wrap gap-2 justify-center">
-              <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(234,17,0,0.15)', color: '#ff6b6b', borderColor: 'rgba(234,17,0,0.4)' }}>CRITICAL Threats: 2</span>
-              <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(249,115,22,0.15)', color: '#fb923c', borderColor: 'rgba(249,115,22,0.4)' }}>HIGH Threats: 4</span>
-              <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(0,83,226,0.15)', color: '#60a5fa', borderColor: 'rgba(0,83,226,0.4)' }}>Updated: Mar 2, 2026</span>
+              <span className="px-3 py-1.5 rounded-full text-xs font-bold border"
+                style={{ background: 'rgba(234,17,0,0.15)', color: '#ff6b6b', borderColor: 'rgba(234,17,0,0.4)' }}>
+                🔴 ORANGE Findings: {THREAT_COUNTS.critical}
+              </span>
+              <span className="px-3 py-1.5 rounded-full text-xs font-bold border"
+                style={{ background: 'rgba(255,194,32,0.15)', color: '#FFC220', borderColor: 'rgba(255,194,32,0.4)' }}>
+                🟡 YELLOW Findings: {THREAT_COUNTS.high}
+              </span>
+              <span className="px-3 py-1.5 rounded-full text-xs font-bold border"
+                style={{ background: 'rgba(0,83,226,0.15)', color: '#60a5fa', borderColor: 'rgba(0,83,226,0.4)' }}>
+                {CSO_PROFILES.length} Executives · Updated {THREAT_COUNTS.updated}
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Executive Cards Grid */}
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-        {executives.map(exec => (
-          <div
-            key={exec.id}
-            onClick={() => setSelectedExecutive(selectedExecutive === exec.id ? null : exec.id)}
-            className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg border border-gray-700 hover:border-blue-500 transition-all duration-300 cursor-pointer transform hover:scale-105 shadow-2xl"
-          >
-            {/* Card Header */}
-            <div className="p-6 border-b border-gray-700">
-              <div className="flex items-start gap-4">
-                {/* Profile Image */}
-                <div className="w-24 h-24 rounded-full border-4 border-blue-500 overflow-hidden flex-shrink-0 bg-gray-800">
-                  <img 
-                    src={exec.profileImage} 
-                    alt={exec.name}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      // Fallback to initials if image fails to load
-                      e.currentTarget.style.display = 'none';
-                      e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                    }}
-                  />
-                  <div className="hidden w-full h-full flex items-center justify-center text-4xl font-bold bg-gradient-to-br from-blue-500 to-purple-600">
-                    {exec.name.split(' ').map(n => n[0]).join('')}
-                  </div>
-                </div>
-
-                {/* Executive Info */}
-                <div className="flex-1">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <h2 className="text-2xl font-bold mb-1">{exec.name}</h2>
-                      <p className="text-gray-400 text-sm">{exec.title}</p>
-                      <p className="text-blue-400 font-semibold">{exec.company}</p>
-                    </div>
-                    <div className={`px-3 py-1 rounded-full text-xs font-bold ${
-                      exec.threatLevel === 'CRITICAL' ? 'bg-red-500/20 text-red-300 border border-red-500' :
-                      exec.threatLevel === 'HIGH' ? 'bg-orange-500/20 text-orange-300 border border-orange-500' :
-                      exec.threatLevel === 'MEDIUM' ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500' :
-                      'bg-green-500/20 text-green-300 border border-green-500'
-                    }`}>
-                      {exec.threatLevel} THREAT
-                    </div>
-                  </div>
-                  <p className="text-gray-300 text-sm leading-relaxed">{exec.bio}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Stats */}
-            <div className="grid grid-cols-3 gap-4 p-4 bg-gray-900/50">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-400">{exec.keyFindings.length}</div>
-                <div className="text-xs text-gray-400">Key Findings</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-400">{exec.recentActivity.length}</div>
-                <div className="text-xs text-gray-400">Recent Activities</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-red-400">{exec.strategicThreats.length}</div>
-                <div className="text-xs text-gray-400">Strategic Threats</div>
-              </div>
-            </div>
-
-            {/* Expand Indicator */}
-            <div className="p-4 text-center text-sm text-gray-400 border-t border-gray-700">
-              {selectedExecutive === exec.id ? '🔽 Click to collapse' : '🔼 Click to expand full intelligence'}
-            </div>
-          </div>
+      {/* ── Executive Card Grid ───────────────────────────────────────────── */}
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        {CSO_PROFILES.map(exec => (
+          <ExecutiveCard key={exec.id} exec={exec}
+            isSelected={selectedExec === exec.id}
+            onToggle={() => toggleExec(exec.id)} />
         ))}
       </div>
 
-      {/* Expanded Executive Detail */}
-      {selectedExecutive && (
-        <div className="max-w-7xl mx-auto">
-          <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg border-2 border-blue-500 shadow-2xl overflow-hidden">
-            <div className="p-8">
-              <h2 className="text-3xl font-bold mb-6 border-b border-gray-700 pb-4">🔍 Detailed Intelligence: {getExecutive(selectedExecutive)?.name}</h2>
+      {/* ── Expanded Detail Panel ─────────────────────────────────────────── */}
+      {active && (
+        <div className="max-w-7xl mx-auto rounded-2xl overflow-hidden shadow-2xl"
+          style={{ background: 'linear-gradient(135deg,rgba(2,8,23,0.97),rgba(7,15,40,0.97))', border: '2px solid #0053e2' }}>
+          <div className="p-6 sm:p-8">
+            <h2 className="text-2xl font-black mb-6 pb-4 border-b border-slate-800">
+              🔍 Intelligence Detail — {active.name}
+            </h2>
 
-              {/* Strategic Threats */}
-              <div className="mb-8">
-                <h3 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                  <span>⚠️</span>
-                  <span>Strategic Threats to Walmart</span>
-                </h3>
-                <div className="space-y-3">
-                  {getExecutive(selectedExecutive)?.strategicThreats.map((threat, i) => (
-                    <div key={i} className="bg-gray-900/70 p-4 rounded-lg border-l-4 border-red-500">
-                      <p className="text-gray-200">{threat}</p>
-                    </div>
-                  ))}
-                </div>
+            {/* Strategic Threats */}
+            <section className="mb-8">
+              <h3 className="text-lg font-bold mb-3 flex items-center gap-2">⚠️ Strategic Threats to Walmart</h3>
+              <div className="space-y-2">
+                {active.strategicThreats.map((t, i) => (
+                  <div key={i} className="p-3 rounded-lg text-sm text-slate-200"
+                    style={{ background: 'rgba(234,17,0,0.06)', borderLeft: '3px solid rgba(234,17,0,0.4)' }}>{t}</div>
+                ))}
               </div>
+            </section>
 
-              {/* Key Findings */}
-              <div className="mb-8">
-                <h3 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                  <span>📊</span>
-                  <span>Key Intelligence Findings</span>
-                </h3>
-                <div className="space-y-4">
-                  {getExecutive(selectedExecutive)?.keyFindings.map(finding => (
-                    <div
-                      key={finding.id}
-                      onClick={() => setSelectedFinding(selectedFinding?.id === finding.id ? null : finding)}
-                      className="bg-gray-900/70 p-5 rounded-lg border border-gray-700 hover:border-blue-500 transition-all cursor-pointer"
-                    >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-2">
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                              finding.riskColor === 'RED' ? 'bg-red-500/20 text-red-300 border border-red-500' :
-                              finding.riskColor === 'ORANGE' ? 'bg-orange-500/20 text-orange-300 border border-orange-500' :
-                              finding.riskColor === 'YELLOW' ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500' :
-                              'bg-green-500/20 text-green-300 border border-green-500'
-                            }`}>
-                              {finding.riskColor} | Impact: {finding.impactScore}/25
-                            </span>
-                            <span className="text-xs text-gray-400">{finding.date}</span>
-                            <span className="px-2 py-1 bg-blue-500/20 text-blue-300 rounded text-xs">{finding.type}</span>
-                          </div>
-                          <h4 className="font-bold text-lg text-blue-300 mb-2">{finding.headline}</h4>
-                        </div>
-                      </div>
-
-                      {/* Expandable Finding Detail */}
-                      {selectedFinding?.id === finding.id && (
-                        <div className="mt-4 pt-4 border-t border-gray-700 space-y-4">
-                          <div>
-                            <h5 className="font-semibold text-yellow-400 mb-2">📝 Summary:</h5>
-                            <p className="text-gray-300 text-sm leading-relaxed">{finding.summary}</p>
-                          </div>
-                          <div>
-                            <h5 className="font-semibold text-red-400 mb-2">💡 Why It Matters:</h5>
-                            <p className="text-gray-300 text-sm leading-relaxed">{finding.whyItMatters}</p>
-                          </div>
-                          <div>
-                            <h5 className="font-semibold text-blue-400 mb-2">🔗 Sources:</h5>
-                            <div className="space-y-2">
-                              {finding.sources.map((source, i) => (
-                                <div key={i} className="bg-gray-800 p-3 rounded border border-gray-700">
-                                  <a
-                                    href={source.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-blue-400 hover:text-blue-300 text-sm font-medium block mb-1"
-                                  >
-                                    📰 {source.publisher}
-                                  </a>
-                                  <span className="text-xs text-gray-500">{source.date}</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      <div className="mt-3 text-xs text-gray-500">
-                        {selectedFinding?.id === finding.id ? '🔽 Click to collapse' : '🔼 Click for full details & sources'}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+            {/* Key Findings */}
+            <section className="mb-8">
+              <h3 className="text-lg font-bold mb-3 flex items-center gap-2">📊 Key Intelligence Findings</h3>
+              <div className="space-y-3">
+                {active.keyFindings.map(f => (
+                  <FindingCard key={f.id} finding={f}
+                    isOpen={openFinding === f.id}
+                    onToggle={() => setOpenFinding(prev => prev === f.id ? null : f.id)} />
+                ))}
               </div>
+            </section>
 
-              {/* Recent Activity Timeline */}
-              <div className="mb-8">
-                <h3 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                  <span>📅</span>
-                  <span>Recent Activity Timeline</span>
-                </h3>
-                <div className="space-y-3">
-                  {getExecutive(selectedExecutive)?.recentActivity.map((activity, i) => (
-                    <div key={i} className="flex gap-4">
-                      <div className="flex-shrink-0 w-24 text-right">
-                        <span className="text-sm text-gray-400">{activity.date}</span>
-                      </div>
-                      <div className="flex-shrink-0 w-1 bg-blue-500 rounded-full"></div>
-                      <div className="flex-1 bg-gray-900/70 p-4 rounded-lg border border-gray-700">
-                        <h4 className="font-bold text-white mb-1">{activity.title}</h4>
-                        <span className="text-xs px-2 py-1 bg-blue-500/20 text-blue-300 rounded">{activity.type}</span>
-                        <p className="text-sm text-gray-400 mt-2">{activity.impact}</p>
-                      </div>
+            {/* Activity Timeline */}
+            <section className="mb-8">
+              <h3 className="text-lg font-bold mb-3 flex items-center gap-2">📅 Recent Activity Timeline</h3>
+              <div className="space-y-3">
+                {active.recentActivity.map((a, i) => (
+                  <div key={i} className="flex gap-4">
+                    <div className="shrink-0 w-24 text-right">
+                      <span className="text-xs text-slate-500">{a.date}</span>
                     </div>
-                  ))}
-                </div>
+                    <div className="shrink-0 w-px bg-blue-600 rounded-full" />
+                    <div className="flex-1 rounded-lg p-3" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(51,65,85,0.4)' }}>
+                      <p className="text-sm font-bold text-white mb-1">{a.title}</p>
+                      <span className="text-[10px] px-2 py-0.5 rounded" style={{ background: 'rgba(0,83,226,0.2)', color: '#60a5fa' }}>{a.type}</span>
+                      <p className="text-xs text-slate-400 mt-1.5">{a.impact}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
+            </section>
 
-              {/* Recommended Actions */}
-              <div>
-                <h3 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                  <span>🎯</span>
-                  <span>Recommended Actions for Jerrad</span>
-                </h3>
-                <div className="space-y-3">
-                  {getExecutive(selectedExecutive)?.recommendations.map((rec, i) => (
-                    <div key={i} className="bg-gradient-to-r from-blue-900/30 to-purple-900/30 p-4 rounded-lg border-l-4 border-yellow-500">
-                      <p className="text-gray-200">{rec}</p>
-                    </div>
-                  ))}
-                </div>
+            {/* Recommendations */}
+            <section>
+              <h3 className="text-lg font-bold mb-3 flex items-center gap-2">🎯 Recommended Actions for Jerrad</h3>
+              <div className="space-y-2">
+                {active.recommendations.map((r, i) => (
+                  <div key={i} className="p-3 rounded-lg text-sm text-slate-200"
+                    style={{ background: 'linear-gradient(90deg,rgba(0,83,226,0.08),rgba(124,58,237,0.06))', borderLeft: '3px solid #FFC220' }}>{r}</div>
+                ))}
               </div>
-            </div>
+            </section>
           </div>
         </div>
       )}
