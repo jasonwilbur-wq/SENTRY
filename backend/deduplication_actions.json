@@ -1,0 +1,1502 @@
+{
+  "score_fixes": [],
+  "deletions": [
+    {
+      "id": "cbb9e127e152",
+      "company": "Advantech",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "043ea99ee0e5",
+      "company": "Advantech",
+      "reason": "Older duplicate (assessed: 10/29/2025)"
+    },
+    {
+      "id": "783b08932dd8",
+      "company": "Advantech",
+      "reason": "Older duplicate (assessed: 10/23/2025)"
+    },
+    {
+      "id": "9fac745e3d15",
+      "company": "Aeva",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "8872d3071470",
+      "company": "Agility Robotics",
+      "reason": "Older duplicate (assessed: 11/24/2025)"
+    },
+    {
+      "id": "c9e6a2a85896",
+      "company": "Agility Robotics",
+      "reason": "Older duplicate (assessed: 7/12/2025)"
+    },
+    {
+      "id": "6671c4d966bb",
+      "company": "Ajax Systems",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "eff660dc4d2a",
+      "company": "Alcatraz AI",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "4daf31300ca8",
+      "company": "Allegion",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "fd1e70dd6f3b",
+      "company": "Amazon",
+      "reason": "Older duplicate (assessed: 1/22/2026)"
+    },
+    {
+      "id": "3a8a04ce403a",
+      "company": "Amazon",
+      "reason": "Older duplicate (assessed: 1/22/2026)"
+    },
+    {
+      "id": "bbaa074e4408",
+      "company": "Amazon",
+      "reason": "Older duplicate (assessed: 1/22/2026)"
+    },
+    {
+      "id": "50d78bb1d46c",
+      "company": "Amazon",
+      "reason": "Older duplicate (assessed: 1/21/2026)"
+    },
+    {
+      "id": "4b53e4e0b180",
+      "company": "Amazon",
+      "reason": "Older duplicate (assessed: 1/20/2026)"
+    },
+    {
+      "id": "6d83b856a544",
+      "company": "Amazon",
+      "reason": "Older duplicate (assessed: 1/20/2026)"
+    },
+    {
+      "id": "b32baeb2204a",
+      "company": "Amazon",
+      "reason": "Older duplicate (assessed: 1/20/2026)"
+    },
+    {
+      "id": "38959d5c54a3",
+      "company": "Amazon",
+      "reason": "Older duplicate (assessed: 11/24/2025)"
+    },
+    {
+      "id": "e7c9a3a5c239",
+      "company": "Amazon",
+      "reason": "Older duplicate (assessed: 10/22/2025)"
+    },
+    {
+      "id": "55e290e0bdd7",
+      "company": "Amazon",
+      "reason": "Older duplicate (assessed: 10/13/2025)"
+    },
+    {
+      "id": "caec0e417a74",
+      "company": "Amazon",
+      "reason": "Older duplicate (assessed: 10/13/2025)"
+    },
+    {
+      "id": "d5f4ade8168a",
+      "company": "Amazon",
+      "reason": "Older duplicate (assessed: 10/13/2025)"
+    },
+    {
+      "id": "ce7d640ab1cf",
+      "company": "Amazon",
+      "reason": "Older duplicate (assessed: 8/30/2025)"
+    },
+    {
+      "id": "6bd5bf413d9b",
+      "company": "Ambarella",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "d9f966037ddf",
+      "company": "Ambarella",
+      "reason": "Older duplicate (assessed: 12/21/2025)"
+    },
+    {
+      "id": "4136ea8956d6",
+      "company": "Anduril Industries",
+      "reason": "Older duplicate (assessed: 10/15/2025)"
+    },
+    {
+      "id": "50def9f33371",
+      "company": "Anduril Industries",
+      "reason": "Older duplicate (assessed: 7/27/2025)"
+    },
+    {
+      "id": "b0350da8c747",
+      "company": "Anno Robot",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "334445069fcf",
+      "company": "Apple",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "5a4834020581",
+      "company": "Apple",
+      "reason": "Older duplicate (assessed: 12/12/2025)"
+    },
+    {
+      "id": "144ab9edc1b5",
+      "company": "Apple",
+      "reason": "Older duplicate (assessed: 10/11/2025)"
+    },
+    {
+      "id": "d3240733793b",
+      "company": "Athena Security",
+      "reason": "Older duplicate (assessed: 1/5/2026)"
+    },
+    {
+      "id": "177f417f0b04",
+      "company": "Athena Security",
+      "reason": "Older duplicate (assessed: 12/1/2025)"
+    },
+    {
+      "id": "2ec4f1ffa697",
+      "company": "Athena Security",
+      "reason": "Older duplicate (assessed: 8/12/2025)"
+    },
+    {
+      "id": "01a42ce58a9b",
+      "company": "Athena Security",
+      "reason": "Older duplicate (assessed: 7/29/2025)"
+    },
+    {
+      "id": "c1061bcc72f1",
+      "company": "Auror",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "1e7cacd7207c",
+      "company": "Auror",
+      "reason": "Older duplicate (assessed: 10/30/2025)"
+    },
+    {
+      "id": "dc12dc5cb9be",
+      "company": "Auror",
+      "reason": "Older duplicate (assessed: 10/30/2025)"
+    },
+    {
+      "id": "2651e3e65b76",
+      "company": "authID",
+      "reason": "Older duplicate (assessed: 1/30/2026)"
+    },
+    {
+      "id": "b1cbb371639c",
+      "company": "authID",
+      "reason": "Older duplicate (assessed: 12/21/2025)"
+    },
+    {
+      "id": "c23bec70a7ba",
+      "company": "AuthID",
+      "reason": "Older duplicate (assessed: 11/21/2025)"
+    },
+    {
+      "id": "db5b7ab17f2a",
+      "company": "BioCatch",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "3b82aa4c4179",
+      "company": "CVEDIA",
+      "reason": "Older duplicate (assessed: 9/25/2025)"
+    },
+    {
+      "id": "f2e6316c7fe3",
+      "company": "Cato Networks",
+      "reason": "Older duplicate (assessed: 9/3/2025)"
+    },
+    {
+      "id": "8af37bb53727",
+      "company": "Check Point",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "a6eac8a2320d",
+      "company": "Check Point",
+      "reason": "Older duplicate (assessed: 12/16/2025)"
+    },
+    {
+      "id": "7ca976684c05",
+      "company": "Ciphero",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "55bf945d8b0b",
+      "company": "Cloudastructure",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "d964b51a9a85",
+      "company": "Cloudastructure",
+      "reason": "Older duplicate (assessed: 9/21/2025)"
+    },
+    {
+      "id": "c4436587b90e",
+      "company": "Cloudastructure",
+      "reason": "Older duplicate (assessed: 9/19/2025)"
+    },
+    {
+      "id": "02123b92aa47",
+      "company": "Cloudflare",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "9f621e4ad535",
+      "company": "Corsight AI",
+      "reason": "Older duplicate (assessed: 10/18/2025)"
+    },
+    {
+      "id": "9baf0b206200",
+      "company": "CrowdStrike",
+      "reason": "Older duplicate (assessed: 1/8/2026)"
+    },
+    {
+      "id": "e370334b70ec",
+      "company": "CrowdStrike",
+      "reason": "Older duplicate (assessed: 12/20/2025)"
+    },
+    {
+      "id": "2091cf616053",
+      "company": "CrowdStrike",
+      "reason": "Older duplicate (assessed: 11/22/2025)"
+    },
+    {
+      "id": "5faa0e728ca9",
+      "company": "CrowdStrike",
+      "reason": "Older duplicate (assessed: 9/1/2025)"
+    },
+    {
+      "id": "ad9c58284bc0",
+      "company": "CrowdStrike",
+      "reason": "Older duplicate (assessed: 8/4/2025)"
+    },
+    {
+      "id": "6fd192392afd",
+      "company": "CrowdStrike",
+      "reason": "Older duplicate (assessed: 8/3/2025)"
+    },
+    {
+      "id": "73b20189a07f",
+      "company": "CrowdStrike",
+      "reason": "Older duplicate (assessed: 7/17/2025)"
+    },
+    {
+      "id": "6c13752692d7",
+      "company": "CyberArk",
+      "reason": "Older duplicate (assessed: 11/12/2025)"
+    },
+    {
+      "id": "6fdbce35e56f",
+      "company": "CyberArk",
+      "reason": "Older duplicate (assessed: 7/31/2025)"
+    },
+    {
+      "id": "0aa575b07c78",
+      "company": "Cyble",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "a3f61b4e2c3e",
+      "company": "Datalogic",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "6c35155a6c61",
+      "company": "Datalogic",
+      "reason": "Older duplicate (assessed: 12/12/2025)"
+    },
+    {
+      "id": "d2a161e60308",
+      "company": "DroneShield",
+      "reason": "Older duplicate (assessed: 1/8/2026)"
+    },
+    {
+      "id": "abb90979461e",
+      "company": "DroneShield",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "58a34832980c",
+      "company": "DroneShield",
+      "reason": "Older duplicate (assessed: 12/30/2025)"
+    },
+    {
+      "id": "9c11e6569574",
+      "company": "DroneShield",
+      "reason": "Older duplicate (assessed: 12/27/2025)"
+    },
+    {
+      "id": "8b720e648474",
+      "company": "DroneShield",
+      "reason": "Older duplicate (assessed: 11/21/2025)"
+    },
+    {
+      "id": "292a23b19739",
+      "company": "DroneShield",
+      "reason": "Older duplicate (assessed: 10/23/2025)"
+    },
+    {
+      "id": "9711a392f0e6",
+      "company": "DroneShield",
+      "reason": "Older duplicate (assessed: 10/15/2025)"
+    },
+    {
+      "id": "6a3fcbafb01c",
+      "company": "DroneShield",
+      "reason": "Older duplicate (assessed: 9/5/2025)"
+    },
+    {
+      "id": "187b85b4126d",
+      "company": "DroneShield",
+      "reason": "Older duplicate (assessed: 8/11/2025)"
+    },
+    {
+      "id": "f5b9823e1be4",
+      "company": "EarthCam",
+      "reason": "Older duplicate (assessed: 11/19/2025)"
+    },
+    {
+      "id": "60e3c652b750",
+      "company": "EnGenius",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "60c0f7a509f3",
+      "company": "EnGenius",
+      "reason": "Older duplicate (assessed: 11/26/2025)"
+    },
+    {
+      "id": "2c53016b6538",
+      "company": "Equifax",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "445cc2368dfd",
+      "company": "Evolv Technology",
+      "reason": "Older duplicate (assessed: 10/20/2025)"
+    },
+    {
+      "id": "0b0bb5819747",
+      "company": "Evolv Technology",
+      "reason": "Older duplicate (assessed: 9/23/2025)"
+    },
+    {
+      "id": "b8c57101c0d5",
+      "company": "Exabeam",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "8516b1257a16",
+      "company": "Exiger",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "47b566d1423f",
+      "company": "F5",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "cb4053195b61",
+      "company": "FORT Robotics",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "e1a8aa62b22c",
+      "company": "Farmonaut",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "36bb4d6a96e7",
+      "company": "Farmonaut",
+      "reason": "Older duplicate (assessed: 8/14/2025)"
+    },
+    {
+      "id": "f8130f92e9a7",
+      "company": "Flock Safety",
+      "reason": "Older duplicate (assessed: 1/8/2026)"
+    },
+    {
+      "id": "4c3f0f2e6564",
+      "company": "Flock Safety",
+      "reason": "Older duplicate (assessed: 9/12/2025)"
+    },
+    {
+      "id": "920a1eedd526",
+      "company": "Flock Safety",
+      "reason": "Older duplicate (assessed: 8/24/2025)"
+    },
+    {
+      "id": "291c12195c12",
+      "company": "Flock Safety",
+      "reason": "Older duplicate (assessed: 8/3/2025)"
+    },
+    {
+      "id": "d53ab7210cbc",
+      "company": "Flock Safety",
+      "reason": "Older duplicate (assessed: 7/27/2025)"
+    },
+    {
+      "id": "a0f8896515dc",
+      "company": "Fortem Technologies",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "24edabf92fad",
+      "company": "Fortem Technologies",
+      "reason": "Older duplicate (assessed: 12/4/2025)"
+    },
+    {
+      "id": "0fae09da3fbd",
+      "company": "Fortem Technologies",
+      "reason": "Older duplicate (assessed: 11/22/2025)"
+    },
+    {
+      "id": "2bc5a6a6cfd7",
+      "company": "Fortem Technologies",
+      "reason": "Older duplicate (assessed: 10/14/2025)"
+    },
+    {
+      "id": "d3ba595d73af",
+      "company": "Forward Edge-AI",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "07200f1d7f7d",
+      "company": "Genetec",
+      "reason": "Older duplicate (assessed: 1/8/2026)"
+    },
+    {
+      "id": "d2c2b5c63bfe",
+      "company": "Genetec",
+      "reason": "Older duplicate (assessed: 12/2/2025)"
+    },
+    {
+      "id": "eba9f7fd0224",
+      "company": "Genetec",
+      "reason": "Older duplicate (assessed: 11/25/2025)"
+    },
+    {
+      "id": "fe8dbfe1664d",
+      "company": "Genetec",
+      "reason": "Older duplicate (assessed: 10/20/2025)"
+    },
+    {
+      "id": "ca6d5a4ad37e",
+      "company": "Genetec",
+      "reason": "Older duplicate (assessed: 8/13/2025)"
+    },
+    {
+      "id": "05436d6840bd",
+      "company": "Ghost Robotics",
+      "reason": "Older duplicate (assessed: 1/12/2026)"
+    },
+    {
+      "id": "0afeb7baffb2",
+      "company": "Hailo",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "f29429214b27",
+      "company": "Hesai",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "ce3e96581cb7",
+      "company": "HiddenLayer",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "f6e303e57313",
+      "company": "Hikvision",
+      "reason": "Older duplicate (assessed: 12/31/2025)"
+    },
+    {
+      "id": "7477538fd382",
+      "company": "Hikvision",
+      "reason": "Older duplicate (assessed: 12/15/2025)"
+    },
+    {
+      "id": "3269f95e16ba",
+      "company": "Hikvision",
+      "reason": "Older duplicate (assessed: 11/17/2025)"
+    },
+    {
+      "id": "6b0d4b8bcd2f",
+      "company": "Hikvision",
+      "reason": "Older duplicate (assessed: 10/30/2025)"
+    },
+    {
+      "id": "0443e71a98ca",
+      "company": "Hikvision",
+      "reason": "Older duplicate (assessed: 9/30/2025)"
+    },
+    {
+      "id": "0187eb0ba212",
+      "company": "Hikvision",
+      "reason": "Older duplicate (assessed: 8/11/2025)"
+    },
+    {
+      "id": "24b4631a2e85",
+      "company": "Hikvision",
+      "reason": "Older duplicate (assessed: 7/31/2025)"
+    },
+    {
+      "id": "148394d299ed",
+      "company": "IBM",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "aefecad190e7",
+      "company": "Infosys",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "e863cc0280cb",
+      "company": "Interface Systems",
+      "reason": "Older duplicate (assessed: 1/14/2026)"
+    },
+    {
+      "id": "a664f2bc2c4d",
+      "company": "Leidos",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "7d8bdf404bc5",
+      "company": "March Networks",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "ca2262e99b43",
+      "company": "March Networks",
+      "reason": "Older duplicate (assessed: 11/3/2025)"
+    },
+    {
+      "id": "aea596c17a94",
+      "company": "MatrixSpace",
+      "reason": "Older duplicate (assessed: 12/31/2025)"
+    },
+    {
+      "id": "a582f8a64e34",
+      "company": "MatrixSpace",
+      "reason": "Older duplicate (assessed: 12/16/2025)"
+    },
+    {
+      "id": "209dc45ce7e6",
+      "company": "MatrixSpace",
+      "reason": "Older duplicate (assessed: 12/9/2025)"
+    },
+    {
+      "id": "79bcac5b6043",
+      "company": "NVIDIA",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "77327ce8c235",
+      "company": "NVIDIA",
+      "reason": "Older duplicate (assessed: 11/4/2025)"
+    },
+    {
+      "id": "49c3b1afd110",
+      "company": "NVIDIA",
+      "reason": "Older duplicate (assessed: 10/28/2025)"
+    },
+    {
+      "id": "1fbb19bdd33c",
+      "company": "NVIDIA",
+      "reason": "Older duplicate (assessed: 8/3/2025)"
+    },
+    {
+      "id": "870a18732fa8",
+      "company": "Netradyne",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "b71c3617daef",
+      "company": "Neurotechnology",
+      "reason": "Older duplicate (assessed: 12/31/2025)"
+    },
+    {
+      "id": "244e010cddef",
+      "company": "Nozomi Networks",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "84459a7caadb",
+      "company": "Nozomi Networks",
+      "reason": "Older duplicate (assessed: 12/1/2025)"
+    },
+    {
+      "id": "db2a8e27e8cd",
+      "company": "Oracle",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "f12774347de0",
+      "company": "Outtake",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "ad18b7c2baae",
+      "company": "ParaZero",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "1c200335cfcd",
+      "company": "ParaZero",
+      "reason": "Older duplicate (assessed: 12/27/2025)"
+    },
+    {
+      "id": "24ad3f9a4a3c",
+      "company": "ParaZero",
+      "reason": "Older duplicate (assessed: 10/30/2025)"
+    },
+    {
+      "id": "e8d377db4a04",
+      "company": "Perimeter Solutions Group",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "3d463d85dc59",
+      "company": "Ping Identity",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "6ba559e636df",
+      "company": "Pyramid Network Services",
+      "reason": "Older duplicate (assessed: 2026-02-24)"
+    },
+    {
+      "id": "9f9e05d9843c",
+      "company": "Regula",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "8e94166a0ac6",
+      "company": "Reolink",
+      "reason": "Older duplicate (assessed: 1/8/2026)"
+    },
+    {
+      "id": "15065fb51fbc",
+      "company": "Reolink",
+      "reason": "Older duplicate (assessed: 12/18/2025)"
+    },
+    {
+      "id": "526f0779af8d",
+      "company": "Reolink",
+      "reason": "Older duplicate (assessed: 9/6/2025)"
+    },
+    {
+      "id": "b51d414f325b",
+      "company": "Reolink",
+      "reason": "Older duplicate (assessed: 8/4/2025)"
+    },
+    {
+      "id": "801be0d4ec26",
+      "company": "RoboSense",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "5935dffcbcd3",
+      "company": "SEALSQ",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "47d165de90e6",
+      "company": "SEALSQ",
+      "reason": "Older duplicate (assessed: 8/12/2025)"
+    },
+    {
+      "id": "aaaf6de8b0fc",
+      "company": "Safe Pro Group",
+      "reason": "Older duplicate (assessed: 12/20/2025)"
+    },
+    {
+      "id": "03bd78b67048",
+      "company": "Safe Pro Group",
+      "reason": "Older duplicate (assessed: 8/17/2025)"
+    },
+    {
+      "id": "2f0c0c57f28b",
+      "company": "Saildrone",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "1bd292b94250",
+      "company": "Samsung",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "625b1f4be61b",
+      "company": "Samsung",
+      "reason": "Older duplicate (assessed: 12/22/2025)"
+    },
+    {
+      "id": "601037191ad1",
+      "company": "Samsung",
+      "reason": "Older duplicate (assessed: 12/9/2025)"
+    },
+    {
+      "id": "b7bc5c44ce2e",
+      "company": "Samsung",
+      "reason": "Older duplicate (assessed: 9/7/2025)"
+    },
+    {
+      "id": "25e42b65b677",
+      "company": "Samsung",
+      "reason": "Older duplicate (assessed: 9/2/2025)"
+    },
+    {
+      "id": "ad1554e2b853",
+      "company": "Samsung",
+      "reason": "Older duplicate (assessed: 8/10/2025)"
+    },
+    {
+      "id": "7647f33b2efc",
+      "company": "Sensormatic",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "539963481152",
+      "company": "Sensormatic",
+      "reason": "Older duplicate (assessed: 9/4/2025)"
+    },
+    {
+      "id": "51d8781c1a65",
+      "company": "Sensormatic Solutions",
+      "reason": "Older duplicate (assessed: 1/7/2026)"
+    },
+    {
+      "id": "5632b56109f8",
+      "company": "Serve Robotics",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "fb691ee827c4",
+      "company": "Seyond",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "b572c81d2aba",
+      "company": "Seyond",
+      "reason": "Older duplicate (assessed: 12/31/2025)"
+    },
+    {
+      "id": "705f9fcd7bc2",
+      "company": "SightLogix",
+      "reason": "Older duplicate (assessed: 8/22/2025)"
+    },
+    {
+      "id": "c1a94a19c560",
+      "company": "SightLogix",
+      "reason": "Older duplicate (assessed: 7/2/2025)"
+    },
+    {
+      "id": "b679ae09f1bf",
+      "company": "SkySafe",
+      "reason": "Older duplicate (assessed: 1/19/2026)"
+    },
+    {
+      "id": "af63e4396946",
+      "company": "Sophos",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "ffe8aa6b8b5b",
+      "company": "Space42",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "bf8e470550b8",
+      "company": "Spotter Global",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "c013d9976386",
+      "company": "Sunflower Labs",
+      "reason": "Older duplicate (assessed: 7/8/2025)"
+    },
+    {
+      "id": "df5a451e998e",
+      "company": "Supermicro",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "13468071cb74",
+      "company": "Suprema",
+      "reason": "Older duplicate (assessed: 1/14/2026)"
+    },
+    {
+      "id": "2ea05d063df4",
+      "company": "Suprema",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "416eeeccba00",
+      "company": "Suprema",
+      "reason": "Older duplicate (assessed: 12/22/2025)"
+    },
+    {
+      "id": "c2b90869143b",
+      "company": "Suprema",
+      "reason": "Older duplicate (assessed: 11/5/2025)"
+    },
+    {
+      "id": "2f06fdebe214",
+      "company": "Suprema",
+      "reason": "Older duplicate (assessed: 10/10/2025)"
+    },
+    {
+      "id": "cc1e150953cf",
+      "company": "Suprema",
+      "reason": "Older duplicate (assessed: 10/6/2025)"
+    },
+    {
+      "id": "cc6297c796b1",
+      "company": "Teladoc Health",
+      "reason": "Older duplicate (assessed: 12/31/2025)"
+    },
+    {
+      "id": "302dffe6c063",
+      "company": "Teledyne FLIR",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "96e0adda0870",
+      "company": "Teledyne FLIR",
+      "reason": "Older duplicate (assessed: 10/29/2025)"
+    },
+    {
+      "id": "fefe1669d2e8",
+      "company": "Thales",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "50f281d90f2c",
+      "company": "Trend Micro",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "308711aeb495",
+      "company": "Trend Micro",
+      "reason": "Older duplicate (assessed: 11/24/2025)"
+    },
+    {
+      "id": "d4a468d96166",
+      "company": "Trend Micro",
+      "reason": "Older duplicate (assessed: 10/28/2025)"
+    },
+    {
+      "id": "d12dab0afb4c",
+      "company": "TruePath Vision",
+      "reason": "Older duplicate (assessed: 12/31/2025)"
+    },
+    {
+      "id": "634c56dfaf7e",
+      "company": "UGREEN",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "726efc8b26ce",
+      "company": "Userful",
+      "reason": "Older duplicate (assessed: 9/29/2025)"
+    },
+    {
+      "id": "f894f2fee61b",
+      "company": "Vectra AI",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "6d9393406cbc",
+      "company": "Vectra AI",
+      "reason": "Older duplicate (assessed: 12/1/2025)"
+    },
+    {
+      "id": "2167bdc66ea6",
+      "company": "Verkada",
+      "reason": "Older duplicate (assessed: 12/21/2025)"
+    },
+    {
+      "id": "d51046a31da1",
+      "company": "Verkada",
+      "reason": "Older duplicate (assessed: 12/3/2025)"
+    },
+    {
+      "id": "e1370196f5be",
+      "company": "Verkada",
+      "reason": "Older duplicate (assessed: 10/20/2025)"
+    },
+    {
+      "id": "7d5836c2cb30",
+      "company": "Verkada",
+      "reason": "Older duplicate (assessed: 10/20/2025)"
+    },
+    {
+      "id": "4724c144181e",
+      "company": "Verkada",
+      "reason": "Older duplicate (assessed: 10/20/2025)"
+    },
+    {
+      "id": "a19e7aede96f",
+      "company": "Verkada",
+      "reason": "Older duplicate (assessed: 10/9/2025)"
+    },
+    {
+      "id": "2ecac0fad1b6",
+      "company": "Verkada",
+      "reason": "Older duplicate (assessed: 9/23/2025)"
+    },
+    {
+      "id": "0de96b752200",
+      "company": "Verkada",
+      "reason": "Older duplicate (assessed: 9/21/2025)"
+    },
+    {
+      "id": "211fcf27d6dd",
+      "company": "Voyant Photonics",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "697ded587117",
+      "company": "Wallarm",
+      "reason": "Older duplicate (assessed: 8/2/2025)"
+    },
+    {
+      "id": "6d3fd25938bc",
+      "company": "Wallarm",
+      "reason": "Older duplicate (assessed: 8/1/2025)"
+    },
+    {
+      "id": "5692e5456cac",
+      "company": "Xtract One",
+      "reason": "Older duplicate (assessed: 12/2/2025)"
+    },
+    {
+      "id": "ddc9710a7e5b",
+      "company": "Xtract One",
+      "reason": "Older duplicate (assessed: 9/22/2025)"
+    },
+    {
+      "id": "fc7fb669542b",
+      "company": "Zenity",
+      "reason": "Older duplicate (assessed: 202601)"
+    },
+    {
+      "id": "db7e17783474",
+      "company": "ZeroEyes",
+      "reason": "Older duplicate (assessed: 1/27/2026)"
+    },
+    {
+      "id": "34cea2a4e00c",
+      "company": "ZeroEyes",
+      "reason": "Older duplicate (assessed: 12/16/2025)"
+    },
+    {
+      "id": "0617c89c504c",
+      "company": "ZeroEyes",
+      "reason": "Older duplicate (assessed: 11/24/2025)"
+    },
+    {
+      "id": "588f90b93c71",
+      "company": "ZeroEyes",
+      "reason": "Older duplicate (assessed: 9/8/2025)"
+    },
+    {
+      "id": "3d0b4f97c708",
+      "company": "ZeroEyes",
+      "reason": "Older duplicate (assessed: 8/5/2025)"
+    },
+    {
+      "id": "95322030e45e",
+      "company": "ZeroEyes",
+      "reason": "Older duplicate (assessed: 7/26/2025)"
+    },
+    {
+      "id": "38b61805065f",
+      "company": "ZeroEyes",
+      "reason": "Older duplicate (assessed: 7/9/2025)"
+    }
+  ],
+  "kept_records": [
+    {
+      "id": "73f5664a0d55",
+      "company": "Advantech",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "5531b885c812",
+      "company": "Aeva",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "7a6353467d3f",
+      "company": "Agility Robotics",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "b44e4e0d8934",
+      "company": "Ajax Systems",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "57ae9612e3cc",
+      "company": "Alcatraz AI",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "43154ae641b8",
+      "company": "Allegion",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "d5809c2bb9a4",
+      "company": "Amazon",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "9fc890fc9b3c",
+      "company": "Ambarella",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "d27c9c4ad8bd",
+      "company": "Anduril Industries",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "494580aa1137",
+      "company": "Anno Robot",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "ef8035fc8366",
+      "company": "Apple",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "cebd318521f8",
+      "company": "Athena Security",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "e2662e14314c",
+      "company": "Auror",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "3408be1fc05f",
+      "company": "authID",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "42685ccdf91c",
+      "company": "BioCatch",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "7178c436dae2",
+      "company": "CVEDIA",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "c317a7132986",
+      "company": "Cato Networks",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "0bd910e41347",
+      "company": "Check Point",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "3a1c2cd86ef9",
+      "company": "Ciphero",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "2e256e427c5c",
+      "company": "Cloudastructure",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "1d46bd589200",
+      "company": "Cloudflare",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "40c584c7a505",
+      "company": "Corsight AI",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "5dfbc06c6668",
+      "company": "CrowdStrike",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "064b6f9d75db",
+      "company": "CyberArk",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "c76bbcc197ac",
+      "company": "Cyble",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "46364fd6ab90",
+      "company": "Datalogic",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "decc311398b6",
+      "company": "DroneShield",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "b2d4f7723d6b",
+      "company": "EarthCam",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "479ba39a1302",
+      "company": "EnGenius",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "1002fc336607",
+      "company": "Equifax",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "0edca7649d2a",
+      "company": "Evolv Technology",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "d485bc28e69a",
+      "company": "Exabeam",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "980268f7cddb",
+      "company": "Exiger",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "0e9c3b67ef72",
+      "company": "F5",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "4f151392343c",
+      "company": "FORT Robotics",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "cb69b05c2314",
+      "company": "Farmonaut",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "79fd7ebbdbdd",
+      "company": "Flock Safety",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "912c04851031",
+      "company": "Fortem Technologies",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "473ae36f9149",
+      "company": "Forward Edge-AI",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "68352ae4a185",
+      "company": "Genetec",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "01c3faa94949",
+      "company": "Ghost Robotics",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "824689106872",
+      "company": "Hailo",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "370935df1133",
+      "company": "Hesai",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "3ff440e17a89",
+      "company": "HiddenLayer",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "c497765acc8e",
+      "company": "Hikvision",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "efe02f5dc343",
+      "company": "IBM",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "9d2b43e840d4",
+      "company": "Infosys",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "c5e1ddaf3efb",
+      "company": "Interface Systems",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "29d87694f083",
+      "company": "Leidos",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "ee10fb0528f0",
+      "company": "March Networks",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "6de6f51660df",
+      "company": "MatrixSpace",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "30a6de6ec2a2",
+      "company": "NVIDIA",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "01fcdb8c4919",
+      "company": "Netradyne",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "7e0f56367ea1",
+      "company": "Neurotechnology",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "0ebfc1930574",
+      "company": "Nozomi Networks",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "d9e35b492f22",
+      "company": "Oracle",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "84ec9f87ba61",
+      "company": "Outtake",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "955c17a850ae",
+      "company": "ParaZero",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "719739922633",
+      "company": "Perimeter Solutions Group",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "c4d3107bd220",
+      "company": "Ping Identity",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "vendor-pyramid-network-services-llc-a455ed53",
+      "company": "Pyramid Network Services LLC",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "1c9a02bc3b6f",
+      "company": "Regula",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "b949b89bb574",
+      "company": "Reolink",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "9bd91f7decc9",
+      "company": "RoboSense",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "82e22120e3b6",
+      "company": "SEALSQ",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "1bdb4c43c578",
+      "company": "Safe Pro Group",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "461ad20ff5ef",
+      "company": "Saildrone",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "16d134b184fc",
+      "company": "Samsung",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "924c84a06cb7",
+      "company": "Sensormatic",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "1fa60de4b956",
+      "company": "Sensormatic Solutions",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "64211831e408",
+      "company": "Serve Robotics",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "efea388bdb0b",
+      "company": "Seyond",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "57de0d06f88a",
+      "company": "SightLogix",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "77f662fe89ec",
+      "company": "SkySafe",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "5a6c2d387fba",
+      "company": "Sophos",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "604dfc95505a",
+      "company": "Space42",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "bace264110d9",
+      "company": "Spotter Global",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "9f44796e732d",
+      "company": "Sunflower Labs",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "ae5e7f678ded",
+      "company": "Supermicro",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "1e3fecd746ef",
+      "company": "Suprema",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "f971d20a4322",
+      "company": "Teladoc Health",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "8eea7be2ccaa",
+      "company": "Teledyne FLIR",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "a9204002a764",
+      "company": "Thales",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "cd6cf34ab11e",
+      "company": "Trend Micro",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "cf4bc45bf587",
+      "company": "TruePath Vision",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "afc3268478cc",
+      "company": "UGREEN",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "99dd4b9ec1b3",
+      "company": "Userful",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "c1af7ffaeda4",
+      "company": "Vectra AI",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "7dfe3fccf4fe",
+      "company": "Verkada",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "47a5a6838b24",
+      "company": "Voyant Photonics",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "4601d7229624",
+      "company": "Wallarm",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "310a9a9e2d1a",
+      "company": "Xtract One",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "b2ce8494cbdc",
+      "company": "Zenity",
+      "reason": "Most recent data"
+    },
+    {
+      "id": "77bcdfd9a1bb",
+      "company": "ZeroEyes",
+      "reason": "Most recent data"
+    }
+  ]
+}
