@@ -202,9 +202,8 @@ export const CompetitorIntel: React.FC = () => {
 
       {/* ═══ 1. HERO — 3D Orbital + KPIs ═══════════════════════════════ */}
       <div
-        className="relative rounded-2xl overflow-hidden mb-8 border border-slate-700"
+        className="relative rounded-2xl overflow-hidden mb-8 border border-slate-700 competitor-hero-bg"
         style={{
-          background: 'radial-gradient(ellipse at 50% 40%, #0c1a3a 0%, #000B28 70%)',
           height: '460px',
         }}
       >

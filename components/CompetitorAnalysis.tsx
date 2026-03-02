@@ -224,11 +224,10 @@ export const CompetitorAnalysis: React.FC<Props> = ({ onNavigate }) => {
   return (
     <div className="space-y-0 pb-8">
 
-      {/* ── HERO ─────────────────────────────────────────────────── */}
+      {/* ── HERO ───────────────────────────────────────────────────────────── */}
       <div
-        className="relative rounded-2xl overflow-hidden mb-8 border border-slate-700"
+        className="relative rounded-2xl overflow-hidden mb-8 border border-slate-700 market-hero-bg"
         style={{
-          background: 'linear-gradient(135deg,#001040 0%,#000b28 55%,#001430 100%)',
           minHeight: '380px',
         }}
       >

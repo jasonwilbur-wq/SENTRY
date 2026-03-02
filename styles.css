@@ -470,6 +470,29 @@ body {
 [data-theme="light"] .border-slate-700\/60 { border-color: rgba(203,213,225,0.7) !important; }
 [data-theme="light"] .border-slate-600      { border-color: #cbd5e1 !important; }
 
+/* ── White opacity backgrounds (for dark mode elements) ── */
+[data-theme="light"] .bg-white\/5  { background-color: rgba(0,0,0,0.03) !important; }
+[data-theme="light"] .bg-white\/10 { background-color: rgba(0,0,0,0.05) !important; }
+[data-theme="light"] .border-white\/5  { border-color: rgba(0,0,0,0.08) !important; }
+[data-theme="light"] .border-white\/10 { border-color: rgba(0,0,0,0.12) !important; }
+
+/* ── Hero gradient backgrounds for analysis pages ── */
+.market-hero-bg {
+  background: linear-gradient(135deg,#001040 0%,#000b28 55%,#001430 100%);
+}
+
+[data-theme="light"] .market-hero-bg {
+  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 55%, #7dd3fc 100%) !important;
+}
+
+.competitor-hero-bg {
+  background: radial-gradient(ellipse at 50% 40%, #0c1a3a 0%, #000B28 70%);
+}
+
+[data-theme="light"] .competitor-hero-bg {
+  background: radial-gradient(ellipse at 50% 40%, #dbeafe 0%, #bfdbfe 70%) !important;
+}
+
 /* ── Semantic badge backgrounds: keep hue, go light ── */
 [data-theme="light"] .bg-green-900\/30   { background-color: rgba(220,252,231,0.8) !important; }
 [data-theme="light"] .bg-green-900\/40   { background-color: rgba(220,252,231,0.8) !important; }

@@ -107,7 +107,7 @@ def _group_products(
             companies[name] = VendorOut(
                 id=row["id"],
                 company_name=name,
-                company_url=row["company_url"],
+                company_url=row.get("company_url", ""),
                 category=row["category"],
                 technology_product=row["technology_product"],
                 report_url=row["report_url"],
@@ -118,6 +118,23 @@ def _group_products(
                 has_var=has_v,
                 latest_var_id=var_id_map.get(row["id"], ""),
                 all_products=[product],
+                # Extended fields
+                description=row.get("description", ""),
+                founded_year=row.get("founded_year", ""),
+                hq_location=row.get("hq_location", ""),
+                business_owner=row.get("business_owner", ""),
+                sourcing_manager=row.get("sourcing_manager", ""),
+                deployment_status=row.get("deployment_status", "Prospect"),
+                hosting_type=row.get("hosting_type", ""),
+                data_classification=row.get("data_classification", "Internal"),
+                # Enhanced vendor details (202601/202602 import)
+                vendor_highlight=row.get("vendor_highlight", ""),
+                pros=row.get("pros", ""),
+                cons=row.get("cons", ""),
+                concerns=row.get("concerns", ""),
+                use_cases=row.get("use_cases", ""),
+                value_to_walmart=row.get("value_to_walmart", ""),
+                maturity_level=row.get("maturity_level", ""),
             )
     return list(companies.values())
 

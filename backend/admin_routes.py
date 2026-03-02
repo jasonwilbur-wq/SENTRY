@@ -476,3 +476,319 @@ def search_vendors_for_linking(
             for r in rows
         ]
     }
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# COMPETITOR INTEL MANAGEMENT
+# ══════════════════════════════════════════════════════════════════════════════
+
+class CompetitorEventCreate(BaseModel):
+    event_date: str
+    competitor: str
+    event_title: str
+    event_type: str = ""
+    detailed_description: str = ""
+    category: str
+    location: str = ""
+    security_implication: str = ""
+    operational_impact: str = ""
+    financial_impact: str = ""
+    reputational_impact: str = ""
+    source_link: str = ""
+    analyst_notes: str = ""
+    source_month: str = ""
+
+
+class CompetitorEventUpdate(BaseModel):
+    event_date: str | None = None
+    competitor: str | None = None
+    event_title: str | None = None
+    event_type: str | None = None
+    detailed_description: str | None = None
+    category: str | None = None
+    location: str | None = None
+    security_implication: str | None = None
+    operational_impact: str | None = None
+    financial_impact: str | None = None
+    reputational_impact: str | None = None
+    source_link: str | None = None
+    analyst_notes: str | None = None
+    source_month: str | None = None
+
+
+class CompetitorEventOut(BaseModel):
+    id: int
+    event_date: str | None
+    competitor: str
+    event_title: str | None
+    event_type: str | None
+    detailed_description: str | None
+    category: str
+    location: str | None
+    security_implication: str | None
+    operational_impact: str | None
+    financial_impact: str | None
+    reputational_impact: str | None
+    source_link: str | None
+    analyst_notes: str | None
+    source_month: str | None
+
+
+class CompetitorEventsListResponse(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
+    events: list[CompetitorEventOut]
+
+
+@router.get("/competitor-events", response_model=CompetitorEventsListResponse)
+def list_competitor_events(
+    competitor: str | None = Query(None),
+    category: str | None = Query(None),
+    month: str | None = Query(None),
+    q: str | None = Query(None),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+) -> CompetitorEventsListResponse:
+    """Admin: List competitor events with filters and pagination."""
+    conn = get_connection()
+    params: list[Any] = []
+    clauses: list[str] = []
+
+    if competitor:
+        clauses.append("competitor = ?")
+        params.append(competitor)
+    if category:
+        clauses.append("category = ?")
+        params.append(category)
+    if month:
+        clauses.append("source_month = ?")
+        params.append(month)
+    if q:
+        clauses.append(
+            "(LOWER(event_title) LIKE ? OR LOWER(detailed_description) LIKE ? "
+            "OR LOWER(competitor) LIKE ?)"
+        )
+        term = f"%{q.lower()}%"
+        params.extend([term, term, term])
+
+    where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
+
+    total = conn.execute(
+        f"SELECT COUNT(*) FROM competitor_events {where}", params
+    ).fetchone()[0]
+
+    total_pages = max(1, math.ceil(total / page_size))
+    page = min(page, total_pages)
+    offset = (page - 1) * page_size
+
+    rows = conn.execute(
+        f"SELECT * FROM competitor_events {where} "
+        f"ORDER BY event_date DESC, id DESC LIMIT ? OFFSET ?",
+        params + [page_size, offset],
+    ).fetchall()
+
+    conn.close()
+
+    events = [
+        CompetitorEventOut(
+            id=r["id"],
+            event_date=r["event_date"],
+            competitor=r["competitor"],
+            event_title=r["event_title"],
+            event_type=r["event_type"],
+            detailed_description=r["detailed_description"],
+            category=r["category"],
+            location=r["location"],
+            security_implication=r["security_implication"],
+            operational_impact=r["operational_impact"],
+            financial_impact=r["financial_impact"],
+            reputational_impact=r["reputational_impact"],
+            source_link=r["source_link"],
+            analyst_notes=r["analyst_notes"],
+            source_month=r["source_month"],
+        )
+        for r in rows
+    ]
+
+    return CompetitorEventsListResponse(
+        total=total,
+        page=page,
+        page_size=page_size,
+        total_pages=total_pages,
+        events=events,
+    )
+
+
+@router.get("/competitor-events/{event_id}", response_model=CompetitorEventOut)
+def get_competitor_event(event_id: int) -> CompetitorEventOut:
+    """Admin: Get single competitor event by ID."""
+    conn = get_connection()
+    row = conn.execute(
+        "SELECT * FROM competitor_events WHERE id = ?", (event_id,)
+    ).fetchone()
+    conn.close()
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    return CompetitorEventOut(
+        id=row["id"],
+        event_date=row["event_date"],
+        competitor=row["competitor"],
+        event_title=row["event_title"],
+        event_type=row["event_type"],
+        detailed_description=row["detailed_description"],
+        category=row["category"],
+        location=row["location"],
+        security_implication=row["security_implication"],
+        operational_impact=row["operational_impact"],
+        financial_impact=row["financial_impact"],
+        reputational_impact=row["reputational_impact"],
+        source_link=row["source_link"],
+        analyst_notes=row["analyst_notes"],
+        source_month=row["source_month"],
+    )
+
+
+@router.post("/competitor-events", response_model=CompetitorEventOut)
+def create_competitor_event(event: CompetitorEventCreate) -> CompetitorEventOut:
+    """Admin: Create a new competitor event."""
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute(
+        """
+        INSERT INTO competitor_events (
+            event_date, competitor, event_title, event_type, detailed_description,
+            category, location, security_implication, operational_impact,
+            financial_impact, reputational_impact, source_link,
+            analyst_notes, source_month
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            event.event_date,
+            event.competitor,
+            event.event_title,
+            event.event_type,
+            event.detailed_description,
+            event.category,
+            event.location,
+            event.security_implication,
+            event.operational_impact,
+            event.financial_impact,
+            event.reputational_impact,
+            event.source_link,
+            event.analyst_notes,
+            event.source_month,
+        ),
+    )
+    event_id = cursor.lastrowid
+    conn.commit()
+
+    row = conn.execute(
+        "SELECT * FROM competitor_events WHERE id = ?", (event_id,)
+    ).fetchone()
+    conn.close()
+
+    return CompetitorEventOut(
+        id=row["id"],
+        event_date=row["event_date"],
+        competitor=row["competitor"],
+        event_title=row["event_title"],
+        event_type=row["event_type"],
+        detailed_description=row["detailed_description"],
+        category=row["category"],
+        location=row["location"],
+        security_implication=row["security_implication"],
+        operational_impact=row["operational_impact"],
+        financial_impact=row["financial_impact"],
+        reputational_impact=row["reputational_impact"],
+        source_link=row["source_link"],
+        analyst_notes=row["analyst_notes"],
+        source_month=row["source_month"],
+    )
+
+
+@router.patch("/competitor-events/{event_id}", response_model=CompetitorEventOut)
+def update_competitor_event(
+    event_id: int, update: CompetitorEventUpdate
+) -> CompetitorEventOut:
+    """Admin: Update competitor event fields."""
+    conn = get_connection()
+
+    # Check if event exists
+    existing = conn.execute(
+        "SELECT id FROM competitor_events WHERE id = ?", (event_id,)
+    ).fetchone()
+    if not existing:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    # Build dynamic UPDATE query for non-None fields
+    updates = []
+    params = []
+    for field, value in update.model_dump(exclude_unset=True).items():
+        if value is not None:
+            updates.append(f"{field} = ?")
+            params.append(value)
+
+    if not updates:
+        # No fields to update
+        conn.close()
+        return get_competitor_event(event_id)
+
+    params.append(event_id)
+    conn.execute(
+        f"UPDATE competitor_events SET {', '.join(updates)} WHERE id = ?", params
+    )
+    conn.commit()
+
+    row = conn.execute(
+        "SELECT * FROM competitor_events WHERE id = ?", (event_id,)
+    ).fetchone()
+    conn.close()
+
+    return CompetitorEventOut(
+        id=row["id"],
+        event_date=row["event_date"],
+        competitor=row["competitor"],
+        event_title=row["event_title"],
+        event_type=row["event_type"],
+        detailed_description=row["detailed_description"],
+        category=row["category"],
+        location=row["location"],
+        security_implication=row["security_implication"],
+        operational_impact=row["operational_impact"],
+        financial_impact=row["financial_impact"],
+        reputational_impact=row["reputational_impact"],
+        source_link=row["source_link"],
+        analyst_notes=row["analyst_notes"],
+        source_month=row["source_month"],
+    )
+
+
+@router.delete("/competitor-events/{event_id}")
+def delete_competitor_event(event_id: int) -> dict:
+    """Admin: Delete a competitor event."""
+    conn = get_connection()
+
+    row = conn.execute(
+        "SELECT id, competitor, event_title FROM competitor_events WHERE id = ?",
+        (event_id,),
+    ).fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    conn.execute("DELETE FROM competitor_events WHERE id = ?", (event_id,))
+    conn.commit()
+    conn.close()
+
+    return {
+        "success": True,
+        "deleted_id": event_id,
+        "competitor": row["competitor"],
+        "event_title": row["event_title"],
+    }
