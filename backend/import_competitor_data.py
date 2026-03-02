@@ -253,7 +253,120 @@ def create_tables(conn):
     conn.execute("""
         CREATE INDEX IF NOT EXISTS idx_source_month ON competitor_events(source_month)
     """)
+    
+    # Create competitor_entities aggregated view table
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS competitor_entities (
+            name TEXT PRIMARY KEY,
+            event_count INTEGER,
+            cyber_count INTEGER,
+            orc_count INTEGER,
+            recall_count INTEGER,
+            legal_count INTEGER,
+            strategic_count INTEGER,
+            tech_count INTEGER,
+            threat_level TEXT,
+            top_category TEXT,
+            categories_json TEXT,
+            monthly_json TEXT,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    """)
+    
     conn.commit()
+
+def refresh_competitor_entities(conn):
+    """Refresh the competitor_entities aggregated table."""
+    import json
+    from collections import Counter
+    
+    print("\n🔄 Refreshing competitor_entities aggregated table...")
+    
+    # Clear existing data
+    conn.execute("DELETE FROM competitor_entities")
+    
+    # Get all competitors
+    competitors = conn.execute("""
+        SELECT DISTINCT competitor
+        FROM competitor_events
+        ORDER BY competitor
+    """).fetchall()
+    
+    MONTHS = ["Sep 2025", "Oct 2025", "Nov 2025", "Dec 2025", "Jan 2026", "Feb 2026"]
+    
+    for (comp_name,) in competitors:
+        # Event counts by category
+        stats = conn.execute("""
+            SELECT
+                COUNT(*) as total,
+                SUM(CASE WHEN category = 'Cyber' THEN 1 ELSE 0 END) as cyber,
+                SUM(CASE WHEN category = 'ORC/Theft' THEN 1 ELSE 0 END) as orc,
+                SUM(CASE WHEN category = 'Recall' THEN 1 ELSE 0 END) as recall,
+                SUM(CASE WHEN category = 'Legal' THEN 1 ELSE 0 END) as legal,
+                SUM(CASE WHEN category = 'Strategic' THEN 1 ELSE 0 END) as strategic,
+                SUM(CASE WHEN category = 'Technology' THEN 1 ELSE 0 END) as tech
+            FROM competitor_events
+            WHERE competitor = ?
+        """, (comp_name,)).fetchone()
+        
+        total, cyber, orc, recall, legal, strategic, tech = stats
+        
+        # Threat level
+        if total >= 30:
+            threat_level = "High"
+        elif total >= 10:
+            threat_level = "Medium"
+        else:
+            threat_level = "Low"
+        
+        # Top category
+        cat_counts = conn.execute("""
+            SELECT category, COUNT(*) as cnt
+            FROM competitor_events
+            WHERE competitor = ?
+            GROUP BY category
+            ORDER BY cnt DESC
+            LIMIT 1
+        """, (comp_name,)).fetchone()
+        
+        top_category = cat_counts[0] if cat_counts else "Other"
+        
+        # Categories JSON
+        all_cats = conn.execute("""
+            SELECT category, COUNT(*) as cnt
+            FROM competitor_events
+            WHERE competitor = ?
+            GROUP BY category
+            ORDER BY cnt DESC
+        """, (comp_name,)).fetchall()
+        
+        categories_json = json.dumps({cat: cnt for cat, cnt in all_cats})
+        
+        # Monthly JSON
+        monthly_data = {}
+        for month in MONTHS:
+            count = conn.execute("""
+                SELECT COUNT(*)
+                FROM competitor_events
+                WHERE competitor = ? AND source_month = ?
+            """, (comp_name, month)).fetchone()[0]
+            monthly_data[month] = count
+        
+        monthly_json = json.dumps(monthly_data)
+        
+        # Insert into competitor_entities
+        conn.execute("""
+            INSERT INTO competitor_entities
+            (name, event_count, cyber_count, orc_count, recall_count, legal_count,
+             strategic_count, tech_count, threat_level, top_category, categories_json, monthly_json)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (comp_name, total, cyber, orc, recall, legal, strategic, tech,
+               threat_level, top_category, categories_json, monthly_json))
+    
+    conn.commit()
+    
+    entities_count = conn.execute("SELECT COUNT(*) FROM competitor_entities").fetchone()[0]
+    print(f"  ✅ Refreshed {entities_count} competitor entities")
 
 def main():
     print("\n" + "="*70)
@@ -317,6 +430,9 @@ def main():
         LIMIT 10
     """).fetchall():
         print(f"    {row[0]}: {row[1]} events")
+    
+    # Refresh competitor_entities aggregated table
+    refresh_competitor_entities(conn)
     
     conn.close()
     print("\n✅ Import complete!\n")
