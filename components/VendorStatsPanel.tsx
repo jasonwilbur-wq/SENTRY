@@ -16,21 +16,23 @@ import { DirectoryStats } from '../services/api';
 import { VendorOrb3D } from './VendorOrb3D';
 
 // ── Animated count-up hook ─────────────────────────────────────────────────
-function useCountUp(target: number, duration = 1200): number {
+// decimals > 0 preserves fractional precision during animation.
+function useCountUp(target: number, duration = 1200, decimals = 0): number {
   const [val, setVal] = useState(0);
   const rafRef = useRef<number | undefined>(undefined);
   useEffect(() => {
     if (!target) return;
-    const start     = performance.now();
-    const step = (now: number) => {
-      const pct = Math.min((now - start) / duration, 1);
+    const factor = 10 ** decimals;
+    const start  = performance.now();
+    const step   = (now: number) => {
+      const pct  = Math.min((now - start) / duration, 1);
       const ease = 1 - Math.pow(1 - pct, 4); // easeOutQuart
-      setVal(Math.round(ease * target));
+      setVal(Math.round(ease * target * factor) / factor);
       if (pct < 1) rafRef.current = requestAnimationFrame(step);
     };
     rafRef.current = requestAnimationFrame(step);
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [target, duration]);
+  }, [target, duration, decimals]);
   return val;
 }
 
@@ -53,12 +55,12 @@ const TOOLTIP_STYLE = {
 
 // ── KPI Tile ────────────────────────────────────────────────────────────────
 function KpiTile({
-  label, value, sub, color, prefix = '', suffix = '',
+  label, value, sub, color, prefix = '', suffix = '', decimals = 0,
 }: {
   label: string; value: number; sub?: string;
-  color: string; prefix?: string; suffix?: string;
+  color: string; prefix?: string; suffix?: string; decimals?: number;
 }) {
-  const count = useCountUp(value);
+  const count = useCountUp(value, 1200, decimals);
   return (
     <div
       className="flex flex-col gap-1 p-4 rounded-xl relative overflow-hidden"
@@ -79,7 +81,7 @@ function KpiTile({
         className="text-2xl font-black"
         style={{ color, textShadow: `0 0 20px ${color}55` }}
       >
-        {prefix}{count.toLocaleString()}{suffix}
+        {prefix}{decimals > 0 ? count.toFixed(decimals) : count.toLocaleString()}{suffix}
       </p>
       {sub && <p className="text-[10px] mt-0.5" style={{ color: '#334155' }}>{sub}</p>}
     </div>
@@ -145,6 +147,8 @@ const SHORT_NAMES: Record<string, string> = {
   'Biometrics & Authentication':                      'Biometrics',
   'Supply Chain & Asset Protection Tech':             'Supply Chain',
   'Video Analytics/AI':                               'V-Analytics',
+  'Cloud Security':                                   'Cloud Sec',
+  'Edge AI/IoT':                                      'Edge AI/IoT',
 };
 
 function CategoryBars({ cats }: { cats: { category: string; count: number; avg_rating: number }[] }) {
@@ -179,17 +183,31 @@ function CategoryBars({ cats }: { cats: { category: string; count: number; avg_r
 }
 
 // ── Decision Bands ───────────────────────────────────────────────────────────
-function DecisionBands({ bands, total }: { bands: Record<string, number>; total: number }) {
-  const entries = Object.entries(bands).filter(([k]) => k).sort((a, b) => b[1] - a[1]);
+// Bands are only populated when score extraction runs in Admin. The majority
+// of VARs are in an "Unscored" state until then — show that honestly.
+function DecisionBands({ bands, totalVars }: { bands: Record<string, number>; totalVars: number }) {
+  const entries     = Object.entries(bands).filter(([k]) => k).sort((a, b) => b[1] - a[1]);
+  const scoredCount = entries.reduce((s, [, v]) => s + v, 0);
+  const unscored    = Math.max(totalVars - scoredCount, 0);
+  // Percentages are relative to totalVars for honest bar widths
+  const pctOf = (n: number) => totalVars > 0 ? (n / totalVars) * 100 : 0;
+
   return (
     <div>
-      <p className="text-xs uppercase tracking-widest text-slate-500 font-bold mb-3">
-        VAR Decision Bands
-      </p>
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-xs uppercase tracking-widest text-slate-500 font-bold">
+          VAR Decision Bands
+        </p>
+        <span className="text-[10px] px-2 py-0.5 rounded-full"
+          style={{ background: 'rgba(0,83,226,0.12)', color: '#60a5fa', border: '1px solid rgba(0,83,226,0.25)' }}>
+          {scoredCount} scored
+        </span>
+      </div>
+
       <div className="space-y-3">
+        {/* Scored bands */}
         {entries.map(([band, count]) => {
-          const pct  = total > 0 ? (count / total) * 100 : 0;
-          const col  = BAND_COLORS[band] ?? '#64748b';
+          const col = BAND_COLORS[band] ?? '#64748b';
           return (
             <div key={band}>
               <div className="flex justify-between mb-1">
@@ -199,19 +217,47 @@ function DecisionBands({ bands, total }: { bands: Record<string, number>; total:
               <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full transition-all duration-1000 ease-out"
-                  style={{ width: `${pct}%`, backgroundColor: col, boxShadow: `0 0 8px ${col}66` }}
+                  style={{ width: `${pctOf(count)}%`, backgroundColor: col, boxShadow: `0 0 8px ${col}66` }}
                 />
               </div>
             </div>
           );
         })}
-        {entries.length === 0 && (
-          <p className="text-xs text-slate-600">No scored VARs yet. Run score extraction in Admin.</p>
+
+        {/* Unscored / Pending */}
+        {unscored > 0 && (
+          <div>
+            <div className="flex justify-between mb-1">
+              <span className="text-xs text-slate-500">Pending Score</span>
+              <span className="text-xs font-bold text-slate-500">{unscored.toLocaleString()}</span>
+            </div>
+            <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full transition-all duration-1000 ease-out"
+                style={{ width: `${pctOf(unscored)}%`, backgroundColor: '#334155' }}
+              />
+            </div>
+          </div>
+        )}
+
+        {entries.length === 0 && unscored === 0 && (
+          <p className="text-xs text-slate-600">No VARs in system yet.</p>
         )}
       </div>
-      <div className="mt-4 pt-3 border-t border-slate-800">
-        <p className="text-[10px] text-slate-600">
-          {total} total VAR reports in system
+
+      <div className="mt-4 pt-3 border-t border-slate-800 space-y-1">
+        <div className="flex justify-between">
+          <span className="text-[10px] text-slate-600">Total VAR reports</span>
+          <span className="text-[10px] font-bold text-slate-400">{totalVars.toLocaleString()}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-[10px] text-slate-600">Scoring coverage</span>
+          <span className="text-[10px] font-bold" style={{ color: scoredCount > 0 ? '#FFC220' : '#334155' }}>
+            {totalVars > 0 ? ((scoredCount / totalVars) * 100).toFixed(1) : '0.0'}%
+          </span>
+        </div>
+        <p className="text-[10px] text-slate-700 mt-1">
+          Run score extraction in Admin to classify remaining VARs.
         </p>
       </div>
     </div>
@@ -227,13 +273,6 @@ export const VendorStatsPanel: React.FC<VendorStatsPanelProps> = ({ stats }) => 
   const riskData = Object.entries(stats.risk_distribution)
     .filter(([k]) => k && k !== 'Unknown')
     .map(([name, value]) => ({ name, value }));
-
-  // Calculate category percentages
-  const totalVendors = stats.total_vendors;
-  const categoryPercentages = stats.top_categories.map(cat => ({
-    ...cat,
-    percentage: totalVendors > 0 ? Math.round((cat.count / totalVendors) * 100 * 10) / 10 : 0,
-  }));
 
   return (
     <section
@@ -269,12 +308,13 @@ export const VendorStatsPanel: React.FC<VendorStatsPanelProps> = ({ stats }) => 
         </div>
       </div>
 
-      {/* KPI row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-4">
-        <KpiTile label="Total Vendors"      value={stats.total_vendors}  sub="across all categories" color="#0053e2" />
-        <KpiTile label="VAR Reports"        value={stats.total_vars}     sub={`${stats.vendors_with_var} vendors covered`} color="#22c55e" />
-        <KpiTile label="VAR Coverage"       value={Math.round(stats.var_coverage_pct)} sub="of vendors assessed" color="#FFC220" suffix="%" />
-        <KpiTile label="Avg Security Score" value={Math.round(stats.avg_rating * 10) / 10} sub="overall portfolio" color="#a78bfa" />
+      {/* KPI row — 5 tiles */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 p-4">
+        <KpiTile label="Total Vendors"      value={stats.total_vendors}       sub="across all categories" color="#0053e2" />
+        <KpiTile label="VAR Reports"        value={stats.total_vars}           sub={`${stats.vendors_with_var.toLocaleString()} vendors covered`} color="#22c55e" />
+        <KpiTile label="VAR Coverage"       value={stats.var_coverage_pct}    sub={`${stats.vendors_with_var.toLocaleString()} of ${stats.total_vendors.toLocaleString()} vendors`} color="#FFC220" suffix="%" decimals={1} />
+        <KpiTile label="Avg Security Score" value={stats.avg_rating}           sub="portfolio average" color="#a78bfa" suffix="/5" decimals={2} />
+        <KpiTile label="Recently Assessed"  value={stats.recently_assessed}    sub="past 90 days" color="#06b6d4" />
       </div>
 
       {/* Charts row — gradient dividers + Category Percentages */}
@@ -288,30 +328,36 @@ export const VendorStatsPanel: React.FC<VendorStatsPanelProps> = ({ stats }) => 
         <div className="py-4 sm:px-4" style={{ borderRight: '1px solid var(--s-border)' }}>
           <div>
             <p className="text-xs uppercase tracking-widest text-slate-500 font-bold mb-3">
-              Category Distribution
+              Avg Score by Category
             </p>
-            <div className="space-y-2 max-h-[180px] overflow-y-auto pr-2 custom-scrollbar">
-              {categoryPercentages.slice(0, 8).map((cat, idx) => (
-                <div key={cat.category} className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div 
-                      className="w-2 h-2 rounded-full shrink-0"
-                      style={{ backgroundColor: `hsl(${210 + idx * 18}, 80%, ${55 - idx * 2}%)` }}
-                    />
-                    <span className="text-[10px] text-slate-400 truncate">
-                      {SHORT_NAMES[cat.category] ?? cat.category.slice(0, 12)}
-                    </span>
+            <div className="space-y-2.5 max-h-[200px] overflow-y-auto pr-1 custom-scrollbar">
+              {stats.top_categories.slice(0, 10).map((cat, idx) => {
+                const pct = Math.min((cat.avg_rating / 5) * 100, 100);
+                const hue = `hsl(${210 + idx * 18}, 80%, ${55 - idx * 2}%)`;
+                return (
+                  <div key={cat.category}>
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-[10px] text-slate-400 truncate max-w-[110px]">
+                        {SHORT_NAMES[cat.category] ?? cat.category.slice(0, 12)}
+                      </span>
+                      <span className="text-[10px] font-bold shrink-0 ml-1" style={{ color: hue }}>
+                        {cat.avg_rating.toFixed(2)}
+                      </span>
+                    </div>
+                    <div className="h-1 bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full"
+                        style={{ width: `${pct}%`, background: hue }}
+                      />
+                    </div>
                   </div>
-                  <span className="text-xs font-bold text-wmt-blue shrink-0">
-                    {cat.percentage}%
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
         <div className="py-4 sm:pl-4">
-          <DecisionBands bands={stats.decision_bands} total={stats.total_vars} />
+          <DecisionBands bands={stats.decision_bands} totalVars={stats.total_vars} />
         </div>
       </div>
     </section>

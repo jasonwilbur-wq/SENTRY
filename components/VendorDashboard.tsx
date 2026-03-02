@@ -38,7 +38,10 @@ const PINNED_CATS: Record<string, string> = {
   'Identity & Access Control (PAC/PIAM)':                     'IAC/PAM',
   'Command & Control / PSIM / Situational Awareness':         'C2/PSIM',
   'Video Analytics & Computer Vision':                        'Video AI',
+  'Video Analytics/AI':                                       'V-Analytics',
   'Biometrics & Authentication':                              'Biometrics',
+  'Cloud Security':                                           'Cloud Sec',
+  'Edge AI/IoT':                                              'Edge AI/IoT',
 };
 
 // ── Helper: client-side risk filter on top of server results ─────────────────
