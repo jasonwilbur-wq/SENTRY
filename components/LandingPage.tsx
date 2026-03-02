@@ -9,12 +9,14 @@ interface LandingPageProps {
 const SENTRY_LETTERS = ['S', 'E', 'N', 'T', 'R', 'Y'];
 
 // Acronym words revealed one by one after title appears
+// S·E·N·T·R·Y — fixed: the N was missing from this array entirely
 const ACRONYM = [
   { letter: 'S', rest: 'ecurity,' },
-  { letter: 'E', rest: 'valuation &' },
+  { letter: 'E', rest: 'merging-Tech' },
+  { letter: 'N', rest: 'ode' },
+  { letter: 'T', rest: 'racking &' },
   { letter: 'R', rest: 'isk' },
-  { letter: 'T', rest: 'ransparency for' },
-  { letter: 'Y', rest: 'ou' },
+  { letter: 'Y', rest: 'ielding Intelligence' },
 ];
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
@@ -87,7 +89,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
             <span className="relative rounded-full h-2 w-2 bg-green-400" />
           </span>
           <span className="text-[10px] font-mono font-semibold tracking-[0.2em] text-slate-400 uppercase">
-            Walmart GSA&amp;I · Enterprise Security · Internal
+            Walmart ET Security · Internal Platform · Eagle &amp; VPN Only
           </span>
         </div>
 
@@ -142,20 +144,44 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
           ))}
         </div>
 
-        {/* Description */}
-        <p
-          className="text-slate-400 text-base md:text-lg max-w-2xl mx-auto mb-14 leading-relaxed"
+        {/* Description + live stats strip */}
+        <div
           style={{
             borderTop: '1px solid rgba(255,255,255,0.06)',
             paddingTop: '2rem',
             transition: 'opacity 0.6s ease 1.2s',
             opacity: mounted ? 1 : 0,
           }}
+          className="mb-10"
         >
-          Global Security, Aviation &amp; Investigations' definitive System of Record for
-          Emerging Technology vendor assessment — identify risks, visualize architecture,
-          and govern with AI-driven insights.
-        </p>
+          <p className="text-slate-400 text-base md:text-lg max-w-2xl mx-auto mb-8 leading-relaxed">
+            Walmart Enterprise Security's single source of truth for emerging-tech vendor risk.
+            Every VAR, every score, every competitor move — one platform, zero spreadsheets.
+          </p>
+
+          {/* Live stats strip */}
+          <div className="flex flex-wrap justify-center gap-3 md:gap-5">
+            {[
+              { value: '2,086', label: 'Vendors Tracked' },
+              { value: '1,349', label: 'VAR Reports' },
+              { value: '12',    label: 'Tech Categories' },
+              { value: '45.3%', label: 'Assessment Coverage' },
+              { value: '4',     label: 'Competitor Execs' },
+            ].map(({ value, label }) => (
+              <div
+                key={label}
+                className="flex flex-col items-center px-4 py-2 rounded-xl"
+                style={{
+                  background: 'rgba(0,83,226,0.07)',
+                  border: '1px solid rgba(0,83,226,0.2)',
+                }}
+              >
+                <span className="text-xl md:text-2xl font-black" style={{ color: '#FFC220' }}>{value}</span>
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mt-0.5">{label}</span>
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* CTA button */}
         <button
@@ -212,7 +238,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
       {/* Footer */}
       <div className="absolute bottom-6 inset-x-0 text-center">
         <p className="text-[10px] font-mono uppercase tracking-[0.2em]" style={{ color: '#1e293b' }}>
-          Secure Connection ∷ Encrypted via Google Cloud IAP ∷ Zero Trust Enforced
+          Walmart Internal Only ∷ Requires Eagle WiFi or VPN ∷ ET Security — Emerging Technology
         </p>
       </div>
     </div>
