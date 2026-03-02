@@ -23,44 +23,18 @@ interface CompetitorEvent {
   security_implication?: string;
 }
 
-// Map competitor names to their primary domain for logo fetching
-const COMPETITOR_DOMAINS: { [key: string]: string } = {
-  'Amazon': 'amazon.com',
-  'Costco': 'costco.com',
-  'Kroger': 'kroger.com',
-  'Target': 'target.com',
-  'Whole Foods': 'wholefoodsmarket.com',
-  'Home Depot': 'homedepot.com',
-  'ALDI': 'aldi.us',
-  'Wegmans': 'wegmans.com',
-  'Zebra Technologies': 'zebra.com',
-  'Lowe\'s': 'lowes.com',
-  'Albertsons': 'albertsons.com',
-  'CarMax': 'carmax.com',
-  'Coupang': 'coupang.com',
-  'Instagram (Meta)': 'instagram.com',
-  'Lidl': 'lidl.com',
-  'Tesco': 'tesco.com',
-  '7-Eleven': '7-eleven.com',
-  'Alibaba': 'alibaba.com',
-  'CVS/Walgreens': 'cvs.com',
-  'Dollar General': 'dollargeneral.com',
-  'Hot Topic': 'hottopic.com',
-  'Sam\'s Club': 'samsclub.com',
-  'Save Mart': 'savemart.com',
-  'Shein': 'shein.com',
-  'TikTok': 'tiktok.com',
-  'Under Armour': 'underarmour.com',
-  'Walgreens': 'walgreens.com',
-  'Temu': 'temu.com',
-  'Francesca\'s': 'francescas.com',
-  'Gather AI': 'gather.ai',
-  'Alpha Modus': 'alphamodus.com',
-  'Simbe': 'simberobotics.com',
-  'Zipline': 'flyzipline.com',
-  'Gatekeeper': 'gatekeeperhq.com',
-  'Schwarz Group': 'about.lidl',
-  'Ahold Delhaize / Carrefour': 'aholddelhaize.com',
+// Map competitor names to their local logo files
+const COMPETITOR_LOGOS: { [key: string]: string } = {
+  'Amazon': '/logos/Amazon.png',
+  'ALDI': '/logos/ALDI.jpg',
+  'Coupang': '/logos/COUPANG.jpg',
+  'Home Depot': '/logos/Home Depot.png',
+  'Kroger': '/logos/Kroger.png',
+  'Lowe\'s': '/logos/Lowes.png',
+  'Target': '/logos/Target.png',
+  'Wegmans': '/logos/Wegmans.jpg',
+  'Whole Foods': '/logos/Whole Foods.png',
+  'Ahold Delhaize / Carrefour': '/logos/carrefour.png',
 };
 
 // Color palette for letter avatars (fallback)
@@ -93,10 +67,8 @@ function getInitials(name: string): string {
 }
 
 function getLogoUrl(name: string): string | null {
-  const domain = COMPETITOR_DOMAINS[name];
-  if (!domain) return null;
-  // Use Clearbit Logo API - free, no API key needed
-  return `https://logo.clearbit.com/${domain}`;
+  // Check if we have a local logo file for this competitor
+  return COMPETITOR_LOGOS[name] || null;
 }
 
 // Component for logo with fallback to letter avatar
