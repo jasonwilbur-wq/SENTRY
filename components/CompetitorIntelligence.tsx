@@ -23,7 +23,47 @@ interface CompetitorEvent {
   security_implication?: string;
 }
 
-// Color palette for letter avatars
+// Map competitor names to their primary domain for logo fetching
+const COMPETITOR_DOMAINS: { [key: string]: string } = {
+  'Amazon': 'amazon.com',
+  'Costco': 'costco.com',
+  'Kroger': 'kroger.com',
+  'Target': 'target.com',
+  'Whole Foods': 'wholefoodsmarket.com',
+  'Home Depot': 'homedepot.com',
+  'ALDI': 'aldi.us',
+  'Wegmans': 'wegmans.com',
+  'Zebra Technologies': 'zebra.com',
+  'Lowe\'s': 'lowes.com',
+  'Albertsons': 'albertsons.com',
+  'CarMax': 'carmax.com',
+  'Coupang': 'coupang.com',
+  'Instagram (Meta)': 'instagram.com',
+  'Lidl': 'lidl.com',
+  'Tesco': 'tesco.com',
+  '7-Eleven': '7-eleven.com',
+  'Alibaba': 'alibaba.com',
+  'CVS/Walgreens': 'cvs.com',
+  'Dollar General': 'dollargeneral.com',
+  'Hot Topic': 'hottopic.com',
+  'Sam\'s Club': 'samsclub.com',
+  'Save Mart': 'savemart.com',
+  'Shein': 'shein.com',
+  'TikTok': 'tiktok.com',
+  'Under Armour': 'underarmour.com',
+  'Walgreens': 'walgreens.com',
+  'Temu': 'temu.com',
+  'Francesca\'s': 'francescas.com',
+  'Gather AI': 'gather.ai',
+  'Alpha Modus': 'alphamodus.com',
+  'Simbe': 'simberobotics.com',
+  'Zipline': 'flyzipline.com',
+  'Gatekeeper': 'gatekeeperhq.com',
+  'Schwarz Group': 'about.lidl',
+  'Ahold Delhaize / Carrefour': 'aholddelhaize.com',
+};
+
+// Color palette for letter avatars (fallback)
 const AVATAR_COLORS = [
   { bg: 'from-blue-600 to-blue-800', border: 'border-blue-500', text: 'text-blue-100' },
   { bg: 'from-purple-600 to-purple-800', border: 'border-purple-500', text: 'text-purple-100' },
@@ -50,6 +90,48 @@ function getInitials(name: string): string {
   const words = name.split(' ').filter(w => w.length > 0);
   if (words.length === 1) return name.slice(0, 2).toUpperCase();
   return words.slice(0, 2).map(w => w[0]).join('').toUpperCase();
+}
+
+function getLogoUrl(name: string): string | null {
+  const domain = COMPETITOR_DOMAINS[name];
+  if (!domain) return null;
+  // Use Clearbit Logo API - free, no API key needed
+  return `https://logo.clearbit.com/${domain}`;
+}
+
+// Component for logo with fallback to letter avatar
+function CompetitorLogo({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' | 'lg' }) {
+  const [logoFailed, setLogoFailed] = useState(false);
+  const logoUrl = getLogoUrl(name);
+  const avatarColor = getAvatarColor(name);
+  const initials = getInitials(name);
+
+  const sizeClasses = {
+    sm: 'w-12 h-12 text-sm',
+    md: 'w-16 h-16 text-xl',
+    lg: 'w-20 h-20 text-2xl',
+  };
+
+  // If logo URL exists and hasn't failed, try to load it
+  if (logoUrl && !logoFailed) {
+    return (
+      <div className={`${sizeClasses[size]} rounded-xl bg-white flex items-center justify-center flex-shrink-0 overflow-hidden border-2 border-gray-600 shadow-lg`}>
+        <img
+          src={logoUrl}
+          alt={`${name} logo`}
+          className="w-full h-full object-contain p-2"
+          onError={() => setLogoFailed(true)}
+        />
+      </div>
+    );
+  }
+
+  // Fallback to letter avatar
+  return (
+    <div className={`${sizeClasses[size]} rounded-xl bg-gradient-to-br ${avatarColor.bg} border-2 ${avatarColor.border} flex items-center justify-center flex-shrink-0 shadow-lg`}>
+      <span className={`font-black ${avatarColor.text}`}>{initials}</span>
+    </div>
+  );
 }
 
 export function CompetitorIntelligence() {
@@ -119,11 +201,11 @@ export function CompetitorIntelligence() {
         <div className="bg-gradient-to-r from-blue-600 to-yellow-500 p-1 rounded-lg">
           <div className="bg-gray-900 p-6 rounded-lg">
             <h1 className="text-4xl font-bold mb-2">🏢 Competitor Intelligence Hub</h1>
-            <p className="text-gray-300">Live threat tracking across {competitors.length} competitors — {stats?.total ?? 350} events indexed</p>
+            <p className="text-gray-300">Live threat tracking across {competitors.length} competitors — {stats?.total ?? 337} events indexed</p>
             <div className="mt-4 flex gap-4 text-sm flex-wrap">
-              <span className="px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full border border-blue-500/50">📊 {stats?.total ?? 350} Total Events</span>
-              <span className="px-3 py-1 bg-red-500/20 text-red-300 rounded-full border border-red-500/50">🔴 {stats?.cyber ?? 35} Cyber</span>
-              <span className="px-3 py-1 bg-yellow-500/20 text-yellow-300 rounded-full border border-yellow-500/50">🟡 {stats?.orc ?? 56} ORC/Theft</span>
+              <span className="px-3 py-1 bg-blue-500/20 text-blue-300 rounded-full border border-blue-500/50">📊 {stats?.total ?? 337} Total Events</span>
+              <span className="px-3 py-1 bg-red-500/20 text-red-300 rounded-full border border-red-500/50">🔴 {stats?.cyber ?? 33} Cyber</span>
+              <span className="px-3 py-1 bg-yellow-500/20 text-yellow-300 rounded-full border border-yellow-500/50">🟡 {stats?.orc ?? 52} ORC/Theft</span>
               <span className="px-3 py-1 bg-purple-500/20 text-purple-300 rounded-full border border-purple-500/50">🟣 {stats?.recall ?? 18} Recalls</span>
               <span className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full">📅 Jan–Feb 2026</span>
             </div>
@@ -137,17 +219,17 @@ export function CompetitorIntelligence() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-5 rounded-lg border-l-4 border-yellow-500 border border-gray-700">
             <p className="text-gray-200 text-sm leading-relaxed">
-              🔥 <strong>Amazon dominates</strong>: {competitors.find(c => c.name === 'Amazon')?.totalEvents || 147} events ({Math.round(((competitors.find(c => c.name === 'Amazon')?.totalEvents || 147) / (stats?.total || 350)) * 100)}% of all activity) - 3x more than nearest competitor. Technology and Strategic categories show aggressive innovation.
+              🔥 <strong>Amazon dominates</strong>: {competitors.find(c => c.name === 'Amazon')?.totalEvents || 147} events ({Math.round(((competitors.find(c => c.name === 'Amazon')?.totalEvents || 147) / (stats?.total || 337)) * 100)}% of all activity) - 3x more than nearest competitor. Technology and Strategic categories show aggressive innovation.
             </p>
           </div>
           <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-5 rounded-lg border-l-4 border-yellow-500 border border-gray-700">
             <p className="text-gray-200 text-sm leading-relaxed">
-              ⚠️ <strong>ORC/Theft epidemic</strong>: {stats?.orc || 56} events across all competitors (16% of activity). Target, Kroger, and Costco show concentrated regional organized crime.
+              ⚠️ <strong>ORC/Theft epidemic</strong>: {stats?.orc || 52} events across all competitors (15% of activity). Target, Kroger, and Costco show concentrated regional organized crime.
             </p>
           </div>
           <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-5 rounded-lg border-l-4 border-yellow-500 border border-gray-700">
             <p className="text-gray-200 text-sm leading-relaxed">
-              🔐 <strong>Cyber threats rising</strong>: {stats?.cyber || 35} cyber events (10% of activity). Amazon, Kroger, and Target are primary targets. Digital security posture gaps vs Amazon\'s advanced controls.
+              🔐 <strong>Cyber threats rising</strong>: {stats?.cyber || 33} cyber events (10% of activity). Amazon, Kroger, and Target are primary targets. Digital security posture gaps vs Amazon's advanced controls.
             </p>
           </div>
           <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-5 rounded-lg border-l-4 border-yellow-500 border border-gray-700">
@@ -163,8 +245,6 @@ export function CompetitorIntelligence() {
         <h2 className="text-2xl font-bold mb-4">🎯 All Competitors ({competitors.length})</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {competitors.map(comp => {
-            const avatarColor = getAvatarColor(comp.name);
-            const initials = getInitials(comp.name);
             const isExpanded = selectedCompetitor === comp.name;
             
             return (
@@ -178,10 +258,8 @@ export function CompetitorIntelligence() {
                 {/* Card Header */}
                 <div className="p-4 border-b border-gray-700">
                   <div className="flex items-start gap-3 mb-3">
-                    {/* Letter Avatar */}
-                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${avatarColor.bg} border-2 ${avatarColor.border} flex items-center justify-center flex-shrink-0`}>
-                      <span className={`text-sm font-black ${avatarColor.text}`}>{initials}</span>
-                    </div>
+                    {/* Logo or Letter Avatar */}
+                    <CompetitorLogo name={comp.name} size="sm" />
                     <div className="flex-1 min-w-0">
                       <h3 className="font-bold text-white text-sm truncate" title={comp.name}>
                         {comp.name}
@@ -235,15 +313,7 @@ export function CompetitorIntelligence() {
           <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg border-2 border-blue-500 shadow-2xl overflow-hidden">
             <div className="p-8">
               <div className="flex items-center gap-4 mb-6 border-b border-gray-700 pb-4">
-                {(() => {
-                  const avatarColor = getAvatarColor(selectedCompetitor);
-                  const initials = getInitials(selectedCompetitor);
-                  return (
-                    <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${avatarColor.bg} border-2 ${avatarColor.border} flex items-center justify-center`}>
-                      <span className={`text-xl font-black ${avatarColor.text}`}>{initials}</span>
-                    </div>
-                  );
-                })()}
+                <CompetitorLogo name={selectedCompetitor} size="lg" />
                 <div>
                   <h2 className="text-3xl font-bold">{selectedCompetitor}</h2>
                   <p className="text-gray-400">Detailed Intelligence Report</p>
