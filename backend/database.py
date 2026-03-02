@@ -9,16 +9,32 @@ DB_PATH = Path(__file__).parent / "data" / "sentry.db"
 
 CREATE_TABLE = """
 CREATE TABLE IF NOT EXISTS vendors (
-    id              TEXT PRIMARY KEY,
-    company_name    TEXT NOT NULL,
-    company_url     TEXT DEFAULT '',
-    category        TEXT DEFAULT 'Other',
-    technology_product TEXT DEFAULT '',
-    report_url      TEXT DEFAULT '',
-    overall_rating  REAL DEFAULT 0.0,
-    vendor_status   TEXT DEFAULT 'Active',
-    risk_level      TEXT DEFAULT 'Medium',
-    last_assessed   TEXT DEFAULT ''
+    id                  TEXT PRIMARY KEY,
+    company_name        TEXT NOT NULL,
+    company_url         TEXT DEFAULT '',
+    category            TEXT DEFAULT 'Other',
+    technology_product  TEXT DEFAULT '',
+    report_url          TEXT DEFAULT '',
+    overall_rating      REAL DEFAULT 0.0,
+    vendor_status       TEXT DEFAULT 'Active',
+    risk_level          TEXT DEFAULT 'Medium',
+    last_assessed       TEXT DEFAULT '',
+    has_var             INTEGER DEFAULT 0,
+    description         TEXT DEFAULT '',
+    founded_year        TEXT DEFAULT '',
+    hq_location         TEXT DEFAULT '',
+    business_owner      TEXT DEFAULT '',
+    sourcing_manager    TEXT DEFAULT '',
+    deployment_status   TEXT DEFAULT 'Prospect',
+    hosting_type        TEXT DEFAULT '',
+    data_classification TEXT DEFAULT 'Internal',
+    vendor_highlight    TEXT DEFAULT '',
+    pros                TEXT DEFAULT '',
+    cons                TEXT DEFAULT '',
+    concerns            TEXT DEFAULT '',
+    use_cases           TEXT DEFAULT '',
+    value_to_walmart    TEXT DEFAULT '',
+    maturity_level      TEXT DEFAULT ''
 );
 """
 
