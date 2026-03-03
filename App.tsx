@@ -241,17 +241,11 @@ const AppShell: React.FC<{
 
 // ── Root component ───────────────────────────────────────────────────────────
 const App: React.FC = () => {
-  // If the user has entered SENTRY before, go straight to Command Center.
-  // Landing page is only shown on first visit (or after cache clear).
-  const [showLanding, setShowLanding] = useState<boolean>(
-    () => localStorage.getItem('sentry-entered') !== 'true'
-  );
+  // Always start on the landing page — it's the intended entry experience.
+  const [showLanding, setShowLanding] = useState(true);
   const [currentView, setCurrentView] = useState<ViewState>(ViewState.HOME);
 
-  const handleEnter = useCallback(() => {
-    localStorage.setItem('sentry-entered', 'true');
-    setShowLanding(false);
-  }, []);
+  const handleEnter = useCallback(() => setShowLanding(false), []);
 
   return (
     // ThemeProvider wraps everything so LandingBackground3D can read reducedMotion
