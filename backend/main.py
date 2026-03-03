@@ -148,12 +148,13 @@ def list_vendors(
     category: str | None = Query(None),
     search:   str | None = Query(None),
     page:      int = Query(1,  ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+    page_size: int = Query(20, ge=1, le=500),
 ):
     """Return vendors paginated, optionally filtered by category or search term.
 
     Grouping (multiple products per company) happens in Python after the DB
     fetch — SQLite has ~1,931 rows so this is sub-millisecond.
+    Raised cap to 500 to support the Risk Map 3D view which needs all vendors.
     """
     conn = get_connection()
     params: list[str] = []

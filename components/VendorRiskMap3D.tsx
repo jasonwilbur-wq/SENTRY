@@ -15,7 +15,7 @@
  */
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { OrbitControls, Html } from '@react-three/drei';
+import { OrbitControls, Html, Stars } from '@react-three/drei';
 import * as THREE from 'three';
 import { fetchVendors } from '../services/api';
 import { useTheme } from '../context/ThemeContext';
@@ -46,18 +46,20 @@ const RISK_COLORS: Record<string, string> = {
   Critical: '#ef4444',
 };
 
+// Y bands are 4 units apart so tiers never bleed into each other
 const RISK_Y: Record<string, number> = {
   Low:      0,
-  Medium:   2.8,
-  High:     5.6,
-  Critical: 8.4,
+  Medium:   4.0,
+  High:     8.0,
+  Critical: 12.0,
 };
 
+// Wider rings — more breathing room between the 400+ vendors per tier
 const RISK_RADIUS: Record<string, number> = {
-  Low:      1.8,
-  Medium:   3.2,
-  High:     4.8,
-  Critical: 6.2,
+  Low:      3.5,
+  Medium:   5.5,
+  High:     7.5,
+  Critical: 9.5,
 };
 
 /** Deterministic pseudo-random from a string seed */
@@ -94,13 +96,17 @@ function placeVendors(vendors: Vendor[]): PlacedVendor[] {
       const jitterAng  = (seededRandom(v.id, 1) - 0.5) * 0.4;
       const angle      = baseAngle + jitterAng;
 
-      const radiusJitter = (seededRandom(v.id, 2) - 0.5) * 0.9;
+      // More radius spread so dense tiers don't pile on top of each other
+      const radiusJitter = (seededRandom(v.id, 2) - 0.5) * 1.8;
       const r            = baseR + radiusJitter;
 
-      const yJitter  = (seededRandom(v.id, 3) - 0.5) * 0.9;
+      // Tighter Y jitter — tiers are now 4 units apart so 1.2 is safe
+      const yJitter  = (seededRandom(v.id, 3) - 0.5) * 1.2;
       const y        = baseY + yJitter;
 
-      const scale    = 0.12 + (Math.max(0, Math.min(5, v.overall_rating)) / 5) * 0.24;
+      // Orbs: 0.28 (unrated) → 0.55 (5-star) — actually visible at any zoom
+      const rating   = typeof v.overall_rating === 'number' ? v.overall_rating : 0;
+      const scale    = 0.28 + (Math.max(0, Math.min(5, rating)) / 5) * 0.27;
 
       placed.push({
         ...v,
@@ -124,60 +130,98 @@ interface OrbProps {
 }
 
 const Orb: React.FC<OrbProps> = ({ vendor, onHover, onClick, reducedMotion }) => {
-  const meshRef   = useRef<THREE.Mesh>(null);
+  const groupRef = useRef<THREE.Group>(null);
+  const coreRef  = useRef<THREE.Mesh>(null);
+  const haloRef  = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
 
   useFrame((_, delta) => {
-    if (!meshRef.current || reducedMotion) return;
-    // Gentle float
-    const t = performance.now() * 0.001;
-    meshRef.current.position.y = vendor.position[1] + Math.sin(t + vendor.position[0]) * 0.05;
-    // Scale on hover
-    const target = hovered ? vendor.scale * 2.2 : vendor.scale;
-    meshRef.current.scale.lerp(new THREE.Vector3(target, target, target), delta * 8);
+    if (!groupRef.current) return;
+
+    // Gentle float — each orb has a unique phase from its X position
+    if (!reducedMotion) {
+      const t = performance.now() * 0.0008;
+      groupRef.current.position.y =
+        vendor.position[1] + Math.sin(t + vendor.position[0] * 1.3) * 0.12;
+    }
+
+    // Smooth scale transition on hover
+    const targetS = hovered ? vendor.scale * 1.9 : vendor.scale;
+    groupRef.current.scale.lerp(
+      new THREE.Vector3(targetS, targetS, targetS),
+      delta * 10,
+    );
+
+    // Pulse halo opacity on hover
+    if (haloRef.current) {
+      const mat = haloRef.current.material as THREE.MeshBasicMaterial;
+      mat.opacity += ((hovered ? 0.38 : 0.14) - mat.opacity) * delta * 8;
+    }
+
+    // Emissive boost on hover
+    if (coreRef.current) {
+      const mat = coreRef.current.material as THREE.MeshStandardMaterial;
+      mat.emissiveIntensity += ((hovered ? 4.0 : 2.2) - mat.emissiveIntensity) * delta * 8;
+    }
   });
 
   const hex = parseInt(vendor.color.replace('#', ''), 16);
 
   return (
-    <mesh
-      ref={meshRef}
+    <group
+      ref={groupRef}
       position={vendor.position}
       scale={vendor.scale}
       onPointerOver={e => { e.stopPropagation(); setHovered(true);  onHover(vendor); document.body.style.cursor = 'pointer'; }}
       onPointerOut={e  => { e.stopPropagation(); setHovered(false); onHover(null);   document.body.style.cursor = 'auto'; }}
       onClick={e        => { e.stopPropagation(); onClick(vendor); }}
     >
-      <sphereGeometry args={[1, 16, 16]} />
-      <meshStandardMaterial
-        color={hex}
-        emissive={hex}
-        emissiveIntensity={hovered ? 1.2 : 0.5}
-        roughness={0.3}
-        metalness={0.4}
-      />
-    </mesh>
+      {/* Core orb — emissive glow material */}
+      <mesh ref={coreRef}>
+        <sphereGeometry args={[1, 22, 22]} />
+        <meshStandardMaterial
+          color={hex}
+          emissive={hex}
+          emissiveIntensity={2.2}
+          roughness={0.15}
+          metalness={0.6}
+        />
+      </mesh>
+
+      {/* Outer halo — soft translucent bloom ring */}
+      <mesh ref={haloRef}>
+        <sphereGeometry args={[1.7, 16, 16]} />
+        <meshBasicMaterial
+          color={hex}
+          transparent
+          opacity={0.14}
+          depthWrite={false}
+        />
+      </mesh>
+    </group>
   );
 };
 
 // ── Ring label (floating text at each risk tier) ──────────────────────────────
 
 const RingLabel: React.FC<{ label: string; y: number; color: string }> = ({ label, y, color }) => (
-  <Html position={[7.4, y, 0]} center>
+  // X=12 keeps label outside the widest ring (max radius ~9.5 + 1.8 jitter)
+  <Html position={[12.5, y, 0]} center>
     <div
       style={{
-        background: 'rgba(4,8,22,0.82)',
+        background: 'rgba(4,8,22,0.88)',
         border: `1px solid ${color}55`,
         borderLeft: `3px solid ${color}`,
         color,
-        padding: '3px 10px',
+        padding: '4px 12px',
         borderRadius: 6,
-        fontSize: 10,
-        fontWeight: 700,
-        letterSpacing: '0.1em',
+        fontSize: 11,
+        fontWeight: 800,
+        letterSpacing: '0.12em',
         textTransform: 'uppercase',
         whiteSpace: 'nowrap',
         pointerEvents: 'none',
+        textShadow: `0 0 8px ${color}88`,
       }}
     >
       {label}
@@ -186,6 +230,17 @@ const RingLabel: React.FC<{ label: string; y: number; color: string }> = ({ labe
 );
 
 // ── Scene ─────────────────────────────────────────────────────────────────────
+
+// Faint orbital ring at each risk tier — gives the galaxy structure
+const OrbitRing: React.FC<{ y: number; radius: number; color: string }> = ({ y, radius, color }) => {
+  const hex = parseInt(color.replace('#', ''), 16);
+  return (
+    <mesh position={[0, y, 0]} rotation={[Math.PI / 2, 0, 0]}>
+      <torusGeometry args={[radius, 0.025, 8, 120]} />
+      <meshBasicMaterial color={hex} transparent opacity={0.18} depthWrite={false} />
+    </mesh>
+  );
+};
 
 const Scene: React.FC<{
   vendors: PlacedVendor[];
@@ -196,34 +251,56 @@ const Scene: React.FC<{
   const { camera } = useThree();
 
   useEffect(() => {
-    camera.position.set(12, 6, 14);
-    camera.lookAt(0, 4, 0);
+    // Y midpoint is 6 (midway between 0 and 12), pull back further to show wide rings
+    camera.position.set(18, 8, 22);
+    camera.lookAt(0, 6, 0);
   }, [camera]);
 
   // Slow galaxy rotation
   const groupRef = useRef<THREE.Group>(null);
   useFrame((_, delta) => {
     if (!groupRef.current || reducedMotion) return;
-    groupRef.current.rotation.y += delta * 0.04;
+    groupRef.current.rotation.y += delta * 0.035;
   });
 
   return (
     <>
-      {/* Lighting */}
-      <ambientLight intensity={0.4} />
-      <pointLight position={[0, 12, 0]}  intensity={1.2} color="#4d9fff" />
-      <pointLight position={[-8, 0, 8]}  intensity={0.6} color="#FFC220" />
-      <pointLight position={[8, 8, -8]}  intensity={0.5} color="#ef4444" />
+      {/* Starfield background for depth */}
+      <Stars radius={80} depth={60} count={3000} factor={3} fade speed={0.5} />
 
-      {/* Risk level ring labels */}
+      {/* Lighting — bright ambient so orbs are always readable + coloured fills */}
+      <ambientLight intensity={1.2} />
+      <hemisphereLight args={[0x223366, 0x000b28, 0.8]} />
+      <pointLight position={[0, 20, 0]}   intensity={60}  color="#4d9fff" />
+      <pointLight position={[-14, 4, 14]} intensity={40}  color="#FFC220" />
+      <pointLight position={[14, 12, -14]} intensity={35} color="#ef4444" />
+      <pointLight position={[0, -4, 0]}   intensity={25}  color="#22c55e" />
+
+      {/* Orbital rings — one thin torus per risk tier */}
+      {Object.entries(RISK_Y).map(([risk, y]) => (
+        <OrbitRing
+          key={risk}
+          y={y}
+          radius={RISK_RADIUS[risk]}
+          color={RISK_COLORS[risk]}
+        />
+      ))}
+
+      {/* Risk level labels */}
       {Object.entries(RISK_Y).map(([risk, y]) => (
         <RingLabel key={risk} label={risk} y={y} color={RISK_COLORS[risk]} />
       ))}
 
-      {/* Central axis */}
-      <mesh position={[0, 4.2, 0]}>
-        <cylinderGeometry args={[0.018, 0.018, 9.6, 8]} />
-        <meshStandardMaterial color="#0053E2" emissive="#0053E2" emissiveIntensity={0.6} opacity={0.4} transparent />
+      {/* Central axis — full height of the Y range */}
+      <mesh position={[0, 6, 0]}>
+        <cylinderGeometry args={[0.022, 0.022, 14, 8]} />
+        <meshStandardMaterial
+          color="#0053E2"
+          emissive="#0053E2"
+          emissiveIntensity={1.2}
+          opacity={0.5}
+          transparent
+        />
       </mesh>
 
       {/* Rotating vendor orbs */}
@@ -241,10 +318,10 @@ const Scene: React.FC<{
 
       <OrbitControls
         enableDamping
-        dampingFactor={0.08}
-        minDistance={4}
-        maxDistance={28}
-        target={[0, 4, 0]}
+        dampingFactor={0.07}
+        minDistance={6}
+        maxDistance={50}
+        target={[0, 6, 0]}
       />
     </>
   );
@@ -280,7 +357,7 @@ const VendorCard: React.FC<{ vendor: PlacedVendor; onClose: () => void }> = ({ v
     <div className="px-4 py-3 space-y-2">
       {[
         { label: 'Risk Level',  value: vendor.risk_level,                       color: vendor.color },
-        { label: 'Rating',      value: `${vendor.overall_rating.toFixed(1)} / 5`, color: '#FFC220' },
+        { label: 'Rating',      value: `${(vendor.overall_rating ?? 0).toFixed(1)} / 5`, color: '#FFC220' },
         { label: 'Status',      value: vendor.vendor_status,                    color: '#94a3b8' },
       ].map(({ label, value, color }) => (
         <div key={label} className="flex items-center justify-between">
@@ -296,21 +373,51 @@ const VendorCard: React.FC<{ vendor: PlacedVendor; onClose: () => void }> = ({ v
 
 const VendorRiskMap3D: React.FC = () => {
   const { reducedMotion } = useTheme();
-  const [vendors, setVendors]     = useState<Vendor[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [hovered, setHovered]     = useState<PlacedVendor | null>(null);
-  const [selected, setSelected]   = useState<PlacedVendor | null>(null);
+  const [vendors, setVendors]       = useState<Vendor[]>([]);
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState<string | null>(null);
+  const [hovered, setHovered]       = useState<PlacedVendor | null>(null);
+  const [selected, setSelected]     = useState<PlacedVendor | null>(null);
   const [riskFilter, setRiskFilter] = useState<string>('All');
 
   useEffect(() => {
-    (async () => {
+    let cancelled = false;
+
+    const loadAll = async () => {
       try {
-        // Fetch up to 300 vendors (covers all of SENTRY's vendor DB)
-        const res = await fetchVendors({ page: 1, page_size: 300 });
-        setVendors(res.vendors as unknown as Vendor[]);
-      } catch { /* silently degrade */ }
-      finally { setLoading(false); }
-    })();
+        setError(null);
+        // Fetch page 1 to discover total_pages, then fan out for the rest.
+        // Using page_size=100 (backend hard cap) — all pages fire in parallel.
+        const PAGE_SZ = 100;
+        const first = await fetchVendors({ page: 1, page_size: PAGE_SZ });
+        if (cancelled) return;
+
+        let all = [...first.vendors];
+
+        if (first.total_pages > 1) {
+          const rest = await Promise.all(
+            Array.from({ length: first.total_pages - 1 }, (_, i) =>
+              fetchVendors({ page: i + 2, page_size: PAGE_SZ })
+            )
+          );
+          if (cancelled) return;
+          rest.forEach(r => all.push(...r.vendors));
+        }
+
+        setVendors(all);
+      } catch (err) {
+        if (!cancelled) {
+          const msg = err instanceof Error ? err.message : 'Unknown error loading vendors';
+          console.error('[VendorRiskMap3D] Failed to load vendors:', err);
+          setError(msg);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    loadAll();
+    return () => { cancelled = true; };
   }, []);
 
   const placed = useMemo(() => placeVendors(vendors), [vendors]);
@@ -396,9 +503,10 @@ const VendorRiskMap3D: React.FC = () => {
       <div
         className="relative flex-1 rounded-2xl overflow-hidden"
         style={{
-          minHeight: 460,
-          background: 'radial-gradient(ellipse at 40% 40%, rgba(0,20,60,0.9) 0%, #000B28 70%)',
+          minHeight: 520,
+          background: 'radial-gradient(ellipse at 50% 50%, #000d2e 0%, #000408 100%)',
           border: '1px solid var(--s-border-mid)',
+          boxShadow: 'inset 0 0 60px rgba(0,83,226,0.08)',
         }}
       >
         {loading ? (
@@ -406,6 +514,19 @@ const VendorRiskMap3D: React.FC = () => {
             <div className="text-center space-y-3">
               <div className="w-8 h-8 rounded-full border-2 border-blue-500 border-t-transparent animate-spin mx-auto" />
               <p className="text-xs" style={{ color: 'var(--s-text-dim)' }}>Plotting vendor galaxy…</p>
+            </div>
+          </div>
+        ) : error ? (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="text-center space-y-3 max-w-xs">
+              <div className="w-10 h-10 mx-auto rounded-full flex items-center justify-center" style={{ background: 'rgba(239,68,68,0.15)', border: '1px solid rgba(239,68,68,0.3)' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2" strokeLinecap="round">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+              </div>
+              <p className="text-xs font-semibold" style={{ color: '#ef4444' }}>Could not load vendor data</p>
+              <p className="text-[10px] font-mono break-all" style={{ color: 'var(--s-text-dim)' }}>{error}</p>
+              <p className="text-[10px]" style={{ color: 'var(--s-text-dim)' }}>Is the SENTRY backend running?</p>
             </div>
           </div>
         ) : (
@@ -449,7 +570,7 @@ const VendorRiskMap3D: React.FC = () => {
         )}
 
         {/* Interaction hint */}
-        {!loading && !selected && (
+        {!loading && !error && !selected && (
           <div
             className="absolute bottom-3 left-3 text-[9px] uppercase tracking-widest"
             style={{ color: 'rgba(255,255,255,0.2)', pointerEvents: 'none' }}

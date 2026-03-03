@@ -241,18 +241,27 @@ const AppShell: React.FC<{
 
 // ── Root component ───────────────────────────────────────────────────────────
 const App: React.FC = () => {
-  const [showLanding,  setShowLanding]  = useState(true);
-  const [currentView,  setCurrentView]  = useState<ViewState>(ViewState.HOME);
+  // If the user has entered SENTRY before, go straight to Command Center.
+  // Landing page is only shown on first visit (or after cache clear).
+  const [showLanding, setShowLanding] = useState<boolean>(
+    () => localStorage.getItem('sentry-entered') !== 'true'
+  );
+  const [currentView, setCurrentView] = useState<ViewState>(ViewState.HOME);
+
+  const handleEnter = useCallback(() => {
+    localStorage.setItem('sentry-entered', 'true');
+    setShowLanding(false);
+  }, []);
 
   return (
-    // ThemeProvider wraps everything so even LandingBackground3D can read reducedMotion
+    // ThemeProvider wraps everything so LandingBackground3D can read reducedMotion
     <ThemeProvider>
       <VendorProvider>
         {/* Accessible skip link — first focusable element in the DOM */}
         <a href="#main-content" className="skip-nav">Skip to main content</a>
 
         {showLanding
-          ? <LandingPage onEnter={() => setShowLanding(false)} />
+          ? <LandingPage onEnter={handleEnter} />
           : <AppShell currentView={currentView} setCurrentView={setCurrentView} />
         }
       </VendorProvider>
