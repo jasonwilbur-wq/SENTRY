@@ -530,6 +530,65 @@ body {
 [data-theme="light"] .text-yellow-400   { color: #92400e !important; }
 [data-theme="light"] .text-red-400      { color: #b91c1c !important; }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   ACCESSIBILITY: REDUCED MOTION
+   Honors both OS prefers-reduced-motion AND manual [data-reduced-motion]
+   attribute set by ThemeContext toggleReducedMotion()
+═══════════════════════════════════════════════════════════════════════ */
+
+/* ── OS-level: honor system setting ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration:       0.01ms !important;
+    animation-iteration-count: 1    !important;
+    transition-duration:      0.01ms !important;
+    scroll-behavior:          auto  !important;
+  }
+  /* Preserve essential color transitions so UI doesn't feel broken */
+  .btn-primary, .btn-ghost {
+    transition: background-color 0.1s ease !important;
+  }
+}
+
+/* ── Manual override: [data-reduced-motion="true"] on <html> ── */
+[data-reduced-motion="true"] *, 
+[data-reduced-motion="true"] *::before, 
+[data-reduced-motion="true"] *::after {
+  animation-duration:       0.01ms !important;
+  animation-iteration-count: 1    !important;
+  transition-duration:      0.01ms !important;
+}
+[data-reduced-motion="true"] .btn-primary,
+[data-reduced-motion="true"] .btn-ghost {
+  transition: background-color 0.1s ease !important;
+}
+
+/* ── Accessibility: fix dim-text contrast (was 4.34:1 → now 4.6:1) ── */
+:root        { --s-text-dim: #6b7e99; }
+:root[data-theme="light"] { --s-text-dim: #475569; }
+
+/* ── Skip Navigation ── */
+.skip-nav {
+  position: absolute;
+  top: -100%;
+  left: 12px;
+  z-index: 9999;
+  padding: 10px 20px;
+  background: #0053E2;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 14px;
+  border-radius: 0 0 8px 8px;
+  text-decoration: none;
+  transition: top 0.15s ease;
+  white-space: nowrap;
+}
+.skip-nav:focus {
+  top: 0;
+  outline: 3px solid #FFC220;
+  outline-offset: 2px;
+}
+
 /* ── D3/SVG text labels (ArchitectureGraph) ── */
 .sentry-arch-svg .arch-label        { fill: #f8fafc; }
 [data-theme="light"] .sentry-arch-svg .arch-label { fill: #0f172a !important; }

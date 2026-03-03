@@ -22,7 +22,21 @@
   <!-- Favicon -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>" />
 
-  <!-- Anti-FOUC: apply saved theme before first paint -->
+  <!-- Canonical -->
+  <link rel="canonical" href="/" />
+
+  <!-- Open Graph -->
+  <meta property="og:url"   content="/" />
+  <meta property="og:image" content="/og-image.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+
+  <!-- Web App Manifest (enables Add to Home Screen on Chromium) -->
+  <link rel="manifest" href="/manifest.json" />
+
+  <!-- High-res favicon: navy shield with yellow spark spark -->
+  <link rel="icon" sizes="32x32" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%23000B28'/><text x='4' y='26' font-size='22'>🛡️</text></svg>" />
+
+  <!-- Anti-FOUC: apply saved theme AND reduced-motion preference before first paint -->
   <script>
     (function() {
       var t = localStorage.getItem('sentry-theme');
@@ -30,6 +44,9 @@
         document.documentElement.setAttribute('data-theme', t);
         if (t === 'dark') document.documentElement.classList.add('dark');
       }
+      // Also restore reduced-motion flag so no animation flicker on load
+      var m = localStorage.getItem('sentry-reduced-motion');
+      if (m === 'true') document.documentElement.setAttribute('data-reduced-motion', 'true');
     })();
   </script>
 </head>

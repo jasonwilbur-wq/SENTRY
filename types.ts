@@ -43,6 +43,7 @@ export enum ViewState {
   REQUEST_LAB_VISIT = 'REQUEST_LAB_VISIT',
   ARCHITECTURE = 'ARCHITECTURE',
   ADMIN = 'ADMIN',
+  RISK_MAP = 'RISK_MAP',
 }
 
 // ── Regulatory Intelligence types ─────────────────────────────────────────
