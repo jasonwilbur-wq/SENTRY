@@ -157,8 +157,8 @@ export function CSOIntelligence() {
   };
 
   return (
-    <div className="min-h-screen text-white p-4 sm:p-8"
-      style={{ background: 'radial-gradient(ellipse at 50% 0%,#020c2a 0%,#000510 70%)' }}>
+    <div className="min-h-screen p-4 sm:p-8"
+      style={{ background: 'var(--s-bg)', color: 'var(--s-text)' }}>
 
       {/* ── 3D Hero ──────────────────────────────────────────────────────── */}
       <div className="max-w-7xl mx-auto mb-8">

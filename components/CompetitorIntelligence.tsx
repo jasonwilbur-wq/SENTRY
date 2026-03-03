@@ -91,7 +91,7 @@ function CompetitorLogo({ name, size = 'md' }: { name: string; size?: 'sm' | 'md
   // If logo URL exists and hasn't failed, try to load it
   if (logoUrl && !logoFailed) {
     return (
-      <div className={`${sizeClasses[size]} rounded-xl bg-white flex items-center justify-center flex-shrink-0 overflow-hidden border-2 border-gray-600 shadow-lg`}>
+      <div className={`${sizeClasses[size]} rounded-xl flex items-center justify-center flex-shrink-0 overflow-hidden shadow-lg`} style={{ background: 'var(--s-panel)', border: '2px solid var(--s-border)' }}>
         <img
           src={logoUrl}
           alt={`${name} logo`}
@@ -171,12 +171,12 @@ export function CompetitorIntelligence() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-8">
+    <div className="min-h-screen p-8" style={{ background: 'var(--s-bg)', color: 'var(--s-text)' }}>
       {/* ═══ 3D HERO — Competitor Threat Constellation ══════════════════ */}
       <div className="max-w-7xl mx-auto mb-8">
         <div
-          className="relative rounded-2xl overflow-hidden border border-slate-700"
-          style={{ height: '400px', background: 'radial-gradient(ellipse at center, #00071a 0%, #000208 100%)' }}
+          className="relative rounded-2xl overflow-hidden"
+          style={{ height: '400px', background: 'radial-gradient(ellipse at center, #00071a 0%, #000208 100%)', border: '1px solid var(--s-border)' }}
         >
           {/* Grid overlay */}
           <div
@@ -212,12 +212,12 @@ export function CompetitorIntelligence() {
                 <span className="text-[10px] font-bold tracking-wider" style={{ color }}>{label}</span>
               </div>
             ))}
-            <span className="text-[10px] text-slate-500 mt-1">Node size ∝ event count</span>
+            <span className="text-[10px] mt-1" style={{ color: 'var(--s-text-dim)' }}>Node size ∝ event count</span>
           </div>
 
           {/* Hover hint */}
           <div className="absolute bottom-5 right-6 z-10">
-            <span className="text-[10px] text-slate-500">Hover nodes to inspect competitors</span>
+            <span className="text-[10px]" style={{ color: 'var(--s-text-dim)' }}>Hover nodes to inspect competitors</span>
           </div>
 
           {/* Title overlay */}
@@ -235,7 +235,7 @@ export function CompetitorIntelligence() {
             >
               Competitor Intelligence
             </h1>
-            <p className="text-slate-400 text-sm max-w-lg mb-5">
+            <p className="text-sm max-w-lg mb-5" style={{ color: 'var(--s-text-muted)' }}>
               Live threat tracking across {competitors.length} competitors &mdash; {(stats?.total ?? 0).toLocaleString()} events indexed and analyst-enriched.
             </p>
             <div className="flex flex-wrap gap-2 justify-center">
@@ -253,26 +253,16 @@ export function CompetitorIntelligence() {
       <div className="max-w-7xl mx-auto mb-8">
         <h2 className="text-2xl font-bold mb-4">💡 Executive Intelligence</h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-5 rounded-lg border-l-4 border-yellow-500 border border-gray-700">
-            <p className="text-gray-200 text-sm leading-relaxed">
-              🔥 <strong>Amazon dominates</strong>: {competitors.find(c => c.name === 'Amazon')?.totalEvents || 147} events ({Math.round(((competitors.find(c => c.name === 'Amazon')?.totalEvents || 147) / (stats?.total || 337)) * 100)}% of all activity) - 3x more than nearest competitor. Technology and Strategic categories show aggressive innovation.
-            </p>
-          </div>
-          <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-5 rounded-lg border-l-4 border-yellow-500 border border-gray-700">
-            <p className="text-gray-200 text-sm leading-relaxed">
-              ⚠️ <strong>ORC/Theft epidemic</strong>: {stats?.orc || 52} events across all competitors (15% of activity). Target, Kroger, and Costco show concentrated regional organized crime.
-            </p>
-          </div>
-          <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-5 rounded-lg border-l-4 border-yellow-500 border border-gray-700">
-            <p className="text-gray-200 text-sm leading-relaxed">
-              🔐 <strong>Cyber threats rising</strong>: {stats?.cyber || 33} cyber events (10% of activity). Amazon, Kroger, and Target are primary targets. Digital security posture gaps vs Amazon's advanced controls.
-            </p>
-          </div>
-          <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-5 rounded-lg border-l-4 border-yellow-500 border border-gray-700">
-            <p className="text-gray-200 text-sm leading-relaxed">
-              📦 <strong>Recall pressure</strong>: {stats?.recall || 18} recall events, primarily food safety. Costco leads with supply chain quality control challenges.
-            </p>
-          </div>
+          {[
+            `🔥 Amazon dominates: ${competitors.find(c => c.name === 'Amazon')?.totalEvents || 147} events (${Math.round(((competitors.find(c => c.name === 'Amazon')?.totalEvents || 147) / (stats?.total || 337)) * 100)}% of all activity) — 3× more than nearest competitor. Technology and Strategic categories show aggressive innovation.`,
+            `⚠️ ORC/Theft epidemic: ${stats?.orc || 52} events across all competitors (15% of activity). Target, Kroger, and Costco show concentrated regional organized crime.`,
+            `🔐 Cyber threats rising: ${stats?.cyber || 33} cyber events (10% of activity). Amazon, Kroger, and Target are primary targets. Digital security posture gaps vs Amazon's advanced controls.`,
+            `📦 Recall pressure: ${stats?.recall || 18} recall events, primarily food safety. Costco leads with supply chain quality control challenges.`,
+          ].map((text, i) => (
+            <div key={i} className="p-5 rounded-lg border-l-4 border" style={{ background: 'var(--s-card)', borderLeftColor: '#FFC220', borderColor: 'var(--s-border)' }}>
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--s-text-muted)' }}>{text}</p>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -287,24 +277,27 @@ export function CompetitorIntelligence() {
               <div
                 key={comp.name}
                 onClick={() => handleCardClick(comp.name)}
-                className={`bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg border transition-all duration-300 cursor-pointer transform hover:scale-105 shadow-xl ${
-                  isExpanded ? 'border-blue-500 ring-2 ring-blue-500/50' : 'border-gray-700 hover:border-blue-500'
-                }`}
+                className="rounded-lg border transition-all duration-300 cursor-pointer transform hover:scale-105 shadow-xl"
+                style={{
+                  background: 'var(--s-card)',
+                  borderColor: isExpanded ? '#0053e2' : 'var(--s-border)',
+                  boxShadow: isExpanded ? '0 0 0 2px rgba(0,83,226,0.3)' : undefined,
+                }}
               >
                 {/* Card Header */}
-                <div className="p-4 border-b border-gray-700">
+                <div className="p-4" style={{ borderBottom: '1px solid var(--s-border)' }}>
                   <div className="flex items-start gap-3 mb-3">
                     {/* Logo or Letter Avatar */}
                     <CompetitorLogo name={comp.name} size="sm" />
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-white text-sm truncate" title={comp.name}>
+                      <h3 className="font-bold text-sm truncate" style={{ color: 'var(--s-text)' }} title={comp.name}>
                         {comp.name}
                       </h3>
-                      <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full font-bold border mt-1 ${
-                        comp.threatLevel === 'HIGH' ? 'bg-red-500/20 text-red-300 border-red-500' :
-                        comp.threatLevel === 'MEDIUM' ? 'bg-yellow-500/20 text-yellow-300 border-yellow-500' :
-                        'bg-green-500/20 text-green-300 border-green-500'
-                      }`}>
+                      <span className="inline-block text-[10px] px-2 py-0.5 rounded-full font-bold border mt-1" style={{
+                        background: comp.threatLevel === 'HIGH' ? 'rgba(239,68,68,0.15)' : comp.threatLevel === 'MEDIUM' ? 'rgba(234,179,8,0.15)' : 'rgba(34,197,94,0.15)',
+                        color:      comp.threatLevel === 'HIGH' ? '#ef4444'              : comp.threatLevel === 'MEDIUM' ? '#eab308'              : '#22c55e',
+                        borderColor:comp.threatLevel === 'HIGH' ? 'rgba(239,68,68,0.5)' : comp.threatLevel === 'MEDIUM' ? 'rgba(234,179,8,0.5)' : 'rgba(34,197,94,0.5)',
+                      }}>
                         {comp.threatLevel}
                       </span>
                     </div>
@@ -312,29 +305,29 @@ export function CompetitorIntelligence() {
                 </div>
 
                 {/* Quick Stats */}
-                <div className="grid grid-cols-3 gap-2 p-3 bg-gray-900/50 text-center text-xs">
+                <div className="grid grid-cols-3 gap-2 p-3 text-center text-xs" style={{ background: 'var(--s-modal-inner)' }}>
                   <div>
-                    <div className="text-lg font-bold text-white">{comp.totalEvents}</div>
-                    <div className="text-[10px] text-gray-400">Events</div>
+                    <div className="text-lg font-bold" style={{ color: 'var(--s-text)' }}>{comp.totalEvents}</div>
+                    <div className="text-[10px]" style={{ color: 'var(--s-text-dim)' }}>Events</div>
                   </div>
                   <div>
                     <div className="text-lg font-bold text-red-400">{comp.cyberEvents}</div>
-                    <div className="text-[10px] text-gray-400">Cyber</div>
+                    <div className="text-[10px]" style={{ color: 'var(--s-text-dim)' }}>Cyber</div>
                   </div>
                   <div>
                     <div className="text-lg font-bold text-purple-400">{comp.techEvents}</div>
-                    <div className="text-[10px] text-gray-400">Tech</div>
+                    <div className="text-[10px]" style={{ color: 'var(--s-text-dim)' }}>Tech</div>
                   </div>
                 </div>
 
                 {/* Top Category */}
-                <div className="px-3 py-2 border-t border-gray-700">
-                  <span className="text-[10px] text-gray-500">Top: </span>
-                  <span className="text-[10px] text-blue-300 font-medium">{comp.topCategory}</span>
+                <div className="px-3 py-2" style={{ borderTop: '1px solid var(--s-border)' }}>
+                  <span className="text-[10px]" style={{ color: 'var(--s-text-dim)' }}>Top: </span>
+                  <span className="text-[10px] font-medium" style={{ color: '#60a5fa' }}>{comp.topCategory}</span>
                 </div>
 
                 {/* Expand Indicator */}
-                <div className="p-2 text-center text-[10px] text-gray-500 border-t border-gray-700">
+                <div className="p-2 text-center text-[10px]" style={{ borderTop: '1px solid var(--s-border)', color: 'var(--s-text-dim)' }}>
                   {isExpanded ? '🔽 Click to collapse' : '🔼 Click for details'}
                 </div>
               </div>
@@ -346,13 +339,13 @@ export function CompetitorIntelligence() {
       {/* Expanded Competitor Detail */}
       {selectedCompetitor && (
         <div className="max-w-7xl mx-auto mb-8">
-          <div className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg border-2 border-blue-500 shadow-2xl overflow-hidden">
+          <div className="rounded-lg border-2 shadow-2xl overflow-hidden" style={{ background: 'var(--s-card)', borderColor: '#0053e2' }}>
             <div className="p-8">
-              <div className="flex items-center gap-4 mb-6 border-b border-gray-700 pb-4">
+              <div className="flex items-center gap-4 mb-6 pb-4" style={{ borderBottom: '1px solid var(--s-border)' }}>
                 <CompetitorLogo name={selectedCompetitor} size="lg" />
                 <div>
-                  <h2 className="text-3xl font-bold">{selectedCompetitor}</h2>
-                  <p className="text-gray-400">Detailed Intelligence Report</p>
+                  <h2 className="text-3xl font-bold" style={{ color: 'var(--s-text)' }}>{selectedCompetitor}</h2>
+                  <p style={{ color: 'var(--s-text-muted)' }}>Detailed Intelligence Report</p>
                 </div>
               </div>
 
@@ -363,29 +356,29 @@ export function CompetitorIntelligence() {
                   if (!comp) return null;
                   return (
                     <>
-                      <div className="bg-gray-900/70 p-4 rounded-lg text-center">
-                        <div className="text-2xl font-bold text-white">{comp.totalEvents}</div>
-                        <div className="text-xs text-gray-400">Total Events</div>
+                      <div className="p-4 rounded-lg text-center" style={{ background: 'var(--s-modal-inner)' }}>
+                        <div className="text-2xl font-bold" style={{ color: 'var(--s-text)' }}>{comp.totalEvents}</div>
+                        <div className="text-xs" style={{ color: 'var(--s-text-dim)' }}>Total Events</div>
                       </div>
-                      <div className="bg-gray-900/70 p-4 rounded-lg text-center">
+                      <div className="p-4 rounded-lg text-center" style={{ background: 'var(--s-modal-inner)' }}>
                         <div className="text-2xl font-bold text-red-400">{comp.cyberEvents}</div>
-                        <div className="text-xs text-gray-400">Cyber</div>
+                        <div className="text-xs" style={{ color: 'var(--s-text-dim)' }}>Cyber</div>
                       </div>
-                      <div className="bg-gray-900/70 p-4 rounded-lg text-center">
+                      <div className="p-4 rounded-lg text-center" style={{ background: 'var(--s-modal-inner)' }}>
                         <div className="text-2xl font-bold text-yellow-400">{comp.orcEvents}</div>
-                        <div className="text-xs text-gray-400">ORC/Theft</div>
+                        <div className="text-xs" style={{ color: 'var(--s-text-dim)' }}>ORC/Theft</div>
                       </div>
-                      <div className="bg-gray-900/70 p-4 rounded-lg text-center">
+                      <div className="p-4 rounded-lg text-center" style={{ background: 'var(--s-modal-inner)' }}>
                         <div className="text-2xl font-bold text-purple-400">{comp.recallEvents}</div>
-                        <div className="text-xs text-gray-400">Recalls</div>
+                        <div className="text-xs" style={{ color: 'var(--s-text-dim)' }}>Recalls</div>
                       </div>
-                      <div className="bg-gray-900/70 p-4 rounded-lg text-center">
+                      <div className="p-4 rounded-lg text-center" style={{ background: 'var(--s-modal-inner)' }}>
                         <div className="text-2xl font-bold text-blue-400">{comp.legalEvents}</div>
-                        <div className="text-xs text-gray-400">Legal</div>
+                        <div className="text-xs" style={{ color: 'var(--s-text-dim)' }}>Legal</div>
                       </div>
-                      <div className="bg-gray-900/70 p-4 rounded-lg text-center">
+                      <div className="p-4 rounded-lg text-center" style={{ background: 'var(--s-modal-inner)' }}>
                         <div className="text-2xl font-bold text-teal-400">{comp.techEvents}</div>
-                        <div className="text-xs text-gray-400">Technology</div>
+                        <div className="text-xs" style={{ color: 'var(--s-text-dim)' }}>Technology</div>
                       </div>
                     </>
                   );
@@ -399,30 +392,30 @@ export function CompetitorIntelligence() {
                   <span>Recent Activity</span>
                 </h3>
                 {loadingEvents ? (
-                  <div className="text-center py-8 text-gray-500">
+                  <div className="text-center py-8" style={{ color: 'var(--s-text-dim)' }}>
                     <p className="animate-pulse">Loading recent events...</p>
                   </div>
                 ) : recentEvents.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
+                  <div className="text-center py-8" style={{ color: 'var(--s-text-dim)' }}>
                     <p>No recent events found</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {recentEvents.map((event) => (
-                      <div key={event.id} className="bg-gray-900/70 p-5 rounded-lg border border-gray-700">
+                      <div key={event.id} className="p-5 rounded-lg border" style={{ background: 'var(--s-modal-inner)', borderColor: 'var(--s-border)' }}>
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1">
-                            <span className="text-xs text-gray-400">
+                            <span className="text-xs" style={{ color: 'var(--s-text-dim)' }}>
                               {event.event_date ? new Date(event.event_date).toLocaleDateString() : 'N/A'}
                             </span>
-                            <h4 className="font-bold text-white mt-1">{event.event_title}</h4>
+                            <h4 className="font-bold mt-1" style={{ color: 'var(--s-text)' }}>{event.event_title}</h4>
                           </div>
-                          <span className="px-2 py-1 bg-blue-500/20 text-blue-300 rounded text-xs ml-2">
+                          <span className="px-2 py-1 rounded text-xs ml-2" style={{ background: 'rgba(0,83,226,0.15)', color: '#60a5fa' }}>
                             {event.category}
                           </span>
                         </div>
                         {event.detailed_description && (
-                          <p className="text-sm text-gray-400 mt-2">
+                          <p className="text-sm mt-2" style={{ color: 'var(--s-text-muted)' }}>
                             {event.detailed_description.length > 200
                               ? `${event.detailed_description.slice(0, 200)}...`
                               : event.detailed_description}

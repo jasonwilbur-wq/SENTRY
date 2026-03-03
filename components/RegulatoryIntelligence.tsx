@@ -42,8 +42,8 @@ const KpiCard: React.FC<{ label: string; value: number | string; sub?: string; r
   return (
     <div className="rounded-xl p-4 flex flex-col gap-1 border"
       style={{
-        background: c ? c.bg : 'rgba(255,255,255,0.03)',
-        borderColor: c ? c.border : 'rgba(255,255,255,0.08)',
+        background: c ? c.bg : 'var(--s-card)',
+        borderColor: c ? c.border : 'var(--s-border)',
       }}>
       <span className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--s-text-dim)' }}>{label}</span>
       <span className="text-3xl font-black" style={{ color: c ? c.text : 'var(--s-text)' }}>{value}</span>
@@ -73,12 +73,12 @@ const TechPill: React.FC<{ tech: string }> = ({ tech }) => (
 const ActionCard: React.FC<{ action: RegTopAction; idx: number }> = ({ action, idx }) => {
   const pColor = action.priority === 'High' ? '#ff6b6b' : action.priority === 'Med' ? '#fb923c' : '#4ade80';
   return (
-    <div className="flex gap-3 p-3 rounded-lg border" style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.07)' }}>
+    <div className="flex gap-3 p-3 rounded-lg border" style={{ background: 'var(--s-card)', borderColor: 'var(--s-border)' }}>
       <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs font-black"
         style={{ background: 'rgba(0,83,226,0.18)', color: '#60a5fa' }}>{idx + 1}</div>
       <div className="min-w-0">
         <div className="flex items-center gap-2 mb-0.5">
-          <span className="text-sm font-bold text-white truncate">{action.title}</span>
+          <span className="text-sm font-bold truncate" style={{ color: 'var(--s-text)' }}>{action.title}</span>
           <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded" style={{ background: `${pColor}1a`, color: pColor }}>{action.priority}</span>
         </div>
         <p className="text-[11px] leading-relaxed" style={{ color: 'var(--s-text-dim)' }}>{action.description}</p>
@@ -185,8 +185,8 @@ export const RegulatoryIntelligence: React.FC = () => {
 
       {/* ═══ 3D HERO — Regulatory Globe ═══════════════════════════════ */}
       <div
-        className="relative rounded-2xl overflow-hidden border border-slate-700"
-        style={{ height: '400px', background: 'radial-gradient(ellipse at center, #00091e 0%, #000208 100%)' }}
+        className="relative rounded-2xl overflow-hidden"
+        style={{ height: '400px', background: 'radial-gradient(ellipse at center, #00091e 0%, #000208 100%)', border: '1px solid var(--s-border)' }}
       >
         {/* Grid overlay */}
         <div
@@ -219,14 +219,14 @@ export const RegulatoryIntelligence: React.FC = () => {
             <div key={label} className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color, boxShadow: `0 0 5px ${color}` }} />
               <span className="text-[10px] font-semibold" style={{ color }}>{label}</span>
-              <span className="text-[10px] font-bold text-white ml-1">{count}</span>
+              <span className="text-[10px] font-bold ml-1" style={{ color: 'rgba(255,255,255,0.9)' }}>{count}</span>
             </div>
           ))}
         </div>
 
         {/* Hover hint */}
         <div className="absolute bottom-5 right-6 z-10">
-          <span className="text-[10px] text-slate-500">Hover nodes to inspect jurisdictions</span>
+          <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.45)' }}>Hover nodes to inspect jurisdictions</span>
         </div>
 
         {/* Title overlay (top-center) */}
@@ -244,7 +244,7 @@ export const RegulatoryIntelligence: React.FC = () => {
           >
             Regulatory Intelligence
           </h1>
-          <p className="text-slate-400 text-sm max-w-lg mb-5">
+          <p className="text-sm max-w-lg mb-5" style={{ color: 'rgba(255,255,255,0.65)' }}>
             {stats?.total_obligations ?? '—'} obligations across {summary?.jurisdictions.length ?? '—'} jurisdictions — real-time RAG risk mapping.
           </p>
           <div className="flex flex-wrap gap-2 justify-center">
@@ -271,9 +271,9 @@ export const RegulatoryIntelligence: React.FC = () => {
       {/* ── Summary + Tech breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Exec summary */}
-        <div className="lg:col-span-2 rounded-xl p-5 border" style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.08)' }}>
+        <div className="lg:col-span-2 rounded-xl p-5 border" style={{ background: 'var(--s-card)', borderColor: 'var(--s-border)' }}>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold text-white">Executive Summary</h3>
+            <h3 className="text-sm font-bold" style={{ color: 'var(--s-text)' }}>Executive Summary</h3>
             <div className="flex gap-2">
               <span className="text-[9px] px-2 py-1 rounded-full" style={{ background: 'rgba(255,194,32,0.15)', color: '#FFC220', border: '1px solid rgba(255,194,32,0.3)' }}>
                 Confidence: {summary?.confidence ?? '…'}
@@ -286,7 +286,7 @@ export const RegulatoryIntelligence: React.FC = () => {
           <p className="text-sm leading-relaxed" style={{ color: 'var(--s-text-dim)' }}>{summary?.summary}</p>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {summary?.jurisdictions.slice(0, 12).map(j => (
-              <span key={j} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(255,255,255,0.05)', color: 'var(--s-text-dim)', border: '1px solid rgba(255,255,255,0.08)' }}>{j}</span>
+              <span key={j} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'var(--s-hover-over)', color: 'var(--s-text-dim)', border: '1px solid var(--s-border)' }}>{j}</span>
             ))}
             {(summary?.jurisdictions.length ?? 0) > 12 && (
               <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ color: 'var(--s-text-dim)' }}>+{(summary?.jurisdictions.length ?? 0) - 12} more</span>
@@ -295,8 +295,8 @@ export const RegulatoryIntelligence: React.FC = () => {
         </div>
 
         {/* Tech breakdown */}
-        <div className="rounded-xl p-5 border" style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.08)' }}>
-          <h3 className="text-sm font-bold text-white mb-3">By Technology Category</h3>
+        <div className="rounded-xl p-5 border" style={{ background: 'var(--s-card)', borderColor: 'var(--s-border)' }}>
+          <h3 className="text-sm font-bold mb-3" style={{ color: 'var(--s-text)' }}>By Technology Category</h3>
           <div className="space-y-2">
             {techBreakdown.map(([tech, count]) => (
               <button key={tech} className="w-full text-left group" onClick={() => setFilterTech(filterTech === tech ? '' : tech)}>
@@ -304,7 +304,7 @@ export const RegulatoryIntelligence: React.FC = () => {
                   <span style={{ color: filterTech === tech ? '#FFC220' : 'var(--s-text)' }}>{TECH_ICONS[tech] ?? '⚖️'} {tech}</span>
                   <span style={{ color: 'var(--s-text-dim)' }}>{count}</span>
                 </div>
-                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.06)' }}>
+                <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--s-border-mid)' }}>
                   <div className="h-full rounded-full transition-all"
                     style={{ width: `${(count / maxTechCount) * 100}%`, background: filterTech === tech ? '#FFC220' : 'rgba(0,83,226,0.7)' }} />
                 </div>
@@ -318,33 +318,33 @@ export const RegulatoryIntelligence: React.FC = () => {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
 
         {/* Obligation table — 2/3 width */}
-        <div className="xl:col-span-2 rounded-xl border overflow-hidden" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+        <div className="xl:col-span-2 rounded-xl border overflow-hidden" style={{ borderColor: 'var(--s-border)' }}>
           {/* Toolbar */}
-          <div className="p-4 flex flex-wrap gap-3 items-center" style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+          <div className="p-4 flex flex-wrap gap-3 items-center" style={{ background: 'var(--s-card)', borderBottom: '1px solid var(--s-border)' }}>
             <input
               type="search" placeholder="Search obligations…"
               value={filterQ} onChange={e => setFilterQ(e.target.value)}
-              className="flex-1 min-w-[140px] px-3 py-1.5 rounded-lg text-sm bg-transparent border text-white placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              style={{ borderColor: 'rgba(255,255,255,0.12)' }}
+              className="flex-1 min-w-[140px] px-3 py-1.5 rounded-lg text-sm bg-transparent border focus:outline-none focus:ring-1 focus:ring-blue-500"
+              style={{ borderColor: 'var(--s-border-mid)', color: 'var(--s-text)' }}
             />
             {/* RAG filter */}
             <select value={filterRag} onChange={e => setFilterRag(e.target.value)}
               className="px-2 py-1.5 rounded-lg text-xs bg-transparent border focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
-              style={{ borderColor: 'rgba(255,255,255,0.12)', color: 'var(--s-text)' }}>
+              style={{ borderColor: 'var(--s-border-mid)', color: 'var(--s-text)' }}>
               <option value="">All RAG</option>
               {['Red','Amber','Yellow','Green'].map(r => <option key={r} value={r}>{r}</option>)}
             </select>
             {/* Tech filter */}
             <select value={filterTech} onChange={e => setFilterTech(e.target.value)}
               className="px-2 py-1.5 rounded-lg text-xs bg-transparent border focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
-              style={{ borderColor: 'rgba(255,255,255,0.12)', color: 'var(--s-text)' }}>
+              style={{ borderColor: 'var(--s-border-mid)', color: 'var(--s-text)' }}>
               <option value="">All Tech</option>
               {techBreakdown.map(([t]) => <option key={t} value={t}>{t}</option>)}
             </select>
             {/* Status filter */}
             <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
               className="px-2 py-1.5 rounded-lg text-xs bg-transparent border focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
-              style={{ borderColor: 'rgba(255,255,255,0.12)', color: 'var(--s-text)' }}>
+              style={{ borderColor: 'var(--s-border-mid)', color: 'var(--s-text)' }}>
               <option value="">All Status</option>
               <option value="Enacted">Enacted</option>
               <option value="Proposed">Proposed</option>
@@ -352,7 +352,7 @@ export const RegulatoryIntelligence: React.FC = () => {
             {/* Sort */}
             <select value={sortBy} onChange={e => setSortBy(e.target.value)}
               className="px-2 py-1.5 rounded-lg text-xs bg-transparent border focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
-              style={{ borderColor: 'rgba(255,255,255,0.12)', color: 'var(--s-text)' }}>
+              style={{ borderColor: 'var(--s-border-mid)', color: 'var(--s-text)' }}>
               <option value="risk">Sort: Risk ↓</option>
               <option value="title">Sort: Title</option>
               <option value="jurisdiction">Sort: Jurisdiction</option>
@@ -373,7 +373,7 @@ export const RegulatoryIntelligence: React.FC = () => {
             ) : (
               <table className="w-full text-xs border-collapse">
                 <thead>
-                  <tr style={{ background: 'rgba(255,255,255,0.04)', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+                  <tr style={{ background: 'var(--s-modal-inner)', borderBottom: '1px solid var(--s-border)' }}>
                     {['Risk', 'Jurisdiction', 'Title', 'Tech', 'Status', 'Evidence'].map(h => (
                       <th key={h} className="px-3 py-2.5 text-left text-[10px] uppercase tracking-wider font-bold" style={{ color: 'var(--s-text-dim)' }}>{h}</th>
                     ))}
@@ -383,15 +383,15 @@ export const RegulatoryIntelligence: React.FC = () => {
                   {obligations.map((ob, i) => (
                     <tr key={ob.id}
                       onClick={() => setSelected(ob)}
-                      className="cursor-pointer transition-colors hover:bg-white/5"
-                      style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}
+                      className="cursor-pointer transition-colors hover:bg-black/5"
+                      style={{ borderBottom: '1px solid var(--s-border-light)' }}
                     >
                       <td className="px-3 py-2.5"><RagBadge rag={ob.risk.rag} score={ob.risk.score} /></td>
                       <td className="px-3 py-2.5 max-w-[120px]">
                         <span className="truncate block" style={{ color: 'var(--s-text-dim)' }} title={ob.jurisdiction}>{ob.jurisdiction}</span>
                       </td>
                       <td className="px-3 py-2.5 max-w-[220px]">
-                        <span className="font-medium text-white line-clamp-2 leading-tight" title={ob.title}>{ob.title}</span>
+                        <span className="font-medium line-clamp-2 leading-tight" style={{ color: 'var(--s-text)' }} title={ob.title}>{ob.title}</span>
                       </td>
                       <td className="px-3 py-2.5"><TechPill tech={ob.tech_category} /></td>
                       <td className="px-3 py-2.5">
@@ -420,25 +420,25 @@ export const RegulatoryIntelligence: React.FC = () => {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.02)' }}>
+            <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: '1px solid var(--s-border)', background: 'var(--s-modal-inner)' }}>
               <span className="text-[11px]" style={{ color: 'var(--s-text-dim)' }}>
                 {total} obligations · page {page}/{totalPages}
               </span>
               <div className="flex gap-2">
                 <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
                   className="px-3 py-1 rounded text-xs disabled:opacity-40 transition-opacity"
-                  style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--s-text)' }}>Prev</button>
+                  style={{ background: 'var(--s-hover-over)', color: 'var(--s-text)', border: '1px solid var(--s-border)' }}>Prev</button>
                 <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
                   className="px-3 py-1 rounded text-xs disabled:opacity-40 transition-opacity"
-                  style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--s-text)' }}>Next</button>
+                  style={{ background: 'var(--s-hover-over)', color: 'var(--s-text)', border: '1px solid var(--s-border)' }}>Next</button>
               </div>
             </div>
           )}
         </div>
 
         {/* Top Actions */}
-        <div className="rounded-xl p-5 border flex flex-col gap-3" style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.08)' }}>
-          <h3 className="text-sm font-bold text-white">Remediation Roadmap</h3>
+        <div className="rounded-xl p-5 border flex flex-col gap-3" style={{ background: 'var(--s-card)', borderColor: 'var(--s-border)' }}>
+          <h3 className="text-sm font-bold" style={{ color: 'var(--s-text)' }}>Remediation Roadmap</h3>
           <p className="text-[11px]" style={{ color: 'var(--s-text-dim)' }}>Top prioritised actions by risk and legal deadline.</p>
           <div className="space-y-2 overflow-y-auto" style={{ maxHeight: '560px' }}>
             {(summary?.top_actions ?? []).map((a, i) => <ActionCard key={i} action={a} idx={i} />)}
@@ -450,7 +450,7 @@ export const RegulatoryIntelligence: React.FC = () => {
             </summary>
             <ul className="mt-2 space-y-1.5">
               {(summary?.assumptions ?? []).map((a, i) => (
-                <li key={i} className="text-[10px] leading-relaxed p-2 rounded" style={{ background: 'rgba(255,255,255,0.03)', color: 'var(--s-text-dim)' }}>{a}</li>
+                <li key={i} className="text-[10px] leading-relaxed p-2 rounded" style={{ background: 'var(--s-hover-over)', color: 'var(--s-text-dim)' }}>{a}</li>
               ))}
             </ul>
           </details>
