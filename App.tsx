@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ViewState } from './types';
 import { VendorProvider } from './context/VendorContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { HomeDashboard } from './components/HomeDashboard';
 import { VendorDashboard } from './components/VendorDashboard';
 import { LandingPage } from './components/LandingPage';
 import { RequestAssessment } from './components/RequestAssessment';
@@ -19,6 +20,10 @@ import { PageTransition } from './components/PageTransition';
 // ── View metadata ────────────────────────────────────────────────────────────
 
 const VIEW_META: Record<ViewState, { title: string; subtitle: string }> = {
+  [ViewState.HOME]: {
+    title: 'Command Center',
+    subtitle: 'SENTRY mission control — your starting point for all modules.',
+  },
   [ViewState.DIRECTORY]: {
     title: 'Vendor Directory',
     subtitle: 'Centralized record of all assessed Emerging Technology vendors.',
@@ -65,7 +70,7 @@ const VIEW_META: Record<ViewState, { title: string; subtitle: string }> = {
 
 const App: React.FC = () => {
   const [showLanding, setShowLanding] = useState(true);
-  const [currentView, setCurrentView] = useState<ViewState>(ViewState.DIRECTORY);
+  const [currentView, setCurrentView] = useState<ViewState>(ViewState.HOME);
 
   if (showLanding) {
     return <LandingPage onEnter={() => setShowLanding(false)} />;
@@ -127,6 +132,7 @@ const App: React.FC = () => {
             {/* Page body with animated view transitions */}
             <div className="flex-1 overflow-y-auto p-8">
               <PageTransition viewKey={currentView}>
+                {currentView === ViewState.HOME              && <HomeDashboard onNavigate={setCurrentView} />}
                 {currentView === ViewState.DIRECTORY          && <VendorDashboard />}
                 {currentView === ViewState.PROJECTS           && <ProjectDashboard3D />}
                 {currentView === ViewState.REQUEST_ASSESSMENT && <RequestAssessment />}

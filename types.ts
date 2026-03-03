@@ -32,6 +32,7 @@ export interface PhaseNode {
 }
 
 export enum ViewState {
+  HOME = 'HOME',
   DIRECTORY = 'DIRECTORY',
   PROJECTS = 'PROJECTS',
   REQUEST_ASSESSMENT = 'REQUEST_ASSESSMENT',

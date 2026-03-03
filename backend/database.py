@@ -80,10 +80,22 @@ CREATE TABLE IF NOT EXISTS vendor_highlights (
 
 
 def get_connection() -> sqlite3.Connection:
-    """Return a connection with row-factory for dict-like access."""
-    conn = sqlite3.connect(str(DB_PATH))
+    """Return a connection with row-factory for dict-like access.
+
+    timeout=30  — wait up to 30 s for a write-lock to clear before raising
+                  OperationalError; the default of 5 s was too short for
+                  concurrent FastAPI thread-pool requests and caused the
+                  'database is locked' 500s that silently broke the UI.
+    check_same_thread=False — required because FastAPI dispatches each
+                  request on a different thread from its thread-pool.
+    """
+    conn = sqlite3.connect(str(DB_PATH), timeout=30, check_same_thread=False)
     conn.row_factory = sqlite3.Row
+    # WAL mode: readers don't block writers and vice versa.  Set it every
+    # connection — it's a no-op if already in WAL mode, but harmless.
     conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA busy_timeout=30000")   # belt-and-suspenders: 30 s
+    conn.execute("PRAGMA synchronous=NORMAL")   # safe + faster than FULL
     return conn
 
 

@@ -208,9 +208,9 @@ export const CompetitorAnalysis: React.FC<Props> = ({ onNavigate }) => {
   }, [vendors]);
 
   const sharedTooltipStyle = {
-    backgroundColor: 'rgba(2,8,23,0.95)',
-    borderColor: '#334155',
-    color: '#fff',
+    backgroundColor: 'var(--s-card)',
+    borderColor: 'var(--s-border-mid)',
+    color: 'var(--s-text)',
     borderRadius: '10px',
     fontSize: '12px',
   };

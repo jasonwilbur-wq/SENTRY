@@ -50,7 +50,7 @@ function FindingCard({ finding, isOpen, onToggle }: { finding: Finding; isOpen: 
   return (
     <div onClick={onToggle}
       className="rounded-xl border transition-all duration-200 cursor-pointer"
-      style={{ background: 'rgba(0,0,0,0.3)', borderColor: isOpen ? '#0053e2' : 'rgba(51,65,85,0.6)' }}>
+      style={{ background: 'var(--s-modal-inner)', borderColor: isOpen ? '#0053e2' : 'var(--s-border-mid)' }}>
       <div className="p-4">
         <div className="flex flex-wrap items-center gap-2 mb-2">
           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold"
@@ -65,14 +65,14 @@ function FindingCard({ finding, isOpen, onToggle }: { finding: Finding; isOpen: 
         <p className="text-sm font-semibold text-blue-300 leading-snug">{finding.headline}</p>
       </div>
       {isOpen && (
-        <div className="px-4 pb-4 pt-0 space-y-3 border-t border-slate-700/60">
+        <div className="px-4 pb-4 pt-0 space-y-3" style={{ borderTop: '1px solid var(--s-border)' }}>
           <div className="pt-3">
             <p className="text-[10px] font-bold text-wmt-yellow uppercase tracking-widest mb-1">Summary</p>
-            <p className="text-xs text-slate-300 leading-relaxed">{finding.summary}</p>
+            <p className="text-xs leading-relaxed" style={{ color: 'var(--s-text-muted)' }}>{finding.summary}</p>
           </div>
           <div>
             <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-1">Why It Matters</p>
-            <p className="text-xs text-slate-300 leading-relaxed">{finding.whyItMatters}</p>
+            <p className="text-xs leading-relaxed" style={{ color: 'var(--s-text-muted)' }}>{finding.whyItMatters}</p>
           </div>
           <div>
             <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">Sources</p>
@@ -90,7 +90,7 @@ function FindingCard({ finding, isOpen, onToggle }: { finding: Finding; isOpen: 
           </div>
         </div>
       )}
-      <div className="px-4 pb-2 text-[10px] text-slate-600">{isOpen ? '▲ collapse' : '▼ expand'}</div>
+      <div className="px-4 pb-2 text-[10px]" style={{ color: 'var(--s-text-dim)' }}>{isOpen ? '▲ collapse' : '▼ expand'}</div>
     </div>
   );
 }
@@ -103,8 +103,8 @@ function ExecutiveCard({ exec, isSelected, onToggle }: {
   return (
     <div onClick={onToggle} className="rounded-2xl border cursor-pointer transition-all duration-300 hover:scale-[1.01] shadow-xl overflow-hidden"
       style={{
-        background: 'linear-gradient(135deg,rgba(2,8,23,0.95),rgba(7,15,40,0.95))',
-        borderColor: isSelected ? '#0053e2' : 'rgba(51,65,85,0.6)',
+        background: 'var(--s-card)',
+        borderColor: isSelected ? '#0053e2' : 'var(--s-border-mid)',
         boxShadow: isSelected ? '0 0 30px rgba(0,83,226,0.2)' : undefined,
       }}>
       {/* Header */}
@@ -113,8 +113,8 @@ function ExecutiveCard({ exec, isSelected, onToggle }: {
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2 mb-1">
             <div>
-              <h2 className="text-lg font-black text-white leading-tight">{exec.name}</h2>
-              <p className="text-xs text-slate-400 mt-0.5">{exec.title}</p>
+              <h2 className="text-lg font-black leading-tight" style={{ color: 'var(--s-text)' }}>{exec.name}</h2>
+              <p className="text-xs mt-0.5" style={{ color: 'var(--s-text-muted)' }}>{exec.title}</p>
               <p className="text-xs font-semibold mt-0.5" style={{ color: '#60a5fa' }}>{exec.company}</p>
             </div>
             <ThreatBadge level={exec.threatLevel} />
@@ -123,21 +123,21 @@ function ExecutiveCard({ exec, isSelected, onToggle }: {
         </div>
       </div>
       {/* Stats bar */}
-      <div className="grid grid-cols-3 border-t px-5 py-3 gap-2" style={{ borderColor: 'rgba(51,65,85,0.4)', background: 'rgba(0,0,0,0.2)' }}>
+      <div className="grid grid-cols-3 border-t px-5 py-3 gap-2" style={{ borderColor: 'var(--s-border)', background: 'var(--s-modal-inner)' }}>
         <div className="text-center">
           <div className="text-xl font-black" style={{ color: '#60a5fa' }}>{exec.keyFindings.length}</div>
-          <div className="text-[9px] text-slate-500 uppercase tracking-wider">Findings</div>
+          <div className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--s-text-dim)' }}>Findings</div>
         </div>
         <div className="text-center">
           <div className="text-xl font-black" style={{ color: orangeCount > 0 ? '#fb923c' : '#64748b' }}>{orangeCount}</div>
-          <div className="text-[9px] text-slate-500 uppercase tracking-wider">High-Impact</div>
+          <div className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--s-text-dim)' }}>High-Impact</div>
         </div>
         <div className="text-center">
           <div className="text-xl font-black" style={{ color: ts.text }}>{exec.recentActivity.length}</div>
-          <div className="text-[9px] text-slate-500 uppercase tracking-wider">Activities</div>
+          <div className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--s-text-dim)' }}>Activities</div>
         </div>
       </div>
-      <div className="text-center py-2 text-[10px] text-slate-600" style={{ borderTop: '1px solid rgba(51,65,85,0.3)' }}>
+      <div className="text-center py-2 text-[10px]" style={{ borderTop: '1px solid var(--s-border)', color: 'var(--s-text-dim)' }}>
         {isSelected ? '▲ collapse' : '▼ expand full intelligence'}
       </div>
     </div>
@@ -223,9 +223,9 @@ export function CSOIntelligence() {
       {/* ── Expanded Detail Panel ─────────────────────────────────────────── */}
       {active && (
         <div className="max-w-7xl mx-auto rounded-2xl overflow-hidden shadow-2xl"
-          style={{ background: 'linear-gradient(135deg,rgba(2,8,23,0.97),rgba(7,15,40,0.97))', border: '2px solid #0053e2' }}>
+          style={{ background: 'var(--s-card)', border: '2px solid #0053e2' }}>
           <div className="p-6 sm:p-8">
-            <h2 className="text-2xl font-black mb-6 pb-4 border-b border-slate-800">
+            <h2 className="text-2xl font-black mb-6 pb-4" style={{ borderBottom: '1px solid var(--s-border)', color: 'var(--s-text)' }}>
               🔍 Intelligence Detail — {active.name}
             </h2>
 
@@ -234,8 +234,8 @@ export function CSOIntelligence() {
               <h3 className="text-lg font-bold mb-3 flex items-center gap-2">⚠️ Strategic Threats to Walmart</h3>
               <div className="space-y-2">
                 {active.strategicThreats.map((t, i) => (
-                  <div key={i} className="p-3 rounded-lg text-sm text-slate-200"
-                    style={{ background: 'rgba(234,17,0,0.06)', borderLeft: '3px solid rgba(234,17,0,0.4)' }}>{t}</div>
+                  <div key={i} className="p-3 rounded-lg text-sm"
+                    style={{ background: 'rgba(234,17,0,0.06)', borderLeft: '3px solid rgba(234,17,0,0.4)', color: 'var(--s-text-muted)' }}>{t}</div>
                 ))}
               </div>
             </section>
@@ -262,10 +262,10 @@ export function CSOIntelligence() {
                       <span className="text-xs text-slate-500">{a.date}</span>
                     </div>
                     <div className="shrink-0 w-px bg-blue-600 rounded-full" />
-                    <div className="flex-1 rounded-lg p-3" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(51,65,85,0.4)' }}>
-                      <p className="text-sm font-bold text-white mb-1">{a.title}</p>
+                    <div className="flex-1 rounded-lg p-3" style={{ background: 'var(--s-modal-inner)', border: '1px solid var(--s-border)' }}>
+                      <p className="text-sm font-bold mb-1" style={{ color: 'var(--s-text)' }}>{a.title}</p>
                       <span className="text-[10px] px-2 py-0.5 rounded" style={{ background: 'rgba(0,83,226,0.2)', color: '#60a5fa' }}>{a.type}</span>
-                      <p className="text-xs text-slate-400 mt-1.5">{a.impact}</p>
+                      <p className="text-xs mt-1.5" style={{ color: 'var(--s-text-muted)' }}>{a.impact}</p>
                     </div>
                   </div>
                 ))}
@@ -277,8 +277,8 @@ export function CSOIntelligence() {
               <h3 className="text-lg font-bold mb-3 flex items-center gap-2">🎯 Recommended Actions for Jerrad</h3>
               <div className="space-y-2">
                 {active.recommendations.map((r, i) => (
-                  <div key={i} className="p-3 rounded-lg text-sm text-slate-200"
-                    style={{ background: 'linear-gradient(90deg,rgba(0,83,226,0.08),rgba(124,58,237,0.06))', borderLeft: '3px solid #FFC220' }}>{r}</div>
+                  <div key={i} className="p-3 rounded-lg text-sm"
+                    style={{ background: 'linear-gradient(90deg,rgba(0,83,226,0.08),rgba(124,58,237,0.06))', borderLeft: '3px solid #FFC220', color: 'var(--s-text-muted)' }}>{r}</div>
                 ))}
               </div>
             </section>

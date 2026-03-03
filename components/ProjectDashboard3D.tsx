@@ -830,7 +830,7 @@ const ProjectDashboard3D: React.FC = () => {
             onClick={() => setFilterHealth('red')}
             whileHover={{ scale: 1.05 }}
             style={{
-              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(12, 18, 36, 0.88))',
+              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), var(--s-card))',
               borderColor: filterHealth === 'red' ? '#ef4444' : 'rgba(239, 68, 68, 0.3)',
               boxShadow: filterHealth === 'red' ? '0 4px 24px rgba(239, 68, 68, 0.3)' : 'none',
             }}

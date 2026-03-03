@@ -11,11 +11,11 @@ import { GlassCard3D } from './GlassCard3D';
 import { Vendor, getDownloadUrl } from '../services/api';
 
 // ── Risk palette ─────────────────────────────────────────────────────────────
-const RISK: Record<string, { glow: string; label: string; text: string; bg: string }> = {
-  Low:      { glow: '#22c55e', label: 'LOW',      text: 'text-green-400',  bg: 'bg-green-900/30 border-green-700' },
-  Medium:   { glow: '#eab308', label: 'MEDIUM',   text: 'text-yellow-400', bg: 'bg-yellow-900/30 border-yellow-700' },
-  High:     { glow: '#f97316', label: 'HIGH',     text: 'text-orange-400', bg: 'bg-orange-900/30 border-orange-700' },
-  Critical: { glow: '#ef4444', label: 'CRITICAL', text: 'text-red-400',    bg: 'bg-red-900/30 border-red-700' },
+const RISK: Record<string, { glow: string; label: string; badgeStyle: React.CSSProperties }> = {
+  Low:      { glow: '#22c55e', label: 'LOW',      badgeStyle: { background: 'rgba(34,197,94,0.15)',   color: '#22c55e', borderColor: 'rgba(34,197,94,0.5)'   } },
+  Medium:   { glow: '#eab308', label: 'MEDIUM',   badgeStyle: { background: 'rgba(234,179,8,0.15)',   color: '#eab308', borderColor: 'rgba(234,179,8,0.5)'   } },
+  High:     { glow: '#f97316', label: 'HIGH',     badgeStyle: { background: 'rgba(249,115,22,0.15)',  color: '#f97316', borderColor: 'rgba(249,115,22,0.5)'  } },
+  Critical: { glow: '#ef4444', label: 'CRITICAL', badgeStyle: { background: 'rgba(239,68,68,0.15)',   color: '#ef4444', borderColor: 'rgba(239,68,68,0.5)'   } },
 };
 
 // ── Category color map (first 12 categories from the DB) ─────────────────────
@@ -68,7 +68,7 @@ function ScoreRing({ rating, color }: { rating: number; color: string }) {
         <circle
           cx={36} cy={36} r={RING_R}
           fill="none"
-          stroke="rgba(255,255,255,0.07)"
+          stroke="var(--s-border-mid)"
           strokeWidth={5}
         />
         {/* Fill — starts at 12 o'clock */}
@@ -90,18 +90,18 @@ function ScoreRing({ rating, color }: { rating: number; color: string }) {
         <span className="text-base font-black leading-none" style={{ color }}>
           {rating.toFixed(1)}
         </span>
-        <span className="text-[9px] text-slate-500 leading-none">/5.0</span>
+        <span className="text-[9px] leading-none" style={{ color: 'var(--s-text-dim)' }}>/5.0</span>
       </div>
     </div>
   );
 }
 
 // ── Decision band label ───────────────────────────────────────────────────────
-const BAND_STYLE: Record<string, string> = {
-  'Advance':         'bg-green-900/40 text-green-300 border-green-700',
-  'Research Further':'bg-blue-900/40  text-blue-300  border-blue-700',
-  'Defer':           'bg-yellow-900/40 text-yellow-300 border-yellow-700',
-  'Reject':          'bg-red-900/40   text-red-300   border-red-700',
+const BAND_STYLE: Record<string, React.CSSProperties> = {
+  'Advance':         { background: 'rgba(34,197,94,0.15)',  color: '#22c55e', borderColor: 'rgba(34,197,94,0.5)'  },
+  'Research Further':{ background: 'rgba(0,83,226,0.15)',   color: '#60a5fa', borderColor: 'rgba(0,83,226,0.5)'   },
+  'Defer':           { background: 'rgba(234,179,8,0.15)',  color: '#eab308', borderColor: 'rgba(234,179,8,0.5)'  },
+  'Reject':          { background: 'rgba(239,68,68,0.15)',  color: '#ef4444', borderColor: 'rgba(239,68,68,0.5)'  },
 };
 
 // ── Main card ─────────────────────────────────────────────────────────────────
@@ -115,18 +115,19 @@ export const VendorCard3D: React.FC<VendorCard3DProps> = ({ vendor, onClick, dec
   const risk   = RISK[vendor.risk_level] ?? RISK.Medium;
   const color  = catColor(vendor.category);
   const hasReport = vendor.report_url && !vendor.report_url.includes('google.com/search') && vendor.report_url !== '#';
-  const bandCls   = decisionBand ? BAND_STYLE[decisionBand] : null;
+  const bandStyle = decisionBand ? BAND_STYLE[decisionBand] : null;
 
   return (
     <GlassCard3D
       glowColor={risk.glow}
       intensity={7}
-      className="group relative flex flex-col rounded-2xl overflow-hidden cursor-pointer
-                 border border-white/5 bg-gradient-to-br from-slate-800/40 to-slate-900/40 backdrop-blur-md"
+      className="group relative flex flex-col rounded-2xl overflow-hidden cursor-pointer backdrop-blur-md"
       style={{
-        backdropFilter: 'blur(14px)',
+        background: 'var(--s-card)',
+        border: '1px solid var(--s-border)',
         borderTopColor: risk.glow,
         borderTopWidth: '2px',
+        backdropFilter: 'blur(14px)',
       }}
     >
       {/* Click overlay — whole card is clickable */}
@@ -163,13 +164,14 @@ export const VendorCard3D: React.FC<VendorCard3DProps> = ({ vendor, onClick, dec
           </div>
           <div className="min-w-0">
             <h3
-              className="font-bold text-white text-sm leading-snug line-clamp-2
+              className="font-bold text-sm leading-snug line-clamp-2
                          group-hover:text-wmt-yellow transition-colors duration-200"
+              style={{ color: 'var(--s-text)' }}
               title={vendor.company_name}
             >
               {vendor.company_name}
             </h3>
-            <p className="text-[10px] text-slate-500 line-clamp-1 mt-0.5">
+            <p className="text-[10px] line-clamp-1 mt-0.5" style={{ color: 'var(--s-text-dim)' }}>
               {vendor.category}
             </p>
           </div>
@@ -184,26 +186,26 @@ export const VendorCard3D: React.FC<VendorCard3DProps> = ({ vendor, onClick, dec
       {/* ── Badges row ───────────────────────────────────────────── */}
       <div className="px-4 flex flex-wrap gap-1.5 mb-3">
         {/* Risk badge */}
-        <span className={`text-[9px] font-black tracking-widest px-2 py-0.5 rounded-full border ${risk.bg} ${risk.text}`}>
+        <span className="text-[9px] font-black tracking-widest px-2 py-0.5 rounded-full border" style={risk.badgeStyle}>
           {risk.label}
         </span>
         {/* VAR badge */}
         {vendor.has_var && (
-          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border
-                          bg-green-900/30 text-green-300 border-green-700">
+          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border"
+            style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e', borderColor: 'rgba(34,197,94,0.5)' }}>
             ✓ VAR
           </span>
         )}
         {/* Decision band */}
-        {decisionBand && bandCls && (
-          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${bandCls}`}>
+        {decisionBand && bandStyle && (
+          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border" style={bandStyle}>
             {decisionBand}
           </span>
         )}
         {/* Multi-product badge */}
         {(vendor.all_products?.length ?? 0) > 1 && (
-          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border
-                          bg-sky-900/30 text-sky-300 border-sky-700">
+          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border"
+            style={{ background: 'rgba(6,182,212,0.15)', color: '#06b6d4', borderColor: 'rgba(6,182,212,0.5)' }}>
             {vendor.all_products.length} products
           </span>
         )}
@@ -211,13 +213,13 @@ export const VendorCard3D: React.FC<VendorCard3DProps> = ({ vendor, onClick, dec
 
       {/* ── Top product ──────────────────────────────────────────── */}
       <div className="px-4 mb-3">
-        <p className="text-[9px] uppercase tracking-widest mb-0.5" style={{ color: '#334155' }}>Top Product</p>
-        <p className="text-xs text-slate-300 line-clamp-2">{vendor.technology_product}</p>
+        <p className="text-[9px] uppercase tracking-widest mb-0.5" style={{ color: 'var(--s-text-dim)' }}>Top Product</p>
+        <p className="text-xs line-clamp-2" style={{ color: 'var(--s-text-muted)' }}>{vendor.technology_product}</p>
       </div>
 
       {/* ── Score progress bar ───────────────────────────────────── */}
       <div className="px-4 mb-3">
-        <div className="h-[3px] w-full bg-slate-800 rounded-full overflow-hidden">
+        <div className="h-[3px] w-full rounded-full overflow-hidden" style={{ background: 'var(--s-border-mid)' }}>
           <div
             className="h-full rounded-full transition-all duration-1000 ease-out"
             style={{
@@ -228,9 +230,9 @@ export const VendorCard3D: React.FC<VendorCard3DProps> = ({ vendor, onClick, dec
           />
         </div>
         <div className="flex justify-between mt-1">
-          <span className="text-[9px]" style={{ color: '#1e293b' }}>0</span>
-          <span className="text-[9px]" style={{ color: '#475569' }}>assessed {vendor.last_assessed}</span>
-          <span className="text-[9px]" style={{ color: '#1e293b' }}>5.0</span>
+          <span className="text-[9px]" style={{ color: 'var(--s-text-dim)' }}>0</span>
+          <span className="text-[9px]" style={{ color: 'var(--s-text-dim)' }}>assessed {vendor.last_assessed}</span>
+          <span className="text-[9px]" style={{ color: 'var(--s-text-dim)' }}>5.0</span>
         </div>
       </div>
 
