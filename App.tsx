@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { ViewState } from './types';
 import { VendorProvider } from './context/VendorContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -16,6 +16,7 @@ import { RegulatoryIntelligence } from './components/RegulatoryIntelligence';
 import ProjectDashboard3D from './components/ProjectDashboard3D';
 import { Sidebar } from './components/Sidebar';
 import { PageTransition } from './components/PageTransition';
+import { ChatAssistant } from './components/ChatAssistant';
 
 // ── View metadata ────────────────────────────────────────────────────────────
 
@@ -71,6 +72,8 @@ const VIEW_META: Record<ViewState, { title: string; subtitle: string }> = {
 const App: React.FC = () => {
   const [showLanding, setShowLanding] = useState(true);
   const [currentView, setCurrentView] = useState<ViewState>(ViewState.HOME);
+  const [chatOpen, setChatOpen] = useState(false);
+  const toggleChat = useCallback(() => setChatOpen(o => !o), []);
 
   if (showLanding) {
     return <LandingPage onEnter={() => setShowLanding(false)} />;
@@ -147,6 +150,97 @@ const App: React.FC = () => {
             </div>
           </main>
         </div>
+
+        {/* ── Floating SENTRY-AI chat ────────────────────────────────────── */}
+
+        {/* Dim backdrop when open */}
+        {chatOpen && (
+          <div
+            className="fixed inset-0 z-40"
+            style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(2px)' }}
+            onClick={toggleChat}
+            aria-hidden="true"
+          />
+        )}
+
+        {/* Slide-up drawer anchored bottom-right */}
+        <aside
+          id="sentry-ai-chat"
+          role="dialog"
+          aria-label="SENTRY-AI Chat"
+          aria-modal={chatOpen}
+          className="fixed bottom-0 right-6 z-50"
+          style={{
+            width: 'min(420px, 96vw)',
+            height: chatOpen ? 'min(640px, 88vh)' : '0px',
+            overflow: 'hidden',
+            borderRadius: '16px 16px 0 0',
+            transition: 'height 0.3s cubic-bezier(0.4,0,0.2,1)',
+          }}
+        >
+          {chatOpen && <ChatAssistant />}
+        </aside>
+
+        {/* Floating trigger pill */}
+        <button
+          onClick={toggleChat}
+          aria-label={chatOpen ? 'Close SENTRY-AI' : 'Open SENTRY-AI'}
+          aria-expanded={chatOpen}
+          aria-controls="sentry-ai-chat"
+          style={{
+            position: 'fixed',
+            bottom: chatOpen ? 'calc(min(640px, 88vh) + 12px)' : '24px',
+            right: '24px',
+            zIndex: 51,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: chatOpen ? '10px' : '10px 18px 10px 14px',
+            borderRadius: '99px',
+            border: '1.5px solid rgba(255,255,255,0.15)',
+            background: chatOpen
+              ? 'linear-gradient(135deg,#7f1d1d,#450a0a)'
+              : 'linear-gradient(135deg,#0053e2,#002880)',
+            boxShadow: '0 8px 28px rgba(0,83,226,0.5)',
+            cursor: 'pointer',
+            transition: 'bottom 0.3s cubic-bezier(0.4,0,0.2,1), background 0.2s, padding 0.2s',
+            color: 'white',
+            fontWeight: 700,
+            fontSize: '13px',
+            letterSpacing: '0.03em',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {chatOpen ? (
+            /* X icon when open */
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M5 5l10 10M15 5L5 15" stroke="white" strokeWidth="2.2" strokeLinecap="round"/>
+            </svg>
+          ) : (
+            <>
+              {/* Chat bubble icon */}
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"
+                  stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                />
+                <circle cx="9"  cy="11" r="1" fill="white"/>
+                <circle cx="12" cy="11" r="1" fill="white"/>
+                <circle cx="15" cy="11" r="1" fill="white"/>
+              </svg>
+              <span>SENTRY-AI</span>
+              {/* Pulsing dot — indicates live */}
+              <span className="relative flex items-center justify-center ml-1">
+                <span className="w-2 h-2 rounded-full bg-green-400" />
+                <span
+                  className="absolute w-2 h-2 rounded-full bg-green-400 animate-ping-ring"
+                  style={{ opacity: 0.6 }}
+                />
+              </span>
+            </>
+          )}
+        </button>
+
       </VendorProvider>
     </ThemeProvider>
   );

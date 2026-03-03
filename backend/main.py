@@ -550,16 +550,117 @@ def _pipeline_stage(
 
 
 @app.post("/api/chat", response_model=ChatResponse)
-def chat(req: ChatRequest):
-    """Chat endpoint stub. Wire up to Element LLM Gateway for full AI."""
-    return ChatResponse(
-        response=(
-            f"Thanks for your question: *\"{req.message}\"*\n\n"
-            "SENTRY-AI is not yet configured. To enable AI chat, "
-            "get an Element LLM Gateway key from **#element-genai-support** "
-            "on Slack and set ELEMENT_API_KEY in your environment."
+async def chat(req: ChatRequest):
+    """Chat endpoint — powered by Element LLM Gateway with live SENTRY context."""
+    api_key  = os.environ.get("ELEMENT_API_KEY", "")
+    base_url = os.environ.get("ELEMENT_BASE_URL", "https://api.llm.walmart.com")
+
+    if not api_key:
+        return ChatResponse(
+            response=(
+                f'Thanks for your question: **"{req.message}"**\n\n'
+                "SENTRY-AI needs an Element LLM Gateway key to answer. "
+                "Ask **#element-genai-support** on Slack for a key, then set "
+                "`ELEMENT_API_KEY=<your-key>` in your environment and restart the backend."
+            )
         )
-    )
+
+    # ── Pull live context snapshot from the SENTRY database ────────────────
+    ctx: dict = {}
+    try:
+        _conn = get_connection()
+        ctx["total_vendors"] = _conn.execute("SELECT COUNT(*) FROM vendors").fetchone()[0]
+        ctx["total_vars"]    = _conn.execute("SELECT COUNT(*) FROM var_reports").fetchone()[0]
+
+        risk_rows  = _conn.execute(
+            "SELECT risk_level, COUNT(*) AS cnt FROM vendors "
+            "WHERE risk_level IS NOT NULL AND risk_level != '' GROUP BY risk_level"
+        ).fetchall()
+        ctx["risk_summary"] = ", ".join(f"{r['risk_level']}: {r['cnt']}" for r in risk_rows)
+
+        cat_rows = _conn.execute(
+            "SELECT category, COUNT(*) AS cnt FROM vendors "
+            "GROUP BY category ORDER BY cnt DESC LIMIT 8"
+        ).fetchall()
+        ctx["top_cats"] = ", ".join(f"{r['category']} ({r['cnt']})" for r in cat_rows)
+
+        hr_rows = _conn.execute(
+            "SELECT company_name FROM vendors "
+            "WHERE risk_level IN ('High','Critical') "
+            "ORDER BY overall_rating ASC LIMIT 8"
+        ).fetchall()
+        ctx["high_risk"] = ", ".join(r["company_name"] for r in hr_rows) or "None"
+
+        try:
+            ctx["competitor_events"] = _conn.execute(
+                "SELECT COUNT(*) FROM competitor_events"
+            ).fetchone()[0]
+        except Exception:
+            ctx["competitor_events"] = "N/A"
+
+        _conn.close()
+    except Exception:
+        ctx = {
+            "total_vendors": "N/A", "total_vars": "N/A",
+            "risk_summary": "N/A", "top_cats": "N/A",
+            "high_risk": "N/A", "competitor_events": "N/A",
+        }
+
+    system_prompt = f"""You are SENTRY-AI, the embedded intelligence assistant for \nWalmart\'s Enterprise Security Emerging Technology (EST) team. \nYou are knowledgeable, direct, and security-minded.
+
+## Live SENTRY Data Snapshot
+- Vendors tracked: {ctx['total_vendors']}
+- VAR reports completed: {ctx['total_vars']}
+- Risk distribution: {ctx['risk_summary']}
+- Top technology categories: {ctx['top_cats']}
+- High/Critical risk vendors: {ctx['high_risk']}
+- Competitor events indexed: {ctx['competitor_events']}
+
+## Your Role
+- Answer questions about vendor security assessments, VAR reports, and risk ratings
+- Explain SENTRY\'s four-phase GCP architecture
+- Help interpret regulatory obligations (RAG: Red=19-25, Amber=13-18, Yellow=7-12, Green=1-6)
+- Discuss competitor intelligence trends (ORC/Theft, Cyber, Legal, Recall, Strategic)
+- Clarify VAR decision bands: Advance (>4.0), Research Further (3.0-4.0), Defer (2.0-2.9), Reject (<2.0)
+- Support the EST team at Walmart — owner is Jason Wilbur, CSO is Jerrad Crabtree
+
+Be concise and professional. Use markdown **bold** and bullet lists where helpful."""
+
+    messages: list[dict] = [{"role": "system", "content": system_prompt}]
+    for m in req.history:
+        messages.append({
+            "role": "user" if m.role == "user" else "assistant",
+            "content": m.text,
+        })
+    messages.append({"role": "user", "content": req.message})
+
+    try:
+        async with httpx.AsyncClient(timeout=45.0) as client:
+            resp = await client.post(
+                f"{base_url}/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": "gpt-4o-mini",
+                    "messages": messages,
+                    "temperature": 0.4,
+                    "max_tokens": 1000,
+                },
+            )
+            resp.raise_for_status()
+            content = resp.json()["choices"][0]["message"]["content"]
+            return ChatResponse(response=content)
+    except Exception as exc:
+        return ChatResponse(
+            response=(
+                f"⚠️ **SENTRY-AI error:** {exc}\n\n"
+                "Please verify `ELEMENT_API_KEY` is valid and the backend can "
+                "reach the Element LLM Gateway (`https://api.llm.walmart.com`). "
+                "You must be on Walmart VPN or Eagle WiFi."
+            )
+        )
 
 
 # ── Forms (local stubs — generate ref IDs) ──────────────────────────
