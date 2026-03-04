@@ -123,45 +123,57 @@ function placeVendors(vendors: Vendor[]): PlacedVendor[] {
 // ── Orb ──────────────────────────────────────────────────────────────────────
 
 interface OrbProps {
-  vendor: PlacedVendor;
-  onHover: (v: PlacedVendor | null) => void;
-  onClick: (v: PlacedVendor) => void;
+  vendor:       PlacedVendor;
+  isSelected:   boolean;
+  onHover:      (v: PlacedVendor | null) => void;
+  onSelect:     (v: PlacedVendor) => void;
   reducedMotion: boolean;
 }
 
-const Orb: React.FC<OrbProps> = ({ vendor, onHover, onClick, reducedMotion }) => {
-  const groupRef = useRef<THREE.Group>(null);
-  const coreRef  = useRef<THREE.Mesh>(null);
-  const haloRef  = useRef<THREE.Mesh>(null);
+const Orb: React.FC<OrbProps> = ({ vendor, isSelected, onHover, onSelect, reducedMotion }) => {
+  const groupRef   = useRef<THREE.Group>(null);
+  const coreRef    = useRef<THREE.Mesh>(null);
+  const haloRef    = useRef<THREE.Mesh>(null);
+  const ringRef    = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
+
+  // Track pointer-down position so we can distinguish a click from a drag.
+  // OrbitControls can suppress `onClick` even with 1-2 px of movement.
+  const pointerDown = useRef<{ x: number; y: number } | null>(null);
 
   useFrame((_, delta) => {
     if (!groupRef.current) return;
 
-    // Gentle float — each orb has a unique phase from its X position
+    // Gentle vertical float — phase offset by X position for variety
     if (!reducedMotion) {
       const t = performance.now() * 0.0008;
       groupRef.current.position.y =
         vendor.position[1] + Math.sin(t + vendor.position[0] * 1.3) * 0.12;
     }
 
-    // Smooth scale transition on hover
-    const targetS = hovered ? vendor.scale * 1.9 : vendor.scale;
-    groupRef.current.scale.lerp(
-      new THREE.Vector3(targetS, targetS, targetS),
-      delta * 10,
-    );
+    // Scale: selected > hovered > normal
+    const targetS = isSelected ? vendor.scale * 2.2 : hovered ? vendor.scale * 1.75 : vendor.scale;
+    groupRef.current.scale.lerp(new THREE.Vector3(targetS, targetS, targetS), delta * 10);
 
-    // Pulse halo opacity on hover
+    // Halo opacity
     if (haloRef.current) {
       const mat = haloRef.current.material as THREE.MeshBasicMaterial;
-      mat.opacity += ((hovered ? 0.38 : 0.14) - mat.opacity) * delta * 8;
+      const targetO = isSelected ? 0.55 : hovered ? 0.38 : 0.13;
+      mat.opacity += (targetO - mat.opacity) * delta * 8;
     }
 
-    // Emissive boost on hover
+    // Core emissive
     if (coreRef.current) {
       const mat = coreRef.current.material as THREE.MeshStandardMaterial;
-      mat.emissiveIntensity += ((hovered ? 4.0 : 2.2) - mat.emissiveIntensity) * delta * 8;
+      const targetE = isSelected ? 5.0 : hovered ? 3.8 : 2.0;
+      mat.emissiveIntensity += (targetE - mat.emissiveIntensity) * delta * 8;
+    }
+
+    // Selection ring: spin + fade in
+    if (ringRef.current) {
+      ringRef.current.rotation.z += delta * (isSelected ? 1.2 : 0.3);
+      const mat = ringRef.current.material as THREE.MeshBasicMaterial;
+      mat.opacity += ((isSelected ? 0.9 : 0) - mat.opacity) * delta * 10;
     }
   });
 
@@ -172,56 +184,81 @@ const Orb: React.FC<OrbProps> = ({ vendor, onHover, onClick, reducedMotion }) =>
       ref={groupRef}
       position={vendor.position}
       scale={vendor.scale}
-      onPointerOver={e => { e.stopPropagation(); setHovered(true);  onHover(vendor); document.body.style.cursor = 'pointer'; }}
-      onPointerOut={e  => { e.stopPropagation(); setHovered(false); onHover(null);   document.body.style.cursor = 'auto'; }}
-      onClick={e        => { e.stopPropagation(); onClick(vendor); }}
+      onPointerOver={e => {
+        e.stopPropagation();
+        setHovered(true);
+        onHover(vendor);
+        document.body.style.cursor = 'pointer';
+      }}
+      onPointerOut={e => {
+        e.stopPropagation();
+        setHovered(false);
+        onHover(null);
+        document.body.style.cursor = 'auto';
+      }}
+      onPointerDown={e => {
+        e.stopPropagation();
+        pointerDown.current = { x: e.clientX, y: e.clientY };
+      }}
+      onPointerUp={e => {
+        e.stopPropagation();
+        if (!pointerDown.current) return;
+        const dx = e.clientX - pointerDown.current.x;
+        const dy = e.clientY - pointerDown.current.y;
+        // Only fire if pointer moved < 6 px (true click, not a drag)
+        if (Math.sqrt(dx * dx + dy * dy) < 6) onSelect(vendor);
+        pointerDown.current = null;
+      }}
     >
-      {/* Core orb — emissive glow material */}
+      {/* Core orb */}
       <mesh ref={coreRef}>
         <sphereGeometry args={[1, 22, 22]} />
         <meshStandardMaterial
           color={hex}
           emissive={hex}
-          emissiveIntensity={2.2}
+          emissiveIntensity={2.0}
           roughness={0.15}
           metalness={0.6}
         />
       </mesh>
 
-      {/* Outer halo — soft translucent bloom ring */}
+      {/* Soft halo bloom */}
       <mesh ref={haloRef}>
-        <sphereGeometry args={[1.7, 16, 16]} />
-        <meshBasicMaterial
-          color={hex}
-          transparent
-          opacity={0.14}
-          depthWrite={false}
-        />
+        <sphereGeometry args={[1.7, 14, 14]} />
+        <meshBasicMaterial color={hex} transparent opacity={0.13} depthWrite={false} />
+      </mesh>
+
+      {/* Selection ring — spins and appears when selected */}
+      <mesh ref={ringRef} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[1.9, 0.06, 8, 48]} />
+        <meshBasicMaterial color={hex} transparent opacity={0} depthWrite={false} />
       </mesh>
     </group>
   );
 };
 
-// ── Ring label (floating text at each risk tier) ──────────────────────────────
-
+// ── Ring label — always faces camera, never occluded by rotation ──────────────
 const RingLabel: React.FC<{ label: string; y: number; color: string }> = ({ label, y, color }) => (
-  // X=12 keeps label outside the widest ring (max radius ~9.5 + 1.8 jitter)
-  <Html position={[12.5, y, 0]} center>
+  // prepend=false keeps it in the canvas DOM order (above Three canvas)
+  // transform=false means it uses CSS 2-D positioning — no 3-D rotation weirdness
+  <Html position={[0, y, 0]} center prepend={false} transform={false} zIndexRange={[10, 20]}>
     <div
       style={{
-        background: 'rgba(4,8,22,0.88)',
-        border: `1px solid ${color}55`,
+        background: 'rgba(4,8,22,0.92)',
+        border: `1px solid ${color}66`,
         borderLeft: `3px solid ${color}`,
         color,
-        padding: '4px 12px',
-        borderRadius: 6,
-        fontSize: 11,
+        padding: '3px 10px',
+        borderRadius: 5,
+        fontSize: 10,
         fontWeight: 800,
-        letterSpacing: '0.12em',
+        letterSpacing: '0.14em',
         textTransform: 'uppercase',
         whiteSpace: 'nowrap',
         pointerEvents: 'none',
-        textShadow: `0 0 8px ${color}88`,
+        textShadow: `0 0 6px ${color}`,
+        // translate right so it sits outside the ring (rings are 3.5–9.5 r)
+        transform: 'translateX(calc(50% + 160px))',
       }}
     >
       {label}
@@ -243,11 +280,12 @@ const OrbitRing: React.FC<{ y: number; radius: number; color: string }> = ({ y, 
 };
 
 const Scene: React.FC<{
-  vendors: PlacedVendor[];
-  onHover: (v: PlacedVendor | null) => void;
-  onSelect: (v: PlacedVendor) => void;
+  vendors:      PlacedVendor[];
+  selectedId:   string | null;
+  onHover:      (v: PlacedVendor | null) => void;
+  onSelect:     (v: PlacedVendor) => void;
   reducedMotion: boolean;
-}> = ({ vendors, onHover, onSelect, reducedMotion }) => {
+}> = ({ vendors, selectedId, onHover, onSelect, reducedMotion }) => {
   const { camera } = useThree();
 
   // Camera is initialised via the Canvas `camera` prop — no useEffect needed.
@@ -309,8 +347,9 @@ const Scene: React.FC<{
           <Orb
             key={v.id}
             vendor={v}
+            isSelected={v.id === selectedId}
             onHover={onHover}
-            onClick={onSelect}
+            onSelect={onSelect}
             reducedMotion={reducedMotion}
           />
         ))}
@@ -327,47 +366,116 @@ const Scene: React.FC<{
   );
 };
 
-// ── Tooltip / Info card ───────────────────────────────────────────────────────
+// ── Vendor detail panel ───────────────────────────────────────────────────────
+// Rendered as a DOM overlay (not inside Three.js) so it always reads clearly.
 
-const VendorCard: React.FC<{ vendor: PlacedVendor; onClose: () => void }> = ({ vendor, onClose }) => (
-  <div
-    className="rounded-xl overflow-hidden"
-    style={{
-      width: 240,
-      background: 'rgba(4,8,22,0.96)',
-      border: `1px solid ${vendor.color}55`,
-      boxShadow: `0 0 30px ${vendor.color}22`,
-      animation: 'slideUp 0.2s ease-out both',
-    }}
-    role="dialog"
-    aria-label={`Vendor details: ${vendor.company_name}`}
-  >
-    <div className="px-4 py-3" style={{ borderBottom: `1px solid ${vendor.color}33` }}>
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-sm font-bold text-white leading-tight">{vendor.company_name}</p>
-        <button
-          onClick={onClose}
-          aria-label="Close vendor detail"
-          className="shrink-0 mt-0.5 w-5 h-5 flex items-center justify-center rounded opacity-50 hover:opacity-100"
-          style={{ color: 'var(--s-text-muted)' }}
-        >✕</button>
-      </div>
-      <p className="text-[10px] mt-0.5" style={{ color: 'var(--s-text-dim)' }}>{vendor.category}</p>
-    </div>
-    <div className="px-4 py-3 space-y-2">
-      {[
-        { label: 'Risk Level',  value: vendor.risk_level,                       color: vendor.color },
-        { label: 'Rating',      value: `${(vendor.overall_rating ?? 0).toFixed(1)} / 5`, color: '#FFC220' },
-        { label: 'Status',      value: vendor.vendor_status,                    color: '#94a3b8' },
-      ].map(({ label, value, color }) => (
-        <div key={label} className="flex items-center justify-between">
-          <span className="text-[10px]" style={{ color: 'var(--s-text-dim)' }}>{label}</span>
-          <span className="text-[11px] font-bold" style={{ color }}>{value}</span>
+const RATING_STARS = (r: number) => {
+  const filled = Math.round(r);
+  return Array.from({ length: 5 }, (_, i) => (
+    <span key={i} style={{ color: i < filled ? '#FFC220' : '#334155', fontSize: 13 }}>★</span>
+  ));
+};
+
+const STATUS_COLOR: Record<string, string> = {
+  Active:   '#22c55e',
+  Inactive: '#ef4444',
+  Pending:  '#FFC220',
+  Review:   '#f97316',
+};
+
+const VendorCard: React.FC<{ vendor: PlacedVendor; onClose: () => void }> = ({ vendor, onClose }) => {
+  const statusColor = STATUS_COLOR[vendor.vendor_status] ?? '#94a3b8';
+  const rating      = vendor.overall_rating ?? 0;
+
+  return (
+    <div
+      role="dialog"
+      aria-label={`Vendor details: ${vendor.company_name}`}
+      style={{
+        width: 280,
+        background: 'rgba(4,8,22,0.97)',
+        border: `1px solid ${vendor.color}55`,
+        borderTop: `3px solid ${vendor.color}`,
+        borderRadius: 12,
+        overflow: 'hidden',
+        boxShadow: `0 8px 40px rgba(0,0,0,0.7), 0 0 24px ${vendor.color}22`,
+        animation: 'slideUp 0.22s cubic-bezier(0.16,1,0.3,1) both',
+      }}
+    >
+      {/* Header */}
+      <div style={{ padding: '12px 14px 10px', borderBottom: `1px solid ${vendor.color}22` }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+          <div style={{ minWidth: 0 }}>
+            <p style={{ margin: 0, fontSize: 13, fontWeight: 800, color: '#f1f5f9', lineHeight: 1.3,
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                        maxWidth: 200 }}>
+              {vendor.company_name}
+            </p>
+            <p style={{ margin: '3px 0 0', fontSize: 10, color: '#94a3b8', letterSpacing: '0.04em' }}>
+              {vendor.category}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            style={{
+              flexShrink: 0, width: 22, height: 22, borderRadius: 6,
+              border: '1px solid rgba(255,255,255,0.12)',
+              background: 'rgba(255,255,255,0.06)',
+              color: '#94a3b8', cursor: 'pointer', fontSize: 12,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              lineHeight: 1,
+            }}
+          >✕</button>
         </div>
-      ))}
+      </div>
+
+      {/* Stats */}
+      <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+
+        {/* Risk badge */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 10, color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Risk Level</span>
+          <span style={{
+            fontSize: 11, fontWeight: 800, color: vendor.color,
+            background: `${vendor.color}18`, border: `1px solid ${vendor.color}44`,
+            padding: '2px 8px', borderRadius: 99, letterSpacing: '0.06em',
+          }}>
+            {vendor.risk_level}
+          </span>
+        </div>
+
+        {/* Rating stars */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 10, color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Rating</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+            <span style={{ fontSize: 12, color: '#FFC220', fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>
+              {rating.toFixed(1)}
+            </span>
+            <span style={{ display: 'flex' }}>{RATING_STARS(rating)}</span>
+          </div>
+        </div>
+
+        {/* Status */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{ fontSize: 10, color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Status</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: statusColor, display: 'inline-block' }} />
+            <span style={{ fontSize: 11, fontWeight: 700, color: statusColor }}>{vendor.vendor_status || '—'}</span>
+          </span>
+        </div>
+
+        {/* Divider */}
+        <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '2px 0' }} />
+
+        {/* Press ESC or click elsewhere hint */}
+        <p style={{ margin: 0, fontSize: 9, color: '#475569', textAlign: 'center', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          Click the orb again or ✕ to dismiss
+        </p>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // ── Main page component ───────────────────────────────────────────────────────
 
@@ -537,9 +645,11 @@ const VendorRiskMap3D: React.FC = () => {
             dpr={[1, Math.min(window.devicePixelRatio, 2)]}
             gl={{ antialias: true, alpha: true }}
             style={{ width: '100%', height: '100%' }}
+            onPointerMissed={() => handleClose()}
           >
             <Scene
               vendors={visibleVendors}
+              selectedId={selected?.id ?? null}
               onHover={setHovered}
               onSelect={handleSelect}
               reducedMotion={reducedMotion}
@@ -547,37 +657,54 @@ const VendorRiskMap3D: React.FC = () => {
           </Canvas>
         )}
 
-        {/* Hover tooltip — top-left */}
+        {/* Hover name tag — follows the mouse into top-left corner */}
         {hovered && !selected && (
           <div
-            className="absolute top-3 left-3 px-3 py-2 rounded-lg pointer-events-none"
-            style={{
-              background: 'rgba(4,8,22,0.9)',
-              border: `1px solid ${hovered.color}44`,
-              maxWidth: 200,
-            }}
+            className="absolute top-3 left-3 pointer-events-none"
             aria-live="polite"
+            style={{
+              background: 'rgba(4,8,22,0.94)',
+              border: `1px solid ${hovered.color}55`,
+              borderLeft: `3px solid ${hovered.color}`,
+              borderRadius: 6,
+              padding: '6px 12px',
+              maxWidth: 220,
+            }}
           >
-            <p className="text-xs font-bold text-white truncate">{hovered.company_name}</p>
-            <p className="text-[10px] mt-0.5" style={{ color: hovered.color }}>{hovered.risk_level} Risk · {hovered.overall_rating.toFixed(1)}/5</p>
+            <p style={{ margin: 0, fontSize: 12, fontWeight: 800, color: '#f1f5f9',
+                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {hovered.company_name}
+            </p>
+            <p style={{ margin: '2px 0 0', fontSize: 10, color: hovered.color, fontWeight: 600 }}>
+              {hovered.risk_level} Risk &nbsp;·&nbsp;
+              <span style={{ color: '#FFC220' }}>{(hovered.overall_rating ?? 0).toFixed(1)} ★</span>
+            </p>
           </div>
         )}
 
-        {/* Selected info card — bottom-right */}
+        {/* Selected vendor panel — bottom-right, always on top of canvas */}
         {selected && (
-          <div className="absolute bottom-4 right-4">
+          <div
+            className="absolute bottom-4 right-4"
+            style={{ zIndex: 10 }}
+          >
             <VendorCard vendor={selected} onClose={handleClose} />
           </div>
         )}
 
-        {/* Interaction hint */}
+        {/* Interaction hint — bottom-left, hidden once something is selected */}
         {!loading && !error && !selected && (
           <div
-            className="absolute bottom-3 left-3 text-[9px] uppercase tracking-widest"
-            style={{ color: 'rgba(255,255,255,0.2)', pointerEvents: 'none' }}
+            className="absolute bottom-3 left-3 pointer-events-none"
             aria-hidden="true"
+            style={{
+              fontSize: 9,
+              textTransform: 'uppercase',
+              letterSpacing: '0.12em',
+              color: 'rgba(255,255,255,0.22)',
+            }}
           >
-            Drag to orbit · Scroll to zoom · Click orb for details
+            Drag to orbit · Scroll to zoom · Click an orb for details
           </div>
         )}
       </div>
