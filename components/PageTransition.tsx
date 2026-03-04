@@ -57,6 +57,9 @@ export const PageTransition: React.FC<PageTransitionProps> = ({ viewKey, childre
   }, [children, phase, viewKey, displayKey]);
 
   const styles: React.CSSProperties = {
+    // height: 100% is critical — without it, children that use h-full (like the
+    // 3D Risk Map canvas) have nothing to inherit from and collapse to zero.
+    height: '100%',
     transition: 'opacity 0.16s ease, transform 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
     opacity:
       phase === 'exiting'  ? 0 :

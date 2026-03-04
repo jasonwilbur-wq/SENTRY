@@ -250,9 +250,9 @@ const Scene: React.FC<{
 }> = ({ vendors, onHover, onSelect, reducedMotion }) => {
   const { camera } = useThree();
 
+  // Camera is initialised via the Canvas `camera` prop — no useEffect needed.
+  // We still call lookAt so OrbitControls has the right initial target reference.
   useEffect(() => {
-    // Y midpoint is 6 (midway between 0 and 12), pull back further to show wide rings
-    camera.position.set(18, 8, 22);
     camera.lookAt(0, 6, 0);
   }, [camera]);
 
@@ -442,7 +442,7 @@ const VendorRiskMap3D: React.FC = () => {
   }, [placed]);
 
   return (
-    <div className="flex flex-col gap-4 h-full" style={{ minHeight: 600 }}>
+    <div className="flex flex-col gap-4" style={{ height: '100%', minHeight: 600 }}>
 
       {/* Header strip */}
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -499,11 +499,11 @@ const VendorRiskMap3D: React.FC = () => {
         ))}
       </div>
 
-      {/* 3D Canvas */}
+      {/* 3D Canvas — flex-1 + min-h-0 lets it consume remaining space without overflowing */}
       <div
-        className="relative flex-1 rounded-2xl overflow-hidden"
+        className="relative flex-1 min-h-0 rounded-2xl overflow-hidden"
         style={{
-          minHeight: 520,
+          minHeight: 460,
           background: 'radial-gradient(ellipse at 50% 50%, #000d2e 0%, #000408 100%)',
           border: '1px solid var(--s-border-mid)',
           boxShadow: 'inset 0 0 60px rgba(0,83,226,0.08)',
@@ -533,6 +533,7 @@ const VendorRiskMap3D: React.FC = () => {
           <Canvas
             aria-label={`3D galaxy showing ${placed.length} vendors distributed by risk level. Use mouse to orbit and zoom. Click a sphere to see vendor details.`}
             role="img"
+            camera={{ position: [20, 9, 18], fov: 55, near: 0.1, far: 500 }}
             dpr={[1, Math.min(window.devicePixelRatio, 2)]}
             gl={{ antialias: true, alpha: true }}
             style={{ width: '100%', height: '100%' }}
