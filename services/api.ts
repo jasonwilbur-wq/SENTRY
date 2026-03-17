@@ -228,6 +228,53 @@ export async function sendChat(
   });
 }
 
+// ── Incident Intelligence ───────────────────────────────────────────────
+
+import type {
+  IncidentStats, IncidentListResponse, IncidentFilters, MorningBrief
+} from '../types';
+
+export async function fetchIncidentStats(): Promise<IncidentStats> {
+  return request('/api/incidents/stats');
+}
+
+export interface IncidentQuery {
+  severity?: string;
+  type?: string;
+  region?: string;
+  q?: string;
+  date_from?: string;
+  date_to?: string;
+  sort?: 'date' | 'severity' | 'type';
+  page?: number;
+  page_size?: number;
+}
+
+export async function fetchIncidents(query: IncidentQuery = {}): Promise<IncidentListResponse> {
+  const params = new URLSearchParams();
+  if (query.severity)  params.set('severity', query.severity);
+  if (query.type)      params.set('type', query.type);
+  if (query.region)    params.set('region', query.region);
+  if (query.q)         params.set('q', query.q);
+  if (query.date_from) params.set('date_from', query.date_from);
+  if (query.date_to)   params.set('date_to', query.date_to);
+  if (query.sort)      params.set('sort', query.sort);
+  if (query.page)      params.set('page', String(query.page));
+  if (query.page_size) params.set('page_size', String(query.page_size));
+  const qs = params.toString();
+  return request(`/api/incidents${qs ? '?' + qs : ''}`);
+}
+
+export async function fetchIncidentFilters(): Promise<IncidentFilters> {
+  return request('/api/incidents/filters');
+}
+
+// ── Morning Brief ───────────────────────────────────────────────────────
+
+export async function fetchMorningBrief(): Promise<MorningBrief> {
+  return request('/api/morning-brief');
+}
+
 // ── Forms ────────────────────────────────────────────────────────────────────
 
 export async function submitAssessment(

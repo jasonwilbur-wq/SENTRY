@@ -21,6 +21,7 @@ const AdminPanel             = lazy(() => import('./components/AdminPanel').then
 const CompetitorIntelligence = lazy(() => import('./components/CompetitorIntelligence').then(m => ({ default: m.CompetitorIntelligence })));
 const CSOIntelligence        = lazy(() => import('./components/CSOIntelligence').then(m => ({ default: m.CSOIntelligence })));
 const RegulatoryIntelligence = lazy(() => import('./components/RegulatoryIntelligence').then(m => ({ default: m.RegulatoryIntelligence })));
+const IncidentIntelligence   = lazy(() => import('./components/IncidentIntelligence').then(m => ({ default: m.IncidentIntelligence })));
 const VendorRiskMap3D        = lazy(() => import('./components/VendorRiskMap3D'));
 
 // ── View metadata (title + subtitle for each route) ─────────────────────────
@@ -34,6 +35,7 @@ const VIEW_META: Record<ViewState, { title: string; subtitle: string }> = {
   [ViewState.COMPETITOR_INTEL]:  { title: 'Competitor Intelligence', subtitle: '1,113 analyst-enriched competitor events across retail.' },
   [ViewState.CSO_INTELLIGENCE]:  { title: 'CSO Intelligence',        subtitle: 'Executive security leadership — Amazon, Target, Costco competitive positioning.' },
   [ViewState.REGULATORY_INTEL]:  { title: 'Regulatory Intelligence', subtitle: '362 obligations across AI, Biometrics, ALPR, UAS & Data Privacy.' },
+  [ViewState.INCIDENT_INTEL]:    { title: 'Incident Intelligence',   subtitle: 'Retail security incidents — ORC, cargo theft, cyber, violence & more.' },
   [ViewState.ARCHITECTURE]:      { title: 'SENTRY Architecture',     subtitle: 'GCP four-phase framework hierarchy.' },
   [ViewState.ADMIN]:             { title: 'VAR Administration',      subtitle: 'Manage VAR reports, extract scores, and fix vendor linkage.' },
   [ViewState.RISK_MAP]:          { title: 'Vendor Risk Galaxy',      subtitle: 'All vendors plotted in 3D space by risk level and category.' },
@@ -142,6 +144,7 @@ const AppShell: React.FC<{
                 {currentView === ViewState.COMPETITOR_INTEL    && <CompetitorIntelligence />}
                 {currentView === ViewState.CSO_INTELLIGENCE    && <CSOIntelligence />}
                 {currentView === ViewState.REGULATORY_INTEL    && <RegulatoryIntelligence />}
+                {currentView === ViewState.INCIDENT_INTEL      && <IncidentIntelligence />}
                 {currentView === ViewState.REQUEST_LAB_VISIT   && <RequestLabVisit />}
                 {currentView === ViewState.ARCHITECTURE        && <ArchitectureGraph />}
                 {currentView === ViewState.ADMIN               && <AdminPanel />}

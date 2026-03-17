@@ -74,12 +74,14 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization"],
 )
 
-# ── Admin router (Phase 3) ────────────────────────────────────────────
+# ── Admin router (Phase 3) ────────────────────────────────────
 app.include_router(admin_router)
 from admin_routes import competitor_router
 app.include_router(competitor_router)
 from regulatory_routes import ROUTER as regulatory_router
 app.include_router(regulatory_router)
+from incident_routes import ROUTER as incident_router
+app.include_router(incident_router)
 
 
 # ── Vendors ────────────────────────────────────────────────────────────
@@ -599,6 +601,32 @@ async def chat(req: ChatRequest):
         except Exception:
             ctx["competitor_events"] = "N/A"
 
+        # Incident data for richer AI context
+        try:
+            ctx["total_incidents"] = _conn.execute(
+                "SELECT COUNT(*) FROM incidents"
+            ).fetchone()[0]
+            inc_rows = _conn.execute(
+                "SELECT incident_type, COUNT(*) AS cnt FROM incidents "
+                "GROUP BY incident_type ORDER BY cnt DESC LIMIT 5"
+            ).fetchall()
+            ctx["top_incident_types"] = ", ".join(
+                f"{r['incident_type']} ({r['cnt']})" for r in inc_rows
+            ) or "N/A"
+            crit_rows = _conn.execute(
+                "SELECT incident_date, incident_type, location, summary "
+                "FROM incidents WHERE severity='Critical' "
+                "ORDER BY incident_date DESC LIMIT 3"
+            ).fetchall()
+            ctx["critical_incidents"] = "; ".join(
+                f"{r['incident_date']} — {r['incident_type']} ({r['location']})"
+                for r in crit_rows
+            ) or "None"
+        except Exception:
+            ctx["total_incidents"]     = "N/A"
+            ctx["top_incident_types"]  = "N/A"
+            ctx["critical_incidents"]  = "N/A"
+
         _conn.close()
     except Exception:
         ctx = {
@@ -616,14 +644,19 @@ async def chat(req: ChatRequest):
 - Top technology categories: {ctx['top_cats']}
 - High/Critical risk vendors: {ctx['high_risk']}
 - Competitor events indexed: {ctx['competitor_events']}
+- Retail incidents tracked: {ctx.get('total_incidents', 'N/A')}
+- Top incident types: {ctx.get('top_incident_types', 'N/A')}
+- Recent critical incidents: {ctx.get('critical_incidents', 'N/A')}
 
 ## Your Role
 - Answer questions about vendor security assessments, VAR reports, and risk ratings
 - Explain SENTRY\'s four-phase GCP architecture
 - Help interpret regulatory obligations (RAG: Red=19-25, Amber=13-18, Yellow=7-12, Green=1-6)
 - Discuss competitor intelligence trends (ORC/Theft, Cyber, Legal, Recall, Strategic)
+- Analyze retail incident patterns, severity, and regional distribution
 - Clarify VAR decision bands: Advance (>4.0), Research Further (3.0-4.0), Defer (2.0-2.9), Reject (<2.0)
 - Support the EST team at Walmart — owner is Jason Wilbur, CSO is Jerrad Crabtree
+- Know that incident severity levels are: Critical (cyber/violence), High (cargo theft/robbery), Medium (ORC/fraud), Low (arrests/policy)
 
 Be concise and professional. Use markdown **bold** and bullet lists where helpful."""
 
@@ -678,6 +711,95 @@ def submit_lab_visit(data: dict):
     """Accept a lab visit request."""
     ref = f"SENTRY-LAB-{uuid.uuid4().hex[:8].upper()}"
     return FormResponse(success=True, ref_id=ref, message="Lab visit requested.")
+
+
+# ── Morning Brief ─────────────────────────────────────────────────────────
+
+@app.get("/api/morning-brief")
+def morning_brief() -> dict:
+    """Aggregate live snapshot for the Home Dashboard morning brief card."""
+    conn = get_connection()
+
+    # Incident highlights
+    try:
+        recent_incidents = [
+            dict(zip(r.keys(), tuple(r)))
+            for r in conn.execute(
+                "SELECT id, incident_date, incident_type, severity, location, summary "
+                "FROM incidents WHERE incident_date != '' "
+                "ORDER BY incident_date DESC LIMIT 5"
+            )
+        ]
+        total_incidents = conn.execute("SELECT COUNT(*) FROM incidents").fetchone()[0]
+        critical_count  = conn.execute(
+            "SELECT COUNT(*) FROM incidents WHERE severity='Critical'"
+        ).fetchone()[0]
+    except Exception:
+        recent_incidents = []
+        total_incidents  = 0
+        critical_count   = 0
+
+    # Vendors without recent assessment (>180 days)
+    try:
+        stale_vendors = [
+            dict(zip(r.keys(), tuple(r)))
+            for r in conn.execute(
+                """
+                SELECT company_name, category, last_assessed, overall_rating
+                FROM   vendors
+                WHERE  last_assessed != ''
+                  AND  last_assessed < date('now', '-180 days')
+                  AND  has_var = 1
+                ORDER  BY last_assessed ASC
+                LIMIT  5
+                """
+            )
+        ]
+    except Exception:
+        stale_vendors = []
+
+    # Competitor events count last 30 days (approximate: newest 30 records)
+    try:
+        comp_recent = conn.execute(
+            "SELECT COUNT(*) FROM competitor_events"
+        ).fetchone()[0]
+    except Exception:
+        comp_recent = 0
+
+    # Regulatory — Red count
+    reg_red   = 0
+    reg_amber = 0
+    try:
+        import json
+        from pathlib import Path as _P
+        reg_path = _P(__file__).parent / "data" / "json_reports" / "regulatory-briefing.json"
+        if reg_path.exists():
+            reg_data  = json.loads(reg_path.read_text(encoding="utf-8"))
+            stats     = reg_data.get("stats", {})
+            reg_red   = stats.get("red", 0)
+            reg_amber = stats.get("amber", 0)
+    except Exception:
+        pass
+
+    conn.close()
+    return {
+        "generated_at":    __import__("datetime").datetime.utcnow().isoformat(),
+        "incidents": {
+            "total":    total_incidents,
+            "critical": critical_count,
+            "recent":   recent_incidents,
+        },
+        "regulatory": {
+            "red":   reg_red,
+            "amber": reg_amber,
+        },
+        "competitors": {
+            "total_events": comp_recent,
+        },
+        "vendors": {
+            "stale_assessments": stale_vendors,
+        },
+    }
 
 
 # ── Competitor Intelligence API ─────────────────────────────────────────────

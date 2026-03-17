@@ -7,6 +7,7 @@
 import React, { useEffect, useState } from 'react';
 import { ViewState } from '../types';
 import { fetchStats, fetchCompetitorStats, DirectoryStats, CompetitorStats } from '../services/api';
+import { MorningBriefCard } from './MorningBriefCard';
 
 interface HomeDashboardProps {
   onNavigate: (view: ViewState) => void;
@@ -230,6 +231,15 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({ onNavigate }) => {
       statColor: '#f97316',
       accent: '#f97316',
     },
+    {
+      view: ViewState.INCIDENT_INTEL,
+      icon: <IconShield />,
+      title: 'Incident Intelligence',
+      description: '325+ retail security incidents — ORC, cargo theft, cyber attacks & violence. Searchable by severity, region, and type.',
+      stat: '325+ Incidents',
+      statColor: '#ea1100',
+      accent: '#ea1100',
+    },
   ];
 
   const operationsModules = [
@@ -331,8 +341,8 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({ onNavigate }) => {
         </p>
       </div>
 
-      {/* ── Live KPI strip ──────────────────────────────────────────────── */}
-      <div className="flex flex-wrap gap-3 mb-10">
+      {/* ── Live KPI strip ──────────────────────────────────────────── */}
+      <div className="flex flex-wrap gap-3 mb-8">
         <KpiCard label="Vendors Tracked"    value={totalVendors}  accent="#FFC220" />
         <KpiCard label="VAR Reports"        value={totalVars}     accent="#0053E2" />
         <KpiCard label="Assessment Coverage" value={coverage}     accent="#22c55e" />
@@ -340,10 +350,16 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({ onNavigate }) => {
         <KpiCard label="Competitor Events"  value={compEvents}    accent="#ef4444" />
       </div>
 
+      {/* ── Morning Brief ──────────────────────────────────────────── */}
+      <div className="mb-8">
+        <SectionHeading label="Morning Intel Brief" accent="#ea1100" />
+        <MorningBriefCard onNavigate={onNavigate} />
+      </div>
+
       {/* ── Intelligence group ──────────────────────────────────────────── */}
       <div className="mb-8">
         <SectionHeading label="Intelligence" accent="#ef4444" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {intelligenceModules.map(m => (
             <ModuleCard key={m.view} {...m} onNavigate={onNavigate} />
           ))}

@@ -40,6 +40,7 @@ export enum ViewState {
   COMPETITOR_INTEL = 'COMPETITOR_INTEL',
   CSO_INTELLIGENCE = 'CSO_INTELLIGENCE',
   REGULATORY_INTEL = 'REGULATORY_INTEL',
+  INCIDENT_INTEL = 'INCIDENT_INTEL',
   REQUEST_LAB_VISIT = 'REQUEST_LAB_VISIT',
   ARCHITECTURE = 'ARCHITECTURE',
   ADMIN = 'ADMIN',
@@ -114,4 +115,72 @@ export interface RegSummary {
   assumptions: string[];
   confidence: 'Low' | 'Med' | 'High';
   ingestion_notes: Record<string, unknown>;
+}
+
+// ── Incident Intelligence types ──────────────────────────────────────
+
+export type IncidentSeverity = 'Critical' | 'High' | 'Medium' | 'Low';
+
+export interface Incident {
+  id: string;
+  incident_date: string;
+  incident_type: string;
+  severity: IncidentSeverity;
+  location: string;
+  region: string;
+  country: string;
+  summary: string;
+  impact: string;
+  recommended_action: string;
+  source_url: string;
+  tags: string;
+  source_file: string;
+  created_at: string;
+}
+
+export interface IncidentTypeCount {
+  type: string;
+  count: number;
+}
+
+export interface IncidentMonthlyTrend {
+  month: string;
+  count: number;
+}
+
+export interface IncidentStats {
+  total: number;
+  by_severity: Record<string, number>;
+  by_type: IncidentTypeCount[];
+  by_region: Record<string, number>;
+  monthly_trend: IncidentMonthlyTrend[];
+  recent: Incident[];
+}
+
+export interface IncidentListResponse {
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+  incidents: Incident[];
+}
+
+export interface IncidentFilters {
+  severities: string[];
+  types: string[];
+  regions: string[];
+}
+
+// ── Morning Brief types ──────────────────────────────────────────────
+
+export interface MorningBrief {
+  generated_at: string;
+  incidents: {
+    total: number;
+    critical: number;
+    recent: Partial<Incident>[];
+  };
+  regulatory: { red: number; amber: number };
+  competitors: { total_events: number };
+  vendors: { stale_assessments: Array<{ company_name: string; category: string; last_assessed: string; overall_rating: number }> };
 }

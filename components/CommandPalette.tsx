@@ -22,6 +22,7 @@ const ENTRIES: PaletteEntry[] = [
   { view: ViewState.COMPETITOR_INTEL,  label: 'Competitor Intel',    description: '1,113 analyst-enriched competitor events',          group: 'Intelligence',  keywords: 'competitor intel events amazon target costco' },
   { view: ViewState.CSO_INTELLIGENCE,  label: 'CSO Intelligence',    description: 'Executive security leadership competitive analysis',  group: 'Intelligence',  keywords: 'cso leadership executive security' },
   { view: ViewState.REGULATORY_INTEL,  label: 'Regulatory Intel',    description: '362 obligations — AI, Biometrics, ALPR, UAS, Privacy', group: 'Intelligence', keywords: 'regulatory compliance ai biometrics alpr uas privacy' },
+{ view: ViewState.INCIDENT_INTEL,    label: 'Incident Intelligence', description: '325+ incidents — ORC, cargo theft, cyber, violence', group: 'Intelligence', keywords: 'incident orc theft cargo cyber violence carjacking arson fraud' },
   { view: ViewState.COMPETITOR_ANALYSIS,label:'Market Analysis',     description: 'Risk metrics and vendor performance comparison',    group: 'Intelligence',  keywords: 'market analysis charts risk metrics' },
   { view: ViewState.RISK_MAP,          label: 'Risk Map 3D',         description: 'Vendors plotted in 3D space by risk and category',  group: 'Intelligence',  keywords: 'risk map 3d scatter vendors globe' },
   { view: ViewState.ARCHITECTURE,      label: 'Architecture',        description: 'GCP four-phase framework hierarchy',                group: 'System',        keywords: 'architecture gcp framework' },

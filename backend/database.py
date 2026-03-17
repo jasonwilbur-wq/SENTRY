@@ -99,6 +99,26 @@ def get_connection() -> sqlite3.Connection:
     return conn
 
 
+CREATE_INCIDENTS = """
+CREATE TABLE IF NOT EXISTS incidents (
+    id                  TEXT PRIMARY KEY,
+    incident_date       TEXT DEFAULT '',
+    incident_type       TEXT DEFAULT 'Other',
+    severity            TEXT DEFAULT 'Medium',
+    location            TEXT DEFAULT '',
+    region              TEXT DEFAULT 'Other',
+    country             TEXT DEFAULT 'USA',
+    summary             TEXT DEFAULT '',
+    impact              TEXT DEFAULT '',
+    recommended_action  TEXT DEFAULT '',
+    source_url          TEXT DEFAULT '',
+    tags                TEXT DEFAULT '',
+    source_file         TEXT DEFAULT '',
+    created_at          TEXT DEFAULT (datetime('now'))
+);
+"""
+
+
 def init_db() -> None:
     """Create tables if they don't exist."""
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -106,4 +126,5 @@ def init_db() -> None:
         conn.execute(CREATE_TABLE)
         conn.execute(CREATE_VAR_REPORTS)
         conn.execute(CREATE_HIGHLIGHTS)
+        conn.execute(CREATE_INCIDENTS)
         conn.commit()
