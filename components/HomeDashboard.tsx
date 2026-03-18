@@ -8,6 +8,7 @@ import React, { useEffect, useState } from 'react';
 import { ViewState } from '../types';
 import { fetchStats, fetchCompetitorStats, DirectoryStats, CompetitorStats } from '../services/api';
 import { MorningBriefCard } from './MorningBriefCard';
+import { useTheme } from '../context/ThemeContext';
 
 interface HomeDashboardProps {
   onNavigate: (view: ViewState) => void;
@@ -56,19 +57,11 @@ const ModuleCard: React.FC<ModuleCardProps> = ({
 }) => (
   <button
     onClick={() => onNavigate(view)}
-    className="group flex flex-col gap-3 p-5 rounded-2xl text-left w-full transition-all duration-200 focus-visible:ring-2 focus-visible:ring-wmt-blue focus-visible:outline-none"
+    className="module-card group flex flex-col gap-3 p-5 rounded-2xl text-left w-full focus-visible:ring-2 focus-visible:ring-wmt-blue focus-visible:outline-none"
     style={{
       background: 'var(--s-card)',
       border: '1px solid var(--s-border)',
       backdropFilter: 'blur(12px)',
-    }}
-    onMouseEnter={e => {
-      (e.currentTarget as HTMLElement).style.border = `1px solid ${accent}55`;
-      (e.currentTarget as HTMLElement).style.boxShadow = `0 0 24px ${accent}18`;
-    }}
-    onMouseLeave={e => {
-      (e.currentTarget as HTMLElement).style.border = '1px solid var(--s-border)';
-      (e.currentTarget as HTMLElement).style.boxShadow = 'none';
     }}
   >
     {/* Icon + stat row */}
@@ -186,6 +179,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({ onNavigate }) => {
   const [stats, setStats] = useState<DirectoryStats | null>(null);
   const [compStats, setCompStats] = useState<CompetitorStats | null>(null);
   const [mounted, setMounted] = useState(false);
+  const { reducedMotion } = useTheme();
 
   useEffect(() => {
     setMounted(true);
@@ -320,7 +314,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({ onNavigate }) => {
       style={{
         opacity: mounted ? 1 : 0,
         transform: mounted ? 'none' : 'translateY(16px)',
-        transition: 'opacity 0.45s ease, transform 0.45s cubic-bezier(0.16,1,0.3,1)',
+        transition: reducedMotion ? 'none' : 'opacity 0.45s ease, transform 0.45s cubic-bezier(0.16,1,0.3,1)',
       }}
     >
       {/* ── Welcome banner ──────────────────────────────────────────────── */}

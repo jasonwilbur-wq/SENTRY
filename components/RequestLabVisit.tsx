@@ -40,7 +40,7 @@ export const RequestLabVisit: React.FC = () => {
       }
     } catch {
       // Graceful demo fallback
-      setRefId(`LAB-${Date.now()}`);
+      setRefId(`LAB-${crypto.randomUUID().slice(0, 8).toUpperCase()}`);
       setSubmitted(true);
     } finally {
       setLoading(false);
@@ -66,35 +66,35 @@ export const RequestLabVisit: React.FC = () => {
     );
   }
 
-  const inputCls = 'w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-sentry-accent focus:ring-1 focus:ring-sentry-accent';
+  const inputCls = 'sentry-input';
 
   return (
     <div className="max-w-2xl mx-auto animate-fadeIn">
-      <div className="bg-sentry-card rounded-lg border border-slate-700 shadow-lg p-8">
-        <h2 className="text-2xl font-bold text-white mb-1">Emerging Technology Lab</h2>
-        <p className="text-slate-400 text-sm mb-6">Schedule a hands-on evaluation session with hardware in the secure lab.</p>
+      <div className="rounded-lg shadow-lg p-8" style={{ background: 'var(--s-card)', border: '1px solid var(--s-border-mid)' }}>
+        <h2 className="text-2xl font-bold mb-1" style={{ color: 'var(--s-text)' }}>Emerging Technology Lab</h2>
+        <p className="text-sm mb-6" style={{ color: 'var(--s-text-muted)' }}>Schedule a hands-on evaluation session with hardware in the secure lab.</p>
 
         {error && <div className="mb-4 p-3 rounded bg-red-900/30 border border-red-700 text-red-400 text-sm">{error}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
-              <label htmlFor="contact_name" className="block text-sm font-medium text-slate-300 mb-1">Your Name *</label>
+              <label htmlFor="contact_name" className="block text-sm font-medium mb-1" style={{ color: 'var(--s-text-muted)' }}>Your Name *</label>
               <input id="contact_name" name="contact_name" required value={form.contact_name} onChange={handleChange} className={inputCls} placeholder="Jane Smith" />
             </div>
             <div>
-              <label htmlFor="contact_email" className="block text-sm font-medium text-slate-300 mb-1">Email *</label>
+              <label htmlFor="contact_email" className="block text-sm font-medium mb-1" style={{ color: 'var(--s-text-muted)' }}>Email *</label>
               <input id="contact_email" name="contact_email" type="email" required value={form.contact_email} onChange={handleChange} className={inputCls} placeholder="j.smith@walmart.com" />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
-              <label htmlFor="preferred_date" className="block text-sm font-medium text-slate-300 mb-1">Preferred Date *</label>
+              <label htmlFor="preferred_date" className="block text-sm font-medium mb-1" style={{ color: 'var(--s-text-muted)' }}>Preferred Date *</label>
               <input id="preferred_date" name="preferred_date" type="date" required value={form.preferred_date} onChange={handleChange} className={inputCls} />
             </div>
             <div>
-              <label htmlFor="preferred_slot" className="block text-sm font-medium text-slate-300 mb-1">Time Slot *</label>
+              <label htmlFor="preferred_slot" className="block text-sm font-medium mb-1" style={{ color: 'var(--s-text-muted)' }}>Time Slot *</label>
               <select id="preferred_slot" name="preferred_slot" required value={form.preferred_slot} onChange={handleChange} className={inputCls}>
                 <option value="">Select slot…</option>
                 {TIME_SLOTS.map(s => <option key={s} value={s}>{s}</option>)}
@@ -103,7 +103,7 @@ export const RequestLabVisit: React.FC = () => {
           </div>
 
           <div>
-            <label htmlFor="equipment" className="block text-sm font-medium text-slate-300 mb-1">Equipment of Interest</label>
+            <label htmlFor="equipment" className="block text-sm font-medium mb-1" style={{ color: 'var(--s-text-muted)' }}>Equipment of Interest</label>
             <select id="equipment" name="equipment" value={form.equipment} onChange={handleChange} className={inputCls}>
               <option value="">Select equipment…</option>
               {LAB_EQUIPMENT.map(eq => <option key={eq} value={eq}>{eq}</option>)}
@@ -111,12 +111,12 @@ export const RequestLabVisit: React.FC = () => {
           </div>
 
           <div>
-            <label htmlFor="attendees" className="block text-sm font-medium text-slate-300 mb-1">Number of Attendees</label>
+            <label htmlFor="attendees" className="block text-sm font-medium mb-1" style={{ color: 'var(--s-text-muted)' }}>Number of Attendees</label>
             <input id="attendees" name="attendees" type="number" min="1" max="10" value={form.attendees} onChange={handleChange} className={inputCls} />
           </div>
 
           <div>
-            <label htmlFor="notes" className="block text-sm font-medium text-slate-300 mb-1">Evaluation Goals / Notes</label>
+            <label htmlFor="notes" className="block text-sm font-medium mb-1" style={{ color: 'var(--s-text-muted)' }}>Evaluation Goals / Notes</label>
             <textarea id="notes" name="notes" rows={4} value={form.notes} onChange={handleChange} className={inputCls} placeholder="What are you trying to evaluate? What decision are you trying to make?" />
           </div>
 

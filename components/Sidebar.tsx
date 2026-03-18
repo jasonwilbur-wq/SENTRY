@@ -1,6 +1,7 @@
 import React from 'react';
 import { ViewState } from '../types';
 import { useTheme } from '../context/ThemeContext';
+import { useVendors } from '../context/VendorContext';
 
 interface SidebarProps {
   currentView: ViewState;
@@ -150,7 +151,11 @@ const MotionOffIcon = () => (
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, onOpenPalette }) => {
   const { theme, toggleTheme, reducedMotion, toggleReducedMotion } = useTheme();
+  const { backendOffline } = useVendors();
   const isDark = theme === 'dark';
+  const statusColor = backendOffline ? '#ef4444' : '#22c55e';
+  const statusLabel = backendOffline ? 'Offline'  : 'Online';
+  const statusCls   = backendOffline ? 'bg-red-400' : 'bg-green-400';
 
   return (
     <aside
@@ -210,7 +215,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, onOpe
           SENTRY
         </h1>
         <div className="mt-1.5 space-y-0.5">
-          <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: '#4DBDF5' }}>
+          <p className="text-[9px] font-semibold uppercase tracking-wider" style={{ color: 'var(--s-brand-accent-text)' }}>
             Global Security, Aviation &amp; Investigations
           </p>
           <p className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--s-text-dim)' }}>
@@ -296,17 +301,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, onOpe
                     />
                   )}
                   <span className={`shrink-0 z-10 transition-colors ${
-                    active ? 'text-wmt-yellow' : 'text-slate-500 group-hover:text-slate-300'
+                    active ? 'text-wmt-yellow nav-icon-active' : 'text-slate-500 group-hover:text-slate-300'
                   }`}>
                     {item.icon}
                   </span>
                   <span className="truncate z-10 text-[11px]">{item.label}</span>
                   {/* New badge for Risk Map */}
                   {item.view === ViewState.RISK_MAP && (
-                    <span
-                      className="z-10 text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0"
-                      style={{ background: 'rgba(255,194,32,0.18)', color: '#FFC220', border: '1px solid rgba(255,194,32,0.3)' }}
-                    >
+                    <span className="nav-badge-3d z-10 text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shrink-0">
                       3D
                     </span>
                   )}
@@ -341,13 +343,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, onOpe
               {reducedMotion ? <MotionOffIcon /> : <MotionOnIcon />}
             </button>
 
-            {/* Backend status */}
+            {/* Backend status — wired to VendorContext */}
             <div className="flex items-center gap-1.5">
               <div className="relative">
-                <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                <div className="absolute inset-0 w-1.5 h-1.5 rounded-full bg-green-400 animate-ping-ring" />
+                <div className={`w-1.5 h-1.5 rounded-full ${statusCls}`} />
+                {!backendOffline && (
+                  <div className={`absolute inset-0 w-1.5 h-1.5 rounded-full ${statusCls} animate-ping-ring`} />
+                )}
               </div>
-              <span className="text-[9px] uppercase tracking-wider" style={{ color: '#22c55e' }}>Online</span>
+              <span className="text-[9px] uppercase tracking-wider" style={{ color: statusColor }}>
+                {statusLabel}
+              </span>
             </div>
           </div>
         </div>

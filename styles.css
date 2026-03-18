@@ -285,6 +285,29 @@ body {
 .btn-primary:active { transform: scale(0.97); }
 .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
 
+/* Vendor search input focus ring */
+#vd-search:focus-visible {
+  border-color: rgba(0,83,226,0.5) !important;
+  box-shadow: 0 0 0 3px rgba(0,83,226,0.15) !important;
+  outline: none;
+}
+
+/* Chat input focus ring — replaces inline onFocus/onBlur DOM mutations */
+#chat-input:focus-visible {
+  border-color: rgba(0,83,226,0.5) !important;
+  box-shadow: 0 0 0 3px rgba(0,83,226,0.15) !important;
+  outline: none;
+}
+
+/* Firefox backdrop isolation — prevents dark overlay bleeding into light-mode palette */
+[data-theme="light"] [role="dialog"] > div {
+  isolation: isolate;
+}
+
+/* Brand accent text — WCAG-safe across both themes */
+:root                     { --s-brand-accent-text: #4DBDF5; }
+:root[data-theme="light"] { --s-brand-accent-text: #0369a1; }
+
 /* Ghost button */
 .btn-ghost {
   display: inline-flex;
@@ -302,6 +325,56 @@ body {
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 .btn-ghost:hover { background: var(--s-border); color: var(--s-text); }
+
+/* ── Theme-aware form input — replaces hardcoded bg-slate-900 inputCls ── */
+.sentry-input {
+  width: 100%;
+  background: var(--s-input-bg);
+  border: 1px solid var(--s-border-mid);
+  color: var(--s-text);
+  border-radius: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.sentry-input:focus-visible {
+  border-color: rgba(0,83,226,0.5);
+  box-shadow: 0 0 0 3px rgba(0,83,226,0.15);
+}
+.sentry-input::placeholder { color: var(--s-text-dim); }
+.sentry-input:disabled      { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Theme-aware skeleton pulse ── */
+.sentry-skeleton {
+  background: var(--s-border);
+  animation: pulse 2s ease-in-out infinite;
+  border-radius: 1rem;
+}
+
+/* ── Nav 3D badge — light-mode safe ── */
+.nav-badge-3d {
+  background: rgba(255,194,32,0.18);
+  color: #FFC220;
+  border: 1px solid rgba(255,194,32,0.3);
+}
+[data-theme="light"] .nav-badge-3d {
+  background: rgba(0,83,226,0.12);
+  color: #0053E2;
+  border: 1px solid rgba(0,83,226,0.25);
+}
+
+/* ── Active nav icon — WCAG-safe in light mode ── */
+[data-theme="light"] .nav-icon-active { color: #0053E2 !important; }
+
+/* ── Module card hover — CSS-based, no DOM mutation ── */
+.module-card {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.module-card:hover {
+  border-color: rgba(0,83,226,0.35);
+  box-shadow: 0 0 24px rgba(0,83,226,0.1);
+}
 
 /* Loading shimmer */
 .shimmer {

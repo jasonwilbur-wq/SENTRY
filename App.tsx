@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, lazy, Suspense } from 'react';
 import { ViewState } from './types';
-import { VendorProvider } from './context/VendorContext';
-import { ThemeProvider } from './context/ThemeContext';
+import { VendorProvider, useVendors } from './context/VendorContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { LandingPage } from './components/LandingPage';
 import { Sidebar } from './components/Sidebar';
 import { PageTransition } from './components/PageTransition';
@@ -54,6 +54,8 @@ const AppShell: React.FC<{
   currentView: ViewState;
   setCurrentView: React.Dispatch<React.SetStateAction<ViewState>>;
 }> = ({ currentView, setCurrentView }) => {
+  const { reducedMotion } = useTheme();
+  const { backendOffline } = useVendors();
   const [chatOpen,    setChatOpen]    = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
 
@@ -110,11 +112,11 @@ const AppShell: React.FC<{
                 aria-hidden="true"
               />
               <div className="min-w-0">
-                <h2 className="text-xl font-extrabold text-white leading-tight tracking-tight">
+                <h2 className="text-xl font-extrabold leading-tight tracking-tight" style={{ color: 'var(--s-text)' }}>
                   {meta.title}
                 </h2>
                 {/* truncate prevents subtitle from blowing out the header layout */}
-                <p className="text-xs text-slate-500 mt-0.5 leading-none truncate max-w-[480px]">
+                <p className="text-xs mt-0.5 leading-none truncate max-w-[480px]" style={{ color: 'var(--s-text-dim)' }}>
                   {meta.subtitle}
                 </p>
               </div>
@@ -122,13 +124,22 @@ const AppShell: React.FC<{
 
             <div
               className="flex items-center gap-2 px-3 py-1.5 rounded-full shrink-0"
-              style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}
+              style={backendOffline
+                ? { background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }
+                : { background: 'rgba(34,197,94,0.08)',  border: '1px solid rgba(34,197,94,0.2)' }}
             >
               <div className="relative flex items-center justify-center">
-                <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                <div className="absolute w-1.5 h-1.5 rounded-full bg-green-400 animate-ping-ring" style={{ opacity: 0.5 }} />
+                <div className={`w-1.5 h-1.5 rounded-full ${backendOffline ? 'bg-red-400' : 'bg-green-400'}`} />
+                {!backendOffline && (
+                  <div className="absolute w-1.5 h-1.5 rounded-full bg-green-400 animate-ping-ring" style={{ opacity: 0.5 }} />
+                )}
               </div>
-              <span className="text-[10px] font-bold text-green-400 uppercase tracking-widest">System Online</span>
+              <span
+                className="text-[10px] font-bold uppercase tracking-widest"
+                style={{ color: backendOffline ? '#f87171' : '#4ade80' }}
+              >
+                {backendOffline ? 'Backend Offline' : 'System Online'}
+              </span>
             </div>
           </header>
 
@@ -183,7 +194,7 @@ const AppShell: React.FC<{
           height: chatOpen ? 'min(640px, 88vh)' : '0px',
           overflow: 'hidden',
           borderRadius: '16px 16px 0 0',
-          transition: 'height 0.3s cubic-bezier(0.4,0,0.2,1)',
+          transition: reducedMotion ? 'none' : 'height 0.3s cubic-bezier(0.4,0,0.2,1)',
         }}
       >
         {chatOpen && <ChatAssistant />}
@@ -210,7 +221,7 @@ const AppShell: React.FC<{
             : 'linear-gradient(135deg,#0053e2,#002880)',
           boxShadow: '0 8px 28px rgba(0,83,226,0.5)',
           cursor: 'pointer',
-          transition: 'bottom 0.3s cubic-bezier(0.4,0,0.2,1), background 0.2s, padding 0.2s',
+          transition: reducedMotion ? 'none' : 'bottom 0.3s cubic-bezier(0.4,0,0.2,1), background 0.2s, padding 0.2s',
           color: 'white',
           fontWeight: 700,
           fontSize: '13px',

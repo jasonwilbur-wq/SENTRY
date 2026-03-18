@@ -42,7 +42,7 @@ export const RequestAssessment: React.FC = () => {
       }
     } catch (err) {
       // Backend offline — still show success with local ref for demo
-      setRefId(`DEMO-${Date.now()}`);
+      setRefId(`DEMO-${crypto.randomUUID().slice(0, 8).toUpperCase()}`);
       setSubmitted(true);
     } finally {
       setLoading(false);
@@ -68,32 +68,32 @@ export const RequestAssessment: React.FC = () => {
     );
   }
 
-  const inputCls = 'w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:border-sentry-accent focus:ring-1 focus:ring-sentry-accent';
+  const inputCls = 'sentry-input';
 
   return (
     <div className="max-w-2xl mx-auto animate-fadeIn">
-      <div className="bg-sentry-card rounded-lg border border-slate-700 shadow-lg p-8">
-        <h2 className="text-2xl font-bold text-white mb-1">Security Assessment Request</h2>
-        <p className="text-slate-400 text-sm mb-6">Opens a SENTRY GRC workflow. Fields marked * are required.</p>
+      <div className="rounded-lg shadow-lg p-8" style={{ background: 'var(--s-card)', border: '1px solid var(--s-border-mid)' }}>
+        <h2 className="text-2xl font-bold mb-1" style={{ color: 'var(--s-text)' }}>Security Assessment Request</h2>
+        <p className="text-sm mb-6" style={{ color: 'var(--s-text-muted)' }}>Opens a SENTRY GRC workflow. Fields marked * are required.</p>
 
         {error && <div className="mb-4 p-3 rounded bg-red-900/30 border border-red-700 text-red-400 text-sm">{error}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label htmlFor="vendor_name" className="block text-sm font-medium text-slate-300 mb-1">Vendor / Technology *</label>
+            <label htmlFor="vendor_name" className="block text-sm font-medium mb-1" style={{ color: 'var(--s-text-muted)' }}>Vendor / Technology *</label>
             <input id="vendor_name" name="vendor_name" required value={form.vendor_name} onChange={handleChange} className={inputCls} placeholder="e.g. DroneShield" />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
-              <label htmlFor="assessment_type" className="block text-sm font-medium text-slate-300 mb-1">Assessment Type *</label>
+              <label htmlFor="assessment_type" className="block text-sm font-medium mb-1" style={{ color: 'var(--s-text-muted)' }}>Assessment Type *</label>
               <select id="assessment_type" name="assessment_type" required value={form.assessment_type} onChange={handleChange} className={inputCls}>
                 <option value="">Select type…</option>
                 {ASSESSMENT_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
             </div>
             <div>
-              <label htmlFor="category" className="block text-sm font-medium text-slate-300 mb-1">Technology Category</label>
+              <label htmlFor="category" className="block text-sm font-medium mb-1" style={{ color: 'var(--s-text-muted)' }}>Technology Category</label>
               <select id="category" name="category" value={form.category} onChange={handleChange} className={inputCls}>
                 <option value="">Select category…</option>
                 {RISK_CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
@@ -103,17 +103,17 @@ export const RequestAssessment: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div>
-              <label htmlFor="contact_name" className="block text-sm font-medium text-slate-300 mb-1">Requestor Name *</label>
+              <label htmlFor="contact_name" className="block text-sm font-medium mb-1" style={{ color: 'var(--s-text-muted)' }}>Requestor Name *</label>
               <input id="contact_name" name="contact_name" required value={form.contact_name} onChange={handleChange} className={inputCls} placeholder="Jane Smith" />
             </div>
             <div>
-              <label htmlFor="contact_email" className="block text-sm font-medium text-slate-300 mb-1">Email *</label>
+              <label htmlFor="contact_email" className="block text-sm font-medium mb-1" style={{ color: 'var(--s-text-muted)' }}>Email *</label>
               <input id="contact_email" name="contact_email" type="email" required value={form.contact_email} onChange={handleChange} className={inputCls} placeholder="j.smith@walmart.com" />
             </div>
           </div>
 
           <div>
-            <label htmlFor="urgency" className="block text-sm font-medium text-slate-300 mb-1">Urgency</label>
+            <label htmlFor="urgency" className="block text-sm font-medium mb-1" style={{ color: 'var(--s-text-muted)' }}>Urgency</label>
             <select id="urgency" name="urgency" value={form.urgency} onChange={handleChange} className={inputCls}>
               <option value="low">Low — standard queue</option>
               <option value="normal">Normal — within 2 weeks</option>
@@ -123,7 +123,7 @@ export const RequestAssessment: React.FC = () => {
           </div>
 
           <div>
-            <label htmlFor="notes" className="block text-sm font-medium text-slate-300 mb-1">Additional Context</label>
+            <label htmlFor="notes" className="block text-sm font-medium mb-1" style={{ color: 'var(--s-text-muted)' }}>Additional Context</label>
             <textarea id="notes" name="notes" rows={4} value={form.notes} onChange={handleChange} className={inputCls} placeholder="Pilot stage, business justification, existing concerns…" />
           </div>
 

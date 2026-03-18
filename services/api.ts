@@ -9,7 +9,11 @@
  * NEVER hardcode localhost anywhere else in the codebase — use getDownloadUrl().
  */
 
-const API_BASE: string = (import.meta as any).env?.VITE_API_URL ?? '';
+// Vite types provided by vite/client reference in vite-env.d.ts
+const API_BASE: string = import.meta.env.VITE_API_URL ?? '';
+
+/** Default request timeout in ms. Override per-call for slow endpoints (LLM). */
+const DEFAULT_TIMEOUT_MS = 30_000;
 
 /**
  * Returns the full URL for a VAR report download via the backend proxy.
@@ -19,16 +23,36 @@ export function getDownloadUrl(varId: string): string {
   return `${API_BASE}/api/vars/download/${varId}`;
 }
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  });
-  if (!res.ok) {
-    const text = await res.text().catch(() => 'Unknown error');
-    throw new Error(`API ${res.status}: ${text}`);
+async function request<T>(
+  path: string,
+  options?: RequestInit & { timeoutMs?: number },
+): Promise<T> {
+  const { timeoutMs = DEFAULT_TIMEOUT_MS, ...fetchOptions } = options ?? {};
+  const controller = new AbortController();
+  const timerId = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const headers: HeadersInit = fetchOptions.method && fetchOptions.method !== 'GET'
+      ? { 'Content-Type': 'application/json' }
+      : {};
+    const res = await fetch(`${API_BASE}${path}`, {
+      ...fetchOptions,
+      headers: { ...headers, ...fetchOptions.headers },
+      signal: controller.signal,
+    });
+    if (!res.ok) {
+      const text = await res.text().catch(() => 'Unknown error');
+      throw new Error(`API ${res.status}: ${text}`);
+    }
+    return res.json() as Promise<T>;
+  } catch (err) {
+    if ((err as Error).name === 'AbortError') {
+      throw new Error(`Request timed out after ${timeoutMs}ms: ${path}`);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timerId);
   }
-  return res.json() as Promise<T>;
 }
 
 // ── Vendors ────────────────────────────────────────────────────────────────────
@@ -65,7 +89,7 @@ export interface Vendor {
   last_assessed: string;
   risk_level: 'Low' | 'Medium' | 'High' | 'Critical';
   has_var: boolean;
-  latest_var_id: string;   // Phase 2 — used for /api/vars/download/{id}
+  latest_var_id: string | null;   // Phase 2 — null when vendor has no VARs yet
   all_products: VendorProduct[];
   
   // Extended Insights
@@ -225,6 +249,7 @@ export async function sendChat(
   return request('/api/chat', {
     method: 'POST',
     body: JSON.stringify({ history, message }),
+    timeoutMs: 60_000, // LLM responses can be slow
   });
 }
 
@@ -406,8 +431,8 @@ export async function extractBatch(
   overwrite?: boolean,
 ): Promise<BatchExtractResponse> {
   const qs = new URLSearchParams();
-  if (limit)    qs.set('limit', String(limit));
-  if (overwrite) qs.set('overwrite', 'true');
+  if (limit !== undefined) qs.set('limit', String(limit));
+  if (overwrite)            qs.set('overwrite', 'true');
   const q = qs.toString() ? `?${qs}` : '';
   return request(`/api/admin/vars/extract-batch${q}`, { method: 'POST' });
 }
@@ -514,13 +539,8 @@ export interface CompetitorEventsResponse {
   events: CompetitorEvent[];
 }
 
-export interface CompetitorEventsListResponse {
-  total: number;
-  page: number;
-  page_size: number;
-  total_pages: number;
-  events: CompetitorEvent[];
-}
+/** @deprecated Use CompetitorEventsResponse — identical shape. */
+export type CompetitorEventsListResponse = CompetitorEventsResponse;
 
 export interface CompetitorMonthly {
   months: string[];

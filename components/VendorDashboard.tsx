@@ -120,7 +120,7 @@ export const VendorDashboard: React.FC = () => {
         {/* Title row + search */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
           <div>
-            <h2 className="text-xl font-black text-white">
+            <h2 className="text-xl font-black" style={{ color: 'var(--s-text)' }}>
               Vendor Directory
               <span className="ml-2 text-sm font-normal text-slate-500">
                 {loading ? '…' : `${total.toLocaleString()} vendors`}
@@ -154,14 +154,7 @@ export const VendorDashboard: React.FC = () => {
                 outline: 'none',
                 transition: 'border-color 0.15s, box-shadow 0.15s',
               }}
-              onFocus={e => {
-                (e.target as HTMLInputElement).style.borderColor = 'rgba(0,83,226,0.5)';
-                (e.target as HTMLInputElement).style.boxShadow = '0 0 0 3px rgba(0,83,226,0.15)';
-              }}
-              onBlur={e => {
-                (e.target as HTMLInputElement).style.borderColor = 'var(--s-border-mid)';
-                (e.target as HTMLInputElement).style.boxShadow = 'none';
-              }}
+              // Focus ring handled via #vd-search:focus-visible in styles.css
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
@@ -171,8 +164,6 @@ export const VendorDashboard: React.FC = () => {
                 className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
                 style={{ color: '#475569' }}
                 aria-label="Clear search"
-                onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--s-text)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = '#475569'; }}
               >
                 ✕
               </button>
@@ -200,8 +191,7 @@ export const VendorDashboard: React.FC = () => {
                   color: 'var(--s-text-dim)',
                   border: '1px solid var(--s-border-mid)',
                 }}
-                onMouseEnter={e => { if (!active) { (e.currentTarget as HTMLButtonElement).style.color = 'var(--s-text)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--s-border)'; } }}
-                onMouseLeave={e => { if (!active) { (e.currentTarget as HTMLButtonElement).style.color = 'var(--s-text-dim)'; (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--s-border-mid)'; } }}
+
               >
                 {PINNED_CATS[cat] ?? cat}
               </button>
@@ -267,7 +257,7 @@ export const VendorDashboard: React.FC = () => {
 
       {/* ── Empty state ─────────────────────────────────────────── */}
       {!loading && displayed.length === 0 && (
-        <div className="py-20 text-center rounded-2xl border border-slate-700/50 bg-slate-900/40">
+        <div className="py-20 text-center rounded-2xl" style={{ border: '1px solid var(--s-border-mid)', background: 'var(--s-card)' }}>
           <div className="text-5xl mb-4">🔍</div>
           <p className="text-slate-400 mb-2 font-semibold">No vendors match your filters</p>
           <p className="text-slate-600 text-sm mb-4">Try broadening your search or clearing the filters</p>

@@ -1,27 +1,74 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { sendChat, ChatMessage as ApiMessage } from '../services/api';
+import { useTheme } from '../context/ThemeContext';
 
 interface DisplayMessage extends ApiMessage {
   id: string;
   timestamp: Date;
 }
 
-/** Minimal markdown renderer for model response bubbles */
+/** Minimal markdown renderer for model response bubbles.
+ * Groups consecutive bullet lines into a proper <ul> to produce valid HTML.
+ */
 function renderMarkdown(text: string): React.ReactNode {
-  return text.split('\n').map((line, i) => {
-    const parts = line.split(/\*\*(.*?)\*\*/g);
-    const rendered = parts.map((part, j) =>
-      j % 2 === 1 ? <strong key={j}>{part}</strong> : part,
+  const lines = text.split('\n');
+  const output: React.ReactNode[] = [];
+  let listBuffer: React.ReactNode[] = [];
+
+  const boldSplit = (raw: string) =>
+    raw.split(/\*\*(.*?)\*\*/g).map((p, j) =>
+      j % 2 === 1 ? <strong key={j}>{p}</strong> : p,
     );
-    if (line.startsWith('## ')) return <h4 key={i} className="font-bold text-sentry-accent mt-2 text-sm">{line.slice(3)}</h4>;
-    if (line.startsWith('# '))  return <h3 key={i} className="font-bold text-white mt-2">{line.slice(2)}</h3>;
-    if (line.match(/^[•\-*] /))  return <li key={i} className="ml-4 list-disc text-slate-200">{rendered.slice(1)}</li>;
-    if (line.trim() === '')     return <br key={i} />;
-    return <p key={i} className="leading-relaxed">{rendered}</p>;
+
+  const flushList = (idx: number) => {
+    if (listBuffer.length > 0) {
+      output.push(
+        <ul key={`ul-${idx}`} className="ml-4 list-disc space-y-0.5 my-1">
+          {listBuffer}
+        </ul>,
+      );
+      listBuffer = [];
+    }
+  };
+
+  lines.forEach((line, i) => {
+    if (line.startsWith('## ')) {
+      flushList(i);
+      output.push(
+        <h4 key={i} className="font-bold mt-2 text-sm" style={{ color: 'var(--s-text)' }}>
+          {line.slice(3)}
+        </h4>,
+      );
+    } else if (line.startsWith('# ')) {
+      flushList(i);
+      output.push(
+        <h3 key={i} className="font-bold mt-2" style={{ color: 'var(--s-text)' }}>
+          {line.slice(2)}
+        </h3>,
+      );
+    } else if (line.match(/^[•\-*] /)) {
+      // Strip bullet prefix, then bold-parse the remaining content
+      const content = line.replace(/^[•\-*] /, '');
+      listBuffer.push(
+        <li key={i} style={{ color: 'var(--s-text)' }}>{boldSplit(content)}</li>,
+      );
+    } else if (line.trim() === '') {
+      flushList(i);
+      output.push(<br key={i} />);
+    } else {
+      flushList(i);
+      output.push(
+        <p key={i} className="leading-relaxed">{boldSplit(line)}</p>,
+      );
+    }
   });
+
+  flushList(lines.length); // flush any trailing list
+  return output;
 }
 
 export const ChatAssistant: React.FC = () => {
+  const { reducedMotion } = useTheme();
   const [messages, setMessages] = useState<DisplayMessage[]>([
     {
       id: 'welcome',
@@ -35,7 +82,7 @@ export const ChatAssistant: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth' });
   }, [messages]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -44,7 +91,7 @@ export const ChatAssistant: React.FC = () => {
     if (!text || isLoading) return;
 
     const userMsg: DisplayMessage = {
-      id: Date.now().toString(),
+      id: crypto.randomUUID(),
       role: 'user',
       text,
       timestamp: new Date(),
@@ -66,14 +113,14 @@ export const ChatAssistant: React.FC = () => {
 
       setMessages(prev => [
         ...prev,
-        { id: (Date.now() + 1).toString(), role: 'model', text: result.response, timestamp: new Date() },
+        { id: crypto.randomUUID(), role: 'model', text: result.response, timestamp: new Date() },
       ]);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Could not reach SENTRY backend.';
       setMessages(prev => [
         ...prev,
         {
-          id: (Date.now() + 1).toString(),
+          id: crypto.randomUUID(),
           role: 'model',
           text: `⚠️ **SENTRY-AI unavailable:** ${msg}\n\nMake sure the FastAPI backend is running on port 8081.`,
           timestamp: new Date(),
@@ -111,7 +158,7 @@ export const ChatAssistant: React.FC = () => {
             AI
           </div>
           <div>
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+            <h3 className="text-sm font-bold flex items-center gap-2" style={{ color: 'var(--s-text)' }}>
               SENTRY-AI
               {/* Terminal cursor blink */}
               <span
@@ -190,7 +237,7 @@ export const ChatAssistant: React.FC = () => {
       <form
         onSubmit={handleSendMessage}
         className="p-3 shrink-0 flex gap-2"
-        style={{ borderTop: '1px solid rgba(0,83,226,0.12)', background: 'rgba(0,0,0,0.3)' }}
+        style={{ borderTop: '1px solid var(--s-border-mid)', background: 'var(--s-chat-footer)' }}
       >
         <label htmlFor="chat-input" className="sr-only">Message SENTRY-AI</label>
         <input
@@ -208,14 +255,7 @@ export const ChatAssistant: React.FC = () => {
             outline: 'none',
             transition: 'border-color 0.15s, box-shadow 0.15s',
           }}
-          onFocus={e => {
-            (e.target as HTMLInputElement).style.borderColor = 'rgba(0,83,226,0.5)';
-            (e.target as HTMLInputElement).style.boxShadow = '0 0 0 3px rgba(0,83,226,0.15)';
-          }}
-          onBlur={e => {
-            (e.target as HTMLInputElement).style.borderColor = 'rgba(0,83,226,0.2)';
-            (e.target as HTMLInputElement).style.boxShadow = 'none';
-          }}
+          // Focus ring handled by CSS — see #chat-input:focus-visible in styles.css
         />
         <button
           type="submit"
