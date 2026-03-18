@@ -175,8 +175,8 @@ export function CompetitorIntelligence() {
       {/* ═══ 3D HERO — Competitor Threat Constellation ══════════════════ */}
       <div className="max-w-7xl mx-auto mb-8">
         <div
-          className="relative rounded-2xl overflow-hidden"
-          style={{ height: '400px', background: 'radial-gradient(ellipse at center, #00071a 0%, #000208 100%)', border: '1px solid var(--s-border)' }}
+          className="ci-hero-bg relative rounded-2xl overflow-hidden"
+          style={{ height: '400px', border: '1px solid var(--s-border)' }}
         >
           {/* Grid overlay */}
           <div

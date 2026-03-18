@@ -162,8 +162,8 @@ export function CSOIntelligence() {
 
       {/* ── 3D Hero ──────────────────────────────────────────────────────── */}
       <div className="max-w-7xl mx-auto mb-8">
-        <div className="relative rounded-2xl overflow-hidden border border-slate-700"
-          style={{ height: 400, background: 'radial-gradient(ellipse at center,#000d2e 0%,#000510 100%)' }}>
+        <div className="cso-hero-bg relative rounded-2xl overflow-hidden"
+          style={{ height: 400, border: '1px solid var(--s-border)' }}>
           {/* Grid overlay */}
           <div className="absolute inset-0 pointer-events-none"
             style={{ opacity: 0.05,
@@ -190,7 +190,7 @@ export function CSOIntelligence() {
                 WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               CSO Intelligence
             </h1>
-            <p className="text-slate-400 text-sm max-w-xl mb-5">
+            <p className="text-sm max-w-xl mb-5" style={{ color: 'var(--s-text-muted)' }}>
               Competitor executive tracking — security leadership threat posture, org changes &amp; strategic risk.
             </p>
             <div className="flex flex-wrap gap-2 justify-center">

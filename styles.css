@@ -561,10 +561,44 @@ body {
 .competitor-hero-bg {
   background: radial-gradient(ellipse at 50% 40%, #0c1a3a 0%, #000B28 70%);
 }
-
 [data-theme="light"] .competitor-hero-bg {
   background: radial-gradient(ellipse at 50% 40%, #dbeafe 0%, #bfdbfe 70%) !important;
 }
+
+/* ── CompetitorIntelligence (3D Threat Constellation) ── */
+.ci-hero-bg {
+  background: radial-gradient(ellipse at center, #00071a 0%, #000208 100%);
+}
+[data-theme="light"] .ci-hero-bg {
+  background: radial-gradient(ellipse at center, #dbeafe 0%, #bfdbfe 70%) !important;
+}
+
+/* ── CSO Intelligence (3D Radar) ── */
+.cso-hero-bg {
+  background: radial-gradient(ellipse at center, #000d2e 0%, #000510 100%);
+}
+[data-theme="light"] .cso-hero-bg {
+  background: radial-gradient(ellipse at center, #ede9fe 0%, #c7d2fe 70%) !important;
+}
+
+/* ── Regulatory Intelligence (3D Globe) ── */
+.reg-hero-bg {
+  background: radial-gradient(ellipse at center, #00091e 0%, #000208 100%);
+}
+[data-theme="light"] .reg-hero-bg {
+  background: radial-gradient(ellipse at center, #dcfce7 0%, #bbf7d0 70%) !important;
+}
+
+/* ── Incident Intelligence ── */
+.incident-hero-bg {
+  background: radial-gradient(ellipse at center, #0a0020 0%, #000510 100%);
+}
+[data-theme="light"] .incident-hero-bg {
+  background: radial-gradient(ellipse at center, #fff1f2 0%, #fecdd3 70%) !important;
+}
+
+/* ── Hero legend labels: white counts → theme-aware ── */
+/* Applied via CSS vars directly in JSX; no class needed */
 
 /* ── Semantic badge backgrounds: keep hue, go light ── */
 [data-theme="light"] .bg-green-900\/30   { background-color: rgba(220,252,231,0.8) !important; }

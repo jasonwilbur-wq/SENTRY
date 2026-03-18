@@ -185,8 +185,8 @@ export const RegulatoryIntelligence: React.FC = () => {
 
       {/* ═══ 3D HERO — Regulatory Globe ═══════════════════════════════ */}
       <div
-        className="relative rounded-2xl overflow-hidden"
-        style={{ height: '400px', background: 'radial-gradient(ellipse at center, #00091e 0%, #000208 100%)', border: '1px solid var(--s-border)' }}
+        className="reg-hero-bg relative rounded-2xl overflow-hidden"
+        style={{ height: '400px', border: '1px solid var(--s-border)' }}
       >
         {/* Grid overlay */}
         <div
@@ -219,14 +219,14 @@ export const RegulatoryIntelligence: React.FC = () => {
             <div key={label} className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color, boxShadow: `0 0 5px ${color}` }} />
               <span className="text-[10px] font-semibold" style={{ color }}>{label}</span>
-              <span className="text-[10px] font-bold ml-1" style={{ color: 'rgba(255,255,255,0.9)' }}>{count}</span>
+              <span className="text-[10px] font-bold ml-1" style={{ color: 'var(--s-text)' }}>{count}</span>
             </div>
           ))}
         </div>
 
         {/* Hover hint */}
         <div className="absolute bottom-5 right-6 z-10">
-          <span className="text-[10px]" style={{ color: 'rgba(255,255,255,0.45)' }}>Hover nodes to inspect jurisdictions</span>
+          <span className="text-[10px]" style={{ color: 'var(--s-text-dim)' }}>Hover nodes to inspect jurisdictions</span>
         </div>
 
         {/* Title overlay (top-center) */}
@@ -244,7 +244,7 @@ export const RegulatoryIntelligence: React.FC = () => {
           >
             Regulatory Intelligence
           </h1>
-          <p className="text-sm max-w-lg mb-5" style={{ color: 'rgba(255,255,255,0.65)' }}>
+          <p className="text-sm max-w-lg mb-5" style={{ color: 'var(--s-text-muted)' }}>
             {stats?.total_obligations ?? '—'} obligations across {summary?.jurisdictions.length ?? '—'} jurisdictions — real-time RAG risk mapping.
           </p>
           <div className="flex flex-wrap gap-2 justify-center">

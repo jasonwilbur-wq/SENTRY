@@ -202,10 +202,8 @@ export const CompetitorIntel: React.FC = () => {
 
       {/* ═══ 1. HERO — 3D Orbital + KPIs ═══════════════════════════════ */}
       <div
-        className="relative rounded-2xl overflow-hidden mb-8 border border-slate-700 competitor-hero-bg"
-        style={{
-          height: '460px',
-        }}
+        className="relative rounded-2xl overflow-hidden mb-8 competitor-hero-bg"
+        style={{ height: '460px', border: '1px solid var(--s-border-mid)' }}
       >
         {/* Grid overlay */}
         <div

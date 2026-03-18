@@ -226,10 +226,8 @@ export const CompetitorAnalysis: React.FC<Props> = ({ onNavigate }) => {
 
       {/* ── HERO ───────────────────────────────────────────────────────────── */}
       <div
-        className="relative rounded-2xl overflow-hidden mb-8 border border-slate-700 market-hero-bg"
-        style={{
-          minHeight: '380px',
-        }}
+        className="relative rounded-2xl overflow-hidden mb-8 market-hero-bg"
+        style={{ minHeight: '380px', border: '1px solid var(--s-border-mid)' }}
       >
         {/* Grid overlay */}
         <div
@@ -249,11 +247,11 @@ export const CompetitorAnalysis: React.FC<Props> = ({ onNavigate }) => {
               <span className="w-1 h-1 rounded-full bg-slate-600" />
               <span className="text-xs text-slate-400">EST Forecast Report v1.1</span>
             </div>
-            <h2 className="text-3xl font-black text-white leading-tight mb-2">
+            <h2 className="text-3xl font-black leading-tight mb-2" style={{ color: 'var(--s-text)' }}>
               Security Technology<br />
-              <span className="text-yellow-300">Forecast</span> Landscape
+              <span style={{ color: '#FFC220' }}>Forecast</span> Landscape
             </h2>
-            <p className="text-slate-400 text-sm leading-relaxed max-w-sm mb-6">
+            <p className="text-sm leading-relaxed max-w-sm mb-6" style={{ color: 'var(--s-text-muted)' }}>
               12–24 month prioritized assessment of emerging security capabilities for
               Walmart's enterprise security function.
             </p>

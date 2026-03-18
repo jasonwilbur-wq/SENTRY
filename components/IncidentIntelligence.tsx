@@ -334,8 +334,8 @@ export function IncidentIntelligence() {
     <div className="min-h-screen" style={{ background: 'var(--s-bg)', color: 'var(--s-text)' }}>
 
       {/* Hero banner */}
-      <div className="relative rounded-2xl overflow-hidden border mb-8"
-        style={{ background: 'radial-gradient(ellipse at center, #0a0020 0%, #000510 100%)', borderColor: 'var(--s-border)' }}>
+      <div className="incident-hero-bg relative rounded-2xl overflow-hidden mb-8"
+        style={{ border: '1px solid var(--s-border)' }}>
         <div className="absolute inset-0 pointer-events-none"
           style={{
             opacity: 0.05,
@@ -350,7 +350,7 @@ export function IncidentIntelligence() {
             style={{ background: 'linear-gradient(135deg, #ff6b6b, #ea1100, #FFC220)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
             Incident Intelligence
           </h1>
-          <p className="text-sm text-slate-400 max-w-xl mx-auto mb-5">
+          <p className="text-sm max-w-xl mx-auto mb-5" style={{ color: 'var(--s-text-muted)' }}>
             Retail security incidents — ORC, cargo theft, cyber attacks, violence &amp; more.
             Tracked across all regions from global security feeds.
           </p>
