@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useTheme } from '../context/ThemeContext';
 
 // ═══════════════════════════════════════════════════════════════════════
 // Project Portfolio Admin Panel
@@ -20,9 +21,10 @@ interface Project {
 }
 
 const EST_PHASE_LABELS: Record<number, string> = {
-  1: 'VAR / Intake', 2: 'Vendor Engagement', 3: 'NDA & Legal Gating',
-  4: 'ROM & Technical Assessment', 5: 'Lab Testing (PoT/PoC)',
-  6: 'APM / ERPA / SSP', 7: 'Pilot (LAO)', 8: 'BAU / Program',
+  1: 'VAR / Intake',              2: 'Vendor Engagement',
+  3: 'NDA & Legal Gating',        4: 'ROM & Technical Assessment',
+  5: 'Lab Testing (PoT/PoC)',     6: 'APM / ERPA / SSP',
+  7: 'Pilot (LAO)',               8: 'BAU / Program',
 };
 
 const COMPLIANCE_STATUSES = ['not_started', 'in_progress', 'under_review', 'complete'];
@@ -30,41 +32,86 @@ const HEALTH_OPTIONS      = ['green', 'yellow', 'red'];
 const LIFECYCLE_OPTIONS   = ['active', 'on_hold', 'blocked', 'ended'];
 const NDA_STATUS_OPTIONS  = ['executed', 'pending', 'via_msa', 'expired'];
 
+// ── Theme-aware style helpers ───────────────────────────────────────────
+// All colour decisions live here — components reference this, never hardcode.
+
+const field = (isDark: boolean): React.CSSProperties => ({
+  width: '100%', padding: '8px 12px', borderRadius: 8, fontSize: 13,
+  background: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+  color: 'var(--s-text)',
+  border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.14)'}`,
+  outline: 'none', transition: 'border-color 0.15s',
+  fontFamily: 'inherit',
+});
+
+const selectStyle = (isDark: boolean): React.CSSProperties => ({
+  ...field(isDark),
+  cursor: 'pointer',
+  // colorScheme tells the browser which native OS option-list style to use
+  colorScheme: isDark ? 'dark' : 'light',
+  // Solid bg required — rgba breaks option rendering on Windows Chrome
+  background: 'var(--s-select-bg)',
+  color: 'var(--s-text)',
+});
+
+// Applied directly to every <option> for cross-browser text visibility.
+// Use solid hex values — browsers ignore CSS variables on native <option> elements.
+const optStyle = (isDark: boolean): React.CSSProperties => ({
+  backgroundColor: isDark ? '#1a2744' : '#f8fafc',
+  color:           isDark ? '#f1f5f9' : '#0f172a',
+});
+
+const divider = (isDark: boolean) =>
+  isDark ? '1px solid rgba(255,255,255,0.07)' : '1px solid rgba(0,0,0,0.08)';
+
+const subtlePanel = (isDark: boolean): React.CSSProperties => ({
+  background: isDark ? 'rgba(168,85,247,0.06)' : 'rgba(168,85,247,0.04)',
+  border: `1px solid ${isDark ? 'rgba(168,85,247,0.2)' : 'rgba(168,85,247,0.25)'}`,
+  borderRadius: 10, padding: '12px 14px',
+});
+
 // ── Small re-usable form atoms ──────────────────────────────────────────
 
-const inputCls = `w-full px-3 py-2 rounded-lg text-sm text-white
-  border border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.05)]
-  focus:outline-none focus:border-[#0053e2] focus:ring-1 focus:ring-[#0053e2]
-  placeholder-slate-500 transition-colors`;
-
-const selectCls = `${inputCls} cursor-pointer`;
-
 const FormLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <label style={{ fontSize: 10, fontWeight: 800, textTransform: 'uppercase',
-    letterSpacing: '0.1em', color: 'rgba(255,255,255,0.4)', display: 'block', marginBottom: 5 }}>
+  <label style={{
+    fontSize: 10, fontWeight: 800, textTransform: 'uppercase',
+    letterSpacing: '0.1em', color: 'var(--s-text-dim)',
+    display: 'block', marginBottom: 5,
+  }}>
     {children}
   </label>
 );
 
-const SectionHeader: React.FC<{ icon: string; title: string; subtitle?: string }> = ({ icon, title, subtitle }) => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: 10,
-    padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.07)', marginBottom: 16 }}>
+const SectionHeader: React.FC<{
+  icon: string; title: string; subtitle?: string; isDark: boolean;
+}> = ({ icon, title, subtitle, isDark }) => (
+  <div style={{
+    display: 'flex', alignItems: 'center', gap: 10,
+    padding: '10px 0', borderBottom: divider(isDark), marginBottom: 16,
+  }}>
     <span style={{ fontSize: 18 }}>{icon}</span>
     <div>
-      <div style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>{title}</div>
-      {subtitle && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 1 }}>{subtitle}</div>}
+      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--s-text)' }}>{title}</div>
+      {subtitle && (
+        <div style={{ fontSize: 11, color: 'var(--s-text-dim)', marginTop: 1 }}>{subtitle}</div>
+      )}
     </div>
   </div>
 );
 
 const HealthDot: React.FC<{ health: string }> = ({ health }) => {
   const c = health === 'green' ? '#22c55e' : health === 'yellow' ? '#ffc220' : '#ea1100';
-  return <span style={{ width: 8, height: 8, borderRadius: '50%', background: c,
-    display: 'inline-block', flexShrink: 0, boxShadow: `0 0 6px ${c}` }} />;
+  return (
+    <span style={{
+      width: 8, height: 8, borderRadius: '50%', background: c,
+      display: 'inline-block', flexShrink: 0, boxShadow: `0 0 6px ${c}`,
+    }} />
+  );
 };
 
 const SaveToast: React.FC<{ status: 'success' | 'error'; message: string }> = ({ status, message }) => (
-  <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 16 }}
+  <motion.div
+    initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 16 }}
     style={{
       position: 'fixed', bottom: 28, right: 28, zIndex: 9999,
       padding: '12px 20px', borderRadius: 12, fontWeight: 700, fontSize: 13,
@@ -78,60 +125,66 @@ const SaveToast: React.FC<{ status: 'success' | 'error'; message: string }> = ({
   </motion.div>
 );
 
-// ── NDA Manager sub-component ──────────────────────────────────────────
+// ── NDA Manager sub-component ───────────────────────────────────────────
 
 const NdaManager: React.FC<{
   ndas: NdaEntry[];
   onChange: (ndas: NdaEntry[]) => void;
-}> = ({ ndas, onChange }) => {
-  const add = () => onChange([...ndas, { nda_number: '', vendor: '', status: 'executed', note: '' }]);
+  isDark: boolean;
+}> = ({ ndas, onChange, isDark }) => {
+  const add    = () => onChange([...ndas, { nda_number: '', vendor: '', status: 'executed', note: '' }]);
   const remove = (i: number) => onChange(ndas.filter((_, idx) => idx !== i));
-  const update = (i: number, field: keyof NdaEntry, val: string) =>
-    onChange(ndas.map((n, idx) => idx === i ? { ...n, [field]: val } : n));
+  const update = (i: number, f: keyof NdaEntry, v: string) =>
+    onChange(ndas.map((n, idx) => idx === i ? { ...n, [f]: v } : n));
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
       {ndas.map((nda, i) => (
-        <div key={i} style={{
-          background: 'rgba(168,85,247,0.06)', border: '1px solid rgba(168,85,247,0.2)',
-          borderRadius: 10, padding: '12px 14px',
-        }}>
+        <div key={i} style={subtlePanel(isDark)}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
             <div>
               <FormLabel>NDA Number (Coupa)</FormLabel>
-              <input className={inputCls} value={nda.nda_number} placeholder="e.g. 92431"
+              <input style={field(isDark)} value={nda.nda_number} placeholder="e.g. 92431"
                 onChange={e => update(i, 'nda_number', e.target.value)} />
             </div>
             <div>
               <FormLabel>Vendor / Counterparty</FormLabel>
-              <input className={inputCls} value={nda.vendor} placeholder="e.g. Sunflower Labs"
+              <input style={field(isDark)} value={nda.vendor} placeholder="e.g. Sunflower Labs"
                 onChange={e => update(i, 'vendor', e.target.value)} />
             </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr auto', gap: 8, alignItems: 'end' }}>
             <div>
               <FormLabel>Status</FormLabel>
-              <select className={selectCls} value={nda.status} onChange={e => update(i, 'status', e.target.value)}>
-                {NDA_STATUS_OPTIONS.map(s => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
+              <select style={selectStyle(isDark)} value={nda.status}
+                onChange={e => update(i, 'status', e.target.value)}>
+                {NDA_STATUS_OPTIONS.map(s => (
+                  <option key={s} value={s} style={optStyle(isDark)}>
+                    {s.replace(/_/g, ' ')}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
               <FormLabel>Note (signatory, date, etc.)</FormLabel>
-              <input className={inputCls} value={nda.note} placeholder="e.g. Larry Lundeen signatory, 2025-07-23"
+              <input style={field(isDark)} value={nda.note}
+                placeholder="e.g. Larry Lundeen signatory, 2025-07-23"
                 onChange={e => update(i, 'note', e.target.value)} />
             </div>
             <button onClick={() => remove(i)} style={{
-              padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(234,17,0,0.3)',
-              background: 'rgba(234,17,0,0.1)', color: '#ea1100', cursor: 'pointer',
-              fontSize: 13, fontWeight: 700,
+              padding: '8px 12px', borderRadius: 8,
+              border: '1px solid rgba(234,17,0,0.35)',
+              background: 'rgba(234,17,0,0.1)', color: '#ea1100',
+              cursor: 'pointer', fontSize: 13, fontWeight: 700,
             }}>✕</button>
           </div>
         </div>
       ))}
       <button onClick={add} style={{
         padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 700,
-        border: '1px dashed rgba(168,85,247,0.4)', background: 'rgba(168,85,247,0.06)',
-        color: '#c084fc', alignSelf: 'flex-start',
+        border: '1px dashed rgba(168,85,247,0.4)',
+        background: isDark ? 'rgba(168,85,247,0.06)' : 'rgba(168,85,247,0.04)',
+        color: '#a855f7', alignSelf: 'flex-start',
       }}>
         + Add NDA Entry
       </button>
@@ -139,52 +192,61 @@ const NdaManager: React.FC<{
   );
 };
 
-// ── Compliance ID row ────────────────────────────────────────────────
+// ── Compliance ID row ───────────────────────────────────────────────────
 
 const ComplianceRow: React.FC<{
-  label: string; accent: string;
-  number: string; status: string;
-  placeholder: string;
+  label: string; accent: string; number: string; status: string;
+  placeholder: string; isDark: boolean;
   onNumberChange: (v: string) => void;
   onStatusChange: (v: string) => void;
-}> = ({ label, accent, number, status, placeholder, onNumberChange, onStatusChange }) => (
+}> = ({ label, accent, number, status, placeholder, isDark, onNumberChange, onStatusChange }) => (
   <div style={{
-    background: `${accent}08`, border: `1px solid ${accent}25`,
+    background: isDark ? `${accent}0D` : `${accent}08`,
+    border: `1px solid ${accent}30`,
     borderRadius: 10, padding: '12px 14px',
     display: 'grid', gridTemplateColumns: '80px 1fr 160px', gap: 12, alignItems: 'end',
   }}>
-    <div style={{ fontSize: 11, fontWeight: 800, color: accent, paddingTop: 22,
-      textTransform: 'uppercase', letterSpacing: '0.08em' }}>{label}</div>
+    <div style={{
+      fontSize: 11, fontWeight: 800, color: accent, paddingTop: 22,
+      textTransform: 'uppercase', letterSpacing: '0.08em',
+    }}>{label}</div>
     <div>
       <FormLabel>Reference Number</FormLabel>
-      <input className={inputCls} value={number} placeholder={placeholder}
+      <input style={field(isDark)} value={number} placeholder={placeholder}
         onChange={e => onNumberChange(e.target.value)} />
     </div>
     <div>
       <FormLabel>Status</FormLabel>
-      <select className={selectCls} value={status} onChange={e => onStatusChange(e.target.value)}>
-        {COMPLIANCE_STATUSES.map(s => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
+      <select style={selectStyle(isDark)} value={status}
+        onChange={e => onStatusChange(e.target.value)}>
+        {COMPLIANCE_STATUSES.map(s => (
+          <option key={s} value={s} style={optStyle(isDark)}>
+            {s.replace(/_/g, ' ')}
+          </option>
+        ))}
       </select>
     </div>
   </div>
 );
 
-// ── Edit form ────────────────────────────────────────────────────────
+// ── Edit form ───────────────────────────────────────────────────────────
 
 const EditForm: React.FC<{
   project: Project;
   onSaved: (updated: Project) => void;
 }> = ({ project, onSaved }) => {
+  const { theme }   = useTheme();
+  const isDark      = theme === 'dark';
+
   const [form, setForm] = useState<Project>({ ...project });
   const [saving, setSaving] = useState(false);
   const [toast, setToast]   = useState<{ status: 'success' | 'error'; message: string } | null>(null);
   const [dirty, setDirty]   = useState(false);
 
-  // Reset when a different project is selected
   useEffect(() => { setForm({ ...project }); setDirty(false); }, [project.project_id]);
 
-  const set = (field: keyof Project, val: unknown) => {
-    setForm(f => ({ ...f, [field]: val }));
+  const set = (f: keyof Project, val: unknown) => {
+    setForm(prev => ({ ...prev, [f]: val }));
     setDirty(true);
   };
 
@@ -201,8 +263,7 @@ const EditForm: React.FC<{
         current_phase: form.current_phase, est_phase_index: form.est_phase_index,
         progress_pct: form.progress_pct, blockers_count: form.blockers_count,
         next_milestone: form.next_milestone, next_due_date: form.next_due_date,
-        last_update_by: form.last_update_by,
-        nda_numbers: form.nda_numbers,
+        last_update_by: form.last_update_by, nda_numbers: form.nda_numbers,
         erpa_number: form.erpa_number, erpa_status: form.erpa_status,
         apm_number: form.apm_number, apm_status: form.apm_status,
         ssp_number: form.ssp_number, ssp_status: form.ssp_status,
@@ -216,7 +277,7 @@ const EditForm: React.FC<{
       const updated: Project = await res.json();
       onSaved(updated);
       setDirty(false);
-      showToast('success', `${updated.project_name} saved successfully`);
+      showToast('success', `${updated.project_name} saved`);
     } catch (err) {
       showToast('error', `Save failed: ${err}`);
     } finally {
@@ -224,18 +285,23 @@ const EditForm: React.FC<{
     }
   };
 
+  const headerBg = isDark ? 'rgba(0,0,0,0.25)' : 'rgba(0,83,226,0.04)';
+  const saveBg   = isDark ? 'rgba(0,0,0,0.35)' : 'rgba(248,250,252,0.95)';
+
   return (
     <div style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Form header */}
       <div style={{
-        padding: '20px 24px 16px', borderBottom: '1px solid rgba(255,255,255,0.07)',
-        background: 'rgba(0,0,0,0.2)', flexShrink: 0,
+        padding: '20px 24px 16px', borderBottom: divider(isDark),
+        background: headerBg, flexShrink: 0,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
           <HealthDot health={form.health} />
-          <span style={{ fontSize: 18, fontWeight: 800, color: '#fff' }}>{form.project_name}</span>
+          <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--s-text)' }}>
+            {form.project_name}
+          </span>
         </div>
-        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', fontFamily: 'monospace' }}>
+        <div style={{ fontSize: 11, color: 'var(--s-text-dim)', fontFamily: 'monospace' }}>
           {form.project_id} · Phase {form.est_phase_index}/8
         </div>
       </div>
@@ -246,27 +312,39 @@ const EditForm: React.FC<{
 
           {/* ─ Status & Health */}
           <div>
-            <SectionHeader icon="🟡" title="Status & Health" subtitle="Project lifecycle state and RAG indicator" />
+            <SectionHeader icon="🟡" title="Status & Health"
+              subtitle="Project lifecycle state and RAG indicator" isDark={isDark} />
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
               <div>
                 <FormLabel>Health (RAG)</FormLabel>
-                <select className={selectCls} value={form.health} onChange={e => set('health', e.target.value)}>
-                  {HEALTH_OPTIONS.map(h => <option key={h} value={h}>{h.charAt(0).toUpperCase() + h.slice(1)}</option>)}
+                <select style={selectStyle(isDark)} value={form.health}
+                  onChange={e => set('health', e.target.value)}>
+                  {HEALTH_OPTIONS.map(h => (
+                    <option key={h} value={h} style={optStyle(isDark)}>
+                      {h.charAt(0).toUpperCase() + h.slice(1)}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
                 <FormLabel>Lifecycle State</FormLabel>
-                <select className={selectCls} value={form.lifecycle_state} onChange={e => set('lifecycle_state', e.target.value)}>
-                  {LIFECYCLE_OPTIONS.map(s => <option key={s} value={s}>{s.replace('_', ' ')}</option>)}
+                <select style={selectStyle(isDark)} value={form.lifecycle_state}
+                  onChange={e => set('lifecycle_state', e.target.value)}>
+                  {LIFECYCLE_OPTIONS.map(s => (
+                    <option key={s} value={s} style={optStyle(isDark)}>
+                      {s.replace(/_/g, ' ')}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
                 <FormLabel>Progress %</FormLabel>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 4 }}>
                   <input type="range" min={0} max={100} value={form.progress_pct}
                     onChange={e => set('progress_pct', Number(e.target.value))}
                     style={{ flex: 1, accentColor: '#0053e2' }} />
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#0053e2', minWidth: 36, textAlign: 'right' }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#0053e2',
+                    minWidth: 36, textAlign: 'right' }}>
                     {form.progress_pct}%
                   </span>
                 </div>
@@ -276,31 +354,38 @@ const EditForm: React.FC<{
 
           {/* ─ EST Phase Gate */}
           <div>
-            <SectionHeader icon="🗓️" title="EST Phase Gate" subtitle="Current lifecycle phase — drives the timeline visualization" />
+            <SectionHeader icon="🗓️" title="EST Phase Gate"
+              subtitle="Current lifecycle phase — drives the timeline visualization" isDark={isDark} />
             <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: 12, marginBottom: 14 }}>
               <div>
                 <FormLabel>Phase Index (1–8)</FormLabel>
-                <select className={selectCls} value={form.est_phase_index}
-                  onChange={e => set('est_phase_index', Number(e.target.value))}
-                  style={{ minWidth: 80 }}>
+                <select style={{ ...selectStyle(isDark), minWidth: 260 }}
+                  value={form.est_phase_index}
+                  onChange={e => set('est_phase_index', Number(e.target.value))}>
                   {Object.entries(EST_PHASE_LABELS).map(([idx, label]) => (
-                    <option key={idx} value={idx}>Ph.{idx} — {label}</option>
+                    <option key={idx} value={idx} style={optStyle(isDark)}>
+                      Ph.{idx} — {label}
+                    </option>
                   ))}
                 </select>
               </div>
               <div>
                 <FormLabel>Phase Label (free text)</FormLabel>
-                <input className={inputCls} value={form.current_phase} placeholder="e.g. Lab Testing"
+                <input style={field(isDark)} value={form.current_phase}
+                  placeholder="e.g. Lab Testing"
                   onChange={e => set('current_phase', e.target.value)} />
               </div>
             </div>
             {/* Phase visual bar */}
             <div style={{ display: 'flex', gap: 4 }}>
               {[1,2,3,4,5,6,7,8].map(i => (
-                <button key={i} onClick={() => { set('est_phase_index', i); set('current_phase', EST_PHASE_LABELS[i]); }}
+                <button key={i}
+                  onClick={() => { set('est_phase_index', i); set('current_phase', EST_PHASE_LABELS[i]); }}
                   style={{
                     flex: 1, height: 6, borderRadius: 99, cursor: 'pointer', border: 'none',
-                    background: i <= form.est_phase_index ? '#0053e2' : 'rgba(255,255,255,0.1)',
+                    background: i <= form.est_phase_index
+                      ? '#0053e2'
+                      : isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
                     boxShadow: i === form.est_phase_index ? '0 0 10px rgba(0,83,226,0.6)' : 'none',
                     transition: 'all 0.15s',
                   }} />
@@ -313,23 +398,25 @@ const EditForm: React.FC<{
 
           {/* ─ Next Milestone */}
           <div>
-            <SectionHeader icon="🏁" title="Next Milestone" subtitle="30-day target and any active blockers" />
+            <SectionHeader icon="🏁" title="Next Milestone"
+              subtitle="30-day target and any active blockers" isDark={isDark} />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 160px 80px', gap: 12 }}>
               <div>
                 <FormLabel>Milestone Description</FormLabel>
-                <input className={inputCls} value={form.next_milestone}
+                <input style={field(isDark)} value={form.next_milestone}
                   placeholder="e.g. Privacy Impact Assessment completion"
                   onChange={e => set('next_milestone', e.target.value)} />
               </div>
               <div>
                 <FormLabel>Due Date</FormLabel>
-                <input type="date" className={inputCls} value={form.next_due_date?.split('T')[0] ?? ''}
-                  onChange={e => set('next_due_date', e.target.value)}
-                  style={{ colorScheme: 'dark' }} />
+                <input type="date" style={{ ...field(isDark), colorScheme: isDark ? 'dark' : 'light' }}
+                  value={form.next_due_date?.split('T')[0] ?? ''}
+                  onChange={e => set('next_due_date', e.target.value)} />
               </div>
               <div>
                 <FormLabel>Blockers</FormLabel>
-                <input type="number" min={0} max={99} className={inputCls} value={form.blockers_count}
+                <input type="number" min={0} max={99} style={field(isDark)}
+                  value={form.blockers_count}
                   onChange={e => set('blockers_count', Number(e.target.value))} />
               </div>
             </div>
@@ -337,25 +424,27 @@ const EditForm: React.FC<{
 
           {/* ─ NDA Management */}
           <div>
-            <SectionHeader icon="⚖️" title="NDA Entries" subtitle="One entry per vendor — Coupa contract numbers (Phase 3 gate)" />
-            <NdaManager ndas={form.nda_numbers} onChange={v => set('nda_numbers', v)} />
+            <SectionHeader icon="⚖️" title="NDA Entries"
+              subtitle="One entry per vendor — Coupa contract numbers (Phase 3 gate)" isDark={isDark} />
+            <NdaManager ndas={form.nda_numbers} onChange={v => set('nda_numbers', v)} isDark={isDark} />
           </div>
 
           {/* ─ APM / ERPA / SSP */}
           <div>
-            <SectionHeader icon="🛡️" title="APM / ERPA / SSP" subtitle="Compliance IDs for Phase 6 gate — APM portal, OneTrust, ServiceNow" />
+            <SectionHeader icon="🛡️" title="APM / ERPA / SSP"
+              subtitle="Compliance IDs for Phase 6 gate — APM portal, OneTrust, ServiceNow" isDark={isDark} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <ComplianceRow label="APM" accent="#60a5fa"
+              <ComplianceRow label="APM" accent="#60a5fa" isDark={isDark}
                 number={form.apm_number} status={form.apm_status}
                 placeholder="e.g. APM0022259"
                 onNumberChange={v => set('apm_number', v)}
                 onStatusChange={v => set('apm_status', v)} />
-              <ComplianceRow label="ERPA" accent="#ffc220"
+              <ComplianceRow label="ERPA" accent="#ffc220" isDark={isDark}
                 number={form.erpa_number} status={form.erpa_status}
                 placeholder="e.g. ERPA-2026-0045"
                 onNumberChange={v => set('erpa_number', v)}
                 onStatusChange={v => set('erpa_status', v)} />
-              <ComplianceRow label="SSP" accent="#22c55e"
+              <ComplianceRow label="SSP" accent="#22c55e" isDark={isDark}
                 number={form.ssp_number} status={form.ssp_status}
                 placeholder="e.g. SSP00012298"
                 onNumberChange={v => set('ssp_number', v)}
@@ -365,14 +454,17 @@ const EditForm: React.FC<{
 
           {/* ─ Notes */}
           <div>
-            <SectionHeader icon="📝" title="Compliance Notes" subtitle="Context, links, caveats — visible in the lifecycle timeline" />
-            <textarea className={inputCls} rows={4} value={form.compliance_notes}
+            <SectionHeader icon="📝" title="Compliance Notes"
+              subtitle="Context, links, caveats — visible in the lifecycle timeline" isDark={isDark} />
+            <textarea
+              rows={4} style={{ ...field(isDark), resize: 'vertical', width: '100%', boxSizing: 'border-box' }}
+              value={form.compliance_notes}
               placeholder="Add any notes about the compliance IDs, in-progress items, stakeholder context…"
-              onChange={e => set('compliance_notes', e.target.value)}
-              style={{ resize: 'vertical', fontFamily: 'inherit' }} />
+              onChange={e => set('compliance_notes', e.target.value)} />
             <div style={{ marginTop: 10 }}>
               <FormLabel>Last Updated By</FormLabel>
-              <input className={inputCls} value={form.last_update_by} placeholder="FirstName.LastName@walmart.com"
+              <input style={field(isDark)} value={form.last_update_by}
+                placeholder="FirstName.LastName@walmart.com"
                 onChange={e => set('last_update_by', e.target.value)} />
             </div>
           </div>
@@ -381,42 +473,51 @@ const EditForm: React.FC<{
 
       {/* Sticky save bar */}
       <div style={{
-        padding: '14px 24px', borderTop: '1px solid rgba(255,255,255,0.07)',
-        background: 'rgba(0,0,0,0.3)', display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between', flexShrink: 0, backdropFilter: 'blur(8px)',
+        padding: '14px 24px', borderTop: divider(isDark), background: saveBg,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        flexShrink: 0, backdropFilter: 'blur(8px)',
       }}>
         {dirty
           ? <span style={{ fontSize: 11, color: '#ffc220', fontWeight: 700 }}>● Unsaved changes</span>
-          : <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>No changes</span>
+          : <span style={{ fontSize: 11, color: 'var(--s-text-dim)' }}>No changes</span>
         }
         <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={() => { setForm({ ...project }); setDirty(false); }}
-            disabled={!dirty} style={{
-              padding: '8px 18px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)',
-              background: 'transparent', color: dirty ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.2)',
+          <button
+            onClick={() => { setForm({ ...project }); setDirty(false); }}
+            disabled={!dirty}
+            style={{
+              padding: '8px 18px', borderRadius: 8,
+              border: `1px solid ${isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)'}`,
+              background: 'transparent', color: dirty ? 'var(--s-text)' : 'var(--s-text-dim)',
               cursor: dirty ? 'pointer' : 'not-allowed', fontSize: 13, fontWeight: 600,
             }}>Discard</button>
-          <button onClick={save} disabled={saving || !dirty} style={{
-            padding: '8px 24px', borderRadius: 8, border: 'none',
-            background: dirty ? '#0053e2' : 'rgba(0,83,226,0.3)',
-            color: dirty ? '#fff' : 'rgba(255,255,255,0.35)',
-            cursor: dirty && !saving ? 'pointer' : 'not-allowed',
-            fontSize: 13, fontWeight: 700,
-            boxShadow: dirty ? '0 0 20px rgba(0,83,226,0.4)' : 'none',
-            transition: 'all 0.2s',
-          }}>{saving ? 'Saving…' : 'Save Changes'}</button>
+          <button
+            onClick={save} disabled={saving || !dirty}
+            style={{
+              padding: '8px 24px', borderRadius: 8, border: 'none',
+              background: dirty ? '#0053e2' : (isDark ? 'rgba(0,83,226,0.25)' : 'rgba(0,83,226,0.15)'),
+              color: dirty ? '#ffffff' : 'var(--s-text-dim)',
+              cursor: dirty && !saving ? 'pointer' : 'not-allowed',
+              fontSize: 13, fontWeight: 700,
+              boxShadow: dirty ? '0 0 20px rgba(0,83,226,0.4)' : 'none',
+              transition: 'all 0.2s',
+            }}>{saving ? 'Saving…' : 'Save Changes'}</button>
         </div>
       </div>
 
-      {/* Toast */}
-      <AnimatePresence>{toast && <SaveToast status={toast.status} message={toast.message} />}</AnimatePresence>
+      <AnimatePresence>
+        {toast && <SaveToast status={toast.status} message={toast.message} />}
+      </AnimatePresence>
     </div>
   );
 };
 
-// ── Main export ──────────────────────────────────────────────────────────
+// ── Main export ─────────────────────────────────────────────────────────
 
 export const ProjectAdminPanel: React.FC = () => {
+  const { theme }  = useTheme();
+  const isDark     = theme === 'dark';
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [selected, setSelected] = useState<Project | null>(null);
   const [loading, setLoading]   = useState(true);
@@ -429,7 +530,6 @@ export const ProjectAdminPanel: React.FC = () => {
       const data = await res.json();
       const list: Project[] = data.projects ?? [];
       setProjects(list);
-      // Keep selected in sync after a save
       setSelected(s => s ? (list.find(p => p.project_id === s.project_id) ?? null) : null);
     } finally { setLoading(false); }
   }, []);
@@ -449,28 +549,35 @@ export const ProjectAdminPanel: React.FC = () => {
   const healthColor = (h: string) =>
     h === 'green' ? '#22c55e' : h === 'yellow' ? '#ffc220' : '#ea1100';
 
+  const listBg   = isDark ? 'rgba(0,6,22,0.6)'    : 'rgba(248,250,252,0.97)';
+  const emptyClr = isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.35)';
+  const countClr = isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.25)';
+
   return (
     <div style={{ display: 'flex', height: '100%', background: 'var(--s-bg)', overflow: 'hidden' }}>
 
       {/* ─ Left project list */}
       <div style={{
-        width: 300, flexShrink: 0, borderRight: '1px solid rgba(255,255,255,0.07)',
-        display: 'flex', flexDirection: 'column', background: 'rgba(0,6,22,0.6)',
+        width: 300, flexShrink: 0,
+        borderRight: divider(isDark),
+        display: 'flex', flexDirection: 'column',
+        background: listBg,
       }}>
         {/* Search */}
         <div style={{ padding: '16px 14px 10px' }}>
           <div style={{ position: 'relative' }}>
-            <span style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
-              color: 'rgba(255,255,255,0.3)', fontSize: 14, pointerEvents: 'none' }}>🔍</span>
+            <span style={{
+              position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
+              color: 'var(--s-text-dim)', fontSize: 14, pointerEvents: 'none',
+            }}>🔍</span>
             <input
-              className={inputCls}
-              style={{ paddingLeft: 32 }}
+              style={{ ...field(isDark), paddingLeft: 32 }}
               placeholder="Search projects…"
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
           </div>
-          <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.25)', marginTop: 8, textAlign: 'center' }}>
+          <div style={{ fontSize: 10, color: countClr, marginTop: 8, textAlign: 'center' }}>
             {filtered.length} / {projects.length} projects
           </div>
         </div>
@@ -478,7 +585,9 @@ export const ProjectAdminPanel: React.FC = () => {
         {/* List */}
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {loading ? (
-            <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.3)', padding: 32, fontSize: 12 }}>Loading…</div>
+            <div style={{ textAlign: 'center', color: 'var(--s-text-dim)', padding: 32, fontSize: 12 }}>
+              Loading…
+            </div>
           ) : filtered.map(p => {
             const isActive = selected?.project_id === p.project_id;
             const hc = healthColor(p.health);
@@ -487,38 +596,39 @@ export const ProjectAdminPanel: React.FC = () => {
                 onClick={() => setSelected(p)}
                 style={{
                   width: '100%', textAlign: 'left', padding: '12px 14px',
-                  background: isActive ? 'rgba(0,83,226,0.15)' : 'transparent',
-                  borderLeft: `3px solid ${isActive ? '#0053e2' : 'transparent'}`,
-                  border: 'none', borderLeftWidth: 3,
-                  borderLeftStyle: 'solid',
+                  background: isActive
+                    ? (isDark ? 'rgba(0,83,226,0.15)' : 'rgba(0,83,226,0.08)')
+                    : 'transparent',
+                  border: 'none', borderLeftWidth: 3, borderLeftStyle: 'solid',
                   borderLeftColor: isActive ? '#0053e2' : 'transparent',
-                  cursor: 'pointer',
-                  borderBottom: '1px solid rgba(255,255,255,0.04)',
-                  transition: 'background 0.15s',
+                  borderBottom: divider(isDark),
+                  cursor: 'pointer', transition: 'background 0.15s',
                 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: hc,
-                    flexShrink: 0, boxShadow: `0 0 5px ${hc}` }} />
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#fff', lineHeight: 1.3 }}>
+                  <span style={{
+                    width: 7, height: 7, borderRadius: '50%',
+                    background: hc, flexShrink: 0, boxShadow: `0 0 5px ${hc}`,
+                  }} />
+                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--s-text)', lineHeight: 1.3 }}>
                     {p.project_name}
                   </span>
                 </div>
                 <div style={{ display: 'flex', gap: 6, paddingLeft: 15 }}>
-                  <span style={{ fontSize: 9, fontWeight: 800, color: '#0053e2',
-                    background: 'rgba(0,83,226,0.15)', padding: '1px 6px', borderRadius: 99 }}>
-                    Ph.{p.est_phase_index}/8
-                  </span>
+                  <span style={{
+                    fontSize: 9, fontWeight: 800, color: '#0053e2',
+                    background: 'rgba(0,83,226,0.12)', padding: '1px 6px', borderRadius: 99,
+                  }}>Ph.{p.est_phase_index}/8</span>
                   {p.apm_number && (
-                    <span style={{ fontSize: 9, fontWeight: 700, color: '#60a5fa',
-                      background: 'rgba(96,165,250,0.1)', padding: '1px 6px', borderRadius: 99 }}>
-                      APM
-                    </span>
+                    <span style={{
+                      fontSize: 9, fontWeight: 700, color: '#3b82f6',
+                      background: 'rgba(59,130,246,0.12)', padding: '1px 6px', borderRadius: 99,
+                    }}>APM</span>
                   )}
                   {p.nda_numbers?.length > 0 && (
-                    <span style={{ fontSize: 9, fontWeight: 700, color: '#c084fc',
-                      background: 'rgba(192,132,252,0.1)', padding: '1px 6px', borderRadius: 99 }}>
-                      NDA×{p.nda_numbers.length}
-                    </span>
+                    <span style={{
+                      fontSize: 9, fontWeight: 700, color: '#a855f7',
+                      background: 'rgba(168,85,247,0.12)', padding: '1px 6px', borderRadius: 99,
+                    }}>NDA×{p.nda_numbers.length}</span>
                   )}
                 </div>
               </motion.button>
@@ -539,15 +649,13 @@ export const ProjectAdminPanel: React.FC = () => {
             </motion.div>
           ) : (
             <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-              style={{ height: '100%', display: 'flex', alignItems: 'center',
-                justifyContent: 'center', flexDirection: 'column', gap: 12 }}>
+              style={{
+                height: '100%', display: 'flex', alignItems: 'center',
+                justifyContent: 'center', flexDirection: 'column', gap: 12,
+              }}>
               <span style={{ fontSize: 48 }}>📝</span>
-              <p style={{ fontSize: 14, fontWeight: 700, color: 'rgba(255,255,255,0.4)' }}>
-                Select a project to edit
-              </p>
-              <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.2)' }}>
-                {projects.length} projects loaded
-              </p>
+              <p style={{ fontSize: 14, fontWeight: 700, color: emptyClr }}>Select a project to edit</p>
+              <p style={{ fontSize: 12, color: countClr }}>{projects.length} projects loaded</p>
             </motion.div>
           )}
         </AnimatePresence>
