@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Sphere, MeshDistortMaterial, Float, Text, Html } from '@react-three/drei';
 import * as THREE from 'three';
+import ESTLifecycleTimeline, { type NdaEntry, type ComplianceFields } from './ESTLifecycleTimeline';
 
 // ═══════════════════════════════════════════════════════════════════════
 // 3D Project Dashboard — SENTRY Epic Edition
@@ -17,6 +18,7 @@ interface Project {
   lifecycle_state: string;
   health: string;
   current_phase: string;
+  est_phase_index: number;
   risk_score: number;
   sensitivity: string;
   tags: string;
@@ -27,6 +29,16 @@ interface Project {
   last_update_at: string;
   last_update_by: string;
   est_cost: string;
+  business_owner: string;
+  // Compliance
+  nda_numbers: NdaEntry[];
+  erpa_number: string;
+  erpa_status: string;
+  apm_number: string;
+  apm_status: string;
+  ssp_number: string;
+  ssp_status: string;
+  compliance_notes: string;
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -599,6 +611,38 @@ const ProjectCard3D: React.FC<ProjectCard3DProps> = ({ project, onClick }) => {
               ))}
             </div>
           )}
+
+          {/* EST Phase + Compliance ID badges */}
+          <div className="flex flex-wrap gap-1 mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+            {/* EST Phase pill */}
+            <span className="text-xs px-2 py-1 rounded font-bold" style={{ background: `${color}25`, color, border: `1px solid ${color}50` }}>
+              Ph.{project.est_phase_index || 1}/8
+            </span>
+            {/* APM */}
+            {project.apm_number && (
+              <span className="text-xs px-2 py-1 rounded font-mono" style={{ background: 'rgba(0,83,226,0.15)', color: '#60a5fa', border: '1px solid rgba(0,83,226,0.3)' }}>
+                APM {project.apm_number}
+              </span>
+            )}
+            {/* ERPA */}
+            {project.erpa_number && (
+              <span className="text-xs px-2 py-1 rounded font-mono" style={{ background: 'rgba(255,194,32,0.1)', color: '#ffc220', border: '1px solid rgba(255,194,32,0.3)' }}>
+                ERPA #{project.erpa_number}
+              </span>
+            )}
+            {/* SSP */}
+            {project.ssp_number && (
+              <span className="text-xs px-2 py-1 rounded font-mono" style={{ background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }}>
+                SSP {project.ssp_number}
+              </span>
+            )}
+            {/* NDA */}
+            {project.nda_numbers?.length > 0 && (
+              <span className="text-xs px-2 py-1 rounded font-mono" style={{ background: 'rgba(168,85,247,0.1)', color: '#c084fc', border: '1px solid rgba(168,85,247,0.3)' }}>
+                NDA ×{project.nda_numbers.length}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Glow Effect */}
@@ -652,39 +696,50 @@ const ProjectDashboard3D: React.FC = () => {
   const [filterHealth, setFilterHealth] = useState<'all' | 'green' | 'yellow' | 'red'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Load projects from CSV
+  // Load projects from the backend API (FastAPI on :8082 via Vite proxy)
   useEffect(() => {
     const loadProjects = async () => {
       try {
-        const response = await fetch('/data/projects.csv');
-        const text = await response.text();
-        const lines = text.split('\n');
-        const headers = parseCSVLine(lines[0]);
-
-        const parsed = lines.slice(1)
-          .filter(line => line.trim())
-          .map(line => {
-            const values = parseCSVLine(line);
-            const obj: any = {};
-            headers.forEach((header, idx) => {
-              obj[header.trim()] = values[idx]?.trim() ?? '';
-            });
-            // Coerce numeric fields so progress bars / risk badges work
-            obj.progress_pct    = Number(obj.progress_pct)    || 0;
-            obj.risk_score      = Number(obj.risk_score)      || 0;
-            obj.blockers_count  = Number(obj.blockers_count)  || 0;
-            return obj as Project;
-          })
-          // Drop empty sentinel rows Excel sometimes appends
-          .filter(p => p.project_id);
-
-        setProjects(parsed);
-      } catch (error) {
-        console.error('Error loading projects:', error);
-        setProjects(FALLBACK_PROJECTS);
+        const res = await fetch('/api/projects');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        setProjects(data.projects ?? []);
+      } catch (err) {
+        console.warn('API unavailable, falling back to CSV:', err);
+        // CSV fallback
+        try {
+          const response = await fetch('/data/projects.csv');
+          const text = await response.text();
+          const lines = text.split('\n');
+          const headers = parseCSVLine(lines[0]);
+          const parsed = lines.slice(1)
+            .filter(line => line.trim())
+            .map(line => {
+              const values = parseCSVLine(line);
+              const obj: any = {};
+              headers.forEach((header, idx) => { obj[header.trim()] = values[idx]?.trim() ?? ''; });
+              obj.progress_pct   = Number(obj.progress_pct)  || 0;
+              obj.risk_score     = Number(obj.risk_score)    || 0;
+              obj.blockers_count = Number(obj.blockers_count)|| 0;
+              obj.est_phase_index = Number(obj.est_phase_index) || 1;
+              obj.nda_numbers    = [];
+              obj.erpa_number = obj.erpa_number || '';
+              obj.erpa_status = 'not_started';
+              obj.apm_number  = obj.apm_number  || '';
+              obj.apm_status  = 'not_started';
+              obj.ssp_number  = obj.ssp_number  || '';
+              obj.ssp_status  = 'not_started';
+              obj.compliance_notes = '';
+              obj.business_owner   = '';
+              return obj as Project;
+            })
+            .filter(p => p.project_id);
+          setProjects(parsed);
+        } catch {
+          setProjects(FALLBACK_PROJECTS);
+        }
       }
     };
-
     loadProjects();
   }, []);
 
@@ -1009,6 +1064,45 @@ const ProjectDashboard3D: React.FC = () => {
                     {new Date(selectedProject.last_update_at).toLocaleString()} by {selectedProject.last_update_by}
                   </p>
                 </div>
+
+                {/* ── EST Lifecycle Timeline ── */}
+                <div>
+                  <div style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    marginBottom: 20, paddingTop: 8,
+                    borderTop: '1px solid rgba(255,255,255,0.07)',
+                  }}>
+                    <div style={{
+                      width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 16,
+                      background: 'linear-gradient(135deg, rgba(255,194,32,0.2), rgba(255,194,32,0.05))',
+                      border: '1px solid rgba(255,194,32,0.3)',
+                    }}>🛤️</div>
+                    <div>
+                      <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', letterSpacing: '-0.01em' }}>
+                        EST Lifecycle Timeline
+                      </div>
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 1 }}>
+                        Walmart Global Security · Emerging Security Technology Process · Click any phase to explore
+                      </div>
+                    </div>
+                  </div>
+                  <ESTLifecycleTimeline
+                    estPhaseIndex={selectedProject.est_phase_index || 1}
+                    health={selectedProject.health}
+                    compliance={{
+                      nda_numbers: selectedProject.nda_numbers || [],
+                      erpa_number: selectedProject.erpa_number || '',
+                      erpa_status: selectedProject.erpa_status || 'not_started',
+                      apm_number: selectedProject.apm_number || '',
+                      apm_status: selectedProject.apm_status || 'not_started',
+                      ssp_number: selectedProject.ssp_number || '',
+                      ssp_status: selectedProject.ssp_status || 'not_started',
+                      compliance_notes: selectedProject.compliance_notes || '',
+                    }}
+                  />
+                </div>
               </div>
             </motion.div>
           </motion.div>
@@ -1037,6 +1131,7 @@ const FALLBACK_PROJECTS: Project[] = [
     lifecycle_state: 'active',
     health: 'green',
     current_phase: 'Lab Testing',
+    est_phase_index: 5,
     risk_score: 3,
     sensitivity: 'confidential',
     tags: 'robotics;security;autonomous',
@@ -1047,6 +1142,15 @@ const FALLBACK_PROJECTS: Project[] = [
     last_update_at: '2026-02-28T20:30:00Z',
     last_update_by: 'Cody.Smith@walmart.com',
     est_cost: '',
+    business_owner: '',
+    nda_numbers: [],
+    erpa_number: '',
+    erpa_status: 'not_started',
+    apm_number: '',
+    apm_status: 'not_started',
+    ssp_number: '',
+    ssp_status: 'not_started',
+    compliance_notes: '',
   },
 ];
 

@@ -99,8 +99,7 @@ export const CompetitorEventTable: React.FC<Props> = ({
           <select
             value={competitor}
             onChange={e => setCompetitor(e.target.value)}
-            className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm
-                       text-white focus:border-wmt-blue focus:outline-none"
+            className="sentry-select text-sm"
           >
             <option value="">All Competitors</option>
             {competitors.map(c => <option key={c} value={c}>{c}</option>)}
@@ -109,19 +108,17 @@ export const CompetitorEventTable: React.FC<Props> = ({
         <select
           value={category}
           onChange={e => setCategory(e.target.value)}
-          className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm
-                     text-white focus:border-wmt-blue focus:outline-none"
-        >
-          <option value="">All Categories</option>
+          className="sentry-select text-sm"
+          >
+            <option value="">All Categories</option>
           {cats.map(c => <option key={c} value={c}>{c}</option>)}
         </select>
         <select
           value={month}
           onChange={e => setMonth(e.target.value)}
-          className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm
-                     text-white focus:border-wmt-blue focus:outline-none"
-        >
-          <option value="">All Months</option>
+          className="sentry-select text-sm"
+          >
+            <option value="">All Months</option>
           {MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
         </select>
       </div>

@@ -119,6 +119,44 @@ CREATE TABLE IF NOT EXISTS incidents (
 """
 
 
+CREATE_PROJECTS = """
+CREATE TABLE IF NOT EXISTS projects (
+    project_id          TEXT PRIMARY KEY,
+    project_name        TEXT NOT NULL,
+    summary             TEXT DEFAULT '',
+    managing_unit       TEXT DEFAULT '',
+    lifecycle_state     TEXT DEFAULT 'active',
+    health              TEXT DEFAULT 'green',
+    current_phase       TEXT DEFAULT 'Intake',
+    est_phase_index     INTEGER DEFAULT 1,
+    risk_score          INTEGER DEFAULT 0,
+    sensitivity         TEXT DEFAULT 'internal',
+    tags                TEXT DEFAULT '',
+    progress_pct        INTEGER DEFAULT 0,
+    next_milestone      TEXT DEFAULT '',
+    next_due_date       TEXT DEFAULT '',
+    blockers_count      INTEGER DEFAULT 0,
+    last_update_at      TEXT DEFAULT (datetime('now')),
+    last_update_by      TEXT DEFAULT '',
+    est_cost            TEXT DEFAULT '',
+    business_owner      TEXT DEFAULT '',
+    -- Compliance artifacts (Phase 3: NDA, Phase 6: ERPA/APM/SSP)
+    nda_numbers         TEXT DEFAULT '[]',
+    erpa_number         TEXT DEFAULT '',
+    erpa_status         TEXT DEFAULT 'not_started',
+    apm_number          TEXT DEFAULT '',
+    apm_status          TEXT DEFAULT 'not_started',
+    ssp_number          TEXT DEFAULT '',
+    ssp_status          TEXT DEFAULT 'not_started',
+    compliance_notes    TEXT DEFAULT '',
+    -- Phase gate tracking (JSON array of {phase_index, entered_at, gate_decision, notes})
+    phase_history       TEXT DEFAULT '[]',
+    created_at          TEXT DEFAULT (datetime('now')),
+    updated_at          TEXT DEFAULT (datetime('now'))
+);
+"""
+
+
 def init_db() -> None:
     """Create tables if they don't exist."""
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -127,4 +165,5 @@ def init_db() -> None:
         conn.execute(CREATE_VAR_REPORTS)
         conn.execute(CREATE_HIGHLIGHTS)
         conn.execute(CREATE_INCIDENTS)
+        conn.execute(CREATE_PROJECTS)
         conn.commit()

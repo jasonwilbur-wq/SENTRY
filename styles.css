@@ -10,6 +10,10 @@
    these vars via inline styles or Tailwind via @theme below.
    Theme switching = just flipping these vars. Nothing else. */
 :root {
+  /* ── Select / dropdown (must be solid hex — rgba breaks OS-native option rendering) ── */
+  --s-select-bg:     #0f1b35;
+  --s-select-option: #1a2744;
+
   /* ── Surfaces ── */
   --s-bg:           #000B28;
   --s-sidebar:      rgba(0,   6,  22, 0.93);
@@ -44,6 +48,10 @@
 }
 
 :root[data-theme="light"] {
+  /* ── Select / dropdown ── */
+  --s-select-bg:     #ffffff;
+  --s-select-option: #f8fafc;
+
   /* ── Surfaces ── */
   --s-bg:           #eef2f7;
   --s-sidebar:      rgba(255,255,255, 0.97);
@@ -325,6 +333,41 @@ body {
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 .btn-ghost:hover { background: var(--s-border); color: var(--s-text); }
+
+/* ── color-scheme: tells the browser to render native controls
+      (select arrows, scrollbars, checkboxes) matching the current theme.     ── */
+:root                     { color-scheme: dark;  }
+:root[data-theme="light"] { color-scheme: light; }
+
+/* ── Unified themed select / dropdown ─────────────────────────────────────
+   MUST use solid hex vars — rgba() and transparent backgrounds break
+   OS-native <option> rendering on Windows / macOS system picker.           ── */
+.sentry-select {
+  background-color: var(--s-select-bg);
+  border: 1px solid var(--s-border-mid);
+  color: var(--s-text);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  /* Ensure the select arrow is visible in both themes */
+  -webkit-appearance: auto;
+  appearance: auto;
+}
+.sentry-select:focus-visible {
+  border-color: rgba(0,83,226,0.55);
+  box-shadow: 0 0 0 3px rgba(0,83,226,0.15);
+}
+.sentry-select:hover { border-color: rgba(0,83,226,0.4); }
+
+/* Options: solid background required for cross-browser/OS readability */
+.sentry-select option,
+.sentry-input option {
+  background-color: var(--s-select-bg);
+  color: var(--s-text);
+}
 
 /* ── Theme-aware form input — replaces hardcoded bg-slate-900 inputCls ── */
 .sentry-input {

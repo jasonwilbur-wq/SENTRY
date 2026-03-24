@@ -135,3 +135,71 @@ class FormResponse(BaseModel):
     success: bool
     ref_id: str
     message: str
+
+
+# ── Projects ─────────────────────────────────────────────────────────────
+
+class NdaEntry(BaseModel):
+    """One vendor NDA under a project (a project may have many)."""
+    nda_number: str
+    vendor: str
+    status: str = "executed"          # executed | pending | via_msa
+    note: str = ""
+
+
+class ProjectOut(BaseModel):
+    project_id: str
+    project_name: str
+    summary: str = ""
+    managing_unit: str = ""
+    lifecycle_state: str = "active"
+    health: str = "green"
+    current_phase: str = "Intake"
+    est_phase_index: int = 1
+    risk_score: int = 0
+    sensitivity: str = "internal"
+    tags: str = ""
+    progress_pct: int = 0
+    next_milestone: str = ""
+    next_due_date: str = ""
+    blockers_count: int = 0
+    last_update_at: str = ""
+    last_update_by: str = ""
+    est_cost: str = ""
+    business_owner: str = ""
+    # Compliance fields
+    nda_numbers: list[NdaEntry] = Field(default_factory=list)
+    erpa_number: str = ""
+    erpa_status: str = "not_started"
+    apm_number: str = ""
+    apm_status: str = "not_started"
+    ssp_number: str = ""
+    ssp_status: str = "not_started"
+    compliance_notes: str = ""
+    phase_history: list[dict] = Field(default_factory=list)
+
+
+class ProjectsResponse(BaseModel):
+    total: int
+    projects: list[ProjectOut]
+
+
+class ProjectUpdate(BaseModel):
+    """Partial update — all fields optional."""
+    health: str | None = None
+    lifecycle_state: str | None = None
+    current_phase: str | None = None
+    est_phase_index: int | None = None
+    progress_pct: int | None = None
+    next_milestone: str | None = None
+    next_due_date: str | None = None
+    blockers_count: int | None = None
+    last_update_by: str | None = None
+    nda_numbers: list[NdaEntry] | None = None
+    erpa_number: str | None = None
+    erpa_status: str | None = None
+    apm_number: str | None = None
+    apm_status: str | None = None
+    ssp_number: str | None = None
+    ssp_status: str | None = None
+    compliance_notes: str | None = None

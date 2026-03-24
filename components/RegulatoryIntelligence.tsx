@@ -329,30 +329,26 @@ export const RegulatoryIntelligence: React.FC = () => {
             />
             {/* RAG filter */}
             <select value={filterRag} onChange={e => setFilterRag(e.target.value)}
-              className="px-2 py-1.5 rounded-lg text-xs bg-transparent border focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
-              style={{ borderColor: 'var(--s-border-mid)', color: 'var(--s-text)' }}>
+              className="sentry-select text-xs py-1.5 px-2">
               <option value="">All RAG</option>
               {['Red','Amber','Yellow','Green'].map(r => <option key={r} value={r}>{r}</option>)}
             </select>
             {/* Tech filter */}
             <select value={filterTech} onChange={e => setFilterTech(e.target.value)}
-              className="px-2 py-1.5 rounded-lg text-xs bg-transparent border focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
-              style={{ borderColor: 'var(--s-border-mid)', color: 'var(--s-text)' }}>
+              className="sentry-select text-xs py-1.5 px-2">
               <option value="">All Tech</option>
               {techBreakdown.map(([t]) => <option key={t} value={t}>{t}</option>)}
             </select>
             {/* Status filter */}
             <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-              className="px-2 py-1.5 rounded-lg text-xs bg-transparent border focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
-              style={{ borderColor: 'var(--s-border-mid)', color: 'var(--s-text)' }}>
+              className="sentry-select text-xs py-1.5 px-2">
               <option value="">All Status</option>
               <option value="Enacted">Enacted</option>
               <option value="Proposed">Proposed</option>
             </select>
             {/* Sort */}
             <select value={sortBy} onChange={e => setSortBy(e.target.value)}
-              className="px-2 py-1.5 rounded-lg text-xs bg-transparent border focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
-              style={{ borderColor: 'var(--s-border-mid)', color: 'var(--s-text)' }}>
+              className="sentry-select text-xs py-1.5 px-2">
               <option value="risk">Sort: Risk ↓</option>
               <option value="title">Sort: Title</option>
               <option value="jurisdiction">Sort: Jurisdiction</option>

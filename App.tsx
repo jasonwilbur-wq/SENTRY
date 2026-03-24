@@ -18,6 +18,7 @@ const RequestLabVisit        = lazy(() => import('./components/RequestLabVisit')
 const CompetitorAnalysis     = lazy(() => import('./components/CompetitorAnalysis').then(m => ({ default: m.CompetitorAnalysis })));
 const ArchitectureGraph      = lazy(() => import('./components/ArchitectureGraph').then(m => ({ default: m.ArchitectureGraph })));
 const AdminPanel             = lazy(() => import('./components/AdminPanel').then(m => ({ default: m.AdminPanel })));
+const ProjectAdminPanel      = lazy(() => import('./components/ProjectAdminPanel').then(m => ({ default: m.ProjectAdminPanel })));
 const CompetitorIntelligence = lazy(() => import('./components/CompetitorIntelligence').then(m => ({ default: m.CompetitorIntelligence })));
 const CSOIntelligence        = lazy(() => import('./components/CSOIntelligence').then(m => ({ default: m.CSOIntelligence })));
 const RegulatoryIntelligence = lazy(() => import('./components/RegulatoryIntelligence').then(m => ({ default: m.RegulatoryIntelligence })));
@@ -38,6 +39,7 @@ const VIEW_META: Record<ViewState, { title: string; subtitle: string }> = {
   [ViewState.INCIDENT_INTEL]:    { title: 'Incident Intelligence',   subtitle: 'Retail security incidents — ORC, cargo theft, cyber, violence & more.' },
   [ViewState.ARCHITECTURE]:      { title: 'SENTRY Architecture',     subtitle: 'GCP four-phase framework hierarchy.' },
   [ViewState.ADMIN]:             { title: 'VAR Administration',      subtitle: 'Manage VAR reports, extract scores, and fix vendor linkage.' },
+  [ViewState.PROJECT_ADMIN]:     { title: 'Project Administration',  subtitle: 'Manually update project metadata, compliance IDs, and EST phase gates.' },
   [ViewState.RISK_MAP]:          { title: 'Vendor Risk Galaxy',      subtitle: 'All vendors plotted in 3D space by risk level and category.' },
 };
 
@@ -143,8 +145,10 @@ const AppShell: React.FC<{
             </div>
           </header>
 
-          {/* Page body */}
-          <div className="flex-1 overflow-y-auto p-8">
+          {/* Page body — Project Admin gets zero padding so its panels fill edge-to-edge */}
+          <div className={`flex-1 overflow-hidden ${
+            currentView === ViewState.PROJECT_ADMIN ? '' : 'overflow-y-auto p-8'
+          }`}>
             <PageTransition viewKey={currentView}>
               <Suspense fallback={<ViewSkeleton />}>
                 {currentView === ViewState.HOME               && <HomeDashboard onNavigate={setCurrentView} />}
@@ -159,6 +163,7 @@ const AppShell: React.FC<{
                 {currentView === ViewState.REQUEST_LAB_VISIT   && <RequestLabVisit />}
                 {currentView === ViewState.ARCHITECTURE        && <ArchitectureGraph />}
                 {currentView === ViewState.ADMIN               && <AdminPanel />}
+                {currentView === ViewState.PROJECT_ADMIN        && <ProjectAdminPanel />}
                 {currentView === ViewState.RISK_MAP            && <VendorRiskMap3D />}
               </Suspense>
             </PageTransition>

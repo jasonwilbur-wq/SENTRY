@@ -403,8 +403,7 @@ export function IncidentIntelligence() {
             style={{ background: 'var(--s-modal-inner)', borderColor: 'var(--s-border-mid)', color: 'var(--s-text)' }}
           />
           <select value={sort} onChange={e => setSort(e.target.value as typeof sort)}
-            className="px-3 py-2 rounded-lg text-sm border outline-none"
-            style={{ background: 'var(--s-modal-inner)', borderColor: 'var(--s-border-mid)', color: 'var(--s-text)' }}>
+            className="sentry-select text-sm">
             <option value="date">Sort: Date</option>
             <option value="severity">Sort: Severity</option>
             <option value="type">Sort: Type</option>

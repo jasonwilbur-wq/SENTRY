@@ -82,6 +82,8 @@ from regulatory_routes import ROUTER as regulatory_router
 app.include_router(regulatory_router)
 from incident_routes import ROUTER as incident_router
 app.include_router(incident_router)
+from project_routes import ROUTER as project_router
+app.include_router(project_router)
 
 
 # ── Vendors ────────────────────────────────────────────────────────────
@@ -223,74 +225,73 @@ def list_categories():
 
 @app.get("/api/vendors/{vendor_id}", response_model=VendorOut)
 def get_vendor(vendor_id: str):
-    """Return a single vendor by ID."""
+    """Return a single vendor by ID, enriched with latest VAR scores.
+
+    All queries run inside a single connection that is closed once — the
+    previous version closed the connection mid-function and then tried to
+    execute a second query on the dead handle, causing ProgrammingError 500s
+    for any vendor that had VAR reports.
+    """
+    from fastapi import HTTPException
+
     conn = get_connection()
-    row = conn.execute(
-        "SELECT * FROM vendors WHERE id = ?", (vendor_id,)
-    ).fetchone()
-    if not row:
-        from fastapi import HTTPException
-        raise HTTPException(status_code=404, detail="Vendor not found")
-    var_ids = {
-        r[0] for r in conn.execute(
-            "SELECT DISTINCT vendor_id FROM var_reports WHERE vendor_id = ?",
-            (vendor_id,)
-        ).fetchall()
-    }
-    conn.close()
-    # --- MODIFIED: Ensure we're fetching from a fresh dict to avoid row-object issues
-    row_dict = dict(row)
-    
-    # Fetch latest VAR report scores to enrich the vendor details
-    var_cursor = conn.execute("""
-        SELECT 
-            overall_score, compliance_score, risk_score, maturity_score,
-            integration_score, roi_score, viability_score, 
-            differentiation_score, cloud_dep_score
-        FROM var_reports 
-        WHERE vendor_id = ? 
-        ORDER BY report_date DESC LIMIT 1
-    """, (vendor_id,))
-    
-    var_row = var_cursor.fetchone()
+    try:
+        row = conn.execute(
+            "SELECT * FROM vendors WHERE id = ?", (vendor_id,)
+        ).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Vendor not found")
+
+        row_dict = dict(row)
+
+        var_ids = {
+            r[0] for r in conn.execute(
+                "SELECT DISTINCT vendor_id FROM var_reports WHERE vendor_id = ?",
+                (vendor_id,)
+            ).fetchall()
+        }
+
+        # Latest VAR scores for the detail panel — keep connection open!
+        var_row = conn.execute("""
+            SELECT
+                overall_score, compliance_score, risk_score, maturity_score,
+                integration_score, roi_score, viability_score,
+                differentiation_score, cloud_dep_score
+            FROM var_reports
+            WHERE vendor_id = ?
+            ORDER BY report_date DESC LIMIT 1
+        """, (vendor_id,)).fetchone()
+    finally:
+        conn.close()
+
     var_scores = None
-    
     if var_row:
         var_scores = {
-            "Overall": var_row[0],
-            "Compliance": var_row[1],
-            "Risk": var_row[2],
-            "Maturity": var_row[3],
-            "Integration": var_row[4],
-            "ROI": var_row[5],
-            "Viability": var_row[6],
+            "Overall":         var_row[0],
+            "Compliance":      var_row[1],
+            "Risk":            var_row[2],
+            "Maturity":        var_row[3],
+            "Integration":     var_row[4],
+            "ROI":             var_row[5],
+            "Viability":       var_row[6],
             "Differentiation": var_row[7],
-            "Cloud Dep": var_row[8],
+            "Cloud Dep":       var_row[8],
         }
-    
-    # Use existing helper to form the base object
-    # Note: _group_products expects a list of dicts
-    # Need to instantiate manually because _group_products only handles base fields
-    # and doesn't know about the new extended attributes.
-    
-    # 1. Use existing helper to get the base structure (products list, etc.)
+
     base_vendor = _group_products([row_dict], var_ids)[0]
-    
-    # 2. Convert to dict and enrich
-    enriched_data = base_vendor.dict()
-    enriched_data.update({
-        "var_scores": var_scores,
-        "description": str(row_dict.get("description") or ""),
-        "founded_year": str(row_dict.get("founded_year") or ""),
-        "hq_location": str(row_dict.get("hq_location") or ""),
-        "business_owner": str(row_dict.get("business_owner") or ""),
-        "sourcing_manager": str(row_dict.get("sourcing_manager") or ""),
-        "deployment_status": str(row_dict.get("deployment_status") or "Prospect"),
-        "hosting_type": str(row_dict.get("hosting_type") or ""),
+    enriched    = base_vendor.dict()
+    enriched.update({
+        "var_scores":         var_scores,
+        "description":        str(row_dict.get("description")        or ""),
+        "founded_year":       str(row_dict.get("founded_year")       or ""),
+        "hq_location":        str(row_dict.get("hq_location")        or ""),
+        "business_owner":     str(row_dict.get("business_owner")     or ""),
+        "sourcing_manager":   str(row_dict.get("sourcing_manager")   or ""),
+        "deployment_status":  str(row_dict.get("deployment_status")  or "Prospect"),
+        "hosting_type":       str(row_dict.get("hosting_type")       or ""),
         "data_classification": str(row_dict.get("data_classification") or "Internal"),
     })
-    
-    return VendorOut(**enriched_data)
+    return VendorOut(**enriched)
 
 
 @app.get("/api/vendors/{vendor_id}/highlights", response_model=HighlightsResponse)

@@ -368,8 +368,7 @@ export const AdminPanel: React.FC = () => {
         <select
           value={scoredFilter}
           onChange={e => { setScoredFilter(e.target.value as '' | 'yes' | 'no'); setPage(1); }}
-          className="bg-slate-800 border border-slate-600 rounded-lg px-3 py-2.5 text-sm text-white
-                     focus:outline-none focus:ring-2 focus:ring-wmt-blue"
+          className="sentry-select text-sm py-2.5 px-3"
           aria-label="Filter by score status"
         >
           <option value="">All VARs</option>

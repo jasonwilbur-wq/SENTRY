@@ -196,7 +196,7 @@ function EventFormModal({
               <select
                 value={formData.category}
                 onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm"
+                className="w-full sentry-select text-sm"
                 required
               >
                 {categories.map((cat) => (
@@ -434,7 +434,7 @@ export function CompetitorIntelAdmin() {
             setFilters({ ...filters, category: e.target.value || undefined });
             setPage(1);
           }}
-          className="px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-white text-sm"
+          className="sentry-select text-sm"
         >
           <option value="">All Categories</option>
           <option value="Cyber">Cyber</option>
