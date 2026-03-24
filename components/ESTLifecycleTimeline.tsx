@@ -13,14 +13,18 @@ export interface NdaEntry {
   note: string;
 }
 
+export interface ComplianceEntry {
+  vendor: string;
+  number: string;
+  status: string;
+  note: string;
+}
+
 export interface ComplianceFields {
-  nda_numbers: NdaEntry[];
-  erpa_number: string;
-  erpa_status: string;
-  apm_number: string;
-  apm_status: string;
-  ssp_number: string;
-  ssp_status: string;
+  nda_numbers:  NdaEntry[];
+  apm_entries:  ComplianceEntry[];
+  erpa_entries: ComplianceEntry[];
+  ssp_entries:  ComplianceEntry[];
   compliance_notes: string;
 }
 
@@ -225,9 +229,21 @@ const ESTLifecycleTimeline: React.FC<ESTLifecycleTimelineProps> = ({
       status: n.status,
     })),
     6: [
-      { label: 'APM',  value: compliance.apm_number,  status: compliance.apm_status },
-      { label: 'ERPA', value: compliance.erpa_number, status: compliance.erpa_status },
-      { label: 'SSP',  value: compliance.ssp_number,  status: compliance.ssp_status },
+      ...compliance.apm_entries.map(e => ({
+        label: 'APM',
+        value: e.number ? `${e.number}${e.vendor ? ` · ${e.vendor}` : ''}` : '',
+        status: e.status,
+      })),
+      ...compliance.erpa_entries.map(e => ({
+        label: 'ERPA',
+        value: e.number ? `${e.number}${e.vendor ? ` · ${e.vendor}` : ''}` : '',
+        status: e.status,
+      })),
+      ...compliance.ssp_entries.map(e => ({
+        label: 'SSP',
+        value: e.number ? `${e.number}${e.vendor ? ` · ${e.vendor}` : ''}` : '',
+        status: e.status,
+      })),
     ],
   };
 

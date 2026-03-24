@@ -8,6 +8,7 @@ import { useTheme } from '../context/ThemeContext';
 // ═══════════════════════════════════════════════════════════════════════
 
 interface NdaEntry { nda_number: string; vendor: string; status: string; note: string; }
+interface ComplianceEntry { vendor: string; number: string; status: string; note: string; }
 
 interface Project {
   project_id: string; project_name: string; summary: string; managing_unit: string;
@@ -15,8 +16,10 @@ interface Project {
   risk_score: number; sensitivity: string; tags: string; progress_pct: number;
   next_milestone: string; next_due_date: string; blockers_count: number;
   last_update_at: string; last_update_by: string; est_cost: string; business_owner: string;
-  nda_numbers: NdaEntry[]; erpa_number: string; erpa_status: string;
-  apm_number: string; apm_status: string; ssp_number: string; ssp_status: string;
+  nda_numbers:  NdaEntry[];
+  apm_entries:  ComplianceEntry[];
+  erpa_entries: ComplianceEntry[];
+  ssp_entries:  ComplianceEntry[];
   compliance_notes: string;
 }
 
@@ -192,42 +195,76 @@ const NdaManager: React.FC<{
   );
 };
 
-// ── Compliance ID row ───────────────────────────────────────────────────
+// ── Compliance Manager (APM / ERPA / SSP — multiple entries per type) ───────────
 
-const ComplianceRow: React.FC<{
-  label: string; accent: string; number: string; status: string;
-  placeholder: string; isDark: boolean;
-  onNumberChange: (v: string) => void;
-  onStatusChange: (v: string) => void;
-}> = ({ label, accent, number, status, placeholder, isDark, onNumberChange, onStatusChange }) => (
-  <div style={{
-    background: isDark ? `${accent}0D` : `${accent}08`,
-    border: `1px solid ${accent}30`,
-    borderRadius: 10, padding: '12px 14px',
-    display: 'grid', gridTemplateColumns: '80px 1fr 160px', gap: 12, alignItems: 'end',
-  }}>
-    <div style={{
-      fontSize: 11, fontWeight: 800, color: accent, paddingTop: 22,
-      textTransform: 'uppercase', letterSpacing: '0.08em',
-    }}>{label}</div>
-    <div>
-      <FormLabel>Reference Number</FormLabel>
-      <input style={field(isDark)} value={number} placeholder={placeholder}
-        onChange={e => onNumberChange(e.target.value)} />
+const ComplianceManager: React.FC<{
+  label: string; accent: string; placeholder: string; isDark: boolean;
+  entries: ComplianceEntry[];
+  onChange: (entries: ComplianceEntry[]) => void;
+}> = ({ label, accent, placeholder, isDark, entries, onChange }) => {
+  const add    = () => onChange([...entries, { vendor: '', number: '', status: 'not_started', note: '' }]);
+  const remove = (i: number) => onChange(entries.filter((_, idx) => idx !== i));
+  const update = (i: number, f: keyof ComplianceEntry, v: string) =>
+    onChange(entries.map((e, idx) => idx === i ? { ...e, [f]: v } : e));
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      {entries.map((entry, i) => (
+        <div key={i} style={{
+          background: isDark ? `${accent}0D` : `${accent}08`,
+          border: `1px solid ${accent}30`, borderRadius: 10, padding: '12px 14px',
+        }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+            <div>
+              <FormLabel>{label} Number</FormLabel>
+              <input style={field(isDark)} value={entry.number} placeholder={placeholder}
+                onChange={e => update(i, 'number', e.target.value)} />
+            </div>
+            <div>
+              <FormLabel>Vendor / Company</FormLabel>
+              <input style={field(isDark)} value={entry.vendor}
+                placeholder="e.g. Sunflower Labs"
+                onChange={e => update(i, 'vendor', e.target.value)} />
+            </div>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr auto', gap: 8, alignItems: 'end' }}>
+            <div>
+              <FormLabel>Status</FormLabel>
+              <select style={selectStyle(isDark)} value={entry.status}
+                onChange={e => update(i, 'status', e.target.value)}>
+                {COMPLIANCE_STATUSES.map(s => (
+                  <option key={s} value={s} style={optStyle(isDark)}>
+                    {s.replace(/_/g, ' ')}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <FormLabel>Note (RITM, signatory, context)</FormLabel>
+              <input style={field(isDark)} value={entry.note}
+                placeholder="e.g. RITM72962255 — Prakash Singh"
+                onChange={e => update(i, 'note', e.target.value)} />
+            </div>
+            <button onClick={() => remove(i)} style={{
+              padding: '8px 12px', borderRadius: 8,
+              border: '1px solid rgba(234,17,0,0.35)',
+              background: 'rgba(234,17,0,0.1)', color: '#ea1100',
+              cursor: 'pointer', fontSize: 13, fontWeight: 700,
+            }}>✕</button>
+          </div>
+        </div>
+      ))}
+      <button onClick={add} style={{
+        padding: '8px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 12, fontWeight: 700,
+        border: `1px dashed ${accent}50`,
+        background: isDark ? `${accent}0A` : `${accent}06`,
+        color: accent, alignSelf: 'flex-start',
+      }}>
+        + Add {label} Entry
+      </button>
     </div>
-    <div>
-      <FormLabel>Status</FormLabel>
-      <select style={selectStyle(isDark)} value={status}
-        onChange={e => onStatusChange(e.target.value)}>
-        {COMPLIANCE_STATUSES.map(s => (
-          <option key={s} value={s} style={optStyle(isDark)}>
-            {s.replace(/_/g, ' ')}
-          </option>
-        ))}
-      </select>
-    </div>
-  </div>
-);
+  );
+};
 
 // ── Edit form ───────────────────────────────────────────────────────────
 
@@ -264,9 +301,9 @@ const EditForm: React.FC<{
         progress_pct: form.progress_pct, blockers_count: form.blockers_count,
         next_milestone: form.next_milestone, next_due_date: form.next_due_date,
         last_update_by: form.last_update_by, nda_numbers: form.nda_numbers,
-        erpa_number: form.erpa_number, erpa_status: form.erpa_status,
-        apm_number: form.apm_number, apm_status: form.apm_status,
-        ssp_number: form.ssp_number, ssp_status: form.ssp_status,
+        apm_entries:  form.apm_entries,
+        erpa_entries: form.erpa_entries,
+        ssp_entries:  form.ssp_entries,
         compliance_notes: form.compliance_notes,
       };
       const res = await fetch(`/api/projects/${form.project_id}`, {
@@ -432,23 +469,44 @@ const EditForm: React.FC<{
           {/* ─ APM / ERPA / SSP */}
           <div>
             <SectionHeader icon="🛡️" title="APM / ERPA / SSP"
-              subtitle="Compliance IDs for Phase 6 gate — APM portal, OneTrust, ServiceNow" isDark={isDark} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <ComplianceRow label="APM" accent="#60a5fa" isDark={isDark}
-                number={form.apm_number} status={form.apm_status}
-                placeholder="e.g. APM0022259"
-                onNumberChange={v => set('apm_number', v)}
-                onStatusChange={v => set('apm_status', v)} />
-              <ComplianceRow label="ERPA" accent="#ffc220" isDark={isDark}
-                number={form.erpa_number} status={form.erpa_status}
-                placeholder="e.g. ERPA-2026-0045"
-                onNumberChange={v => set('erpa_number', v)}
-                onStatusChange={v => set('erpa_status', v)} />
-              <ComplianceRow label="SSP" accent="#22c55e" isDark={isDark}
-                number={form.ssp_number} status={form.ssp_status}
-                placeholder="e.g. SSP00012298"
-                onNumberChange={v => set('ssp_number', v)}
-                onStatusChange={v => set('ssp_status', v)} />
+              subtitle="Phase 6 gate — one entry per vendor. APM portal · OneTrust (ERPA) · ServiceNow (SSP)" isDark={isDark} />
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#60a5fa', marginBottom: 8,
+                  display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ background: 'rgba(96,165,250,0.15)', border: '1px solid rgba(96,165,250,0.3)',
+                    padding: '2px 8px', borderRadius: 99, fontSize: 10, fontWeight: 800, letterSpacing: '0.08em' }}>APM</span>
+                  Application Portfolio Management
+                </div>
+                <ComplianceManager label="APM" accent="#60a5fa" isDark={isDark}
+                  placeholder="e.g. APM0022259"
+                  entries={form.apm_entries}
+                  onChange={v => set('apm_entries', v)} />
+              </div>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#ffc220', marginBottom: 8,
+                  display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ background: 'rgba(255,194,32,0.15)', border: '1px solid rgba(255,194,32,0.3)',
+                    padding: '2px 8px', borderRadius: 99, fontSize: 10, fontWeight: 800, letterSpacing: '0.08em' }}>ERPA</span>
+                  Enterprise Risk & Privacy Assessment
+                </div>
+                <ComplianceManager label="ERPA" accent="#ffc220" isDark={isDark}
+                  placeholder="e.g. ERPA-2026-0045"
+                  entries={form.erpa_entries}
+                  onChange={v => set('erpa_entries', v)} />
+              </div>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#22c55e', marginBottom: 8,
+                  display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)',
+                    padding: '2px 8px', borderRadius: 99, fontSize: 10, fontWeight: 800, letterSpacing: '0.08em' }}>SSP</span>
+                  System Security Plan
+                </div>
+                <ComplianceManager label="SSP" accent="#22c55e" isDark={isDark}
+                  placeholder="e.g. SSP00012298"
+                  entries={form.ssp_entries}
+                  onChange={v => set('ssp_entries', v)} />
+              </div>
             </div>
           </div>
 
@@ -618,11 +676,11 @@ export const ProjectAdminPanel: React.FC = () => {
                     fontSize: 9, fontWeight: 800, color: '#0053e2',
                     background: 'rgba(0,83,226,0.12)', padding: '1px 6px', borderRadius: 99,
                   }}>Ph.{p.est_phase_index}/8</span>
-                  {p.apm_number && (
+                  {p.apm_entries?.length > 0 && (
                     <span style={{
                       fontSize: 9, fontWeight: 700, color: '#3b82f6',
                       background: 'rgba(59,130,246,0.12)', padding: '1px 6px', borderRadius: 99,
-                    }}>APM</span>
+                    }}>APM×{p.apm_entries.length}</span>
                   )}
                   {p.nda_numbers?.length > 0 && (
                     <span style={{

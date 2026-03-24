@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
 
 from database import get_connection
-from models import ProjectOut, ProjectsResponse, ProjectUpdate, NdaEntry
+from models import ProjectOut, ProjectsResponse, ProjectUpdate, NdaEntry, ComplianceEntry
 
 ROUTER = APIRouter(prefix="/api/projects", tags=["projects"])
 
@@ -54,6 +54,15 @@ def _phase_index(label: str) -> int:
     return 1
 
 
+def _parse_compliance_list(raw: str | None) -> list[ComplianceEntry]:
+    """Parse a JSON column into a list of ComplianceEntry objects."""
+    try:
+        entries = json.loads(raw or "[]")
+        return [ComplianceEntry(**e) if isinstance(e, dict) else ComplianceEntry(number=str(e)) for e in entries]
+    except Exception:
+        return []
+
+
 def _row_to_project(row) -> ProjectOut:
     """Convert a sqlite3.Row to ProjectOut, parsing JSON columns."""
     d = dict(row)
@@ -63,6 +72,10 @@ def _row_to_project(row) -> ProjectOut:
         nda_entries = [NdaEntry(**n) if isinstance(n, dict) else NdaEntry(nda_number=str(n), vendor="") for n in nda_raw]
     except Exception:
         nda_entries = []
+
+    apm_entries  = _parse_compliance_list(d.get("apm_entries"))
+    erpa_entries = _parse_compliance_list(d.get("erpa_entries"))
+    ssp_entries  = _parse_compliance_list(d.get("ssp_entries"))
 
     try:
         phase_history = json.loads(d.get("phase_history") or "[]")
@@ -90,12 +103,9 @@ def _row_to_project(row) -> ProjectOut:
         est_cost=d.get("est_cost") or "",
         business_owner=d.get("business_owner") or "",
         nda_numbers=nda_entries,
-        erpa_number=d.get("erpa_number") or "",
-        erpa_status=d.get("erpa_status") or "not_started",
-        apm_number=d.get("apm_number") or "",
-        apm_status=d.get("apm_status") or "not_started",
-        ssp_number=d.get("ssp_number") or "",
-        ssp_status=d.get("ssp_status") or "not_started",
+        apm_entries=apm_entries,
+        erpa_entries=erpa_entries,
+        ssp_entries=ssp_entries,
         compliance_notes=d.get("compliance_notes") or "",
         phase_history=phase_history,
     )
@@ -147,11 +157,15 @@ def update_project(project_id: str, body: ProjectUpdate):
             updates["nda_numbers"] = json.dumps(
                 [n.model_dump() for n in data["nda_numbers"]]
             )
-        for field in ("erpa_number", "erpa_status", "apm_number", "apm_status",
-                      "ssp_number", "ssp_status", "compliance_notes",
-                      "health", "lifecycle_state", "current_phase",
-                      "est_phase_index", "progress_pct", "next_milestone",
-                      "next_due_date", "blockers_count", "last_update_by"):
+        for list_field in ("apm_entries", "erpa_entries", "ssp_entries"):
+            if list_field in data:
+                updates[list_field] = json.dumps(
+                    [e.model_dump() for e in data[list_field]]
+                )
+        for field in ("compliance_notes", "health", "lifecycle_state",
+                      "current_phase", "est_phase_index", "progress_pct",
+                      "next_milestone", "next_due_date", "blockers_count",
+                      "last_update_by"):
             if field in data:
                 updates[field] = data[field]
 

@@ -143,7 +143,15 @@ class NdaEntry(BaseModel):
     """One vendor NDA under a project (a project may have many)."""
     nda_number: str
     vendor: str
-    status: str = "executed"          # executed | pending | via_msa
+    status: str = "executed"          # executed | pending | via_msa | expired
+    note: str = ""
+
+
+class ComplianceEntry(BaseModel):
+    """One vendor APM / ERPA / SSP entry (a project may have many per type)."""
+    vendor: str = ""
+    number: str
+    status: str = "not_started"       # not_started | in_progress | under_review | complete
     note: str = ""
 
 
@@ -167,14 +175,11 @@ class ProjectOut(BaseModel):
     last_update_by: str = ""
     est_cost: str = ""
     business_owner: str = ""
-    # Compliance fields
-    nda_numbers: list[NdaEntry] = Field(default_factory=list)
-    erpa_number: str = ""
-    erpa_status: str = "not_started"
-    apm_number: str = ""
-    apm_status: str = "not_started"
-    ssp_number: str = ""
-    ssp_status: str = "not_started"
+    # Compliance fields — each type now supports multiple vendor entries
+    nda_numbers:  list[NdaEntry]       = Field(default_factory=list)
+    apm_entries:  list[ComplianceEntry] = Field(default_factory=list)
+    erpa_entries: list[ComplianceEntry] = Field(default_factory=list)
+    ssp_entries:  list[ComplianceEntry] = Field(default_factory=list)
     compliance_notes: str = ""
     phase_history: list[dict] = Field(default_factory=list)
 
@@ -195,11 +200,8 @@ class ProjectUpdate(BaseModel):
     next_due_date: str | None = None
     blockers_count: int | None = None
     last_update_by: str | None = None
-    nda_numbers: list[NdaEntry] | None = None
-    erpa_number: str | None = None
-    erpa_status: str | None = None
-    apm_number: str | None = None
-    apm_status: str | None = None
-    ssp_number: str | None = None
-    ssp_status: str | None = None
+    nda_numbers:  list[NdaEntry]        | None = None
+    apm_entries:  list[ComplianceEntry] | None = None
+    erpa_entries: list[ComplianceEntry] | None = None
+    ssp_entries:  list[ComplianceEntry] | None = None
     compliance_notes: str | None = None

@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Sphere, MeshDistortMaterial, Float, Text, Html } from '@react-three/drei';
 import * as THREE from 'three';
-import ESTLifecycleTimeline, { type NdaEntry, type ComplianceFields } from './ESTLifecycleTimeline';
+import ESTLifecycleTimeline, { type NdaEntry, type ComplianceEntry, type ComplianceFields } from './ESTLifecycleTimeline';
 
 // ═══════════════════════════════════════════════════════════════════════
 // 3D Project Dashboard — SENTRY Epic Edition
@@ -30,14 +30,11 @@ interface Project {
   last_update_by: string;
   est_cost: string;
   business_owner: string;
-  // Compliance
-  nda_numbers: NdaEntry[];
-  erpa_number: string;
-  erpa_status: string;
-  apm_number: string;
-  apm_status: string;
-  ssp_number: string;
-  ssp_status: string;
+  // Compliance — each type supports multiple vendor entries
+  nda_numbers:  NdaEntry[];
+  apm_entries:  ComplianceEntry[];
+  erpa_entries: ComplianceEntry[];
+  ssp_entries:  ComplianceEntry[];
   compliance_notes: string;
 }
 
@@ -619,21 +616,21 @@ const ProjectCard3D: React.FC<ProjectCard3DProps> = ({ project, onClick }) => {
               Ph.{project.est_phase_index || 1}/8
             </span>
             {/* APM */}
-            {project.apm_number && (
+            {project.apm_entries?.length > 0 && (
               <span className="text-xs px-2 py-1 rounded font-mono" style={{ background: 'rgba(0,83,226,0.15)', color: '#60a5fa', border: '1px solid rgba(0,83,226,0.3)' }}>
-                APM {project.apm_number}
+                APM ×{project.apm_entries.length}
               </span>
             )}
             {/* ERPA */}
-            {project.erpa_number && (
+            {project.erpa_entries?.length > 0 && (
               <span className="text-xs px-2 py-1 rounded font-mono" style={{ background: 'rgba(255,194,32,0.1)', color: '#ffc220', border: '1px solid rgba(255,194,32,0.3)' }}>
-                ERPA #{project.erpa_number}
+                ERPA ×{project.erpa_entries.length}
               </span>
             )}
             {/* SSP */}
-            {project.ssp_number && (
+            {project.ssp_entries?.length > 0 && (
               <span className="text-xs px-2 py-1 rounded font-mono" style={{ background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }}>
-                SSP {project.ssp_number}
+                SSP ×{project.ssp_entries.length}
               </span>
             )}
             {/* NDA */}
@@ -722,13 +719,10 @@ const ProjectDashboard3D: React.FC = () => {
               obj.risk_score     = Number(obj.risk_score)    || 0;
               obj.blockers_count = Number(obj.blockers_count)|| 0;
               obj.est_phase_index = Number(obj.est_phase_index) || 1;
-              obj.nda_numbers    = [];
-              obj.erpa_number = obj.erpa_number || '';
-              obj.erpa_status = 'not_started';
-              obj.apm_number  = obj.apm_number  || '';
-              obj.apm_status  = 'not_started';
-              obj.ssp_number  = obj.ssp_number  || '';
-              obj.ssp_status  = 'not_started';
+              obj.nda_numbers   = [];
+              obj.apm_entries   = [];
+              obj.erpa_entries  = [];
+              obj.ssp_entries   = [];
               obj.compliance_notes = '';
               obj.business_owner   = '';
               return obj as Project;
@@ -1092,13 +1086,10 @@ const ProjectDashboard3D: React.FC = () => {
                     estPhaseIndex={selectedProject.est_phase_index || 1}
                     health={selectedProject.health}
                     compliance={{
-                      nda_numbers: selectedProject.nda_numbers || [],
-                      erpa_number: selectedProject.erpa_number || '',
-                      erpa_status: selectedProject.erpa_status || 'not_started',
-                      apm_number: selectedProject.apm_number || '',
-                      apm_status: selectedProject.apm_status || 'not_started',
-                      ssp_number: selectedProject.ssp_number || '',
-                      ssp_status: selectedProject.ssp_status || 'not_started',
+                      nda_numbers:  selectedProject.nda_numbers  || [],
+                      apm_entries:  selectedProject.apm_entries  || [],
+                      erpa_entries: selectedProject.erpa_entries || [],
+                      ssp_entries:  selectedProject.ssp_entries  || [],
                       compliance_notes: selectedProject.compliance_notes || '',
                     }}
                   />
@@ -1143,13 +1134,10 @@ const FALLBACK_PROJECTS: Project[] = [
     last_update_by: 'Cody.Smith@walmart.com',
     est_cost: '',
     business_owner: '',
-    nda_numbers: [],
-    erpa_number: '',
-    erpa_status: 'not_started',
-    apm_number: '',
-    apm_status: 'not_started',
-    ssp_number: '',
-    ssp_status: 'not_started',
+    nda_numbers:  [],
+    apm_entries:  [],
+    erpa_entries: [],
+    ssp_entries:  [],
     compliance_notes: '',
   },
 ];
