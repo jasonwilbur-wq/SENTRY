@@ -271,6 +271,21 @@ def update_project(project_id: str, body: ProjectUpdate):
     return _row_to_project(updated, vendors)
 
 
+# ── DELETE /api/projects/{project_id} ───────────────────────────────────────
+
+@ROUTER.delete("/{project_id}", status_code=204)
+def delete_project(project_id: str):
+    """Permanently delete a project and all its vendor entries (CASCADE)."""
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT 1 FROM projects WHERE project_id = ?", (project_id,)
+        ).fetchone()
+        if row is None:
+            raise HTTPException(status_code=404, detail=f"Project '{project_id}' not found")
+        conn.execute("DELETE FROM projects WHERE project_id = ?", (project_id,))
+        conn.commit()
+
+
 # ── GET /api/projects/{project_id}/vendors ────────────────────────────────────
 
 @ROUTER.get("/{project_id}/vendors", response_model=list[ProjectVendor])

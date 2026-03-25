@@ -629,10 +629,13 @@ export const ProjectAdminPanel: React.FC = () => {
   const { theme }  = useTheme();
   const isDark     = theme === 'dark';
 
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [selected, setSelected] = useState<Project | null>(null);
-  const [loading, setLoading]   = useState(true);
-  const [search, setSearch]     = useState('');
+  const [projects,       setProjects]       = useState<Project[]>([]);
+  const [selected,       setSelected]       = useState<Project | null>(null);
+  const [loading,        setLoading]        = useState(true);
+  const [search,         setSearch]         = useState('');
+  const [hoveredId,      setHoveredId]      = useState<string | null>(null);
+  const [confirmDeleteId,setConfirmDeleteId]= useState<string | null>(null);
+  const [deleting,       setDeleting]       = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -650,6 +653,21 @@ export const ProjectAdminPanel: React.FC = () => {
   const handleSaved = (updated: Project) => {
     setProjects(ps => ps.map(p => p.project_id === updated.project_id ? updated : p));
     setSelected(updated);
+  };
+
+  const handleDelete = async (projectId: string) => {
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/projects/${projectId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setProjects(ps => ps.filter(p => p.project_id !== projectId));
+      if (selected?.project_id === projectId) setSelected(null);
+    } catch (err) {
+      console.error('Delete failed:', err);
+    } finally {
+      setDeleting(false);
+      setConfirmDeleteId(null);
+    }
   };
 
   const filtered = projects.filter(p =>
@@ -700,49 +718,133 @@ export const ProjectAdminPanel: React.FC = () => {
               Loading…
             </div>
           ) : filtered.map(p => {
-            const isActive = selected?.project_id === p.project_id;
+            const isActive    = selected?.project_id === p.project_id;
+            const isHovered   = hoveredId === p.project_id;
+            const isConfirming = confirmDeleteId === p.project_id;
             const hc = healthColor(p.health);
             return (
-              <motion.button key={p.project_id} whileHover={{ x: 2 }}
-                onClick={() => setSelected(p)}
-                style={{
-                  width: '100%', textAlign: 'left', padding: '12px 14px',
-                  background: isActive
-                    ? (isDark ? 'rgba(0,83,226,0.15)' : 'rgba(0,83,226,0.08)')
-                    : 'transparent',
-                  border: 'none', borderLeftWidth: 3, borderLeftStyle: 'solid',
-                  borderLeftColor: isActive ? '#0053e2' : 'transparent',
-                  borderBottom: divider(isDark),
-                  cursor: 'pointer', transition: 'background 0.15s',
-                }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                  <span style={{
-                    width: 7, height: 7, borderRadius: '50%',
-                    background: hc, flexShrink: 0, boxShadow: `0 0 5px ${hc}`,
-                  }} />
-                  <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--s-text)', lineHeight: 1.3 }}>
-                    {p.project_name}
-                  </span>
-                </div>
-                <div style={{ display: 'flex', gap: 6, paddingLeft: 15 }}>
-                  <span style={{
-                    fontSize: 9, fontWeight: 800, color: '#0053e2',
-                    background: 'rgba(0,83,226,0.12)', padding: '1px 6px', borderRadius: 99,
-                  }}>Ph.{p.est_phase_index}/8</span>
-                  {p.apm_entries?.length > 0 && (
+              <div
+                key={p.project_id}
+                style={{ position: 'relative', borderBottom: divider(isDark) }}
+                onMouseEnter={() => setHoveredId(p.project_id)}
+                onMouseLeave={() => setHoveredId(null)}
+              >
+                {/* Row button */}
+                <motion.button
+                  whileHover={{ x: 2 }}
+                  onClick={() => { setSelected(p); setConfirmDeleteId(null); }}
+                  style={{
+                    width: '100%', textAlign: 'left',
+                    padding: '12px 40px 12px 14px',
+                    background: isActive
+                      ? (isDark ? 'rgba(0,83,226,0.15)' : 'rgba(0,83,226,0.08)')
+                      : 'transparent',
+                    border: 'none', borderLeftWidth: 3, borderLeftStyle: 'solid',
+                    borderLeftColor: isActive ? '#0053e2' : 'transparent',
+                    cursor: 'pointer', transition: 'background 0.15s',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                     <span style={{
-                      fontSize: 9, fontWeight: 700, color: '#3b82f6',
-                      background: 'rgba(59,130,246,0.12)', padding: '1px 6px', borderRadius: 99,
-                    }}>APM×{p.apm_entries.length}</span>
-                  )}
-                  {p.nda_numbers?.length > 0 && (
+                      width: 7, height: 7, borderRadius: '50%',
+                      background: hc, flexShrink: 0, boxShadow: `0 0 5px ${hc}`,
+                    }} />
+                    <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--s-text)', lineHeight: 1.3 }}>
+                      {p.project_name}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, paddingLeft: 15 }}>
                     <span style={{
-                      fontSize: 9, fontWeight: 700, color: '#a855f7',
-                      background: 'rgba(168,85,247,0.12)', padding: '1px 6px', borderRadius: 99,
-                    }}>NDA×{p.nda_numbers.length}</span>
+                      fontSize: 9, fontWeight: 800, color: '#0053e2',
+                      background: 'rgba(0,83,226,0.12)', padding: '1px 6px', borderRadius: 99,
+                    }}>Ph.{p.est_phase_index}/8</span>
+                    {p.apm_entries?.length > 0 && (
+                      <span style={{
+                        fontSize: 9, fontWeight: 700, color: '#3b82f6',
+                        background: 'rgba(59,130,246,0.12)', padding: '1px 6px', borderRadius: 99,
+                      }}>APM×{p.apm_entries.length}</span>
+                    )}
+                    {p.nda_numbers?.length > 0 && (
+                      <span style={{
+                        fontSize: 9, fontWeight: 700, color: '#a855f7',
+                        background: 'rgba(168,85,247,0.12)', padding: '1px 6px', borderRadius: 99,
+                      }}>NDA×{p.nda_numbers.length}</span>
+                    )}
+                  </div>
+                </motion.button>
+
+                {/* Trash icon — visible on hover */}
+                {(isHovered || isConfirming) && (
+                  <button
+                    title="Delete project"
+                    onClick={e => {
+                      e.stopPropagation();
+                      setConfirmDeleteId(isConfirming ? null : p.project_id);
+                    }}
+                    style={{
+                      position: 'absolute', top: '50%', right: 10,
+                      transform: 'translateY(-50%)',
+                      width: 26, height: 26, borderRadius: 6,
+                      border: `1px solid ${isConfirming ? 'rgba(234,17,0,0.5)' : 'rgba(234,17,0,0.25)'}`,
+                      background: isConfirming ? 'rgba(234,17,0,0.18)' : 'rgba(234,17,0,0.08)',
+                      color: '#ea1100', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 13, transition: 'all 0.15s',
+                    }}
+                  >
+                    🗑
+                  </button>
+                )}
+
+                {/* Inline confirmation strip */}
+                <AnimatePresence>
+                  {isConfirming && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.18 }}
+                      style={{ overflow: 'hidden' }}
+                    >
+                      <div style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '8px 12px',
+                        background: isDark ? 'rgba(234,17,0,0.12)' : 'rgba(234,17,0,0.07)',
+                        borderTop: '1px solid rgba(234,17,0,0.2)',
+                      }}>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: '#ea1100' }}>
+                          Delete permanently?
+                        </span>
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <button
+                            onClick={e => { e.stopPropagation(); setConfirmDeleteId(null); }}
+                            style={{
+                              padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700,
+                              border: '1px solid rgba(255,255,255,0.15)',
+                              background: 'transparent', color: 'var(--s-text-dim)', cursor: 'pointer',
+                            }}
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={e => { e.stopPropagation(); handleDelete(p.project_id); }}
+                            disabled={deleting}
+                            style={{
+                              padding: '4px 10px', borderRadius: 6, fontSize: 11, fontWeight: 700,
+                              border: '1px solid rgba(234,17,0,0.4)',
+                              background: '#ea1100', color: 'white',
+                              cursor: deleting ? 'wait' : 'pointer',
+                              opacity: deleting ? 0.7 : 1,
+                            }}
+                          >
+                            {deleting ? '…' : 'Delete'}
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
                   )}
-                </div>
-              </motion.button>
+                </AnimatePresence>
+              </div>
             );
           })}
         </div>
