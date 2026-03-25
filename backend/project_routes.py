@@ -162,7 +162,7 @@ def update_project(project_id: str, body: ProjectUpdate):
                 updates[list_field] = json.dumps(
                     [e.model_dump() for e in data[list_field]]
                 )
-        for field in ("compliance_notes", "health", "lifecycle_state",
+        for field in ("project_name", "compliance_notes", "health", "lifecycle_state",
                       "current_phase", "est_phase_index", "progress_pct",
                       "next_milestone", "next_due_date", "blockers_count",
                       "last_update_by"):

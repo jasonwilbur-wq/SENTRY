@@ -296,6 +296,7 @@ const EditForm: React.FC<{
     setSaving(true);
     try {
       const payload = {
+        project_name: form.project_name,
         health: form.health, lifecycle_state: form.lifecycle_state,
         current_phase: form.current_phase, est_phase_index: form.est_phase_index,
         progress_pct: form.progress_pct, blockers_count: form.blockers_count,
@@ -334,9 +335,20 @@ const EditForm: React.FC<{
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
           <HealthDot health={form.health} />
-          <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--s-text)' }}>
-            {form.project_name}
-          </span>
+          <input
+            value={form.project_name}
+            onChange={e => set('project_name', e.target.value)}
+            title="Click to rename project"
+            style={{
+              fontSize: 18, fontWeight: 800, color: 'var(--s-text)',
+              background: 'transparent', border: 'none', outline: 'none',
+              borderBottom: `2px solid ${dirty ? '#0053e2' : 'transparent'}`,
+              padding: '2px 0', width: '100%', fontFamily: 'inherit',
+              cursor: 'text', transition: 'border-color 0.15s',
+            }}
+            onFocus={e => (e.target.style.borderBottomColor = '#0053e2')}
+            onBlur={e  => (e.target.style.borderBottomColor = dirty ? '#0053e2' : 'transparent')}
+          />
         </div>
         <div style={{ fontSize: 11, color: 'var(--s-text-dim)', fontFamily: 'monospace' }}>
           {form.project_id} · Phase {form.est_phase_index}/8

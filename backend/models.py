@@ -191,6 +191,7 @@ class ProjectsResponse(BaseModel):
 
 class ProjectUpdate(BaseModel):
     """Partial update — all fields optional."""
+    project_name: str | None = None
     health: str | None = None
     lifecycle_state: str | None = None
     current_phase: str | None = None
