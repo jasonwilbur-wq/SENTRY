@@ -149,10 +149,15 @@ CREATE TABLE IF NOT EXISTS projects (
     ssp_number          TEXT DEFAULT '',
     ssp_status          TEXT DEFAULT 'not_started',
     compliance_notes    TEXT DEFAULT '',
+    exit_reason         TEXT DEFAULT '',
     -- Phase gate tracking (JSON array of {phase_index, entered_at, gate_decision, notes})
     phase_history       TEXT DEFAULT '[]',
     created_at          TEXT DEFAULT (datetime('now')),
-    updated_at          TEXT DEFAULT (datetime('now'))
+    updated_at          TEXT DEFAULT (datetime('now')),
+    -- Multi-vendor compliance entries (JSON arrays, Phase 6)
+    apm_entries         TEXT DEFAULT '[]',
+    erpa_entries        TEXT DEFAULT '[]',
+    ssp_entries         TEXT DEFAULT '[]'
 );
 """
 
@@ -166,4 +171,15 @@ def init_db() -> None:
         conn.execute(CREATE_HIGHLIGHTS)
         conn.execute(CREATE_INCIDENTS)
         conn.execute(CREATE_PROJECTS)
+        # Safe migrations — add any columns that may be missing from older DBs
+        cols = {r[1] for r in conn.execute("PRAGMA table_info(projects)").fetchall()}
+        migrations = [
+            ("exit_reason",  "ALTER TABLE projects ADD COLUMN exit_reason TEXT DEFAULT ''"),
+            ("apm_entries",  "ALTER TABLE projects ADD COLUMN apm_entries TEXT DEFAULT '[]'"),
+            ("erpa_entries", "ALTER TABLE projects ADD COLUMN erpa_entries TEXT DEFAULT '[]'"),
+            ("ssp_entries",  "ALTER TABLE projects ADD COLUMN ssp_entries TEXT DEFAULT '[]'"),
+        ]
+        for col_name, sql in migrations:
+            if col_name not in cols:
+                conn.execute(sql)
         conn.commit()
