@@ -92,10 +92,12 @@ def _group_products(
     rows: list[dict],
     var_vendor_ids: set[str] | None = None,
     latest_var_ids: dict[str, str] | None = None,
+    linked_map: dict[str, list[dict]] | None = None,
 ) -> list[VendorOut]:
     """Group multiple product rows for the same company into one VendorOut."""
     var_ids     = var_vendor_ids or set()
     var_id_map  = latest_var_ids or {}   # vendor_id -> latest var_report.id
+    prj_map     = linked_map or {}       # lowercase company_name -> [{project...}]
     companies: dict[str, VendorOut] = {}
     for row in rows:
         name = row["company_name"]
@@ -143,6 +145,8 @@ def _group_products(
                 use_cases=row.get("use_cases", ""),
                 value_to_walmart=row.get("value_to_walmart", ""),
                 maturity_level=row.get("maturity_level", ""),
+                # Project associations
+                linked_projects=prj_map.get(name.lower(), []),
             )
     return list(companies.values())
 
@@ -191,10 +195,37 @@ def list_vendors(
             "GROUP BY vendor_id HAVING report_date = MAX(report_date)"
         ).fetchall()
     }
+    # Linked projects: join project_vendors → projects on vendor_name ≈ company_name
+    # Case-insensitive match covers minor name differences
+    linked_rows = conn.execute("""
+        SELECT
+            LOWER(pv.vendor_name)  AS vname,
+            pv.project_id,
+            p.project_name,
+            p.current_phase,
+            p.est_phase_index,
+            pv.role,
+            pv.status
+        FROM project_vendors pv
+        JOIN projects p ON pv.project_id = p.project_id
+        WHERE p.lifecycle_state NOT IN ('rejected', 'discontinued')
+    """).fetchall()
+    # Build a map: lowercase vendor name → list of linked project dicts
+    linked_map: dict[str, list[dict]] = {}
+    for lr in linked_rows:
+        key = dict(lr)["vname"]
+        linked_map.setdefault(key, []).append({
+            "project_id":     dict(lr)["project_id"],
+            "project_name":   dict(lr)["project_name"],
+            "current_phase":  dict(lr)["current_phase"],
+            "est_phase_index":dict(lr)["est_phase_index"],
+            "role":           dict(lr)["role"] or "",
+            "status":         dict(lr)["status"] or "",
+        })
     conn.close()
 
     # Group multiple-product rows into logical vendors
-    all_vendors = _group_products(rows, var_ids, latest_var_ids)
+    all_vendors = _group_products(rows, var_ids, latest_var_ids, linked_map)
 
     total       = len(all_vendors)
     total_pages = max(1, math.ceil(total / page_size))

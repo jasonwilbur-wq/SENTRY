@@ -217,6 +217,48 @@ export const VendorCard3D: React.FC<VendorCard3DProps> = ({ vendor, onClick, dec
         <p className="text-xs line-clamp-2" style={{ color: 'var(--s-text-muted)' }}>{vendor.technology_product}</p>
       </div>
 
+      {/* ── Linked EST projects ──────────────────────────────────── */}
+      {(vendor.linked_projects?.length ?? 0) > 0 && (
+        <div className="px-4 mb-3">
+          <p className="text-[9px] uppercase tracking-widest mb-1.5" style={{ color: 'var(--s-text-dim)' }}>EST Projects</p>
+          <div className="flex flex-wrap gap-1">
+            {vendor.linked_projects!.slice(0, 3).map(lp => (
+              <span
+                key={lp.project_id}
+                title={`${lp.project_name} · ${lp.current_phase} · Phase ${lp.est_phase_index}/8${lp.role ? ` · ${lp.role}` : ''}`}
+                style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 4,
+                  fontSize: 9, fontWeight: 700,
+                  padding: '2px 7px', borderRadius: 99,
+                  background: 'rgba(0,83,226,0.12)',
+                  border: '1px solid rgba(0,83,226,0.28)',
+                  color: '#60a5fa',
+                  maxWidth: 160, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
+                }}
+              >
+                <span style={{
+                  width: 14, height: 14, borderRadius: 3, flexShrink: 0,
+                  background: 'rgba(0,83,226,0.25)',
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 8, fontWeight: 900, color: '#93c5fd',
+                }}>P{lp.est_phase_index}</span>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  {lp.project_id.replace('PRJ-', '')}
+                </span>
+              </span>
+            ))}
+            {(vendor.linked_projects!.length > 3) && (
+              <span style={{
+                fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 99,
+                background: 'rgba(148,163,184,0.1)',
+                border: '1px solid rgba(148,163,184,0.2)',
+                color: 'var(--s-text-dim)',
+              }}>+{vendor.linked_projects!.length - 3}</span>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ── Score progress bar ───────────────────────────────────── */}
       <div className="px-4 mb-3">
         <div className="h-[3px] w-full rounded-full overflow-hidden" style={{ background: 'var(--s-border-mid)' }}>

@@ -77,6 +77,15 @@ export interface VarScores {
   "Cloud Dep"?: number;
 }
 
+export interface LinkedProject {
+  project_id: string;
+  project_name: string;
+  current_phase: string;
+  est_phase_index: number;
+  role: string;
+  status: string;
+}
+
 export interface Vendor {
   id: string;
   company_name: string;
@@ -111,6 +120,9 @@ export interface Vendor {
   use_cases?: string;
   value_to_walmart?: string;
   maturity_level?: string;
+
+  // Project associations
+  linked_projects?: LinkedProject[];
 }
 
 export interface VendorsParams {

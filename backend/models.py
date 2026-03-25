@@ -12,6 +12,16 @@ class VendorProduct(BaseModel):
     last_assessed: str = ""
 
 
+class LinkedProject(BaseModel):
+    """A project this vendor is associated with, for card display."""
+    project_id: str
+    project_name: str
+    current_phase: str
+    est_phase_index: int
+    role: str = ""
+    status: str = ""
+
+
 class VendorOut(BaseModel):
     """Shape the frontend expects from GET /api/vendors."""
     id: str
@@ -50,6 +60,9 @@ class VendorOut(BaseModel):
     use_cases: str = ""
     value_to_walmart: str = ""
     maturity_level: str = ""
+
+    # Project associations — enriched from project_vendors + projects join
+    linked_projects: list[LinkedProject] = Field(default_factory=list)
 
 
 class VendorsResponse(BaseModel):

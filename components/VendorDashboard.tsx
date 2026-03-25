@@ -28,6 +28,18 @@ const RISK_PILLS = [
   { label: 'Low',        value: 'Low',       color: '#22c55e' },
 ];
 
+const PHASE_PILLS = [
+  { label: 'All Phases',    value: 0  },
+  { label: 'Ph.1 Intake',   value: 1  },
+  { label: 'Ph.2 Engage',   value: 2  },
+  { label: 'Ph.3 NDA',      value: 3  },
+  { label: 'Ph.4 Assess',   value: 4  },
+  { label: 'Ph.5 Lab/PoC',  value: 5  },
+  { label: 'Ph.6 APM/SSP',  value: 6  },
+  { label: 'Ph.7 Pilot',    value: 7  },
+  { label: 'Ph.8 BAU',      value: 8  },
+];
+
 // ── Category pill bar (shorter labels to keep UI clean) ──────────────────────
 const PINNED_CATS: Record<string, string> = {
   'All':                                                      'All',
@@ -78,6 +90,7 @@ export const VendorDashboard: React.FC = () => {
 
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [riskFilter,     setRiskFilter]     = useState('');
+  const [phaseFilter,    setPhaseFilter]    = useState(0);
   const [stats,          setStats]          = useState<DirectoryStats | null>(null);
   const [statsLoading,   setStatsLoading]   = useState(true);
 
@@ -92,12 +105,16 @@ export const VendorDashboard: React.FC = () => {
   const handleOpenVendor  = useCallback((v: Vendor) => setSelectedVendor(v), []);
   const handleCloseModal  = useCallback(() => setSelectedVendor(null), []);
   const handleClearFilter = useCallback(() => {
-    setSearch(''); setCategory('All'); setRiskFilter('');
+    setSearch(''); setCategory('All'); setRiskFilter(''); setPhaseFilter(0);
   }, [setSearch, setCategory]);
 
-  // Apply client-side risk filter on top of server-paginated results
-  const displayed  = applyRiskFilter(vendors, riskFilter);
-  const hasFilters = !!(search || category !== 'All' || riskFilter);
+  // Apply client-side risk + phase filters on top of server-paginated results
+  const displayed = vendors
+    .filter(v => !riskFilter  || v.risk_level === riskFilter)
+    .filter(v => !phaseFilter || (v.linked_projects ?? []).some(
+      lp => lp.est_phase_index === phaseFilter
+    ));
+  const hasFilters = !!(search || category !== 'All' || riskFilter || phaseFilter);
 
   // Categories: only show the pinned ones that exist in the DB
   const pinnedCategories = ['All', ...categories.filter(c => c !== 'All' && PINNED_CATS[c])];
@@ -232,6 +249,33 @@ export const VendorDashboard: React.FC = () => {
               Clear All
             </button>
           )}
+        </div>
+
+        {/* EST Phase pills */}
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="text-[10px] uppercase tracking-wider text-slate-600 font-bold mr-1">EST Phase:</span>
+          {PHASE_PILLS.map(p => {
+            const active = phaseFilter === p.value;
+            return (
+              <button
+                key={p.value}
+                onClick={() => setPhaseFilter(p.value)}
+                className="px-3 py-1 rounded-full text-xs font-semibold border transition-all"
+                style={active ? {
+                  background: 'rgba(168,85,247,0.18)',
+                  borderColor: 'rgba(168,85,247,0.6)',
+                  boxShadow: '0 0 10px rgba(168,85,247,0.35)',
+                  color: '#c084fc',
+                } : {
+                  background: 'var(--s-input-bg)',
+                  color: 'var(--s-text-dim)',
+                  borderColor: 'var(--s-border)',
+                }}
+              >
+                {p.label}
+              </button>
+            );
+          })}
         </div>
 
         {/* Pagination header hint */}
