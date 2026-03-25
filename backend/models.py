@@ -155,6 +155,37 @@ class ComplianceEntry(BaseModel):
     note: str = ""
 
 
+class ProjectVendor(BaseModel):
+    """A vendor involved in a project (may be active, inactive, removed, etc.)."""
+    id: str
+    project_id: str
+    vendor_name: str
+    vendor_id: str = ""
+    role: str = "Vendor"
+    status: str = "active"   # active | evaluating | inactive | removed
+    notes: str = ""
+    added_at: str = ""
+    updated_at: str = ""
+
+
+class ProjectVendorCreate(BaseModel):
+    """Payload to add a vendor to a project."""
+    vendor_name: str
+    vendor_id: str = ""
+    role: str = "Vendor"
+    status: str = "active"
+    notes: str = ""
+
+
+class ProjectVendorUpdate(BaseModel):
+    """Partial update for a project vendor entry."""
+    vendor_name: str | None = None
+    vendor_id: str | None = None
+    role: str | None = None
+    status: str | None = None
+    notes: str | None = None
+
+
 class ProjectOut(BaseModel):
     project_id: str
     project_name: str
@@ -181,7 +212,9 @@ class ProjectOut(BaseModel):
     erpa_entries: list[ComplianceEntry] = Field(default_factory=list)
     ssp_entries:  list[ComplianceEntry] = Field(default_factory=list)
     compliance_notes: str = ""
+    exit_reason: str = ""
     phase_history: list[dict] = Field(default_factory=list)
+    vendors: list["ProjectVendor"] = Field(default_factory=list)
 
 
 class ProjectsResponse(BaseModel):
@@ -206,3 +239,4 @@ class ProjectUpdate(BaseModel):
     erpa_entries: list[ComplianceEntry] | None = None
     ssp_entries:  list[ComplianceEntry] | None = None
     compliance_notes: str | None = None
+    exit_reason: str | None = None

@@ -1,20 +1,29 @@
 """SENTRY Backend — Project Portfolio API routes.
 
-GET  /api/projects          → list all projects with compliance metadata
-GET  /api/projects/{id}     → single project detail
-PATCH /api/projects/{id}   → update compliance fields / phase / health
+GET    /api/projects                             → list all projects (includes vendors)
+GET    /api/projects/{id}                        → single project detail
+PATCH  /api/projects/{id}                        → update fields / phase / health
+GET    /api/projects/{id}/vendors                → list vendors on a project
+POST   /api/projects/{id}/vendors                → add a vendor to a project
+PATCH  /api/projects/{id}/vendors/{vendor_id}    → update a vendor entry
+DELETE /api/projects/{id}/vendors/{vendor_id}    → remove a vendor entry
 """
 import json
+import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException
 
 from database import get_connection
-from models import ProjectOut, ProjectsResponse, ProjectUpdate, NdaEntry, ComplianceEntry
+from models import (
+    ComplianceEntry, NdaEntry,
+    ProjectOut, ProjectsResponse, ProjectUpdate,
+    ProjectVendor, ProjectVendorCreate, ProjectVendorUpdate,
+)
 
 ROUTER = APIRouter(prefix="/api/projects", tags=["projects"])
 
-# ── Phase index look-up (normalized phase label → EST phase 1-8) ──────────────
+# ── Phase index look-up ───────────────────────────────────────────────────────
 _PHASE_MAP: dict[str, int] = {
     "intake":               1,
     "var":                  1,
@@ -44,10 +53,8 @@ _PHASE_MAP: dict[str, int] = {
 def _phase_index(label: str) -> int:
     """Map a free-text phase label to EST phase number 1-8."""
     key = label.strip().lower()
-    # exact match first
     if key in _PHASE_MAP:
         return _PHASE_MAP[key]
-    # substring scan
     for token, idx in _PHASE_MAP.items():
         if token in key:
             return idx
@@ -58,18 +65,58 @@ def _parse_compliance_list(raw: str | None) -> list[ComplianceEntry]:
     """Parse a JSON column into a list of ComplianceEntry objects."""
     try:
         entries = json.loads(raw or "[]")
-        return [ComplianceEntry(**e) if isinstance(e, dict) else ComplianceEntry(number=str(e)) for e in entries]
+        return [
+            ComplianceEntry(**e) if isinstance(e, dict) else ComplianceEntry(number=str(e))
+            for e in entries
+        ]
     except Exception:
         return []
 
 
-def _row_to_project(row) -> ProjectOut:
+def _fetch_vendors(conn, project_id: str) -> list[ProjectVendor]:
+    """Fetch all vendor entries for a project, ordered by status then name."""
+    rows = conn.execute(
+        """
+        SELECT id, project_id, vendor_name, vendor_id, role, status, notes, added_at, updated_at
+        FROM project_vendors
+        WHERE project_id = ?
+        ORDER BY
+            CASE status
+                WHEN 'active'     THEN 0
+                WHEN 'evaluating' THEN 1
+                WHEN 'inactive'   THEN 2
+                WHEN 'removed'    THEN 3
+                ELSE 4
+            END,
+            vendor_name
+        """,
+        (project_id,),
+    ).fetchall()
+    return [
+        ProjectVendor(
+            id=r["id"],
+            project_id=r["project_id"],
+            vendor_name=r["vendor_name"],
+            vendor_id=r["vendor_id"] or "",
+            role=r["role"] or "Vendor",
+            status=r["status"] or "active",
+            notes=r["notes"] or "",
+            added_at=r["added_at"] or "",
+            updated_at=r["updated_at"] or "",
+        )
+        for r in rows
+    ]
+
+
+def _row_to_project(row, vendors: list[ProjectVendor] | None = None) -> ProjectOut:
     """Convert a sqlite3.Row to ProjectOut, parsing JSON columns."""
     d = dict(row)
-    # Parse JSON-stored arrays
     try:
         nda_raw = json.loads(d.get("nda_numbers") or "[]")
-        nda_entries = [NdaEntry(**n) if isinstance(n, dict) else NdaEntry(nda_number=str(n), vendor="") for n in nda_raw]
+        nda_entries = [
+            NdaEntry(**n) if isinstance(n, dict) else NdaEntry(nda_number=str(n), vendor="")
+            for n in nda_raw
+        ]
     except Exception:
         nda_entries = []
 
@@ -107,7 +154,9 @@ def _row_to_project(row) -> ProjectOut:
         erpa_entries=erpa_entries,
         ssp_entries=ssp_entries,
         compliance_notes=d.get("compliance_notes") or "",
+        exit_reason=d.get("exit_reason") or "",
         phase_history=phase_history,
+        vendors=vendors or [],
     )
 
 
@@ -120,7 +169,42 @@ def list_projects():
         rows = conn.execute(
             "SELECT * FROM projects ORDER BY est_phase_index DESC, project_id"
         ).fetchall()
-    projects = [_row_to_project(r) for r in rows]
+        # Fetch all vendor entries in one query and group by project_id
+        vendor_rows = conn.execute(
+            """
+            SELECT id, project_id, vendor_name, vendor_id, role, status, notes, added_at, updated_at
+            FROM project_vendors
+            ORDER BY project_id,
+                CASE status
+                    WHEN 'active'     THEN 0
+                    WHEN 'evaluating' THEN 1
+                    WHEN 'inactive'   THEN 2
+                    WHEN 'removed'    THEN 3
+                    ELSE 4
+                END,
+                vendor_name
+            """
+        ).fetchall()
+
+    # Group vendors by project_id
+    vendor_map: dict[str, list[ProjectVendor]] = {}
+    for vr in vendor_rows:
+        pid = vr["project_id"]
+        if pid not in vendor_map:
+            vendor_map[pid] = []
+        vendor_map[pid].append(ProjectVendor(
+            id=vr["id"],
+            project_id=vr["project_id"],
+            vendor_name=vr["vendor_name"],
+            vendor_id=vr["vendor_id"] or "",
+            role=vr["role"] or "Vendor",
+            status=vr["status"] or "active",
+            notes=vr["notes"] or "",
+            added_at=vr["added_at"] or "",
+            updated_at=vr["updated_at"] or "",
+        ))
+
+    projects = [_row_to_project(r, vendor_map.get(dict(r)["project_id"], [])) for r in rows]
     return ProjectsResponse(total=len(projects), projects=projects)
 
 
@@ -132,9 +216,10 @@ def get_project(project_id: str):
         row = conn.execute(
             "SELECT * FROM projects WHERE project_id = ?", (project_id,)
         ).fetchone()
-    if row is None:
-        raise HTTPException(status_code=404, detail=f"Project '{project_id}' not found")
-    return _row_to_project(row)
+        if row is None:
+            raise HTTPException(status_code=404, detail=f"Project '{project_id}' not found")
+        vendors = _fetch_vendors(conn, project_id)
+    return _row_to_project(row, vendors)
 
 
 # ── PATCH /api/projects/{project_id} ─────────────────────────────────────────
@@ -152,7 +237,6 @@ def update_project(project_id: str, body: ProjectUpdate):
         updates: dict[str, object] = {}
         data = body.model_dump(exclude_none=True)
 
-        # Serialize list/complex fields to JSON
         if "nda_numbers" in data:
             updates["nda_numbers"] = json.dumps(
                 [n.model_dump() for n in data["nda_numbers"]]
@@ -162,25 +246,130 @@ def update_project(project_id: str, body: ProjectUpdate):
                 updates[list_field] = json.dumps(
                     [e.model_dump() for e in data[list_field]]
                 )
-        for field in ("project_name", "compliance_notes", "health", "lifecycle_state",
-                      "current_phase", "est_phase_index", "progress_pct",
-                      "next_milestone", "next_due_date", "blockers_count",
-                      "last_update_by"):
+        for field in (
+            "project_name", "compliance_notes", "exit_reason", "health",
+            "lifecycle_state", "current_phase", "est_phase_index",
+            "progress_pct", "next_milestone", "next_due_date",
+            "blockers_count", "last_update_by",
+        ):
             if field in data:
                 updates[field] = data[field]
 
-        if not updates:
-            return _row_to_project(row)
-
-        updates["updated_at"] = datetime.now(timezone.utc).isoformat()
-        set_clause = ", ".join(f"{k} = ?" for k in updates)
-        conn.execute(
-            f"UPDATE projects SET {set_clause} WHERE project_id = ?",
-            (*updates.values(), project_id),
-        )
-        conn.commit()
+        if updates:
+            updates["updated_at"] = datetime.now(timezone.utc).isoformat()
+            set_clause = ", ".join(f"{k} = ?" for k in updates)
+            conn.execute(
+                f"UPDATE projects SET {set_clause} WHERE project_id = ?",
+                (*updates.values(), project_id),
+            )
+            conn.commit()
 
         updated = conn.execute(
             "SELECT * FROM projects WHERE project_id = ?", (project_id,)
         ).fetchone()
-    return _row_to_project(updated)
+        vendors = _fetch_vendors(conn, project_id)
+    return _row_to_project(updated, vendors)
+
+
+# ── GET /api/projects/{project_id}/vendors ────────────────────────────────────
+
+@ROUTER.get("/{project_id}/vendors", response_model=list[ProjectVendor])
+def list_project_vendors(project_id: str):
+    """Return all vendor entries for a project."""
+    with get_connection() as conn:
+        exists = conn.execute(
+            "SELECT 1 FROM projects WHERE project_id = ?", (project_id,)
+        ).fetchone()
+        if not exists:
+            raise HTTPException(status_code=404, detail=f"Project '{project_id}' not found")
+        return _fetch_vendors(conn, project_id)
+
+
+# ── POST /api/projects/{project_id}/vendors ───────────────────────────────────
+
+@ROUTER.post("/{project_id}/vendors", response_model=ProjectVendor, status_code=201)
+def add_project_vendor(project_id: str, body: ProjectVendorCreate):
+    """Add a vendor to a project."""
+    with get_connection() as conn:
+        exists = conn.execute(
+            "SELECT 1 FROM projects WHERE project_id = ?", (project_id,)
+        ).fetchone()
+        if not exists:
+            raise HTTPException(status_code=404, detail=f"Project '{project_id}' not found")
+
+        entry_id = str(uuid.uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+        conn.execute(
+            """
+            INSERT INTO project_vendors
+                (id, project_id, vendor_name, vendor_id, role, status, notes, added_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (entry_id, project_id, body.vendor_name, body.vendor_id,
+             body.role, body.status, body.notes, now, now),
+        )
+        conn.commit()
+        row = conn.execute(
+            "SELECT * FROM project_vendors WHERE id = ?", (entry_id,)
+        ).fetchone()
+
+    return ProjectVendor(
+        id=row["id"], project_id=row["project_id"],
+        vendor_name=row["vendor_name"], vendor_id=row["vendor_id"] or "",
+        role=row["role"] or "Vendor", status=row["status"] or "active",
+        notes=row["notes"] or "", added_at=row["added_at"] or "",
+        updated_at=row["updated_at"] or "",
+    )
+
+
+# ── PATCH /api/projects/{project_id}/vendors/{entry_id} ──────────────────────
+
+@ROUTER.patch("/{project_id}/vendors/{entry_id}", response_model=ProjectVendor)
+def update_project_vendor(project_id: str, entry_id: str, body: ProjectVendorUpdate):
+    """Update a vendor entry on a project."""
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT * FROM project_vendors WHERE id = ? AND project_id = ?",
+            (entry_id, project_id),
+        ).fetchone()
+        if row is None:
+            raise HTTPException(status_code=404, detail="Vendor entry not found")
+
+        data = body.model_dump(exclude_none=True)
+        if not data:
+            return ProjectVendor(**dict(row))
+
+        data["updated_at"] = datetime.now(timezone.utc).isoformat()
+        set_clause = ", ".join(f"{k} = ?" for k in data)
+        conn.execute(
+            f"UPDATE project_vendors SET {set_clause} WHERE id = ?",
+            (*data.values(), entry_id),
+        )
+        conn.commit()
+        updated = conn.execute(
+            "SELECT * FROM project_vendors WHERE id = ?", (entry_id,)
+        ).fetchone()
+
+    return ProjectVendor(
+        id=updated["id"], project_id=updated["project_id"],
+        vendor_name=updated["vendor_name"], vendor_id=updated["vendor_id"] or "",
+        role=updated["role"] or "Vendor", status=updated["status"] or "active",
+        notes=updated["notes"] or "", added_at=updated["added_at"] or "",
+        updated_at=updated["updated_at"] or "",
+    )
+
+
+# ── DELETE /api/projects/{project_id}/vendors/{entry_id} ─────────────────────
+
+@ROUTER.delete("/{project_id}/vendors/{entry_id}", status_code=204)
+def remove_project_vendor(project_id: str, entry_id: str):
+    """Remove a vendor from a project."""
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT 1 FROM project_vendors WHERE id = ? AND project_id = ?",
+            (entry_id, project_id),
+        ).fetchone()
+        if row is None:
+            raise HTTPException(status_code=404, detail="Vendor entry not found")
+        conn.execute("DELETE FROM project_vendors WHERE id = ?", (entry_id,))
+        conn.commit()

@@ -162,6 +162,21 @@ CREATE TABLE IF NOT EXISTS projects (
 """
 
 
+CREATE_PROJECT_VENDORS = """
+CREATE TABLE IF NOT EXISTS project_vendors (
+    id           TEXT PRIMARY KEY,
+    project_id   TEXT NOT NULL REFERENCES projects(project_id) ON DELETE CASCADE,
+    vendor_name  TEXT NOT NULL,
+    vendor_id    TEXT DEFAULT '',
+    role         TEXT DEFAULT 'Vendor',
+    status       TEXT DEFAULT 'active',
+    notes        TEXT DEFAULT '',
+    added_at     TEXT DEFAULT (datetime('now')),
+    updated_at   TEXT DEFAULT (datetime('now'))
+);
+"""
+
+
 def init_db() -> None:
     """Create tables if they don't exist."""
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -171,6 +186,7 @@ def init_db() -> None:
         conn.execute(CREATE_HIGHLIGHTS)
         conn.execute(CREATE_INCIDENTS)
         conn.execute(CREATE_PROJECTS)
+        conn.execute(CREATE_PROJECT_VENDORS)
         # Safe migrations — add any columns that may be missing from older DBs
         cols = {r[1] for r in conn.execute("PRAGMA table_info(projects)").fetchall()}
         migrations = [

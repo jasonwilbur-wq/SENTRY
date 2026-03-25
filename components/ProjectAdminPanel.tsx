@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
+import VendorManager, { type ProjectVendor } from './VendorManager';
 
 // ═══════════════════════════════════════════════════════════════════════
 // Project Portfolio Admin Panel
@@ -21,6 +22,8 @@ interface Project {
   erpa_entries: ComplianceEntry[];
   ssp_entries:  ComplianceEntry[];
   compliance_notes: string;
+  exit_reason: string;
+  vendors: ProjectVendor[];
 }
 
 const EST_PHASE_LABELS: Record<number, string> = {
@@ -32,7 +35,7 @@ const EST_PHASE_LABELS: Record<number, string> = {
 
 const COMPLIANCE_STATUSES = ['not_started', 'in_progress', 'under_review', 'complete'];
 const HEALTH_OPTIONS      = ['green', 'yellow', 'red'];
-const LIFECYCLE_OPTIONS   = ['active', 'on_hold', 'blocked', 'ended'];
+const LIFECYCLE_OPTIONS = ['active', 'on_hold', 'blocked', 'ended', 'rejected', 'discontinued'];
 const NDA_STATUS_OPTIONS  = ['executed', 'pending', 'via_msa', 'expired'];
 
 // ── Theme-aware style helpers ───────────────────────────────────────────
@@ -306,6 +309,7 @@ const EditForm: React.FC<{
         erpa_entries: form.erpa_entries,
         ssp_entries:  form.ssp_entries,
         compliance_notes: form.compliance_notes,
+        exit_reason: form.exit_reason,
       };
       const res = await fetch(`/api/projects/${form.project_id}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
@@ -399,6 +403,31 @@ const EditForm: React.FC<{
                 </div>
               </div>
             </div>
+
+            {/* Exit Reason — shown only for rejected / discontinued */}
+            {(form.lifecycle_state === 'rejected' || form.lifecycle_state === 'discontinued') && (
+              <div style={{ marginTop: 14 }}>
+                <FormLabel>
+                  {form.lifecycle_state === 'rejected' ? '🚫 Rejection Reason' : '⏹ Discontinuation Reason'}
+                </FormLabel>
+                <textarea
+                  rows={3}
+                  placeholder={
+                    form.lifecycle_state === 'rejected'
+                      ? 'e.g. No-Go at Lab Testing — NDAA Section 889 compliance gap'
+                      : 'e.g. Budget reprioritized Q2 2026 — vendor paused commercialization'
+                  }
+                  value={form.exit_reason}
+                  onChange={e => set('exit_reason', e.target.value)}
+                  style={{
+                    ...field(isDark),
+                    resize: 'vertical',
+                    borderColor: form.lifecycle_state === 'rejected'
+                      ? 'rgba(234,17,0,0.4)' : 'rgba(100,116,139,0.4)',
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           {/* ─ EST Phase Gate */}
@@ -520,6 +549,18 @@ const EditForm: React.FC<{
                   onChange={v => set('ssp_entries', v)} />
               </div>
             </div>
+          </div>
+
+          {/* ─ Vendor Roster */}
+          <div>
+            <SectionHeader icon="🏢" title="Vendor Roster"
+              subtitle="Track all vendors involved — active, evaluating, inactive, or removed" isDark={isDark} />
+            <VendorManager
+              projectId={form.project_id}
+              isDark={isDark}
+              vendors={form.vendors || []}
+              onVendorsChange={vendors => setForm(prev => ({ ...prev, vendors }))}
+            />
           </div>
 
           {/* ─ Notes */}

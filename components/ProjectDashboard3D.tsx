@@ -10,6 +10,18 @@ import ESTLifecycleTimeline, { type NdaEntry, type ComplianceEntry, type Complia
 // Walmart Global Security · Emerging Technology
 // ═══════════════════════════════════════════════════════════════════════
 
+export interface ProjectVendor {
+  id: string;
+  project_id: string;
+  vendor_name: string;
+  vendor_id: string;
+  role: string;
+  status: 'active' | 'evaluating' | 'inactive' | 'removed';
+  notes: string;
+  added_at: string;
+  updated_at: string;
+}
+
 interface Project {
   project_id: string;
   project_name: string;
@@ -30,12 +42,13 @@ interface Project {
   last_update_by: string;
   est_cost: string;
   business_owner: string;
-  // Compliance — each type supports multiple vendor entries
   nda_numbers:  NdaEntry[];
   apm_entries:  ComplianceEntry[];
   erpa_entries: ComplianceEntry[];
   ssp_entries:  ComplianceEntry[];
   compliance_notes: string;
+  exit_reason: string;
+  vendors: ProjectVendor[];
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -443,23 +456,37 @@ const ProjectCard3D: React.FC<ProjectCard3DProps> = ({ project, onClick }) => {
   const circumference = 2 * Math.PI * 45;
   const offset = circumference - (progress / 100) * circumference;
 
+  const isArchived = new Set(['rejected', 'discontinued', 'ended']).has(project.lifecycle_state?.toLowerCase());
+  const archiveBadge: Record<string, { label: string; color: string }> = {
+    rejected:     { label: '🚫 Rejected',     color: '#ea1100' },
+    discontinued: { label: '⏹ Discontinued', color: '#64748b' },
+    ended:        { label: '✓ Ended',         color: '#64748b' },
+  };
+  const badge = archiveBadge[project.lifecycle_state?.toLowerCase()] ?? null;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -8, scale: 1.02 }}
+      whileHover={{ y: -4, scale: 1.01 }}
       transition={{ duration: 0.3 }}
       onClick={onClick}
       className="relative cursor-pointer"
+      style={{ opacity: isArchived ? 0.72 : 1 }}
     >
       {/* Glass Card */}
       <div
         className="relative overflow-hidden rounded-2xl p-6 backdrop-blur-xl border"
         style={{
-          background: `linear-gradient(135deg, ${bgColor}, rgba(12, 18, 36, 0.88))`,
-          borderColor: color,
+          background: isArchived
+            ? 'linear-gradient(135deg, rgba(30,30,40,0.85), rgba(12,18,36,0.95))'
+            : `linear-gradient(135deg, ${bgColor}, rgba(12, 18, 36, 0.88))`,
+          borderColor: isArchived ? 'rgba(100,116,139,0.4)' : color,
           borderWidth: '2px',
-          boxShadow: `0 8px 32px ${color}40, 0 0 40px ${color}20`,
+          boxShadow: isArchived
+            ? '0 4px 16px rgba(0,0,0,0.3)'
+            : `0 8px 32px ${color}40, 0 0 40px ${color}20`,
+          filter: isArchived ? 'grayscale(0.4)' : 'none',
         }}
       >
         {/* Animated Background Gradient */}
@@ -483,21 +510,34 @@ const ProjectCard3D: React.FC<ProjectCard3DProps> = ({ project, onClick }) => {
               <div className="flex items-center gap-2 mb-2">
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center text-lg font-bold"
-                  style={{ backgroundColor: color, color: '#000' }}
+                  style={{ backgroundColor: isArchived ? '#334155' : color, color: '#fff' }}
                 >
-                  {getStatusIcon(project.health)}
+                  {isArchived ? '✕' : getStatusIcon(project.health)}
                 </div>
-                <span
-                  className="text-xs font-semibold uppercase tracking-wider px-2 py-1 rounded"
-                  style={{ backgroundColor: bgColor, color }}
-                >
-                  {project.health}
-                </span>
+                {badge ? (
+                  <span className="text-xs font-bold px-2 py-1 rounded"
+                    style={{ background: `${badge.color}22`, color: badge.color, border: `1px solid ${badge.color}44` }}>
+                    {badge.label}
+                  </span>
+                ) : (
+                  <span
+                    className="text-xs font-semibold uppercase tracking-wider px-2 py-1 rounded"
+                    style={{ backgroundColor: bgColor, color }}
+                  >
+                    {project.health}
+                  </span>
+                )}
               </div>
-              <h3 className="text-lg font-bold text-white mb-1 line-clamp-2">
+              <h3 className="text-lg font-bold mb-1 line-clamp-2"
+                style={{ color: isArchived ? '#94a3b8' : '#fff' }}>
                 {project.project_name}
               </h3>
-              <p className="text-xs text-slate-400 mb-2">{project.project_id}</p>
+              <p className="text-xs text-slate-500 mb-2">{project.project_id}</p>
+              {isArchived && project.exit_reason && (
+                <p className="text-xs italic line-clamp-2" style={{ color: '#64748b' }}>
+                  {project.exit_reason}
+                </p>
+              )}
             </div>
 
             {/* Progress Ring */}
@@ -609,6 +649,40 @@ const ProjectCard3D: React.FC<ProjectCard3DProps> = ({ project, onClick }) => {
             </div>
           )}
 
+          {/* Vendor Roster — compact pill row on the card */}
+          {project.vendors && project.vendors.length > 0 && (
+            <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+              <p className="text-xs text-slate-400 mb-2 font-semibold uppercase tracking-wider">Vendors</p>
+              <div className="flex flex-wrap gap-1.5">
+                {project.vendors.map(v => {
+                  const cfg = {
+                    active:     { bg: 'rgba(34,197,94,0.12)',  border: 'rgba(34,197,94,0.4)',  color: '#22c55e', dot: '●' },
+                    evaluating: { bg: 'rgba(96,165,250,0.12)', border: 'rgba(96,165,250,0.4)', color: '#60a5fa', dot: '◎' },
+                    inactive:   { bg: 'rgba(100,116,139,0.12)',border: 'rgba(100,116,139,0.4)',color: '#94a3b8', dot: '○' },
+                    removed:    { bg: 'rgba(239,68,68,0.10)',  border: 'rgba(239,68,68,0.35)', color: '#f87171', dot: '✕' },
+                  }[v.status] ?? { bg: 'rgba(100,116,139,0.12)', border: 'rgba(100,116,139,0.4)', color: '#94a3b8', dot: '○' };
+                  return (
+                    <span
+                      key={v.id}
+                      title={`${v.role} · ${v.status}${v.notes ? ' — ' + v.notes : ''}`}
+                      className="text-xs px-2 py-0.5 rounded-full font-semibold flex items-center gap-1"
+                      style={{
+                        background: cfg.bg,
+                        border: `1px solid ${cfg.border}`,
+                        color: cfg.color,
+                        textDecoration: v.status === 'removed' ? 'line-through' : 'none',
+                        opacity: v.status === 'removed' ? 0.7 : 1,
+                      }}
+                    >
+                      <span style={{ fontSize: 8 }}>{cfg.dot}</span>
+                      {v.vendor_name}
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* EST Phase + Compliance ID badges */}
           <div className="flex flex-wrap gap-1 mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
             {/* EST Phase pill */}
@@ -692,6 +766,10 @@ const ProjectDashboard3D: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'orbital'>('grid');
   const [filterHealth, setFilterHealth] = useState<'all' | 'green' | 'yellow' | 'red'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [portfolioTab, setPortfolioTab] = useState<'active' | 'archive'>('active');
+
+  // States considered "archived" — hidden from active portfolio
+  const ARCHIVE_STATES = new Set(['rejected', 'discontinued', 'ended']);
 
   // Load projects from the backend API (FastAPI on :8082 via Vite proxy)
   useEffect(() => {
@@ -724,7 +802,9 @@ const ProjectDashboard3D: React.FC = () => {
               obj.erpa_entries  = [];
               obj.ssp_entries   = [];
               obj.compliance_notes = '';
+              obj.exit_reason      = '';
               obj.business_owner   = '';
+              obj.vendors          = [];
               return obj as Project;
             })
             .filter(p => p.project_id);
@@ -739,22 +819,26 @@ const ProjectDashboard3D: React.FC = () => {
 
   const filteredProjects = useMemo(() => {
     return projects.filter(project => {
+      const isArchived = ARCHIVE_STATES.has(project.lifecycle_state?.toLowerCase());
+      if (portfolioTab === 'active'  &&  isArchived) return false;
+      if (portfolioTab === 'archive' && !isArchived) return false;
       const matchesHealth = filterHealth === 'all' || project.health.toLowerCase() === filterHealth;
-      const matchesSearch = searchQuery === '' || 
+      const matchesSearch = searchQuery === '' ||
         project.project_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         project.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
         project.project_id.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesHealth && matchesSearch;
     });
-  }, [projects, filterHealth, searchQuery]);
+  }, [projects, filterHealth, searchQuery, portfolioTab]);
 
   const stats = useMemo(() => {
-    const total = projects.length;
-    const green = projects.filter(p => p.health.toLowerCase() === 'green').length;
-    const yellow = projects.filter(p => p.health.toLowerCase() === 'yellow').length;
-    const red = projects.filter(p => p.health.toLowerCase() === 'red').length;
-    
-    return { total, green, yellow, red };
+    const active   = projects.filter(p => !ARCHIVE_STATES.has(p.lifecycle_state?.toLowerCase()));
+    const archived = projects.filter(p =>  ARCHIVE_STATES.has(p.lifecycle_state?.toLowerCase()));
+    const total  = active.length;
+    const green  = active.filter(p => p.health.toLowerCase() === 'green').length;
+    const yellow = active.filter(p => p.health.toLowerCase() === 'yellow').length;
+    const red    = active.filter(p => p.health.toLowerCase() === 'red').length;
+    return { total, green, yellow, red, archived: archived.length };
   }, [projects]);
 
   return (
@@ -787,6 +871,40 @@ const ProjectDashboard3D: React.FC = () => {
 
             {/* View Mode Toggle */}
             <div className="flex items-center gap-3">
+              {/* Portfolio tabs */}
+              <div className="flex items-center rounded-lg overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.12)' }}>
+                <button
+                  onClick={() => { setPortfolioTab('active'); setFilterHealth('all'); }}
+                  className="px-4 py-2 text-sm font-semibold transition-all"
+                  style={{
+                    background: portfolioTab === 'active' ? '#0053E2' : 'rgba(255,255,255,0.04)',
+                    color: portfolioTab === 'active' ? '#fff' : '#94a3b8',
+                  }}
+                >
+                  Active Portfolio
+                  <span className="ml-2 text-xs px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }}>
+                    {stats.total}
+                  </span>
+                </button>
+                <button
+                  onClick={() => { setPortfolioTab('archive'); setFilterHealth('all'); }}
+                  className="px-4 py-2 text-sm font-semibold transition-all"
+                  style={{
+                    background: portfolioTab === 'archive' ? 'rgba(100,116,139,0.4)' : 'rgba(255,255,255,0.04)',
+                    color: portfolioTab === 'archive' ? '#fff' : '#94a3b8',
+                  }}
+                >
+                  🗄️ Archive
+                  {stats.archived > 0 && (
+                    <span className="ml-2 text-xs px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(100,116,139,0.4)' }}>
+                      {stats.archived}
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.12)' }} />
+
               <button
                 onClick={() => setViewMode('grid')}
                 className={`px-4 py-2 rounded-lg font-semibold transition-all ${
@@ -1059,6 +1177,90 @@ const ProjectDashboard3D: React.FC = () => {
                   </p>
                 </div>
 
+                {/* ── Vendor Roster ── */}
+                {selectedProject.vendors && selectedProject.vendors.length > 0 && (
+                  <div>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 10,
+                      marginBottom: 14, paddingTop: 8,
+                      borderTop: '1px solid rgba(255,255,255,0.07)',
+                    }}>
+                      <div style={{
+                        width: 32, height: 32, borderRadius: 8, flexShrink: 0,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: 16,
+                        background: 'linear-gradient(135deg, rgba(0,83,226,0.2), rgba(0,83,226,0.05))',
+                        border: '1px solid rgba(0,83,226,0.3)',
+                      }}>🏢</div>
+                      <div>
+                        <div style={{ fontSize: 15, fontWeight: 800, color: '#fff' }}>Vendor Roster</div>
+                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 1 }}>
+                          {selectedProject.vendors.filter(v => v.status === 'active').length} active
+                          {selectedProject.vendors.filter(v => v.status === 'evaluating').length > 0 &&
+                            ` · ${selectedProject.vendors.filter(v => v.status === 'evaluating').length} evaluating`}
+                          {selectedProject.vendors.filter(v => v.status === 'removed').length > 0 &&
+                            ` · ${selectedProject.vendors.filter(v => v.status === 'removed').length} removed`}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {selectedProject.vendors.map(v => {
+                        const statusCfg = {
+                          active:     { color: '#22c55e', bg: 'rgba(34,197,94,0.08)',   border: 'rgba(34,197,94,0.25)',  icon: '✓', label: 'Active' },
+                          evaluating: { color: '#60a5fa', bg: 'rgba(96,165,250,0.08)',  border: 'rgba(96,165,250,0.25)', icon: '◎', label: 'Evaluating' },
+                          inactive:   { color: '#94a3b8', bg: 'rgba(100,116,139,0.08)',border: 'rgba(100,116,139,0.25)',icon: '○', label: 'Inactive' },
+                          removed:    { color: '#f87171', bg: 'rgba(239,68,68,0.08)',   border: 'rgba(239,68,68,0.25)',  icon: '✕', label: 'Removed' },
+                        }[v.status] ?? { color: '#94a3b8', bg: 'rgba(100,116,139,0.08)', border: 'rgba(100,116,139,0.25)', icon: '○', label: v.status };
+                        return (
+                          <div
+                            key={v.id}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 12,
+                              padding: '10px 14px', borderRadius: 10,
+                              background: statusCfg.bg,
+                              border: `1px solid ${statusCfg.border}`,
+                              opacity: v.status === 'removed' ? 0.75 : 1,
+                            }}
+                          >
+                            {/* Status icon */}
+                            <div style={{
+                              width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              background: `${statusCfg.color}20`,
+                              border: `1px solid ${statusCfg.color}50`,
+                              color: statusCfg.color, fontSize: 13, fontWeight: 800,
+                            }}>{statusCfg.icon}</div>
+                            {/* Info */}
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span style={{
+                                  fontSize: 13, fontWeight: 700, color: '#fff',
+                                  textDecoration: v.status === 'removed' ? 'line-through' : 'none',
+                                }}>{v.vendor_name}</span>
+                                <span style={{
+                                  fontSize: 10, fontWeight: 700, color: statusCfg.color,
+                                  background: `${statusCfg.color}18`, border: `1px solid ${statusCfg.color}40`,
+                                  padding: '1px 7px', borderRadius: 99, letterSpacing: '0.06em',
+                                }}>{statusCfg.label}</span>
+                                {v.role && v.role !== 'Vendor' && (
+                                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>
+                                    {v.role}
+                                  </span>
+                                )}
+                              </div>
+                              {v.notes && (
+                                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                  {v.notes}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* ── EST Lifecycle Timeline ── */}
                 <div>
                   <div style={{
@@ -1139,6 +1341,8 @@ const FALLBACK_PROJECTS: Project[] = [
     erpa_entries: [],
     ssp_entries:  [],
     compliance_notes: '',
+    exit_reason: '',
+    vendors: [],
   },
 ];
 
