@@ -58,12 +58,25 @@ const AppShell: React.FC<{
 }> = ({ currentView, setCurrentView }) => {
   const { reducedMotion } = useTheme();
   const { backendOffline } = useVendors();
-  const [chatOpen,    setChatOpen]    = useState(false);
-  const [paletteOpen, setPaletteOpen] = useState(false);
+  const [chatOpen,      setChatOpen]      = useState(false);
+  const [paletteOpen,   setPaletteOpen]   = useState(false);
+  const [chatDismissed, setChatDismissed] = useState(
+    () => localStorage.getItem('sentry-ai-dismissed') === '1'
+  );
 
   const toggleChat   = useCallback(() => setChatOpen(o => !o), []);
   const openPalette  = useCallback(() => setPaletteOpen(true), []);
   const closePalette = useCallback(() => setPaletteOpen(false), []);
+  const dismissChat  = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setChatOpen(false);
+    setChatDismissed(true);
+    localStorage.setItem('sentry-ai-dismissed', '1');
+  }, []);
+  const restoreChat  = useCallback(() => {
+    setChatDismissed(false);
+    localStorage.removeItem('sentry-ai-dismissed');
+  }, []);
 
   // Global Cmd+K / Ctrl+K → open command palette
   useEffect(() => {
@@ -178,7 +191,7 @@ const AppShell: React.FC<{
         onNavigate={v => { setCurrentView(v); closePalette(); }}
       />
 
-      {/* ── Floating SENTRY-AI chat ─────────────────────────────── */}
+      {/* ── Floating SENTRY-AI chat ───────────────────────────── */}
       {chatOpen && (
         <div
           className="fixed inset-0 z-40"
@@ -205,55 +218,143 @@ const AppShell: React.FC<{
         {chatOpen && <ChatAssistant />}
       </aside>
 
-      <button
-        onClick={toggleChat}
-        aria-label={chatOpen ? 'Close SENTRY-AI chat' : 'Open SENTRY-AI chat'}
-        aria-expanded={chatOpen}
-        aria-controls="sentry-ai-chat"
-        style={{
-          position: 'fixed',
-          bottom: chatOpen ? 'calc(min(640px, 88vh) + 12px)' : '24px',
-          right: '24px',
-          zIndex: 51,
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: chatOpen ? '10px' : '10px 18px 10px 14px',
-          borderRadius: '99px',
-          border: '1.5px solid rgba(255,255,255,0.15)',
-          background: chatOpen
-            ? 'linear-gradient(135deg,#7f1d1d,#450a0a)'
-            : 'linear-gradient(135deg,#0053e2,#002880)',
-          boxShadow: '0 8px 28px rgba(0,83,226,0.5)',
-          cursor: 'pointer',
-          transition: reducedMotion ? 'none' : 'bottom 0.3s cubic-bezier(0.4,0,0.2,1), background 0.2s, padding 0.2s',
-          color: 'white',
-          fontWeight: 700,
-          fontSize: '13px',
-          letterSpacing: '0.03em',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        {chatOpen ? (
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-            <path d="M5 5l10 10M15 5L5 15" stroke="white" strokeWidth="2.2" strokeLinecap="round"/>
+      {/* Restore pill — shown only when widget is dismissed */}
+      {chatDismissed && (
+        <button
+          onClick={restoreChat}
+          aria-label="Restore SENTRY-AI chat"
+          title="Restore SENTRY-AI"
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            right: '24px',
+            zIndex: 51,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            padding: '6px 12px 6px 10px',
+            borderRadius: '99px',
+            border: '1px solid rgba(255,255,255,0.12)',
+            background: 'rgba(15,23,42,0.85)',
+            backdropFilter: 'blur(8px)',
+            cursor: 'pointer',
+            color: 'rgba(148,163,184,0.7)',
+            fontSize: '11px',
+            fontWeight: 600,
+            letterSpacing: '0.04em',
+            transition: 'opacity 0.2s, background 0.2s',
+            whiteSpace: 'nowrap',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(0,83,226,0.3)')}
+          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(15,23,42,0.85)')}
+        >
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-        ) : (
-          <>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <circle cx="9"  cy="11" r="1" fill="white"/>
-              <circle cx="12" cy="11" r="1" fill="white"/>
-              <circle cx="15" cy="11" r="1" fill="white"/>
-            </svg>
-            <span>SENTRY-AI</span>
-            <span className="relative flex items-center justify-center ml-1">
-              <span className="w-2 h-2 rounded-full bg-green-400" />
-              <span className="absolute w-2 h-2 rounded-full bg-green-400 animate-ping-ring" style={{ opacity: 0.6 }} />
-            </span>
-          </>
-        )}
-      </button>
+          SENTRY-AI
+        </button>
+      )}
+
+      {/* Main toggle button — hidden when dismissed */}
+      {!chatDismissed && (
+        <div
+          style={{
+            position: 'fixed',
+            bottom: chatOpen ? 'calc(min(640px, 88vh) + 12px)' : '24px',
+            right: '24px',
+            zIndex: 51,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            transition: reducedMotion ? 'none' : 'bottom 0.3s cubic-bezier(0.4,0,0.2,1)',
+          }}
+        >
+          {/* Dismiss × button — only shown when chat is closed */}
+          {!chatOpen && (
+            <button
+              onClick={dismissChat}
+              aria-label="Hide SENTRY-AI chat button"
+              title="Hide SENTRY-AI (click the ghost pill in the corner to restore)"
+              style={{
+                width: '26px',
+                height: '26px',
+                borderRadius: '50%',
+                border: '1px solid rgba(255,255,255,0.18)',
+                background: 'rgba(15,23,42,0.7)',
+                backdropFilter: 'blur(6px)',
+                color: 'rgba(148,163,184,0.8)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '13px',
+                lineHeight: 1,
+                flexShrink: 0,
+                transition: 'background 0.15s, color 0.15s',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = 'rgba(234,17,0,0.25)';
+                e.currentTarget.style.color = '#f87171';
+                e.currentTarget.style.borderColor = 'rgba(234,17,0,0.4)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = 'rgba(15,23,42,0.7)';
+                e.currentTarget.style.color = 'rgba(148,163,184,0.8)';
+                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.18)';
+              }}
+            >
+              ×
+            </button>
+          )}
+
+          {/* Main SENTRY-AI toggle */}
+          <button
+            onClick={toggleChat}
+            aria-label={chatOpen ? 'Close SENTRY-AI chat' : 'Open SENTRY-AI chat'}
+            aria-expanded={chatOpen}
+            aria-controls="sentry-ai-chat"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: chatOpen ? '10px' : '10px 18px 10px 14px',
+              borderRadius: '99px',
+              border: '1.5px solid rgba(255,255,255,0.15)',
+              background: chatOpen
+                ? 'linear-gradient(135deg,#7f1d1d,#450a0a)'
+                : 'linear-gradient(135deg,#0053e2,#002880)',
+              boxShadow: '0 8px 28px rgba(0,83,226,0.5)',
+              cursor: 'pointer',
+              color: 'white',
+              fontWeight: 700,
+              fontSize: '13px',
+              letterSpacing: '0.03em',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {chatOpen ? (
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M5 5l10 10M15 5L5 15" stroke="white" strokeWidth="2.2" strokeLinecap="round"/>
+              </svg>
+            ) : (
+              <>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <circle cx="9"  cy="11" r="1" fill="white"/>
+                  <circle cx="12" cy="11" r="1" fill="white"/>
+                  <circle cx="15" cy="11" r="1" fill="white"/>
+                </svg>
+                <span>SENTRY-AI</span>
+                <span className="relative flex items-center justify-center ml-1">
+                  <span className="w-2 h-2 rounded-full bg-green-400" />
+                  <span className="absolute w-2 h-2 rounded-full bg-green-400 animate-ping-ring" style={{ opacity: 0.6 }} />
+                </span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
     </>
   );
 };
