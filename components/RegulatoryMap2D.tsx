@@ -77,6 +77,11 @@ export const RegulatoryMap2D: React.FC<Props> = ({
   const [worldGeo, setWorldGeo] = useState<GeoJSON.FeatureCollection | null>(null);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [transform, setTransform] = useState({ k: 1, x: 0, y: 0 });
+  const [clusterMenu, setClusterMenu] = useState<{
+    nodes: PlacedNode[];
+    screenX: number;
+    screenY: number;
+  } | null>(null);
 
   // ── Load data ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -120,7 +125,18 @@ export const RegulatoryMap2D: React.FC<Props> = ({
     if (!svg || !worldGeo) return;
     const zoom = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([1, 8])
-      .on('zoom', (event) => setTransform({ k: event.transform.k, x: event.transform.x, y: event.transform.y }));
+      .filter((event) => {
+        // Let marker clicks pass through to React — only zoom on
+        // background clicks, scroll, or drag on non-marker elements.
+        const target = event.target as SVGElement;
+        if (event.type === 'wheel') return true; // always zoom on scroll
+        if (target.closest('g[tabindex]')) return false; // marker area — skip zoom
+        return true;
+      })
+      .on('zoom', (event) => {
+        setTransform({ k: event.transform.k, x: event.transform.x, y: event.transform.y });
+        setClusterMenu(null);
+      });
     d3.select(svg).call(zoom);
     return () => { d3.select(svg).on('.zoom', null); };
   }, [worldGeo]);
@@ -131,6 +147,8 @@ export const RegulatoryMap2D: React.FC<Props> = ({
     const wrap = wrapRef.current;
     if (!tip || !wrap) return;
     setHoveredNode(node.jurisdiction);
+    // Hide tooltip if cluster menu is open (avoid visual clash)
+    if (clusterMenu) return;
     const wr = wrap.getBoundingClientRect();
     const mx = e.clientX - wr.left;
     const my = e.clientY - wr.top;
@@ -163,9 +181,61 @@ export const RegulatoryMap2D: React.FC<Props> = ({
     if (tipRef.current) tipRef.current.style.display = 'none';
   }, []);
 
-  const handleClick = useCallback((node: PlacedNode) => {
-    onJurisdictionClick?.(selectedJurisdiction === node.jurisdiction ? null : node.jurisdiction);
+  // ── Cluster-aware click ────────────────────────────────────────────
+  const PROXIMITY_PX = 30; // SVG viewBox pixels
+
+  const handleClick = useCallback((e: React.MouseEvent, node: PlacedNode) => {
+    // Find all markers within proximity radius
+    const nearby = placedNodes.filter(n => {
+      const dx = n.x - node.x;
+      const dy = n.y - node.y;
+      return Math.hypot(dx, dy) <= PROXIMITY_PX;
+    });
+
+    if (nearby.length <= 1) {
+      // Isolated marker → direct select/deselect
+      setClusterMenu(null);
+      onJurisdictionClick?.(selectedJurisdiction === node.jurisdiction ? null : node.jurisdiction);
+    } else {
+      // Multiple nearby → show cluster picker at click position
+      const wrap = wrapRef.current;
+      if (!wrap) return;
+      const wr = wrap.getBoundingClientRect();
+      // Sort: worst RAG first (Red > Amber > Yellow > Green), then by count desc
+      const ragOrder: Record<string, number> = { Red: 0, Amber: 1, Yellow: 2, Green: 3 };
+      const sorted = [...nearby].sort((a, b) => {
+        const ra = ragOrder[a.geo.worst_rag] ?? 4;
+        const rb = ragOrder[b.geo.worst_rag] ?? 4;
+        return ra !== rb ? ra - rb : b.geo.total - a.geo.total;
+      });
+      setClusterMenu({
+        nodes: sorted,
+        screenX: e.clientX - wr.left,
+        screenY: e.clientY - wr.top,
+      });
+    }
+  }, [placedNodes, onJurisdictionClick, selectedJurisdiction]);
+
+  const selectFromCluster = useCallback((jurisdiction: string) => {
+    setClusterMenu(null);
+    onJurisdictionClick?.(selectedJurisdiction === jurisdiction ? null : jurisdiction);
   }, [onJurisdictionClick, selectedJurisdiction]);
+
+  // Close cluster menu on outside click or scroll
+  useEffect(() => {
+    if (!clusterMenu) return;
+    const close = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-cluster-menu]')) setClusterMenu(null);
+    };
+    const closeScroll = () => setClusterMenu(null);
+    window.addEventListener('click', close, { capture: true });
+    window.addEventListener('wheel', closeScroll, { passive: true });
+    return () => {
+      window.removeEventListener('click', close, { capture: true });
+      window.removeEventListener('wheel', closeScroll);
+    };
+  }, [clusterMenu]);
 
   // ── Loading ────────────────────────────────────────────────────────
   if (!worldGeo || !pathGen) {
@@ -259,13 +329,13 @@ export const RegulatoryMap2D: React.FC<Props> = ({
 
             return (
               <g key={node.jurisdiction} style={{ cursor: 'pointer' }}
-                onClick={e => { e.stopPropagation(); handleClick(node); }}
+                onClick={ev => { ev.stopPropagation(); handleClick(ev, node); }}
                 onMouseEnter={e => showTip(e, node)}
                 onMouseMove={e => showTip(e, node)}
                 onMouseLeave={hideTip}
                 tabIndex={0}
                 aria-label={`${node.label}: ${node.geo.total} obligations, ${node.geo.worst_rag} risk`}
-                onKeyDown={e => { if (e.key === 'Enter') handleClick(node); }}>
+                onKeyDown={e => { if (e.key === 'Enter') handleClick(e as unknown as React.MouseEvent, node); }}>
 
                 {/* Pulse ring on active */}
                 {active && (
@@ -324,6 +394,95 @@ export const RegulatoryMap2D: React.FC<Props> = ({
         backdropFilter: 'blur(12px)', whiteSpace: 'nowrap', zIndex: 30,
         boxShadow: '0 12px 40px rgba(0,0,0,0.6)', maxWidth: '240px',
       }} />
+
+      {/* Cluster picker dropdown */}
+      {clusterMenu && (
+        <div
+          data-cluster-menu
+          style={{
+            position: 'absolute',
+            left: Math.min(clusterMenu.screenX, (wrapRef.current?.clientWidth ?? 400) - 260),
+            top: Math.min(clusterMenu.screenY + 8, (wrapRef.current?.clientHeight ?? 400) - clusterMenu.nodes.length * 38 - 50),
+            zIndex: 40,
+            background: 'rgba(0,8,30,0.96)',
+            border: '1px solid rgba(0,83,226,0.5)',
+            borderRadius: '12px',
+            backdropFilter: 'blur(16px)',
+            boxShadow: '0 16px 48px rgba(0,0,0,0.7)',
+            padding: '6px 0',
+            minWidth: '220px',
+            maxHeight: '320px',
+            overflowY: 'auto',
+          }}
+        >
+          <div style={{
+            padding: '8px 14px 6px',
+            fontSize: '10px',
+            fontWeight: 800,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            color: '#64748b',
+            borderBottom: '1px solid rgba(0,83,226,0.2)',
+          }}>
+            {clusterMenu.nodes.length} jurisdictions in this area
+          </div>
+          {clusterMenu.nodes.map(n => {
+            const ragColor = RAG_FILL[n.geo.worst_rag] ?? '#22c55e';
+            const glowColor = RAG_GLOW[n.geo.worst_rag] ?? '#4ade80';
+            const isActive = selectedJurisdiction === n.jurisdiction;
+            return (
+              <button
+                key={n.jurisdiction}
+                onClick={(ev) => { ev.stopPropagation(); selectFromCluster(n.jurisdiction); }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '10px',
+                  width: '100%',
+                  padding: '8px 14px',
+                  border: 'none',
+                  background: isActive ? 'rgba(255,194,32,0.12)' : 'transparent',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'background 0.15s',
+                  borderLeft: isActive ? '3px solid #FFC220' : '3px solid transparent',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = isActive ? 'rgba(255,194,32,0.18)' : 'rgba(0,83,226,0.15)')}
+                onMouseLeave={e => (e.currentTarget.style.background = isActive ? 'rgba(255,194,32,0.12)' : 'transparent')}
+              >
+                {/* RAG dot */}
+                <span style={{
+                  width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0,
+                  background: ragColor, boxShadow: `0 0 6px ${glowColor}`,
+                }} />
+                {/* Label */}
+                <span style={{
+                  flex: 1, fontSize: '12px', fontWeight: 600,
+                  color: isActive ? '#FFC220' : '#e2e8f0',
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}>
+                  {n.label}
+                </span>
+                {/* RAG badge */}
+                <span style={{
+                  fontSize: '9px', fontWeight: 700, padding: '2px 6px',
+                  borderRadius: '9999px', textTransform: 'uppercase',
+                  background: `${ragColor}22`, color: glowColor,
+                }}>
+                  {n.geo.worst_rag}
+                </span>
+                {/* Count */}
+                <span style={{
+                  fontSize: '11px', fontWeight: 800, color: '#94a3b8',
+                  minWidth: '24px', textAlign: 'right',
+                }}>
+                  {n.geo.total}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Legend */}
       <div className="absolute bottom-3 left-3 pointer-events-none rounded-lg px-3 py-2"
