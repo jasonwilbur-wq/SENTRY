@@ -5,6 +5,11 @@
  * Markers sized by obligation count, colored by RAG status.
  * D3 force simulation pushes overlapping markers apart.
  * Click shows detail popover; hover for tooltip; scroll to zoom; drag to pan.
+ *
+ * Click handling strategy:
+ * - Each marker circle has onPointerDown (preventDefault to kill mouse
+ *   synthesis, so D3 zoom never sees it) + onPointerUp (show popover).
+ * - This completely bypasses D3 zoom's click interception.
  */
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import * as d3 from 'd3';
@@ -58,24 +63,6 @@ function deCluster(
   return simNodes;
 }
 
-// ── Convert screen coords → SVG viewBox coords ──────────────────────
-function screenToSvg(
-  screenX: number, screenY: number,
-  svg: SVGSVGElement, transform: { k: number; x: number; y: number },
-): { svgX: number; svgY: number } {
-  // Use the SVG's own matrix to handle viewBox + preserveAspectRatio
-  const pt = svg.createSVGPoint();
-  pt.x = screenX;
-  pt.y = screenY;
-  const ctm = svg.getScreenCTM();
-  if (!ctm) return { svgX: 0, svgY: 0 };
-  const svgPt = pt.matrixTransform(ctm.inverse());
-  // Undo the D3 pan+zoom transform
-  const svgX = (svgPt.x - transform.x) / transform.k;
-  const svgY = (svgPt.y - transform.y) / transform.k;
-  return { svgX, svgY };
-}
-
 export const RegulatoryMap2D: React.FC<Props> = ({
   selectedJurisdiction = null,
   onJurisdictionClick,
@@ -88,8 +75,6 @@ export const RegulatoryMap2D: React.FC<Props> = ({
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [transform, setTransform] = useState({ k: 1, x: 0, y: 0 });
   const [popover, setPopover] = useState<PopoverState | null>(null);
-  const transformRef = useRef(transform);
-  transformRef.current = transform;
 
   // ── Load data ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -123,13 +108,11 @@ export const RegulatoryMap2D: React.FC<Props> = ({
     if (!projection || nodes.length === 0) return [];
     return deCluster(nodes, projection, rScale);
   }, [nodes, projection, rScale]);
-  const placedRef = useRef(placedNodes);
-  placedRef.current = placedNodes;
 
   const pathGen = useMemo(() => projection ? d3.geoPath(projection) : null, [projection]);
   const graticule = useMemo(() => d3.geoGraticule10(), []);
 
-  // ── D3 Zoom (only handles zoom/pan — no click logic) ──────────────
+  // ── D3 Zoom ────────────────────────────────────────────────────────
   useEffect(() => {
     const svg = svgRef.current;
     if (!svg || !worldGeo) return;
@@ -142,92 +125,71 @@ export const RegulatoryMap2D: React.FC<Props> = ({
     return () => { d3.select(svg).on('.zoom', null); };
   }, [worldGeo]);
 
-  // ── Click detection on wrapper div (bypasses D3 zoom entirely) ─────
-  const HIT_RADIUS = 25; // SVG viewBox px — generous click target
-  const CLUSTER_RADIUS = 30;
+  // ── Marker click handler ───────────────────────────────────────────
+  const CLUSTER_RADIUS = 30; // SVG viewBox px
 
-  useEffect(() => {
-    const wrap = wrapRef.current;
-    const svg = svgRef.current;
-    if (!wrap || !svg) return;
+  const handleMarkerPointerDown = useCallback((e: React.PointerEvent) => {
+    // preventDefault kills mouse-event synthesis → D3 zoom never sees
+    // mousedown/mouseup/click for this interaction. Our pointerUp fires
+    // independently and shows the popover.
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
 
-    let startX = 0, startY = 0;
+  const handleMarkerPointerUp = useCallback((e: React.PointerEvent, node: PlacedNode) => {
+    e.stopPropagation();
 
-    const onDown = (e: PointerEvent) => {
-      startX = e.clientX;
-      startY = e.clientY;
-    };
-
-    // Use pointerup instead of click — D3 zoom intercepts click events
-    // with stopImmediatePropagation(), but never touches pointer events.
-    const onUp = (e: PointerEvent) => {
-      // Ignore if this was a drag/pan gesture (moved > 5px)
-      if (Math.hypot(e.clientX - startX, e.clientY - startY) > 5) return;
-
-      // Ignore clicks on the popover itself or control buttons
-      const target = e.target as HTMLElement;
-      if (target.closest('[data-popover]') || target.closest('button')) return;
-
-      const { svgX, svgY } = screenToSvg(e.clientX, e.clientY, svg, transformRef.current);
-      const placed = placedRef.current;
-
-      // Find clicked marker (nearest within hit radius)
-      let closest: PlacedNode | null = null;
-      let closestDist = Infinity;
-      for (const n of placed) {
-        const d = Math.hypot(n.x - svgX, n.y - svgY);
-        if (d <= HIT_RADIUS && d < closestDist) {
-          closest = n;
-          closestDist = d;
-        }
-      }
-
-      if (!closest) {
-        setPopover(null);
-        return;
-      }
-
-      // Gather nearby markers within cluster radius
-      const nearby = placed
-        .filter(n => Math.hypot(n.x - closest!.x, n.y - closest!.y) <= CLUSTER_RADIUS)
-        .sort((a, b) => {
-          const ra = RAG_ORDER[a.geo.worst_rag] ?? 4;
-          const rb = RAG_ORDER[b.geo.worst_rag] ?? 4;
-          return ra !== rb ? ra - rb : b.geo.total - a.geo.total;
-        });
-
-      const wr = wrap.getBoundingClientRect();
-      // Hide tooltip before showing popover
-      if (tipRef.current) tipRef.current.style.display = 'none';
-      setHoveredNode(null);
-      setPopover({
-        nodes: nearby,
-        screenX: e.clientX - wr.left,
-        screenY: e.clientY - wr.top,
+    // Find nearby markers for cluster picker
+    const nearby = placedNodes
+      .filter(n => Math.hypot(n.x - node.x, n.y - node.y) <= CLUSTER_RADIUS)
+      .sort((a, b) => {
+        const ra = RAG_ORDER[a.geo.worst_rag] ?? 4;
+        const rb = RAG_ORDER[b.geo.worst_rag] ?? 4;
+        return ra !== rb ? ra - rb : b.geo.total - a.geo.total;
       });
-    };
 
-    wrap.addEventListener('pointerdown', onDown);
-    wrap.addEventListener('pointerup', onUp);
-    return () => {
-      wrap.removeEventListener('pointerdown', onDown);
-      wrap.removeEventListener('pointerup', onUp);
-    };
-  }, [worldGeo]); // stable — uses refs for dynamic data
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+    const wr = wrap.getBoundingClientRect();
 
-  // Close popover on scroll/zoom
+    // Hide tooltip
+    if (tipRef.current) tipRef.current.style.display = 'none';
+    setHoveredNode(null);
+
+    setPopover({
+      nodes: nearby,
+      screenX: e.clientX - wr.left,
+      screenY: e.clientY - wr.top,
+    });
+  }, [placedNodes]);
+
+  // Close popover on empty-area click or scroll
   useEffect(() => {
     if (!popover) return;
-    const close = () => setPopover(null);
-    window.addEventListener('wheel', close, { passive: true });
-    return () => window.removeEventListener('wheel', close);
+    const closeOnWheel = () => setPopover(null);
+    const closeOnClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-popover]')) {
+        setPopover(null);
+      }
+    };
+    window.addEventListener('wheel', closeOnWheel, { passive: true });
+    // Delay adding click listener so the current event cycle doesn't close it
+    const timer = setTimeout(() => {
+      window.addEventListener('click', closeOnClick, { capture: true });
+    }, 100);
+    return () => {
+      window.removeEventListener('wheel', closeOnWheel);
+      clearTimeout(timer);
+      window.removeEventListener('click', closeOnClick, { capture: true });
+    };
   }, [popover]);
 
   // ── Tooltip (hover only) ───────────────────────────────────────────
   const showTip = useCallback((e: React.MouseEvent, node: PlacedNode) => {
     const tip = tipRef.current;
     const wrap = wrapRef.current;
-    if (!tip || !wrap || popover) return; // hide tooltip when popover is open
+    if (!tip || !wrap || popover) return;
     setHoveredNode(node.jurisdiction);
     const wr = wrap.getBoundingClientRect();
     const mx = e.clientX - wr.left;
@@ -332,7 +294,7 @@ export const RegulatoryMap2D: React.FC<Props> = ({
             );
           })}
 
-          {/* Markers — no onClick (handled by wrapper div) */}
+          {/* Markers */}
           {placedNodes.map(node => {
             const { x, y, r } = node;
             const fill = RAG_FILL[node.geo.worst_rag] ?? '#22c55e';
@@ -346,14 +308,12 @@ export const RegulatoryMap2D: React.FC<Props> = ({
             const showLabel = node.geo.total >= 5 || active || isRed;
 
             return (
-              <g key={node.jurisdiction} style={{ pointerEvents: 'none' }}
-                onMouseEnter={e => showTip(e, node)}
-                onMouseMove={e => showTip(e, node)}
-                onMouseLeave={hideTip}>
-
+              <g key={node.jurisdiction}>
+                {/* Decorative elements — no pointer events */}
                 {active && (
                   <circle cx={x} cy={y} r={r * 2.5} fill="none"
-                    stroke={isSelected ? '#FFC220' : glow} strokeWidth={1.5} opacity={0.4}>
+                    stroke={isSelected ? '#FFC220' : glow} strokeWidth={1.5} opacity={0.4}
+                    style={{ pointerEvents: 'none' }}>
                     <animate attributeName="r" from={r * 1.5} to={r * 3} dur="1.5s" repeatCount="indefinite" />
                     <animate attributeName="opacity" from="0.5" to="0" dur="1.5s" repeatCount="indefinite" />
                   </circle>
@@ -363,20 +323,28 @@ export const RegulatoryMap2D: React.FC<Props> = ({
                   fill={glow}
                   opacity={active ? 0.3 : isRed ? 0.15 : isAmber ? 0.1 : 0.06}
                   filter={active ? 'url(#marker-glow-strong)' : undefined}
+                  style={{ pointerEvents: 'none' }}
                 />
 
-                <circle cx={x} cy={y} r={active ? r * 1.25 : r}
+                {/* ★ MAIN CLICKABLE CIRCLE — pointer events handled here ★ */}
+                <circle cx={x} cy={y} r={Math.max(active ? r * 1.25 : r, 8)}
                   fill={fill} opacity={active ? 1 : 0.9}
                   stroke={isSelected ? '#FFC220' : active ? '#fff' : glow}
                   strokeWidth={isSelected ? 3 : active ? 2 : 1}
                   filter={(isRed || isAmber || active) ? 'url(#marker-glow)' : undefined}
-                  style={{ pointerEvents: 'visiblePainted', cursor: 'pointer' }}
+                  style={{ cursor: 'pointer' }}
+                  onPointerDown={handleMarkerPointerDown}
+                  onPointerUp={e => handleMarkerPointerUp(e, node)}
+                  onMouseEnter={e => showTip(e as unknown as React.MouseEvent, node)}
+                  onMouseMove={e => showTip(e as unknown as React.MouseEvent, node)}
+                  onMouseLeave={hideTip}
                 />
 
+                {/* Text labels — no pointer events */}
                 {(node.geo.total >= 8 || active) && (
                   <text x={x} y={y + 4} textAnchor="middle" fill="#fff"
                     fontSize={active ? 11 : 9} fontWeight={800}
-                    filter="url(#text-shadow)">
+                    filter="url(#text-shadow)" style={{ pointerEvents: 'none' }}>
                     {node.geo.total}
                   </text>
                 )}
@@ -386,7 +354,7 @@ export const RegulatoryMap2D: React.FC<Props> = ({
                     textAnchor="middle"
                     fill={isSelected ? '#FFC220' : active ? '#fff' : '#cbd5e1'}
                     fontSize={active ? 12 : 10} fontWeight={active ? 800 : 600}
-                    filter="url(#text-shadow)">
+                    filter="url(#text-shadow)" style={{ pointerEvents: 'none' }}>
                     {node.label}
                   </text>
                 )}
@@ -470,4 +438,3 @@ export const RegulatoryMap2D: React.FC<Props> = ({
     </div>
   );
 };
-
