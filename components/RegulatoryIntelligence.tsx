@@ -13,7 +13,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { RegObligation, RegSummary, RegTopAction } from '../types';
 import { RegulatoryObligationModal } from './RegulatoryObligationModal';
-import { RegulatoryGlobe3D } from './RegulatoryGlobe3D';
+import { RegulatoryMap2D } from './RegulatoryMap2D';
 
 const API = (window as any).__SENTRY_API__ ?? '';
 
@@ -225,31 +225,19 @@ export const RegulatoryIntelligence: React.FC = () => {
         </div>
       </div>
 
-      {/* ═══ 2. INTERACTIVE GLOBE — full area clickable, no overlays ═══════ */}
+      {/* ═══ 2. INTERACTIVE MAP ═══════════════════════════════════════ */}
       <div className="rounded-2xl overflow-hidden border relative"
-        style={{ height: '460px', borderColor: 'var(--s-border)', background: 'var(--s-card)' }}>
-        {/* Subtle grid pattern */}
-        <div className="absolute inset-0 pointer-events-none z-[1] opacity-[0.03]"
-          style={{
-            backgroundImage:
-              'linear-gradient(rgba(0,83,226,0.5) 1px,transparent 1px),'
-              + 'linear-gradient(90deg,rgba(0,83,226,0.5) 1px,transparent 1px)',
-            backgroundSize: '52px 52px',
-          }}
+        style={{ height: '420px', borderColor: 'var(--s-border)' }}>
+        <RegulatoryMap2D
+          selectedJurisdiction={filterJur}
+          onJurisdictionClick={handleGlobeClick}
         />
-        {/* Globe fills entire container — fully interactive */}
-        <div className="absolute inset-0 z-0">
-          <RegulatoryGlobe3D
-            selectedJurisdiction={filterJur}
-            onJurisdictionClick={handleGlobeClick}
-          />
-        </div>
-        {/* Active filter indicator — positioned so it doesn't block globe */}
+        {/* Active filter indicator */}
         {filterJur && (
-          <div className="absolute top-4 left-4 z-10">
+          <div className="absolute top-3 left-3 z-10">
             <button
               onClick={() => setFilterJur(null)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all hover:scale-105"
+              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all hover:scale-105"
               style={{
                 background: 'rgba(255,194,32,0.2)',
                 border: '1px solid rgba(255,194,32,0.5)',
