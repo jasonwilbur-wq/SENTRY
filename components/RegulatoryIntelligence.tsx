@@ -1,11 +1,12 @@
 /**
  * RegulatoryIntelligence — Full-page module for regulatory tracking.
  *
- * Layout:
- *  1. Interactive 3D globe (data-driven, clickable, US states visible)
- *  2. KPI strip
- *  3. Executive summary + tech breakdown
- *  4. Searchable obligation table + remediation roadmap
+ * Layout (top → bottom):
+ *  1. Page header (title + stats — NOT overlaid on globe)
+ *  2. Interactive 3D globe (full clickable area)
+ *  3. KPI strip
+ *  4. Executive summary + tech breakdown
+ *  5. Searchable obligation table + remediation roadmap
  *
  * Globe clicks filter the table by jurisdiction.
  */
@@ -16,7 +17,7 @@ import { RegulatoryGlobe3D } from './RegulatoryGlobe3D';
 
 const API = (window as any).__SENTRY_API__ ?? '';
 
-// ── RAG colour helpers ───────────────────────────────────────────────────────
+// ── RAG colour helpers ───────────────────────────────────────────────
 const RAG_COLORS: Record<string, { bg: string; text: string; border: string; dot: string }> = {
   Red:    { bg: 'rgba(234,17,0,0.12)',   text: '#ff6b6b', border: 'rgba(234,17,0,0.35)',   dot: '#ea1100' },
   Amber:  { bg: 'rgba(251,146,60,0.12)', text: '#fb923c', border: 'rgba(251,146,60,0.35)', dot: '#f97316' },
@@ -34,16 +35,16 @@ const E_CAL  = '📅';
 const E_USER = '👤';
 const E_DL   = '📥';
 
-// ── Sub-components ───────────────────────────────────────────────────────────
+// ── Sub-components ───────────────────────────────────────────────────
 
 const KpiCard: React.FC<{ label: string; value: number | string; sub?: string; rag?: string }> = ({ label, value, sub, rag }) => {
   const c = rag ? RAG_COLORS[rag] : null;
   return (
-    <div className="rounded-xl p-4 flex flex-col gap-1 border"
+    <div className="rounded-xl p-4 flex flex-col gap-1 border min-w-0"
       style={{ background: c ? c.bg : 'var(--s-card)', borderColor: c ? c.border : 'var(--s-border)' }}>
-      <span className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--s-text-dim)' }}>{label}</span>
-      <span className="text-3xl font-black" style={{ color: c ? c.text : 'var(--s-text)' }}>{value}</span>
-      {sub && <span className="text-[10px]" style={{ color: 'var(--s-text-dim)' }}>{sub}</span>}
+      <span className="text-[10px] uppercase tracking-widest truncate" style={{ color: 'var(--s-text-dim)' }}>{label}</span>
+      <span className="text-2xl lg:text-3xl font-black" style={{ color: c ? c.text : 'var(--s-text)' }}>{value}</span>
+      {sub && <span className="text-[10px] truncate" style={{ color: 'var(--s-text-dim)' }}>{sub}</span>}
     </div>
   );
 };
@@ -51,7 +52,7 @@ const KpiCard: React.FC<{ label: string; value: number | string; sub?: string; r
 const RagBadge: React.FC<{ rag: string; score?: number }> = ({ rag, score }) => {
   const c = RAG_COLORS[rag] ?? RAG_COLORS.Green;
   return (
-    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border"
+    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide border whitespace-nowrap"
       style={{ background: c.bg, color: c.text, borderColor: c.border }}>
       <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: c.dot }} />
       {rag}{score !== undefined ? ` · ${score}` : ''}
@@ -60,7 +61,7 @@ const RagBadge: React.FC<{ rag: string; score?: number }> = ({ rag, score }) => 
 };
 
 const TechPill: React.FC<{ tech: string }> = ({ tech }) => (
-  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium"
+  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium whitespace-nowrap"
     style={{ background: 'rgba(0,83,226,0.12)', color: '#60a5fa', border: '1px solid rgba(0,83,226,0.25)' }}>
     {TECH_ICONS[tech] ?? '⚖️'} {tech}
   </span>
@@ -69,15 +70,15 @@ const TechPill: React.FC<{ tech: string }> = ({ tech }) => (
 const ActionCard: React.FC<{ action: RegTopAction; idx: number }> = ({ action, idx }) => {
   const pColor = action.priority === 'High' ? '#ff6b6b' : action.priority === 'Med' ? '#fb923c' : '#4ade80';
   return (
-    <div className="flex gap-3 p-3 rounded-lg border" style={{ background: 'var(--s-card)', borderColor: 'var(--s-border)' }}>
+    <div className="flex gap-3 p-3 rounded-lg border min-w-0" style={{ background: 'var(--s-card)', borderColor: 'var(--s-border)' }}>
       <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs font-black"
         style={{ background: 'rgba(0,83,226,0.18)', color: '#60a5fa' }}>{idx + 1}</div>
-      <div className="min-w-0">
-        <div className="flex items-center gap-2 mb-0.5">
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2 mb-0.5 min-w-0">
           <span className="text-sm font-bold truncate" style={{ color: 'var(--s-text)' }}>{action.title}</span>
-          <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded" style={{ background: `${pColor}1a`, color: pColor }}>{action.priority}</span>
+          <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded shrink-0" style={{ background: `${pColor}1a`, color: pColor }}>{action.priority}</span>
         </div>
-        <p className="text-[11px] leading-relaxed" style={{ color: 'var(--s-text-dim)' }}>{action.description}</p>
+        <p className="text-[11px] leading-relaxed line-clamp-2" style={{ color: 'var(--s-text-dim)' }}>{action.description}</p>
         <div className="flex gap-3 mt-1 text-[10px]" style={{ color: 'var(--s-text-dim)' }}>
           <span>{E_CAL} {action.eta}</span>
           <span>{E_USER} {action.owner}</span>
@@ -87,7 +88,7 @@ const ActionCard: React.FC<{ action: RegTopAction; idx: number }> = ({ action, i
   );
 };
 
-// ── Main component ───────────────────────────────────────────────────────────
+// ── Main component ───────────────────────────────────────────────────
 export const RegulatoryIntelligence: React.FC = () => {
   const [summary, setSummary]             = useState<RegSummary | null>(null);
   const [obligations, setObligations]     = useState<RegObligation[]>([]);
@@ -107,13 +108,13 @@ export const RegulatoryIntelligence: React.FC = () => {
   const [page, setPage]                   = useState(1);
   const PAGE_SIZE = 20;
 
-  // ── Globe → table click handler ────────────────────────────────────
+  // Globe → table click handler
   const handleGlobeClick = useCallback((jurisdiction: string | null) => {
     setFilterJur(jurisdiction);
     setPage(1);
   }, []);
 
-  // ── Fetch summary ──────────────────────────────────────────────────
+  // Fetch summary
   useEffect(() => {
     fetch(`${API}/api/regulatory/summary`)
       .then(r => r.ok ? r.json() : Promise.reject(r.statusText))
@@ -122,13 +123,11 @@ export const RegulatoryIntelligence: React.FC = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  // ── Fetch obligations with filters ─────────────────────────────────
+  // Fetch obligations with filters
   const fetchObligations = useCallback(() => {
     setObLoading(true);
     const params = new URLSearchParams({
-      page: String(page),
-      page_size: String(PAGE_SIZE),
-      sort: sortBy,
+      page: String(page), page_size: String(PAGE_SIZE), sort: sortBy,
     });
     if (filterRag)    params.set('rag', filterRag);
     if (filterTech)   params.set('tech', filterTech);
@@ -185,18 +184,52 @@ export const RegulatoryIntelligence: React.FC = () => {
   );
 
   const stats = summary?.stats;
+  const hasActiveFilter = !!(filterRag || filterTech || filterStatus || filterQ || filterJur);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 max-w-full overflow-hidden">
 
-      {/* ═══ 3D HERO — Interactive Regulatory Globe ═══════════════════ */}
-      <div
-        className="reg-hero-bg relative rounded-2xl overflow-hidden"
-        style={{ height: '520px', border: '1px solid var(--s-border)' }}
-      >
-        {/* Grid overlay */}
-        <div
-          className="absolute inset-0 opacity-[0.05] pointer-events-none z-[1]"
+      {/* ═══ 1. PAGE HEADER — separate from globe for full interactivity ═══ */}
+      <div className="text-center">
+        <p className="text-[10px] font-bold tracking-[0.2em] uppercase mb-2"
+          style={{ color: '#FFC220' }}>
+          Enterprise Security &nbsp;·&nbsp; Global Regulatory Intelligence
+        </p>
+        <h1
+          className="text-3xl lg:text-4xl font-black mb-2 leading-tight"
+          style={{
+            background: 'linear-gradient(135deg, #60a5fa 0%, #0053E2 50%, #FFC220 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+          }}
+        >
+          Regulatory Intelligence
+        </h1>
+        <p className="text-sm mx-auto max-w-xl mb-3" style={{ color: 'var(--s-text-muted)' }}>
+          {stats?.total_obligations ?? '—'} obligations across {summary?.jurisdictions.length ?? '—'} jurisdictions — real-time RAG risk mapping
+        </p>
+        {/* RAG summary pills */}
+        <div className="flex flex-wrap gap-2 justify-center">
+          {([
+            ['Red',    stats?.red,      'rgba(234,17,0,0.15)',   '#ff6b6b', 'rgba(234,17,0,0.4)'],
+            ['Amber',  stats?.amber,    'rgba(249,115,22,0.15)', '#fb923c', 'rgba(249,115,22,0.4)'],
+            ['Yellow', stats?.yellow,   'rgba(255,194,32,0.15)', '#FFC220', 'rgba(255,194,32,0.4)'],
+            ['Green',  stats?.green,    'rgba(42,135,3,0.15)',   '#4ade80', 'rgba(42,135,3,0.4)'],
+            ['Enacted',stats?.enacted,  'rgba(0,83,226,0.15)',   '#60a5fa', 'rgba(0,83,226,0.4)'],
+          ] as const).map(([label, count, bg, color, border]) => (
+            <span key={label} className="px-3 py-1.5 rounded-full text-xs font-bold border"
+              style={{ background: bg, color, borderColor: border }}>
+              {count ?? '—'} {label}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* ═══ 2. INTERACTIVE GLOBE — full area clickable, no overlays ═══════ */}
+      <div className="rounded-2xl overflow-hidden border relative"
+        style={{ height: '460px', borderColor: 'var(--s-border)', background: 'var(--s-card)' }}>
+        {/* Subtle grid pattern */}
+        <div className="absolute inset-0 pointer-events-none z-[1] opacity-[0.03]"
           style={{
             backgroundImage:
               'linear-gradient(rgba(0,83,226,0.5) 1px,transparent 1px),'
@@ -204,65 +237,36 @@ export const RegulatoryIntelligence: React.FC = () => {
             backgroundSize: '52px 52px',
           }}
         />
-
-        {/* Globe (full bleed) */}
+        {/* Globe fills entire container — fully interactive */}
         <div className="absolute inset-0 z-0">
           <RegulatoryGlobe3D
             selectedJurisdiction={filterJur}
             onJurisdictionClick={handleGlobeClick}
           />
         </div>
-
-        {/* Title overlay */}
-        <div className="relative z-10 pointer-events-none flex flex-col items-center pt-6 text-center px-6">
-          <p className="text-[10px] font-bold text-wmt-yellow tracking-[0.2em] uppercase mb-2">
-            Enterprise Security &nbsp;•&nbsp; Global Regulatory Intelligence
-          </p>
-          <h1
-            className="text-4xl lg:text-5xl font-black mb-2 leading-tight"
-            style={{
-              background: 'linear-gradient(135deg, #60a5fa 0%, #0053E2 50%, #FFC220 100%)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            Regulatory Intelligence
-          </h1>
-          <p className="text-sm max-w-lg mb-4" style={{ color: 'var(--s-text-muted)' }}>
-            {stats?.total_obligations ?? '—'} obligations across {summary?.jurisdictions.length ?? '—'} jurisdictions — real-time RAG risk mapping.
-          </p>
-          <div className="flex flex-wrap gap-2 justify-center">
-            <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(234,17,0,0.15)', color: '#ff6b6b', borderColor: 'rgba(234,17,0,0.4)' }}>{stats?.red ?? '—'} Red</span>
-            <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(249,115,22,0.15)', color: '#fb923c', borderColor: 'rgba(249,115,22,0.4)' }}>{stats?.amber ?? '—'} Amber</span>
-            <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(255,194,32,0.15)', color: '#FFC220', borderColor: 'rgba(255,194,32,0.4)' }}>{stats?.yellow ?? '—'} Yellow</span>
-            <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(42,135,3,0.15)', color: '#4ade80', borderColor: 'rgba(42,135,3,0.4)' }}>{stats?.green ?? '—'} Green</span>
-            <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(0,83,226,0.15)', color: '#60a5fa', borderColor: 'rgba(0,83,226,0.4)' }}>{stats?.enacted ?? '—'} Enacted</span>
+        {/* Active filter indicator — positioned so it doesn't block globe */}
+        {filterJur && (
+          <div className="absolute top-4 left-4 z-10">
+            <button
+              onClick={() => setFilterJur(null)}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all hover:scale-105"
+              style={{
+                background: 'rgba(255,194,32,0.2)',
+                border: '1px solid rgba(255,194,32,0.5)',
+                color: '#FFC220',
+                backdropFilter: 'blur(8px)',
+              }}
+            >
+              🌍 {filterJur}
+              <span className="text-[10px] opacity-70">✕</span>
+            </button>
           </div>
-
-          {/* Active jurisdiction filter pill */}
-          {filterJur && (
-            <div className="mt-4 pointer-events-auto">
-              <button
-                onClick={() => setFilterJur(null)}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all hover:opacity-90"
-                style={{
-                  background: 'rgba(255,194,32,0.2)',
-                  border: '1px solid rgba(255,194,32,0.5)',
-                  color: '#FFC220',
-                  backdropFilter: 'blur(8px)',
-                }}
-              >
-                🌍 Filtered: {filterJur}
-                <span className="ml-1 text-[10px] opacity-70">✕ clear</span>
-              </button>
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
-      {/* ══ Hero KPIs ═════════════════════════════════════════════════ */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-        <KpiCard label="Total Obligations" value={stats?.total_obligations ?? 0} sub="unique obligations" />
+      {/* ═══ 3. KPI STRIP ══════════════════════════════════════════════════ */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-7 gap-3">
+        <KpiCard label="Total" value={stats?.total_obligations ?? 0} sub="obligations" />
         <KpiCard label="Red" value={stats?.red ?? 0} sub="Risk 19-25" rag="Red" />
         <KpiCard label="Amber" value={stats?.amber ?? 0} sub="Risk 13-18" rag="Amber" />
         <KpiCard label="Yellow" value={stats?.yellow ?? 0} sub="Risk 7-12" rag="Yellow" />
@@ -271,17 +275,20 @@ export const RegulatoryIntelligence: React.FC = () => {
         <KpiCard label="Proposed" value={stats?.proposed ?? 0} sub="pending" />
       </div>
 
-      {/* ── Summary + Tech breakdown ═════════════════════════════════ */}
+      {/* ═══ 4. EXEC SUMMARY + TECH BREAKDOWN ═══════════════════════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Exec summary */}
-        <div className="lg:col-span-2 rounded-xl p-5 border" style={{ background: 'var(--s-card)', borderColor: 'var(--s-border)' }}>
-          <div className="flex items-center justify-between mb-3">
+        {/* Exec summary — 2/3 width */}
+        <div className="lg:col-span-2 rounded-xl p-5 border min-w-0"
+          style={{ background: 'var(--s-card)', borderColor: 'var(--s-border)' }}>
+          <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
             <h3 className="text-sm font-bold" style={{ color: 'var(--s-text)' }}>Executive Summary</h3>
-            <div className="flex gap-2">
-              <span className="text-[9px] px-2 py-1 rounded-full" style={{ background: 'rgba(255,194,32,0.15)', color: '#FFC220', border: '1px solid rgba(255,194,32,0.3)' }}>
+            <div className="flex gap-2 flex-wrap">
+              <span className="text-[9px] px-2 py-1 rounded-full whitespace-nowrap"
+                style={{ background: 'rgba(255,194,32,0.15)', color: '#FFC220', border: '1px solid rgba(255,194,32,0.3)' }}>
                 Confidence: {summary?.confidence ?? '…'}
               </span>
-              <span className="text-[9px] px-2 py-1 rounded-full" style={{ background: 'rgba(0,83,226,0.15)', color: '#60a5fa', border: '1px solid rgba(0,83,226,0.3)' }}>
+              <span className="text-[9px] px-2 py-1 rounded-full whitespace-nowrap"
+                style={{ background: 'rgba(0,83,226,0.15)', color: '#60a5fa', border: '1px solid rgba(0,83,226,0.3)' }}>
                 Through {summary?.data_through ?? '…'}
               </span>
             </div>
@@ -308,15 +315,18 @@ export const RegulatoryIntelligence: React.FC = () => {
           </div>
         </div>
 
-        {/* Tech breakdown */}
-        <div className="rounded-xl p-5 border" style={{ background: 'var(--s-card)', borderColor: 'var(--s-border)' }}>
+        {/* Tech breakdown — 1/3 width */}
+        <div className="rounded-xl p-5 border min-w-0"
+          style={{ background: 'var(--s-card)', borderColor: 'var(--s-border)' }}>
           <h3 className="text-sm font-bold mb-3" style={{ color: 'var(--s-text)' }}>By Technology Category</h3>
           <div className="space-y-2">
             {techBreakdown.map(([tech, count]) => (
               <button key={tech} className="w-full text-left group" onClick={() => setFilterTech(filterTech === tech ? '' : tech)}>
-                <div className="flex justify-between text-[11px] mb-0.5">
-                  <span style={{ color: filterTech === tech ? '#FFC220' : 'var(--s-text)' }}>{TECH_ICONS[tech] ?? '⚖️'} {tech}</span>
-                  <span style={{ color: 'var(--s-text-dim)' }}>{count}</span>
+                <div className="flex justify-between text-[11px] mb-0.5 gap-2">
+                  <span className="truncate" style={{ color: filterTech === tech ? '#FFC220' : 'var(--s-text)' }}>
+                    {TECH_ICONS[tech] ?? '⚖️'} {tech}
+                  </span>
+                  <span className="shrink-0" style={{ color: 'var(--s-text-dim)' }}>{count}</span>
                 </div>
                 <div className="h-1.5 rounded-full overflow-hidden" style={{ background: 'var(--s-border-mid)' }}>
                   <div className="h-full rounded-full transition-all"
@@ -328,72 +338,86 @@ export const RegulatoryIntelligence: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Obligation Table + Top Actions ════════════════════════════ */}
+      {/* ═══ 5. OBLIGATION TABLE + REMEDIATION ═══════════════════════════ */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
 
-        {/* Obligation table — 2/3 width */}
-        <div className="xl:col-span-2 rounded-xl border overflow-hidden" style={{ borderColor: 'var(--s-border)' }}>
+        {/* Obligation table — 2/3 */}
+        <div className="xl:col-span-2 rounded-xl border overflow-hidden min-w-0 flex flex-col"
+          style={{ borderColor: 'var(--s-border)' }}>
           {/* Toolbar */}
-          <div className="p-4 flex flex-wrap gap-3 items-center" style={{ background: 'var(--s-card)', borderBottom: '1px solid var(--s-border)' }}>
+          <div className="p-3 flex flex-wrap gap-2 items-center shrink-0"
+            style={{ background: 'var(--s-card)', borderBottom: '1px solid var(--s-border)' }}>
             <input
               type="search" placeholder="Search obligations…"
               value={filterQ} onChange={e => setFilterQ(e.target.value)}
-              className="flex-1 min-w-[140px] px-3 py-1.5 rounded-lg text-sm bg-transparent border focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="flex-1 min-w-[120px] px-3 py-1.5 rounded-lg text-sm bg-transparent border focus:outline-none focus:ring-1 focus:ring-blue-500"
               style={{ borderColor: 'var(--s-border-mid)', color: 'var(--s-text)' }}
             />
-            {/* RAG filter */}
             <select value={filterRag} onChange={e => setFilterRag(e.target.value)}
               className="sentry-select text-xs py-1.5 px-2">
               <option value="">All RAG</option>
               {['Red','Amber','Yellow','Green'].map(r => <option key={r} value={r}>{r}</option>)}
             </select>
-            {/* Tech filter */}
             <select value={filterTech} onChange={e => setFilterTech(e.target.value)}
               className="sentry-select text-xs py-1.5 px-2">
               <option value="">All Tech</option>
               {techBreakdown.map(([t]) => <option key={t} value={t}>{t}</option>)}
             </select>
-            {/* Status filter */}
             <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
               className="sentry-select text-xs py-1.5 px-2">
               <option value="">All Status</option>
               <option value="Enacted">Enacted</option>
               <option value="Proposed">Proposed</option>
             </select>
-            {/* Sort */}
             <select value={sortBy} onChange={e => setSortBy(e.target.value)}
               className="sentry-select text-xs py-1.5 px-2">
               <option value="risk">Sort: Risk ↓</option>
               <option value="title">Sort: Title</option>
               <option value="jurisdiction">Sort: Jurisdiction</option>
             </select>
-            {/* Jurisdiction clear */}
             {filterJur && (
               <button onClick={() => setFilterJur(null)}
-                className="px-3 py-1.5 rounded-lg text-xs font-bold"
+                className="px-2.5 py-1.5 rounded-lg text-xs font-bold shrink-0"
                 style={{ background: 'rgba(255,194,32,0.15)', color: '#FFC220', border: '1px solid rgba(255,194,32,0.3)' }}>
                 🌍 {filterJur} ✕
               </button>
             )}
+            {hasActiveFilter && (
+              <button
+                onClick={() => { setFilterRag(''); setFilterTech(''); setFilterStatus(''); setFilterQ(''); setFilterJur(null); }}
+                className="px-2.5 py-1.5 rounded-lg text-xs font-bold shrink-0"
+                style={{ background: 'rgba(234,17,0,0.12)', color: '#ff6b6b', border: '1px solid rgba(234,17,0,0.3)' }}>
+                Clear all
+              </button>
+            )}
             <button onClick={downloadJSON}
-              className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:opacity-90"
+              className="px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all hover:opacity-90 shrink-0"
               style={{ background: 'rgba(0,83,226,0.25)', color: '#60a5fa', border: '1px solid rgba(0,83,226,0.35)' }}>
               {E_DL} JSON
             </button>
           </div>
 
-          {/* Table */}
-          <div className="overflow-x-auto" style={{ maxHeight: '520px', overflowY: 'auto' }}>
+          {/* Table — scrollable */}
+          <div className="flex-1 overflow-auto" style={{ maxHeight: '520px' }}>
             {obLoading ? (
               <div className="flex justify-center py-12">
                 <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
               </div>
             ) : (
-              <table className="w-full text-xs border-collapse">
-                <thead>
+              <table className="w-full text-xs" style={{ tableLayout: 'fixed' }}>
+                <colgroup>
+                  <col style={{ width: '100px' }} />
+                  <col style={{ width: '140px' }} />
+                  <col />
+                  <col style={{ width: '110px' }} />
+                  <col style={{ width: '80px' }} />
+                  <col style={{ width: '80px' }} />
+                </colgroup>
+                <thead className="sticky top-0 z-[2]">
                   <tr style={{ background: 'var(--s-modal-inner)', borderBottom: '1px solid var(--s-border)' }}>
                     {['Risk', 'Jurisdiction', 'Title', 'Tech', 'Status', 'Evidence'].map(h => (
-                      <th key={h} className="px-3 py-2.5 text-left text-[10px] uppercase tracking-wider font-bold" style={{ color: 'var(--s-text-dim)' }}>{h}</th>
+                      <th key={h} className="px-3 py-2.5 text-left text-[10px] uppercase tracking-wider font-bold"
+                        style={{ color: 'var(--s-text-dim)', background: 'var(--s-modal-inner)' }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -401,42 +425,57 @@ export const RegulatoryIntelligence: React.FC = () => {
                   {obligations.map(ob => (
                     <tr key={ob.id}
                       onClick={() => setSelected(ob)}
-                      className="cursor-pointer transition-colors hover:bg-black/5"
+                      className="cursor-pointer transition-colors hover:bg-white/5"
                       style={{ borderBottom: '1px solid var(--s-border-light)' }}
                     >
                       <td className="px-3 py-2.5"><RagBadge rag={ob.risk.rag} score={ob.risk.score} /></td>
-                      <td className="px-3 py-2.5 max-w-[120px]">
+                      <td className="px-3 py-2.5">
                         <button
-                          className="truncate block text-left hover:underline"
+                          className="block w-full text-left truncate hover:underline text-[11px]"
                           style={{ color: filterJur === ob.jurisdiction ? '#FFC220' : 'var(--s-text-dim)' }}
                           title={ob.jurisdiction}
-                          onClick={e => { e.stopPropagation(); setFilterJur(filterJur === ob.jurisdiction ? null : ob.jurisdiction); setPage(1); }}
+                          onClick={e => {
+                            e.stopPropagation();
+                            setFilterJur(filterJur === ob.jurisdiction ? null : ob.jurisdiction);
+                            setPage(1);
+                          }}
                         >
                           {ob.jurisdiction}
                         </button>
                       </td>
-                      <td className="px-3 py-2.5 max-w-[220px]">
-                        <span className="font-medium line-clamp-2 leading-tight" style={{ color: 'var(--s-text)' }} title={ob.title}>{ob.title}</span>
+                      <td className="px-3 py-2.5">
+                        <span className="font-medium line-clamp-2 leading-tight text-[11px]"
+                          style={{ color: 'var(--s-text)' }} title={ob.title}>
+                          {ob.title}
+                        </span>
                       </td>
                       <td className="px-3 py-2.5"><TechPill tech={ob.tech_category} /></td>
                       <td className="px-3 py-2.5">
                         <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase"
-                          style={{ background: ob.status === 'Enacted' ? 'rgba(42,135,3,0.18)' : 'rgba(255,194,32,0.12)',
-                                   color: ob.status === 'Enacted' ? '#4ade80' : '#FFC220' }}>
+                          style={{
+                            background: ob.status === 'Enacted' ? 'rgba(42,135,3,0.18)' : 'rgba(255,194,32,0.12)',
+                            color: ob.status === 'Enacted' ? '#4ade80' : '#FFC220',
+                          }}>
                           {ob.status}
                         </span>
                       </td>
                       <td className="px-3 py-2.5">
                         <span className="text-[9px] px-1.5 py-0.5 rounded font-medium"
-                          style={{ background: ob.evidence_status === 'Partially' ? 'rgba(251,146,60,0.12)' : 'rgba(255,255,255,0.06)',
-                                   color: ob.evidence_status === 'Partially' ? '#fb923c' : 'var(--s-text-dim)' }}>
+                          style={{
+                            background: ob.evidence_status === 'Partially' ? 'rgba(251,146,60,0.12)' : 'rgba(255,255,255,0.06)',
+                            color: ob.evidence_status === 'Partially' ? '#fb923c' : 'var(--s-text-dim)',
+                          }}>
                           {ob.evidence_status}
                         </span>
                       </td>
                     </tr>
                   ))}
                   {obligations.length === 0 && (
-                    <tr><td colSpan={6} className="text-center py-12" style={{ color: 'var(--s-text-dim)' }}>No obligations match the current filters.</td></tr>
+                    <tr>
+                      <td colSpan={6} className="text-center py-12" style={{ color: 'var(--s-text-dim)' }}>
+                        No obligations match the current filters.
+                      </td>
+                    </tr>
                   )}
                 </tbody>
               </table>
@@ -445,37 +484,47 @@ export const RegulatoryIntelligence: React.FC = () => {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: '1px solid var(--s-border)', background: 'var(--s-modal-inner)' }}>
+            <div className="flex items-center justify-between px-4 py-3 shrink-0"
+              style={{ borderTop: '1px solid var(--s-border)', background: 'var(--s-modal-inner)' }}>
               <span className="text-[11px]" style={{ color: 'var(--s-text-dim)' }}>
                 {total} obligations · page {page}/{totalPages}
-                {filterJur && <span className="ml-2 text-[10px]" style={{ color: '#FFC220' }}>filtered: {filterJur}</span>}
+                {filterJur && <span className="ml-2 text-[10px]" style={{ color: '#FFC220' }}>· {filterJur}</span>}
               </span>
               <div className="flex gap-2">
                 <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
                   className="px-3 py-1 rounded text-xs disabled:opacity-40 transition-opacity"
-                  style={{ background: 'var(--s-hover-over)', color: 'var(--s-text)', border: '1px solid var(--s-border)' }}>Prev</button>
+                  style={{ background: 'var(--s-hover-over)', color: 'var(--s-text)', border: '1px solid var(--s-border)' }}>
+                  Prev
+                </button>
                 <button onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}
                   className="px-3 py-1 rounded text-xs disabled:opacity-40 transition-opacity"
-                  style={{ background: 'var(--s-hover-over)', color: 'var(--s-text)', border: '1px solid var(--s-border)' }}>Next</button>
+                  style={{ background: 'var(--s-hover-over)', color: 'var(--s-text)', border: '1px solid var(--s-border)' }}>
+                  Next
+                </button>
               </div>
             </div>
           )}
         </div>
 
-        {/* Top Actions */}
-        <div className="rounded-xl p-5 border flex flex-col gap-3" style={{ background: 'var(--s-card)', borderColor: 'var(--s-border)' }}>
+        {/* Remediation Roadmap — 1/3 */}
+        <div className="rounded-xl p-5 border flex flex-col gap-3 min-w-0"
+          style={{ background: 'var(--s-card)', borderColor: 'var(--s-border)' }}>
           <h3 className="text-sm font-bold" style={{ color: 'var(--s-text)' }}>Remediation Roadmap</h3>
-          <p className="text-[11px]" style={{ color: 'var(--s-text-dim)' }}>Top prioritised actions by risk and legal deadline.</p>
-          <div className="space-y-2 overflow-y-auto" style={{ maxHeight: '560px' }}>
+          <p className="text-[11px]" style={{ color: 'var(--s-text-dim)' }}>
+            Top prioritised actions by risk and legal deadline.
+          </p>
+          <div className="space-y-2 flex-1 overflow-y-auto" style={{ maxHeight: '520px' }}>
             {(summary?.top_actions ?? []).map((a, i) => <ActionCard key={i} action={a} idx={i} />)}
           </div>
           <details className="mt-2">
-            <summary className="text-[10px] cursor-pointer font-bold uppercase tracking-wider" style={{ color: 'var(--s-text-dim)' }}>
+            <summary className="text-[10px] cursor-pointer font-bold uppercase tracking-wider"
+              style={{ color: 'var(--s-text-dim)' }}>
               Assumptions &amp; Confidence
             </summary>
             <ul className="mt-2 space-y-1.5">
               {(summary?.assumptions ?? []).map((a, i) => (
-                <li key={i} className="text-[10px] leading-relaxed p-2 rounded" style={{ background: 'var(--s-hover-over)', color: 'var(--s-text-dim)' }}>{a}</li>
+                <li key={i} className="text-[10px] leading-relaxed p-2 rounded"
+                  style={{ background: 'var(--s-hover-over)', color: 'var(--s-text-dim)' }}>{a}</li>
               ))}
             </ul>
           </details>

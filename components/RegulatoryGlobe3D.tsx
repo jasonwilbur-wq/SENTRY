@@ -434,8 +434,10 @@ export const RegulatoryGlobe3D: React.FC<Props> = ({
           const wr = wrapRef.current.getBoundingClientRect();
           const tip = tipRef.current;
           tip.style.display = 'block';
-          tip.style.left = `${(p.x * 0.5 + 0.5) * wr.width}px`;
-          tip.style.top  = `${(-p.y * 0.5 + 0.5) * wr.height - 80}px`;
+          const rawLeft = (p.x * 0.5 + 0.5) * wr.width;
+          const rawTop  = (-p.y * 0.5 + 0.5) * wr.height - 80;
+          tip.style.left = `${Math.max(60, Math.min(rawLeft, wr.width - 60))}px`;
+          tip.style.top  = `${Math.max(8, rawTop)}px`;
 
           const ragColor = RAG_CSS[geo.worst_rag] || '#4ade80';
           tip.innerHTML = `
@@ -521,8 +523,8 @@ export const RegulatoryGlobe3D: React.FC<Props> = ({
         🇺🇸 US Focus
       </button>
 
-      {/* Legend */}
-      <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-1">
+      {/* Legend — pointer-events-none so it doesn't block globe interaction */}
+      <div className="absolute bottom-4 left-4 z-10 flex flex-col gap-1 pointer-events-none">
         {([
           ['Red', '#ff6b6b', 'Critical (19-25)'],
           ['Amber', '#fb923c', 'High (13-18)'],
@@ -544,8 +546,8 @@ export const RegulatoryGlobe3D: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* Interaction hint */}
-      <div className="absolute bottom-4 right-4 z-10">
+      {/* Interaction hint — pointer-events-none so it doesn't block globe */}
+      <div className="absolute bottom-4 right-4 z-10 pointer-events-none">
         <span className="text-[9px]" style={{ color: '#334155' }}>
           Drag to rotate · Click node to filter · Scroll to zoom
         </span>
