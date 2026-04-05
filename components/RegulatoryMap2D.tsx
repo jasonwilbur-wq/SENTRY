@@ -143,7 +143,7 @@ export const RegulatoryMap2D: React.FC<Props> = ({
   }, [worldGeo]);
 
   // ── Click detection on wrapper div (bypasses D3 zoom entirely) ─────
-  const HIT_RADIUS = 18; // SVG viewBox px — generous click target
+  const HIT_RADIUS = 25; // SVG viewBox px — generous click target
   const CLUSTER_RADIUS = 30;
 
   useEffect(() => {
@@ -151,17 +151,17 @@ export const RegulatoryMap2D: React.FC<Props> = ({
     const svg = svgRef.current;
     if (!wrap || !svg) return;
 
-    let isDrag = false;
     let startX = 0, startY = 0;
 
     const onDown = (e: PointerEvent) => {
-      isDrag = false;
       startX = e.clientX;
       startY = e.clientY;
     };
 
-    const onClick = (e: MouseEvent) => {
-      // Ignore if this was a drag (pan gesture)
+    // Use pointerup instead of click — D3 zoom intercepts click events
+    // with stopImmediatePropagation(), but never touches pointer events.
+    const onUp = (e: PointerEvent) => {
+      // Ignore if this was a drag/pan gesture (moved > 5px)
       if (Math.hypot(e.clientX - startX, e.clientY - startY) > 5) return;
 
       // Ignore clicks on the popover itself or control buttons
@@ -208,10 +208,10 @@ export const RegulatoryMap2D: React.FC<Props> = ({
     };
 
     wrap.addEventListener('pointerdown', onDown);
-    wrap.addEventListener('click', onClick);
+    wrap.addEventListener('pointerup', onUp);
     return () => {
       wrap.removeEventListener('pointerdown', onDown);
-      wrap.removeEventListener('click', onClick);
+      wrap.removeEventListener('pointerup', onUp);
     };
   }, [worldGeo]); // stable — uses refs for dynamic data
 
