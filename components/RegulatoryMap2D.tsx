@@ -4,7 +4,7 @@
  * D3-geo Natural Earth projection + world-atlas TopoJSON.
  * Markers sized by obligation count, colored by RAG status.
  * D3 force simulation pushes overlapping markers apart.
- * Click to filter, hover for details, scroll to zoom, drag to pan.
+ * Click shows detail popover; hover for tooltip; scroll to zoom; drag to pan.
  */
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import * as d3 from 'd3';
@@ -12,14 +12,9 @@ import * as topojson from 'topojson-client';
 import type { Topology, GeometryCollection } from 'topojson-specification';
 import { JURISDICTION_COORDS } from '../data/regulatoryGeoData';
 import { fetchRegulatoryGeo, type RegulatoryGeoJurisdiction } from '../services/api';
+import { MapDetailPopover, RAG_FILL, RAG_GLOW, type PopoverState } from './MapDetailPopover';
 
-// ── Colors ───────────────────────────────────────────────────────────
-const RAG_FILL: Record<string, string> = {
-  Red: '#ea1100', Amber: '#f97316', Yellow: '#FFC220', Green: '#22c55e',
-};
-const RAG_GLOW: Record<string, string> = {
-  Red: '#ff6b6b', Amber: '#fb923c', Yellow: '#ffe066', Green: '#4ade80',
-};
+const RAG_ORDER: Record<string, number> = { Red: 0, Amber: 1, Yellow: 2, Green: 3 };
 
 interface Props {
   selectedJurisdiction?: string | null;
@@ -36,9 +31,9 @@ interface MapNode {
 
 /** Node position after force simulation. */
 interface PlacedNode extends MapNode {
-  ox: number; oy: number; // original projected position
-  x: number;  y: number;  // displaced position after force sim
-  r: number;              // marker radius
+  ox: number; oy: number;
+  x: number;  y: number;
+  r: number;
 }
 
 // ── Force simulation (runs once, synchronously) ──────────────────────
@@ -53,8 +48,6 @@ function deCluster(
     return { ...n, ox: px, oy: py, x: px, y: py, r };
   });
 
-  // Aggressive collision avoidance — generous padding between markers,
-  // weak pull-back so they can spread far from origin, many iterations.
   const sim = d3.forceSimulation(simNodes as d3.SimulationNodeDatum[] as any)
     .force('collide', d3.forceCollide<PlacedNode>().radius(d => d.r + 8).strength(1).iterations(4))
     .force('x', d3.forceX<PlacedNode>(d => d.ox).strength(0.15))
@@ -62,8 +55,25 @@ function deCluster(
     .stop();
 
   for (let i = 0; i < 200; i++) sim.tick();
-
   return simNodes;
+}
+
+// ── Convert screen coords → SVG viewBox coords ──────────────────────
+function screenToSvg(
+  screenX: number, screenY: number,
+  svg: SVGSVGElement, transform: { k: number; x: number; y: number },
+): { svgX: number; svgY: number } {
+  // Use the SVG's own matrix to handle viewBox + preserveAspectRatio
+  const pt = svg.createSVGPoint();
+  pt.x = screenX;
+  pt.y = screenY;
+  const ctm = svg.getScreenCTM();
+  if (!ctm) return { svgX: 0, svgY: 0 };
+  const svgPt = pt.matrixTransform(ctm.inverse());
+  // Undo the D3 pan+zoom transform
+  const svgX = (svgPt.x - transform.x) / transform.k;
+  const svgY = (svgPt.y - transform.y) / transform.k;
+  return { svgX, svgY };
 }
 
 export const RegulatoryMap2D: React.FC<Props> = ({
@@ -77,11 +87,9 @@ export const RegulatoryMap2D: React.FC<Props> = ({
   const [worldGeo, setWorldGeo] = useState<GeoJSON.FeatureCollection | null>(null);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [transform, setTransform] = useState({ k: 1, x: 0, y: 0 });
-  const [clusterMenu, setClusterMenu] = useState<{
-    nodes: PlacedNode[];
-    screenX: number;
-    screenY: number;
-  } | null>(null);
+  const [popover, setPopover] = useState<PopoverState | null>(null);
+  const transformRef = useRef(transform);
+  transformRef.current = transform;
 
   // ── Load data ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -115,40 +123,112 @@ export const RegulatoryMap2D: React.FC<Props> = ({
     if (!projection || nodes.length === 0) return [];
     return deCluster(nodes, projection, rScale);
   }, [nodes, projection, rScale]);
+  const placedRef = useRef(placedNodes);
+  placedRef.current = placedNodes;
 
   const pathGen = useMemo(() => projection ? d3.geoPath(projection) : null, [projection]);
   const graticule = useMemo(() => d3.geoGraticule10(), []);
 
-  // ── D3 Zoom ────────────────────────────────────────────────────────
+  // ── D3 Zoom (only handles zoom/pan — no click logic) ──────────────
   useEffect(() => {
     const svg = svgRef.current;
     if (!svg || !worldGeo) return;
     const zoom = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([1, 8])
-      .filter((event) => {
-        // Let marker clicks pass through to React — only zoom on
-        // background clicks, scroll, or drag on non-marker elements.
-        const target = event.target as SVGElement;
-        if (event.type === 'wheel') return true; // always zoom on scroll
-        if (target.closest('g[tabindex]')) return false; // marker area — skip zoom
-        return true;
-      })
       .on('zoom', (event) => {
         setTransform({ k: event.transform.k, x: event.transform.x, y: event.transform.y });
-        setClusterMenu(null);
       });
     d3.select(svg).call(zoom);
     return () => { d3.select(svg).on('.zoom', null); };
   }, [worldGeo]);
 
-  // ── Tooltip ────────────────────────────────────────────────────────
+  // ── Click detection on wrapper div (bypasses D3 zoom entirely) ─────
+  const HIT_RADIUS = 18; // SVG viewBox px — generous click target
+  const CLUSTER_RADIUS = 30;
+
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    const svg = svgRef.current;
+    if (!wrap || !svg) return;
+
+    let isDrag = false;
+    let startX = 0, startY = 0;
+
+    const onDown = (e: PointerEvent) => {
+      isDrag = false;
+      startX = e.clientX;
+      startY = e.clientY;
+    };
+
+    const onClick = (e: MouseEvent) => {
+      // Ignore if this was a drag (pan gesture)
+      if (Math.hypot(e.clientX - startX, e.clientY - startY) > 5) return;
+
+      // Ignore clicks on the popover itself or control buttons
+      const target = e.target as HTMLElement;
+      if (target.closest('[data-popover]') || target.closest('button')) return;
+
+      const { svgX, svgY } = screenToSvg(e.clientX, e.clientY, svg, transformRef.current);
+      const placed = placedRef.current;
+
+      // Find clicked marker (nearest within hit radius)
+      let closest: PlacedNode | null = null;
+      let closestDist = Infinity;
+      for (const n of placed) {
+        const d = Math.hypot(n.x - svgX, n.y - svgY);
+        if (d <= HIT_RADIUS && d < closestDist) {
+          closest = n;
+          closestDist = d;
+        }
+      }
+
+      if (!closest) {
+        setPopover(null);
+        return;
+      }
+
+      // Gather nearby markers within cluster radius
+      const nearby = placed
+        .filter(n => Math.hypot(n.x - closest!.x, n.y - closest!.y) <= CLUSTER_RADIUS)
+        .sort((a, b) => {
+          const ra = RAG_ORDER[a.geo.worst_rag] ?? 4;
+          const rb = RAG_ORDER[b.geo.worst_rag] ?? 4;
+          return ra !== rb ? ra - rb : b.geo.total - a.geo.total;
+        });
+
+      const wr = wrap.getBoundingClientRect();
+      // Hide tooltip before showing popover
+      if (tipRef.current) tipRef.current.style.display = 'none';
+      setHoveredNode(null);
+      setPopover({
+        nodes: nearby,
+        screenX: e.clientX - wr.left,
+        screenY: e.clientY - wr.top,
+      });
+    };
+
+    wrap.addEventListener('pointerdown', onDown);
+    wrap.addEventListener('click', onClick);
+    return () => {
+      wrap.removeEventListener('pointerdown', onDown);
+      wrap.removeEventListener('click', onClick);
+    };
+  }, [worldGeo]); // stable — uses refs for dynamic data
+
+  // Close popover on scroll/zoom
+  useEffect(() => {
+    if (!popover) return;
+    const close = () => setPopover(null);
+    window.addEventListener('wheel', close, { passive: true });
+    return () => window.removeEventListener('wheel', close);
+  }, [popover]);
+
+  // ── Tooltip (hover only) ───────────────────────────────────────────
   const showTip = useCallback((e: React.MouseEvent, node: PlacedNode) => {
     const tip = tipRef.current;
     const wrap = wrapRef.current;
-    if (!tip || !wrap) return;
+    if (!tip || !wrap || popover) return; // hide tooltip when popover is open
     setHoveredNode(node.jurisdiction);
-    // Hide tooltip if cluster menu is open (avoid visual clash)
-    if (clusterMenu) return;
     const wr = wrap.getBoundingClientRect();
     const mx = e.clientX - wr.left;
     const my = e.clientY - wr.top;
@@ -169,73 +249,23 @@ export const RegulatoryMap2D: React.FC<Props> = ({
       <div style="font-size:10px;color:#94a3b8;border-top:1px solid rgba(255,255,255,0.15);padding-top:5px">
         ${techs.slice(0, 4).join(' · ')}${techs.length > 4 ? ` +${techs.length - 4}` : ''}
       </div>
-      <div style="font-size:10px;color:#64748b;margin-top:3px">Click to filter ↓</div>
+      <div style="font-size:10px;color:#64748b;margin-top:3px">Click for details</div>
     `;
     tip.style.display = 'block';
     tip.style.left = `${Math.min(mx + 14, wr.width - 240)}px`;
     tip.style.top  = `${Math.max(8, my - 100)}px`;
-  }, []);
+  }, [popover]);
 
   const hideTip = useCallback(() => {
     setHoveredNode(null);
     if (tipRef.current) tipRef.current.style.display = 'none';
   }, []);
 
-  // ── Cluster-aware click ────────────────────────────────────────────
-  const PROXIMITY_PX = 30; // SVG viewBox pixels
-
-  const handleClick = useCallback((e: React.MouseEvent, node: PlacedNode) => {
-    // Find all markers within proximity radius
-    const nearby = placedNodes.filter(n => {
-      const dx = n.x - node.x;
-      const dy = n.y - node.y;
-      return Math.hypot(dx, dy) <= PROXIMITY_PX;
-    });
-
-    if (nearby.length <= 1) {
-      // Isolated marker → direct select/deselect
-      setClusterMenu(null);
-      onJurisdictionClick?.(selectedJurisdiction === node.jurisdiction ? null : node.jurisdiction);
-    } else {
-      // Multiple nearby → show cluster picker at click position
-      const wrap = wrapRef.current;
-      if (!wrap) return;
-      const wr = wrap.getBoundingClientRect();
-      // Sort: worst RAG first (Red > Amber > Yellow > Green), then by count desc
-      const ragOrder: Record<string, number> = { Red: 0, Amber: 1, Yellow: 2, Green: 3 };
-      const sorted = [...nearby].sort((a, b) => {
-        const ra = ragOrder[a.geo.worst_rag] ?? 4;
-        const rb = ragOrder[b.geo.worst_rag] ?? 4;
-        return ra !== rb ? ra - rb : b.geo.total - a.geo.total;
-      });
-      setClusterMenu({
-        nodes: sorted,
-        screenX: e.clientX - wr.left,
-        screenY: e.clientY - wr.top,
-      });
-    }
-  }, [placedNodes, onJurisdictionClick, selectedJurisdiction]);
-
-  const selectFromCluster = useCallback((jurisdiction: string) => {
-    setClusterMenu(null);
+  // ── Select from popover ────────────────────────────────────────────
+  const selectJurisdiction = useCallback((jurisdiction: string) => {
+    setPopover(null);
     onJurisdictionClick?.(selectedJurisdiction === jurisdiction ? null : jurisdiction);
   }, [onJurisdictionClick, selectedJurisdiction]);
-
-  // Close cluster menu on outside click or scroll
-  useEffect(() => {
-    if (!clusterMenu) return;
-    const close = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (!target.closest('[data-cluster-menu]')) setClusterMenu(null);
-    };
-    const closeScroll = () => setClusterMenu(null);
-    window.addEventListener('click', close, { capture: true });
-    window.addEventListener('wheel', closeScroll, { passive: true });
-    return () => {
-      window.removeEventListener('click', close, { capture: true });
-      window.removeEventListener('wheel', closeScroll);
-    };
-  }, [clusterMenu]);
 
   // ── Loading ────────────────────────────────────────────────────────
   if (!worldGeo || !pathGen) {
@@ -249,14 +279,13 @@ export const RegulatoryMap2D: React.FC<Props> = ({
     );
   }
 
-  // ── Helper: should we show connector line? ─────────────────────────
-  const CONNECTOR_THRESHOLD = 3; // pixels
+  const CONNECTOR_THRESHOLD = 3;
 
   return (
     <div ref={wrapRef} className="w-full h-full relative select-none" style={{ background: '#000B28' }}>
       <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`}
         className="w-full h-full" style={{ display: 'block', cursor: 'grab' }}
-        aria-label="Interactive regulatory map — scroll to zoom, drag to pan, click markers to filter">
+        aria-label="Interactive regulatory map — scroll to zoom, drag to pan, click markers for details">
         <defs>
           <filter id="marker-glow" x="-100%" y="-100%" width="300%" height="300%">
             <feGaussianBlur stdDeviation="4" result="blur" />
@@ -272,72 +301,56 @@ export const RegulatoryMap2D: React.FC<Props> = ({
         </defs>
 
         <g transform={`translate(${transform.x},${transform.y}) scale(${transform.k})`}>
-          {/* Ocean background */}
           <rect x={-200} y={-200} width={W + 400} height={H + 400} fill="#000B28" />
-
-          {/* Graticule */}
           <path d={pathGen(graticule) ?? ''} fill="none" stroke="rgba(0,83,226,0.2)" strokeWidth={0.4} />
-
-          {/* Country outlines */}
           {worldGeo.features.map((feat, i) => (
             <path key={i} d={pathGen(feat) ?? ''} fill="#0f2847" stroke="#1e4a8a" strokeWidth={0.6} />
           ))}
-
-          {/* Globe rim */}
           <path d={pathGen({ type: 'Sphere' }) ?? ''} fill="none" stroke="#1e4a8a" strokeWidth={1.2} />
 
-          {/* ── Connector lines (displaced → origin) ────────── */}
+          {/* Connector lines */}
           {placedNodes.map(node => {
-            const dx = node.x - node.ox;
-            const dy = node.y - node.oy;
-            if (Math.hypot(dx, dy) < CONNECTOR_THRESHOLD) return null;
-            const glow = RAG_GLOW[node.geo.worst_rag] ?? '#4ade80';
+            if (Math.hypot(node.x - node.ox, node.y - node.oy) < CONNECTOR_THRESHOLD) return null;
             return (
               <line key={`c-${node.jurisdiction}`}
                 x1={node.ox} y1={node.oy} x2={node.x} y2={node.y}
-                stroke={glow} strokeWidth={0.6} opacity={0.35}
+                stroke={RAG_GLOW[node.geo.worst_rag] ?? '#4ade80'} strokeWidth={0.6} opacity={0.35}
                 strokeDasharray="2 2" style={{ pointerEvents: 'none' }}
               />
             );
           })}
 
-          {/* ── Origin dots (tiny dot at true geo position) ──── */}
+          {/* Origin dots */}
           {placedNodes.map(node => {
-            const dx = node.x - node.ox;
-            const dy = node.y - node.oy;
-            if (Math.hypot(dx, dy) < CONNECTOR_THRESHOLD) return null;
-            const fill = RAG_FILL[node.geo.worst_rag] ?? '#22c55e';
+            if (Math.hypot(node.x - node.ox, node.y - node.oy) < CONNECTOR_THRESHOLD) return null;
             return (
               <circle key={`o-${node.jurisdiction}`}
                 cx={node.ox} cy={node.oy} r={2}
-                fill={fill} opacity={0.5} style={{ pointerEvents: 'none' }}
+                fill={RAG_FILL[node.geo.worst_rag] ?? '#22c55e'} opacity={0.5}
+                style={{ pointerEvents: 'none' }}
               />
             );
           })}
 
-          {/* ── Markers (at displaced positions) ────────────── */}
+          {/* Markers — no onClick (handled by wrapper div) */}
           {placedNodes.map(node => {
             const { x, y, r } = node;
             const fill = RAG_FILL[node.geo.worst_rag] ?? '#22c55e';
             const glow = RAG_GLOW[node.geo.worst_rag] ?? '#4ade80';
             const isSelected = selectedJurisdiction === node.jurisdiction;
             const isHovered = hoveredNode === node.jurisdiction;
+            const isPopoverTarget = popover?.nodes.some(n => n.jurisdiction === node.jurisdiction) ?? false;
             const isRed = node.geo.worst_rag === 'Red';
             const isAmber = node.geo.worst_rag === 'Amber';
-            const active = isSelected || isHovered;
-            const showLabel = node.geo.total >= 5 || isSelected || isHovered || isRed;
+            const active = isSelected || isHovered || isPopoverTarget;
+            const showLabel = node.geo.total >= 5 || active || isRed;
 
             return (
-              <g key={node.jurisdiction} style={{ cursor: 'pointer' }}
-                onClick={ev => { ev.stopPropagation(); handleClick(ev, node); }}
+              <g key={node.jurisdiction} style={{ pointerEvents: 'none' }}
                 onMouseEnter={e => showTip(e, node)}
                 onMouseMove={e => showTip(e, node)}
-                onMouseLeave={hideTip}
-                tabIndex={0}
-                aria-label={`${node.label}: ${node.geo.total} obligations, ${node.geo.worst_rag} risk`}
-                onKeyDown={e => { if (e.key === 'Enter') handleClick(e as unknown as React.MouseEvent, node); }}>
+                onMouseLeave={hideTip}>
 
-                {/* Pulse ring on active */}
                 {active && (
                   <circle cx={x} cy={y} r={r * 2.5} fill="none"
                     stroke={isSelected ? '#FFC220' : glow} strokeWidth={1.5} opacity={0.4}>
@@ -346,37 +359,34 @@ export const RegulatoryMap2D: React.FC<Props> = ({
                   </circle>
                 )}
 
-                {/* Glow aura */}
                 <circle cx={x} cy={y} r={r * 1.4}
                   fill={glow}
                   opacity={active ? 0.3 : isRed ? 0.15 : isAmber ? 0.1 : 0.06}
                   filter={active ? 'url(#marker-glow-strong)' : undefined}
                 />
 
-                {/* Main circle */}
                 <circle cx={x} cy={y} r={active ? r * 1.25 : r}
                   fill={fill} opacity={active ? 1 : 0.9}
                   stroke={isSelected ? '#FFC220' : active ? '#fff' : glow}
                   strokeWidth={isSelected ? 3 : active ? 2 : 1}
                   filter={(isRed || isAmber || active) ? 'url(#marker-glow)' : undefined}
+                  style={{ pointerEvents: 'visiblePainted', cursor: 'pointer' }}
                 />
 
-                {/* Count badge */}
                 {(node.geo.total >= 8 || active) && (
                   <text x={x} y={y + 4} textAnchor="middle" fill="#fff"
                     fontSize={active ? 11 : 9} fontWeight={800}
-                    style={{ pointerEvents: 'none' }} filter="url(#text-shadow)">
+                    filter="url(#text-shadow)">
                     {node.geo.total}
                   </text>
                 )}
 
-                {/* Label */}
                 {showLabel && (
                   <text x={x} y={y - (active ? r * 1.25 : r) - 5}
                     textAnchor="middle"
                     fill={isSelected ? '#FFC220' : active ? '#fff' : '#cbd5e1'}
                     fontSize={active ? 12 : 10} fontWeight={active ? 800 : 600}
-                    style={{ pointerEvents: 'none' }} filter="url(#text-shadow)">
+                    filter="url(#text-shadow)">
                     {node.label}
                   </text>
                 )}
@@ -386,7 +396,7 @@ export const RegulatoryMap2D: React.FC<Props> = ({
         </g>
       </svg>
 
-      {/* Tooltip */}
+      {/* Tooltip (hover) */}
       <div ref={tipRef} style={{
         display: 'none', position: 'absolute', pointerEvents: 'none',
         padding: '12px 16px', borderRadius: '12px', color: '#fff',
@@ -395,93 +405,16 @@ export const RegulatoryMap2D: React.FC<Props> = ({
         boxShadow: '0 12px 40px rgba(0,0,0,0.6)', maxWidth: '240px',
       }} />
 
-      {/* Cluster picker dropdown */}
-      {clusterMenu && (
-        <div
-          data-cluster-menu
-          style={{
-            position: 'absolute',
-            left: Math.min(clusterMenu.screenX, (wrapRef.current?.clientWidth ?? 400) - 260),
-            top: Math.min(clusterMenu.screenY + 8, (wrapRef.current?.clientHeight ?? 400) - clusterMenu.nodes.length * 38 - 50),
-            zIndex: 40,
-            background: 'rgba(0,8,30,0.96)',
-            border: '1px solid rgba(0,83,226,0.5)',
-            borderRadius: '12px',
-            backdropFilter: 'blur(16px)',
-            boxShadow: '0 16px 48px rgba(0,0,0,0.7)',
-            padding: '6px 0',
-            minWidth: '220px',
-            maxHeight: '320px',
-            overflowY: 'auto',
-          }}
-        >
-          <div style={{
-            padding: '8px 14px 6px',
-            fontSize: '10px',
-            fontWeight: 800,
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            color: '#64748b',
-            borderBottom: '1px solid rgba(0,83,226,0.2)',
-          }}>
-            {clusterMenu.nodes.length} jurisdictions in this area
-          </div>
-          {clusterMenu.nodes.map(n => {
-            const ragColor = RAG_FILL[n.geo.worst_rag] ?? '#22c55e';
-            const glowColor = RAG_GLOW[n.geo.worst_rag] ?? '#4ade80';
-            const isActive = selectedJurisdiction === n.jurisdiction;
-            return (
-              <button
-                key={n.jurisdiction}
-                onClick={(ev) => { ev.stopPropagation(); selectFromCluster(n.jurisdiction); }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px',
-                  width: '100%',
-                  padding: '8px 14px',
-                  border: 'none',
-                  background: isActive ? 'rgba(255,194,32,0.12)' : 'transparent',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  transition: 'background 0.15s',
-                  borderLeft: isActive ? '3px solid #FFC220' : '3px solid transparent',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.background = isActive ? 'rgba(255,194,32,0.18)' : 'rgba(0,83,226,0.15)')}
-                onMouseLeave={e => (e.currentTarget.style.background = isActive ? 'rgba(255,194,32,0.12)' : 'transparent')}
-              >
-                {/* RAG dot */}
-                <span style={{
-                  width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0,
-                  background: ragColor, boxShadow: `0 0 6px ${glowColor}`,
-                }} />
-                {/* Label */}
-                <span style={{
-                  flex: 1, fontSize: '12px', fontWeight: 600,
-                  color: isActive ? '#FFC220' : '#e2e8f0',
-                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                }}>
-                  {n.label}
-                </span>
-                {/* RAG badge */}
-                <span style={{
-                  fontSize: '9px', fontWeight: 700, padding: '2px 6px',
-                  borderRadius: '9999px', textTransform: 'uppercase',
-                  background: `${ragColor}22`, color: glowColor,
-                }}>
-                  {n.geo.worst_rag}
-                </span>
-                {/* Count */}
-                <span style={{
-                  fontSize: '11px', fontWeight: 800, color: '#94a3b8',
-                  minWidth: '24px', textAlign: 'right',
-                }}>
-                  {n.geo.total}
-                </span>
-              </button>
-            );
-          })}
-        </div>
+      {/* Detail popover (click) */}
+      {popover && (
+        <MapDetailPopover
+          popover={popover}
+          wrapWidth={wrapRef.current?.clientWidth ?? 600}
+          wrapHeight={wrapRef.current?.clientHeight ?? 400}
+          selectedJurisdiction={selectedJurisdiction}
+          onSelect={selectJurisdiction}
+          onClose={() => setPopover(null)}
+        />
       )}
 
       {/* Legend */}
@@ -513,7 +446,7 @@ export const RegulatoryMap2D: React.FC<Props> = ({
           🖱️ Scroll to zoom · Drag to pan
         </div>
         <div className="text-[10px]" style={{ color: '#475569' }}>
-          Click a marker to filter table ↓
+          Click a marker for details
         </div>
       </div>
 
@@ -537,3 +470,4 @@ export const RegulatoryMap2D: React.FC<Props> = ({
     </div>
   );
 };
+
