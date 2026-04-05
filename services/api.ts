@@ -637,6 +637,21 @@ export async function fetchRegulatorySummary(): Promise<RegulatorySummary> {
   return request('/api/regulatory/summary');
 }
 
+export interface RegulatoryGeoJurisdiction {
+  jurisdiction: string;
+  total: number;
+  red: number;
+  amber: number;
+  yellow: number;
+  green: number;
+  worst_rag: string;
+  techs: string[];
+}
+
+export async function fetchRegulatoryGeo(): Promise<{ jurisdictions: RegulatoryGeoJurisdiction[]; total: number }> {
+  return request('/api/regulatory/geo');
+}
+
 // ── Projects ─────────────────────────────────────────────────────────────────
 
 export interface ProjectListItem {

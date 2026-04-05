@@ -1,14 +1,22 @@
+/**
+ * RegulatoryIntelligence — Full-page module for regulatory tracking.
+ *
+ * Layout:
+ *  1. Interactive 3D globe (data-driven, clickable, US states visible)
+ *  2. KPI strip
+ *  3. Executive summary + tech breakdown
+ *  4. Searchable obligation table + remediation roadmap
+ *
+ * Globe clicks filter the table by jurisdiction.
+ */
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { RegObligation, RegSummary, RegTopAction } from '../types';
 import { RegulatoryObligationModal } from './RegulatoryObligationModal';
 import { RegulatoryGlobe3D } from './RegulatoryGlobe3D';
 
-// Use relative paths so requests go through Vite's proxy (/api → :8082).
-// A hardcoded absolute URL (127.0.0.1:8082) was causing browsers to block
-// the cross-origin fetch with "TypeError: Failed to fetch".
 const API = (window as any).__SENTRY_API__ ?? '';
 
-// ── RAG colour helpers ───────────────────────────────────────────────────
+// ── RAG colour helpers ───────────────────────────────────────────────────────
 const RAG_COLORS: Record<string, { bg: string; text: string; border: string; dot: string }> = {
   Red:    { bg: 'rgba(234,17,0,0.12)',   text: '#ff6b6b', border: 'rgba(234,17,0,0.35)',   dot: '#ea1100' },
   Amber:  { bg: 'rgba(251,146,60,0.12)', text: '#fb923c', border: 'rgba(251,146,60,0.35)', dot: '#f97316' },
@@ -17,34 +25,22 @@ const RAG_COLORS: Record<string, { bg: string; text: string; border: string; dot
 };
 
 const TECH_ICONS: Record<string, string> = {
-  AI: String.fromCodePoint(0x1F9E0),
-  'Data Privacy': String.fromCodePoint(0x1F512),
-  Biometrics: String.fromCodePoint(0x1F4F7),
-  'ALPR/LPR': String.fromCodePoint(0x1F697),
-  'Drones/UAS': String.fromCodePoint(0x1F681),
-  Surveillance: String.fromCodePoint(0x1F4F9),
-  ORC: String.fromCodePoint(0x1F6D2),
-  'Weapons Detection': String.fromCodePoint(0x1F6A8),
-  Robotics: String.fromCodePoint(0x1F916),
-  Other: String.fromCodePoint(0x2696),
+  AI: '🧠', 'Data Privacy': '🔒', Biometrics: '📷', 'ALPR/LPR': '🚗',
+  'Drones/UAS': '🚁', Surveillance: '📹', ORC: '🛒',
+  'Weapons Detection': '🚨', Robotics: '🤖', Other: '⚖️',
 };
 
-// Emoji constants for use in JSX expressions
-const E_CAL  = String.fromCodePoint(0x1F4C5);
-const E_USER = String.fromCodePoint(0x1F464);
-const E_DL   = String.fromCodePoint(0x1F4E5);
+const E_CAL  = '📅';
+const E_USER = '👤';
+const E_DL   = '📥';
 
-
-// ── Sub-components ──────────────────────────────────────────────────────
+// ── Sub-components ───────────────────────────────────────────────────────────
 
 const KpiCard: React.FC<{ label: string; value: number | string; sub?: string; rag?: string }> = ({ label, value, sub, rag }) => {
   const c = rag ? RAG_COLORS[rag] : null;
   return (
     <div className="rounded-xl p-4 flex flex-col gap-1 border"
-      style={{
-        background: c ? c.bg : 'var(--s-card)',
-        borderColor: c ? c.border : 'var(--s-border)',
-      }}>
+      style={{ background: c ? c.bg : 'var(--s-card)', borderColor: c ? c.border : 'var(--s-border)' }}>
       <span className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--s-text-dim)' }}>{label}</span>
       <span className="text-3xl font-black" style={{ color: c ? c.text : 'var(--s-text)' }}>{value}</span>
       {sub && <span className="text-[10px]" style={{ color: 'var(--s-text-dim)' }}>{sub}</span>}
@@ -91,7 +87,7 @@ const ActionCard: React.FC<{ action: RegTopAction; idx: number }> = ({ action, i
   );
 };
 
-// ── Main component ──────────────────────────────────────────────────────────────
+// ── Main component ───────────────────────────────────────────────────────────
 export const RegulatoryIntelligence: React.FC = () => {
   const [summary, setSummary]             = useState<RegSummary | null>(null);
   const [obligations, setObligations]     = useState<RegObligation[]>([]);
@@ -106,11 +102,18 @@ export const RegulatoryIntelligence: React.FC = () => {
   const [filterTech, setFilterTech]       = useState('');
   const [filterStatus, setFilterStatus]   = useState('');
   const [filterQ, setFilterQ]             = useState('');
+  const [filterJur, setFilterJur]         = useState<string | null>(null);
   const [sortBy, setSortBy]               = useState('risk');
   const [page, setPage]                   = useState(1);
   const PAGE_SIZE = 20;
 
-  // ── Fetch summary
+  // ── Globe → table click handler ────────────────────────────────────
+  const handleGlobeClick = useCallback((jurisdiction: string | null) => {
+    setFilterJur(jurisdiction);
+    setPage(1);
+  }, []);
+
+  // ── Fetch summary ──────────────────────────────────────────────────
   useEffect(() => {
     fetch(`${API}/api/regulatory/summary`)
       .then(r => r.ok ? r.json() : Promise.reject(r.statusText))
@@ -119,7 +122,7 @@ export const RegulatoryIntelligence: React.FC = () => {
       .finally(() => setLoading(false));
   }, []);
 
-  // ── Fetch obligations with filters
+  // ── Fetch obligations with filters ─────────────────────────────────
   const fetchObligations = useCallback(() => {
     setObLoading(true);
     const params = new URLSearchParams({
@@ -131,15 +134,16 @@ export const RegulatoryIntelligence: React.FC = () => {
     if (filterTech)   params.set('tech', filterTech);
     if (filterStatus) params.set('status', filterStatus);
     if (filterQ)      params.set('q', filterQ);
+    if (filterJur)    params.set('jurisdiction', filterJur);
 
     fetch(`${API}/api/regulatory/obligations?${params}`)
       .then(r => r.ok ? r.json() : Promise.reject(r.statusText))
       .then(d => { setObligations(d.obligations); setTotal(d.total); })
       .catch(e => setError(String(e)))
       .finally(() => setObLoading(false));
-  }, [page, sortBy, filterRag, filterTech, filterStatus, filterQ]);
+  }, [page, sortBy, filterRag, filterTech, filterStatus, filterQ, filterJur]);
 
-  useEffect(() => { setPage(1); }, [filterRag, filterTech, filterStatus, filterQ, sortBy]);
+  useEffect(() => { setPage(1); }, [filterRag, filterTech, filterStatus, filterQ, filterJur, sortBy]);
   useEffect(() => { fetchObligations(); }, [fetchObligations]);
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
@@ -174,7 +178,9 @@ export const RegulatoryIntelligence: React.FC = () => {
     <div className="rounded-xl p-6 border" style={{ background: 'rgba(234,17,0,0.08)', borderColor: 'rgba(234,17,0,0.3)' }}>
       <p className="text-red-400 font-bold">Failed to load regulatory data</p>
       <p className="text-sm text-red-300 mt-1">{error}</p>
-      <p className="text-xs mt-2" style={{ color: 'var(--s-text-dim)' }}>Ensure the backend is running and run <code>python build_regulatory_report.py</code> from the backend folder.</p>
+      <p className="text-xs mt-2" style={{ color: 'var(--s-text-dim)' }}>
+        Ensure the backend is running and run <code>python build_regulatory_report.py</code>.
+      </p>
     </div>
   );
 
@@ -183,14 +189,14 @@ export const RegulatoryIntelligence: React.FC = () => {
   return (
     <div className="space-y-6">
 
-      {/* ═══ 3D HERO — Regulatory Globe ═══════════════════════════════ */}
+      {/* ═══ 3D HERO — Interactive Regulatory Globe ═══════════════════ */}
       <div
         className="reg-hero-bg relative rounded-2xl overflow-hidden"
-        style={{ height: '400px', border: '1px solid var(--s-border)' }}
+        style={{ height: '520px', border: '1px solid var(--s-border)' }}
       >
         {/* Grid overlay */}
         <div
-          className="absolute inset-0 opacity-[0.05] pointer-events-none"
+          className="absolute inset-0 opacity-[0.05] pointer-events-none z-[1]"
           style={{
             backgroundImage:
               'linear-gradient(rgba(0,83,226,0.5) 1px,transparent 1px),'
@@ -198,39 +204,17 @@ export const RegulatoryIntelligence: React.FC = () => {
             backgroundSize: '52px 52px',
           }}
         />
-        {/* Globe */}
+
+        {/* Globe (full bleed) */}
         <div className="absolute inset-0 z-0">
           <RegulatoryGlobe3D
-            red={stats?.red ?? 0}
-            amber={stats?.amber ?? 0}
-            yellow={stats?.yellow ?? 0}
-            green={stats?.green ?? 0}
+            selectedJurisdiction={filterJur}
+            onJurisdictionClick={handleGlobeClick}
           />
         </div>
 
-        {/* RAG legend (bottom-left) */}
-        <div className="absolute bottom-5 left-6 z-10 flex flex-col gap-1.5">
-          {[
-            { label: 'RED — Critical Risk (19-25)',    color: '#ff6b6b', count: stats?.red ?? 0 },
-            { label: 'AMBER — High Risk (13-18)',       color: '#fb923c', count: stats?.amber ?? 0 },
-            { label: 'YELLOW — Medium Risk (7-12)',     color: '#FFC220', count: stats?.yellow ?? 0 },
-            { label: 'GREEN — Low Risk (1-6)',          color: '#4ade80', count: stats?.green ?? 0 },
-          ].map(({ label, color, count }) => (
-            <div key={label} className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: color, boxShadow: `0 0 5px ${color}` }} />
-              <span className="text-[10px] font-semibold" style={{ color }}>{label}</span>
-              <span className="text-[10px] font-bold ml-1" style={{ color: 'var(--s-text)' }}>{count}</span>
-            </div>
-          ))}
-        </div>
-
-        {/* Hover hint */}
-        <div className="absolute bottom-5 right-6 z-10">
-          <span className="text-[10px]" style={{ color: 'var(--s-text-dim)' }}>Hover nodes to inspect jurisdictions</span>
-        </div>
-
-        {/* Title overlay (top-center) */}
-        <div className="relative z-10 h-full flex flex-col items-center justify-start pt-8 text-center px-6">
+        {/* Title overlay */}
+        <div className="relative z-10 pointer-events-none flex flex-col items-center pt-6 text-center px-6">
           <p className="text-[10px] font-bold text-wmt-yellow tracking-[0.2em] uppercase mb-2">
             Enterprise Security &nbsp;•&nbsp; Global Regulatory Intelligence
           </p>
@@ -244,7 +228,7 @@ export const RegulatoryIntelligence: React.FC = () => {
           >
             Regulatory Intelligence
           </h1>
-          <p className="text-sm max-w-lg mb-5" style={{ color: 'var(--s-text-muted)' }}>
+          <p className="text-sm max-w-lg mb-4" style={{ color: 'var(--s-text-muted)' }}>
             {stats?.total_obligations ?? '—'} obligations across {summary?.jurisdictions.length ?? '—'} jurisdictions — real-time RAG risk mapping.
           </p>
           <div className="flex flex-wrap gap-2 justify-center">
@@ -254,10 +238,29 @@ export const RegulatoryIntelligence: React.FC = () => {
             <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(42,135,3,0.15)', color: '#4ade80', borderColor: 'rgba(42,135,3,0.4)' }}>{stats?.green ?? '—'} Green</span>
             <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(0,83,226,0.15)', color: '#60a5fa', borderColor: 'rgba(0,83,226,0.4)' }}>{stats?.enacted ?? '—'} Enacted</span>
           </div>
+
+          {/* Active jurisdiction filter pill */}
+          {filterJur && (
+            <div className="mt-4 pointer-events-auto">
+              <button
+                onClick={() => setFilterJur(null)}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs font-bold transition-all hover:opacity-90"
+                style={{
+                  background: 'rgba(255,194,32,0.2)',
+                  border: '1px solid rgba(255,194,32,0.5)',
+                  color: '#FFC220',
+                  backdropFilter: 'blur(8px)',
+                }}
+              >
+                🌍 Filtered: {filterJur}
+                <span className="ml-1 text-[10px] opacity-70">✕ clear</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* ══ Hero KPIs */}
+      {/* ══ Hero KPIs ═════════════════════════════════════════════════ */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
         <KpiCard label="Total Obligations" value={stats?.total_obligations ?? 0} sub="unique obligations" />
         <KpiCard label="Red" value={stats?.red ?? 0} sub="Risk 19-25" rag="Red" />
@@ -268,7 +271,7 @@ export const RegulatoryIntelligence: React.FC = () => {
         <KpiCard label="Proposed" value={stats?.proposed ?? 0} sub="pending" />
       </div>
 
-      {/* ── Summary + Tech breakdown */}
+      {/* ── Summary + Tech breakdown ═════════════════════════════════ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Exec summary */}
         <div className="lg:col-span-2 rounded-xl p-5 border" style={{ background: 'var(--s-card)', borderColor: 'var(--s-border)' }}>
@@ -286,10 +289,21 @@ export const RegulatoryIntelligence: React.FC = () => {
           <p className="text-sm leading-relaxed" style={{ color: 'var(--s-text-dim)' }}>{summary?.summary}</p>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {summary?.jurisdictions.slice(0, 12).map(j => (
-              <span key={j} className="text-[9px] px-1.5 py-0.5 rounded" style={{ background: 'var(--s-hover-over)', color: 'var(--s-text-dim)', border: '1px solid var(--s-border)' }}>{j}</span>
+              <button key={j}
+                onClick={() => { setFilterJur(filterJur === j ? null : j); setPage(1); }}
+                className="text-[9px] px-1.5 py-0.5 rounded cursor-pointer transition-all hover:opacity-80"
+                style={{
+                  background: filterJur === j ? 'rgba(255,194,32,0.2)' : 'var(--s-hover-over)',
+                  color: filterJur === j ? '#FFC220' : 'var(--s-text-dim)',
+                  border: filterJur === j ? '1px solid rgba(255,194,32,0.4)' : '1px solid var(--s-border)',
+                }}>
+                {j}
+              </button>
             ))}
             {(summary?.jurisdictions.length ?? 0) > 12 && (
-              <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ color: 'var(--s-text-dim)' }}>+{(summary?.jurisdictions.length ?? 0) - 12} more</span>
+              <span className="text-[9px] px-1.5 py-0.5 rounded" style={{ color: 'var(--s-text-dim)' }}>
+                +{(summary?.jurisdictions.length ?? 0) - 12} more
+              </span>
             )}
           </div>
         </div>
@@ -314,7 +328,7 @@ export const RegulatoryIntelligence: React.FC = () => {
         </div>
       </div>
 
-      {/* ── Obligation Table + Top Actions */}
+      {/* ── Obligation Table + Top Actions ════════════════════════════ */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
 
         {/* Obligation table — 2/3 width */}
@@ -353,6 +367,14 @@ export const RegulatoryIntelligence: React.FC = () => {
               <option value="title">Sort: Title</option>
               <option value="jurisdiction">Sort: Jurisdiction</option>
             </select>
+            {/* Jurisdiction clear */}
+            {filterJur && (
+              <button onClick={() => setFilterJur(null)}
+                className="px-3 py-1.5 rounded-lg text-xs font-bold"
+                style={{ background: 'rgba(255,194,32,0.15)', color: '#FFC220', border: '1px solid rgba(255,194,32,0.3)' }}>
+                🌍 {filterJur} ✕
+              </button>
+            )}
             <button onClick={downloadJSON}
               className="px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:opacity-90"
               style={{ background: 'rgba(0,83,226,0.25)', color: '#60a5fa', border: '1px solid rgba(0,83,226,0.35)' }}>
@@ -376,7 +398,7 @@ export const RegulatoryIntelligence: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {obligations.map((ob, i) => (
+                  {obligations.map(ob => (
                     <tr key={ob.id}
                       onClick={() => setSelected(ob)}
                       className="cursor-pointer transition-colors hover:bg-black/5"
@@ -384,7 +406,14 @@ export const RegulatoryIntelligence: React.FC = () => {
                     >
                       <td className="px-3 py-2.5"><RagBadge rag={ob.risk.rag} score={ob.risk.score} /></td>
                       <td className="px-3 py-2.5 max-w-[120px]">
-                        <span className="truncate block" style={{ color: 'var(--s-text-dim)' }} title={ob.jurisdiction}>{ob.jurisdiction}</span>
+                        <button
+                          className="truncate block text-left hover:underline"
+                          style={{ color: filterJur === ob.jurisdiction ? '#FFC220' : 'var(--s-text-dim)' }}
+                          title={ob.jurisdiction}
+                          onClick={e => { e.stopPropagation(); setFilterJur(filterJur === ob.jurisdiction ? null : ob.jurisdiction); setPage(1); }}
+                        >
+                          {ob.jurisdiction}
+                        </button>
                       </td>
                       <td className="px-3 py-2.5 max-w-[220px]">
                         <span className="font-medium line-clamp-2 leading-tight" style={{ color: 'var(--s-text)' }} title={ob.title}>{ob.title}</span>
@@ -419,6 +448,7 @@ export const RegulatoryIntelligence: React.FC = () => {
             <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: '1px solid var(--s-border)', background: 'var(--s-modal-inner)' }}>
               <span className="text-[11px]" style={{ color: 'var(--s-text-dim)' }}>
                 {total} obligations · page {page}/{totalPages}
+                {filterJur && <span className="ml-2 text-[10px]" style={{ color: '#FFC220' }}>filtered: {filterJur}</span>}
               </span>
               <div className="flex gap-2">
                 <button onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}
@@ -439,7 +469,6 @@ export const RegulatoryIntelligence: React.FC = () => {
           <div className="space-y-2 overflow-y-auto" style={{ maxHeight: '560px' }}>
             {(summary?.top_actions ?? []).map((a, i) => <ActionCard key={i} action={a} idx={i} />)}
           </div>
-          {/* Assumptions */}
           <details className="mt-2">
             <summary className="text-[10px] cursor-pointer font-bold uppercase tracking-wider" style={{ color: 'var(--s-text-dim)' }}>
               Assumptions &amp; Confidence

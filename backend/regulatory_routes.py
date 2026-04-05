@@ -117,6 +117,49 @@ def get_filter_options() -> dict:
     }
 
 
+@ROUTER.get("/geo")
+def get_geo_aggregation() -> dict:
+    """Jurisdiction-level aggregation for the 3D globe.
+
+    Returns per-jurisdiction RAG breakdown, total count, and worst RAG.
+    The frontend maps jurisdiction names to lat/lon coordinates.
+    """
+    data = _load()
+    buckets: dict[str, dict] = {}
+    for o in data["obligations"]:
+        j = o["jurisdiction"]
+        b = buckets.setdefault(j, {"jurisdiction": j, "total": 0,
+                                    "red": 0, "amber": 0, "yellow": 0, "green": 0,
+                                    "techs": set()})
+        b["total"] += 1
+        rag_lower = o["risk"]["rag"].lower()
+        if rag_lower in b:
+            b[rag_lower] += 1
+        b["techs"].add(o.get("tech_category", "Other"))
+
+    RAG_ORDER = {"red": 0, "amber": 1, "yellow": 2, "green": 3}
+
+    result = []
+    for b in buckets.values():
+        # Determine worst RAG
+        worst = "green"
+        for rag in ("red", "amber", "yellow", "green"):
+            if b[rag] > 0:
+                worst = rag
+                break
+        result.append({
+            "jurisdiction": b["jurisdiction"],
+            "total": b["total"],
+            "red": b["red"], "amber": b["amber"],
+            "yellow": b["yellow"], "green": b["green"],
+            "worst_rag": worst.capitalize(),
+            "techs": sorted(b["techs"]),
+        })
+
+    result.sort(key=lambda x: (RAG_ORDER.get(x["worst_rag"].lower(), 9), -x["total"]))
+    return {"jurisdictions": result, "total": len(result)}
+
+
 @ROUTER.get("/download")
 def download_full_report() -> dict:
     """Return the full report JSON (for client-side download)."""
