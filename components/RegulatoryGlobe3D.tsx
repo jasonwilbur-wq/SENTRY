@@ -25,13 +25,11 @@ import {
 } from '../data/regulatoryGeoData';
 import { fetchRegulatoryGeo, type RegulatoryGeoJurisdiction } from '../services/api';
 
-// ── Props ────────────────────────────────────────────────────────────────────
 interface Props {
   selectedJurisdiction?: string | null;
   onJurisdictionClick?: (jurisdiction: string | null) => void;
 }
 
-// ── Constants ────────────────────────────────────────────────────────────────
 const US_CENTER: [number, number] = [39.5, -98.5];
 const GLOBE_CAM_POS  = (R: number): [number, number, number] => [0, R * 0.4, R * 2.0];
 const US_CAM_POS     = (R: number): [number, number, number] => {
@@ -40,14 +38,12 @@ const US_CAM_POS     = (R: number): [number, number, number] => {
 };
 const US_CAM_LOOK    = (R: number): [number, number, number] => latLonToVec3(US_CENTER[0], US_CENTER[1], R);
 
-// ── Merged node = geo data + coordinate ──────────────────────────────────────
 interface GlobeNode {
   jurisdiction: string;
   coord: JurisdictionCoord;
   geo: RegulatoryGeoJurisdiction;
 }
 
-// ── Component ────────────────────────────────────────────────────────────────
 export const RegulatoryGlobe3D: React.FC<Props> = ({
   selectedJurisdiction = null,
   onJurisdictionClick,
@@ -59,7 +55,6 @@ export const RegulatoryGlobe3D: React.FC<Props> = ({
   const selectedRef = useRef(selectedJurisdiction);
   selectedRef.current = selectedJurisdiction;
 
-  // Animation target refs for smooth camera transitions
   const camTargetPos  = useRef(new THREE.Vector3());
   const camTargetLook = useRef(new THREE.Vector3(0, 0, 0));
   const autoRotate    = useRef(true);
@@ -78,7 +73,6 @@ export const RegulatoryGlobe3D: React.FC<Props> = ({
     const R = Math.min(W, H) * 0.32;
     const RS = R / 160;
 
-    // ── Renderer ─────────────────────────────────────────────────────
     const renderer = new THREE.WebGLRenderer({
       antialias: true, alpha: true, powerPreference: 'high-performance',
     });
@@ -96,7 +90,6 @@ export const RegulatoryGlobe3D: React.FC<Props> = ({
     camera.lookAt(0, 0, 0);
     camTargetPos.current.set(cx, cy, cz);
 
-    // ── Starfield ────────────────────────────────────────────────────
     const starCount = 3000;
     const sPos = new Float32Array(starCount * 3);
     for (let i = 0; i < sPos.length; i++) sPos[i] = (Math.random() - 0.5) * R * 14;
@@ -106,7 +99,6 @@ export const RegulatoryGlobe3D: React.FC<Props> = ({
       color: 0x60a5fa, size: R * 0.003, transparent: true, opacity: 0.35,
     })));
 
-    // ── Lighting ─────────────────────────────────────────────────────
     scene.add(new THREE.AmbientLight(0x0a0f20, 3.0));
     const kl = new THREE.PointLight(0x3060ff, 4, R * 10);
     kl.position.set(R * 1.5, R * 1.2, R * 1.8);
@@ -115,7 +107,6 @@ export const RegulatoryGlobe3D: React.FC<Props> = ({
     fl.position.set(-R * 1.2, -R * 0.8, -R);
     scene.add(fl);
 
-    // ── Globe group ──────────────────────────────────────────────────
     const globeG = new THREE.Group();
     scene.add(globeG);
 
@@ -159,7 +150,6 @@ export const RegulatoryGlobe3D: React.FC<Props> = ({
       ));
     }
 
-    // ── Data loading ─────────────────────────────────────────────────
     const nodeMeshes: THREE.Mesh[] = [];
     const nodeData: GlobeNode[] = [];
     const glowMeshes: THREE.Mesh[] = [];
@@ -332,7 +322,6 @@ export const RegulatoryGlobe3D: React.FC<Props> = ({
       }
     }).catch(err => console.warn('RegulatoryGlobe3D: geo fetch failed', err));
 
-    // ── Hover & click ────────────────────────────────────────────────
     const raycaster = new THREE.Raycaster();
     const mouse = new THREE.Vector2(-9, -9);
     let hoveredIdx = -1;
@@ -352,7 +341,6 @@ export const RegulatoryGlobe3D: React.FC<Props> = ({
     renderer.domElement.addEventListener('click', onClick);
     renderer.domElement.style.cursor = 'grab';
 
-    // ── Mouse drag rotation ──────────────────────────────────────────
     let isDragging = false;
     let prevX = 0, prevY = 0;
     const onDown = (e: MouseEvent) => {
@@ -382,7 +370,6 @@ export const RegulatoryGlobe3D: React.FC<Props> = ({
     window.addEventListener('mouseup', onUp);
     window.addEventListener('mousemove', onDrag);
 
-    // ── Animate ──────────────────────────────────────────────────────
     let rafId = 0;
     const animate = () => {
       rafId = requestAnimationFrame(animate);
@@ -478,7 +465,6 @@ export const RegulatoryGlobe3D: React.FC<Props> = ({
     };
     animate();
 
-    // ── Resize ───────────────────────────────────────────────────────
     const onResize = () => {
       const w = el.clientWidth;
       const h = el.clientHeight;
@@ -567,8 +553,6 @@ export const RegulatoryGlobe3D: React.FC<Props> = ({
     </div>
   );
 };
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
 
 function makeArc(a: THREE.Vector3, b: THREE.Vector3, color: number): THREE.Line {
   const mid = a.clone().add(b).multiplyScalar(0.5);
