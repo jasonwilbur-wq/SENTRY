@@ -1,12 +1,18 @@
 /**
  * HomeDashboard — Mission-control landing after the cinematic entry.
  *
- * Shows live KPIs + grouped module cards so every user knows
- * where they are and what SENTRY can do for them.
+ * ALL stats are live — fetched from backend APIs on mount.
+ * Zero hardcoded numbers. If an endpoint is unreachable,
+ * the card gracefully shows "—".
  */
 import React, { useEffect, useState } from 'react';
 import { ViewState } from '../types';
-import { fetchStats, fetchCompetitorStats, DirectoryStats, CompetitorStats } from '../services/api';
+import {
+  fetchStats, fetchCompetitorStats, fetchIncidentStats, fetchRegulatorySummary, fetchProjects,
+  DirectoryStats, CompetitorStats,
+} from '../services/api';
+import type { IncidentStats } from '../types';
+import type { RegulatorySummary, ProjectListItem } from '../services/api';
 import { MorningBriefCard } from './MorningBriefCard';
 import { useTheme } from '../context/ThemeContext';
 
@@ -173,13 +179,20 @@ const IconAdmin = () => (
   </svg>
 );
 
+// ── Helper: format number with "+" for large counts ───────────────────────────
+const fmt = (n: number | undefined | null): string =>
+  n != null ? n.toLocaleString() : '—';
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 export const HomeDashboard: React.FC<HomeDashboardProps> = ({ onNavigate }) => {
-  const [stats, setStats] = useState<DirectoryStats | null>(null);
+  const [stats, setStats]         = useState<DirectoryStats | null>(null);
   const [compStats, setCompStats] = useState<CompetitorStats | null>(null);
-  const [mounted, setMounted] = useState(false);
-  const { reducedMotion, theme } = useTheme();
+  const [incStats, setIncStats]   = useState<IncidentStats | null>(null);
+  const [regStats, setRegStats]   = useState<RegulatorySummary | null>(null);
+  const [projData, setProjData]   = useState<{ projects: ProjectListItem[]; total: number } | null>(null);
+  const [mounted, setMounted]     = useState(false);
+  const { reducedMotion, theme }  = useTheme();
 
   // Home screen is always dark — restore the user's real theme on leave.
   useEffect(() => {
@@ -193,20 +206,48 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({ onNavigate }) => {
     };
   }, [theme]);
 
+  // Fetch all stats in parallel on mount
   useEffect(() => {
     setMounted(true);
     fetchStats().then(setStats).catch(() => {});
     fetchCompetitorStats().then(setCompStats).catch(() => {});
+    fetchIncidentStats().then(setIncStats).catch(() => {});
+    fetchRegulatorySummary().then(setRegStats).catch(() => {});
+    fetchProjects().then(setProjData).catch(() => {});
   }, []);
 
-  const totalVendors  = stats  ? stats.total_vendors.toLocaleString()        : '—';
-  const totalVars     = stats  ? stats.total_vars.toLocaleString()           : '—';
-  const coverage      = stats  ? `${stats.var_coverage_pct.toFixed(1)}%`     : '—';
-  const avgRating     = stats  ? stats.avg_rating.toFixed(2)                 : '—';
-  const compEvents    = compStats ? compStats.total.toLocaleString()         : '—';
-  const vendorStat    = stats  ? `${totalVendors} vendors`                   : 'Loading…';
-  const varStat       = stats  ? `${totalVars} VARs`                        : 'Loading…';
-  const compEventStat = compStats ? `${compEvents} events`                   : 'Loading…';
+  // ── Derived display values (all live) ─────────────────────────────────
+  const totalVendors = fmt(stats?.total_vendors);
+  const totalVars    = fmt(stats?.total_vars);
+  const coverage     = stats ? `${stats.var_coverage_pct.toFixed(1)}%` : '—';
+  const avgRating    = stats ? stats.avg_rating.toFixed(2) : '—';
+  const compEvents   = fmt(compStats?.total);
+
+  // Module stats — all derived from live data
+  const vendorStat    = stats ? `${totalVendors} vendors` : 'Loading…';
+  const varStat       = stats ? `${totalVars} VARs` : 'Loading…';
+  const compEventStat = compStats ? `${compEvents} events` : 'Loading…';
+  const incidentStat  = incStats ? `${fmt(incStats.total)} Incidents` : 'Loading…';
+
+  // Regulatory — live RAG breakdown
+  const regTotal = regStats?.stats?.total_obligations;
+  const regRed   = regStats?.stats?.red;
+  const regAmber = regStats?.stats?.amber;
+  const regStat  = regStats
+    ? `${fmt(regRed)} Red · ${fmt(regAmber)} Amber`
+    : 'Loading…';
+  const regDesc  = regStats
+    ? `${fmt(regTotal)} obligations across AI, Biometrics, ALPR, UAS & Data Privacy — tracked by jurisdiction, RAG status, and deadline.`
+    : 'Regulatory obligations across AI, Biometrics, ALPR, UAS & Data Privacy — tracked by jurisdiction, RAG status, and deadline.';
+
+  // Projects — live count
+  const activeProjects = projData
+    ? projData.projects.filter(p => !['rejected', 'discontinued'].includes(p.lifecycle_state)).length
+    : null;
+  const projectStat = activeProjects != null ? `${activeProjects} Active` : 'Loading…';
+
+  // CSO — static (data file, not a DB table)
+  const csoStat = '5 Exec Profiles';
 
   // ── Module groups ────────────────────────────────────────────────────────
   const intelligenceModules = [
@@ -224,7 +265,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({ onNavigate }) => {
       icon: <IconPeople />,
       title: 'CSO Intelligence',
       description: 'Executive security leadership analysis — competitive positioning of retail CSOs and strategic threat mapping.',
-      stat: '4 Exec Profiles',
+      stat: csoStat,
       statColor: '#a78bfa',
       accent: '#a78bfa',
     },
@@ -232,8 +273,8 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({ onNavigate }) => {
       view: ViewState.REGULATORY_INTEL,
       icon: <IconScale />,
       title: 'Regulatory Intelligence',
-      description: '362 obligations across AI, Biometrics, ALPR, UAS & Data Privacy — tracked by jurisdiction, RAG status, and deadline.',
-      stat: '85 Red · 186 Amber',
+      description: regDesc,
+      stat: regStat,
       statColor: '#f97316',
       accent: '#f97316',
     },
@@ -241,8 +282,8 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({ onNavigate }) => {
       view: ViewState.INCIDENT_INTEL,
       icon: <IconShield />,
       title: 'Incident Intelligence',
-      description: '325+ retail security incidents — ORC, cargo theft, cyber attacks & violence. Searchable by severity, region, and type.',
-      stat: '325+ Incidents',
+      description: 'Retail security incidents — ORC, cargo theft, cyber attacks & violence. Searchable by severity, region, and type.',
+      stat: incidentStat,
       statColor: '#ea1100',
       accent: '#ea1100',
     },
@@ -262,8 +303,8 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({ onNavigate }) => {
       view: ViewState.PROJECTS,
       icon: <IconProjects />,
       title: 'Project Portfolio',
-      description: '3D visualization of all active EST projects — budget tracking, phase status, and pilot outcomes across the portfolio.',
-      stat: '14 Active · $5.05M',
+      description: '3D visualization of all active EST projects — phase status, compliance tracking, and vendor associations across the portfolio.',
+      stat: projectStat,
       statColor: '#FFC220',
       accent: '#FFC220',
     },

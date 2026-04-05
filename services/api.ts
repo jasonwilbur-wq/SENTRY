@@ -616,3 +616,37 @@ export async function fetchCompetitorEvents(params?: {
 export async function fetchCompetitorCategories(): Promise<{ categories: string[] }> {
   return request('/api/competitors/categories');
 }
+
+// ── Regulatory Intelligence ──────────────────────────────────────────────────
+
+export interface RegulatorySummary {
+  stats: {
+    total_obligations: number;
+    red: number;
+    amber: number;
+    yellow: number;
+    green: number;
+    enacted: number;
+    proposed: number;
+    tech_breakdown: Record<string, number>;
+  };
+  [key: string]: unknown;
+}
+
+export async function fetchRegulatorySummary(): Promise<RegulatorySummary> {
+  return request('/api/regulatory/summary');
+}
+
+// ── Projects ─────────────────────────────────────────────────────────────────
+
+export interface ProjectListItem {
+  project_id: string;
+  project_name: string;
+  lifecycle_state: string;
+  health: string;
+  est_phase_index: number;
+}
+
+export async function fetchProjects(): Promise<{ projects: ProjectListItem[]; total: number }> {
+  return request('/api/projects');
+}
