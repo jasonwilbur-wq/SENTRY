@@ -1,5 +1,15 @@
+/**
+ * LandingPage — cinematic entry screen for SENTRY.
+ *
+ * Forces dark mode while visible (space aesthetic).
+ * All stats are live — fetched from backend APIs on mount.
+ */
 import React, { useEffect, useState } from 'react';
 import { LandingBackground3D } from './LandingBackground3D';
+import { useTheme } from '../context/ThemeContext';
+import {
+  fetchStats, fetchCompetitorStats, fetchRegulatorySummary,
+} from '../services/api';
 
 interface LandingPageProps {
   onEnter: () => void;
@@ -9,7 +19,6 @@ interface LandingPageProps {
 const SENTRY_LETTERS = ['S', 'E', 'N', 'T', 'R', 'Y'];
 
 // Acronym words revealed one by one after title appears
-// S·E·N·T·R·Y — fixed: the N was missing from this array entirely
 const ACRONYM = [
   { letter: 'S', rest: 'ecurity,' },
   { letter: 'E', rest: 'merging-Tech' },
@@ -19,20 +28,70 @@ const ACRONYM = [
   { letter: 'Y', rest: 'ielding Intelligence' },
 ];
 
+// ── Live stat strip item ─────────────────────────────────────────────────────
+interface StatItem { value: string; label: string }
+
 export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
   const [mounted, setMounted]           = useState(false);
   const [acronymIndex, setAcronymIndex] = useState(-1);
+  const [liveStats, setLiveStats]       = useState<StatItem[]>([]);
+  const { theme }                       = useTheme();
 
+  // ── Force dark mode while landing page is visible ──────────────────────
   useEffect(() => {
-    // Trigger mount animation
-    const t1 = setTimeout(() => setMounted(true), 60);
+    const root = document.documentElement;
+    root.setAttribute('data-theme', 'dark');
+    root.classList.add('dark');
+    return () => {
+      root.setAttribute('data-theme', theme);
+      if (theme === 'dark') root.classList.add('dark');
+      else                  root.classList.remove('dark');
+    };
+  }, [theme]);
 
-    // Cascade the acronym words one-by-one, 160ms apart, starting after 800ms
+  // ── Fetch live stats in parallel ───────────────────────────────────────
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const [stats, compStats, regStats] = await Promise.allSettled([
+          fetchStats(),
+          fetchCompetitorStats(),
+          fetchRegulatorySummary(),
+        ]);
+
+        const items: StatItem[] = [];
+
+        if (stats.status === 'fulfilled') {
+          const s = stats.value;
+          items.push({ value: s.total_vendors.toLocaleString(), label: 'Vendors Tracked' });
+          items.push({ value: s.total_vars.toLocaleString(), label: 'VAR Reports' });
+          items.push({ value: `${s.var_coverage_pct.toFixed(1)}%`, label: 'Assessment Coverage' });
+        }
+
+        if (compStats.status === 'fulfilled') {
+          items.push({ value: compStats.value.total.toLocaleString(), label: 'Competitor Events' });
+        }
+
+        if (regStats.status === 'fulfilled') {
+          const r = regStats.value.stats;
+          items.push({ value: r.total_obligations.toLocaleString(), label: 'Regulatory Obligations' });
+        }
+
+        setLiveStats(items);
+      } catch {
+        // Graceful degradation — stats strip just won't render
+      }
+    };
+    load();
+  }, []);
+
+  // ── Mount + acronym cascade ────────────────────────────────────────────
+  useEffect(() => {
+    const t1 = setTimeout(() => setMounted(true), 60);
     const timers: ReturnType<typeof setTimeout>[] = [];
     ACRONYM.forEach((_, i) => {
       timers.push(setTimeout(() => setAcronymIndex(i), 900 + i * 160));
     });
-
     return () => {
       clearTimeout(t1);
       timers.forEach(clearTimeout);
@@ -40,7 +99,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-sentry-dark flex flex-col items-center justify-center relative overflow-hidden text-white">
+    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden text-white"
+         style={{ background: '#000B28' }}>
 
       {/* Three.js starfield */}
       <LandingBackground3D />
@@ -93,7 +153,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
           </span>
         </div>
 
-        {/* SENTRY title — letter-by-letter reveal, fixed glow */}
+        {/* SENTRY title — letter-by-letter reveal */}
         <h1 className="relative mb-8 leading-none select-none" style={{ perspective: '600px' }}>
           <div className="flex items-center justify-center gap-1 md:gap-2">
             {SENTRY_LETTERS.map((letter, i) => (
@@ -114,7 +174,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
               </span>
             ))}
           </div>
-          {/* Glow backdrop — actually contains content now, positioned behind */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
@@ -160,27 +219,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
           </p>
 
           {/* Live stats strip */}
-          <div className="flex flex-wrap justify-center gap-3 md:gap-5">
-            {[
-              { value: '2,086', label: 'Vendors Tracked' },
-              { value: '1,349', label: 'VAR Reports' },
-              { value: '12',    label: 'Tech Categories' },
-              { value: '45.3%', label: 'Assessment Coverage' },
-              { value: '4',     label: 'Competitor Execs' },
-            ].map(({ value, label }) => (
-              <div
-                key={label}
-                className="flex flex-col items-center px-4 py-2 rounded-xl"
-                style={{
-                  background: 'rgba(0,83,226,0.07)',
-                  border: '1px solid rgba(0,83,226,0.2)',
-                }}
-              >
-                <span className="text-xl md:text-2xl font-black" style={{ color: '#FFC220' }}>{value}</span>
-                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mt-0.5">{label}</span>
-              </div>
-            ))}
-          </div>
+          {liveStats.length > 0 && (
+            <div className="flex flex-wrap justify-center gap-3 md:gap-5">
+              {liveStats.map(({ value, label }) => (
+                <div
+                  key={label}
+                  className="flex flex-col items-center px-4 py-2 rounded-xl"
+                  style={{
+                    background: 'rgba(0,83,226,0.07)',
+                    border: '1px solid rgba(0,83,226,0.2)',
+                  }}
+                >
+                  <span className="text-xl md:text-2xl font-black" style={{ color: '#FFC220' }}>{value}</span>
+                  <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mt-0.5">{label}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* CTA button */}
@@ -204,7 +259,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
           onMouseDown={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.96)'; }}
           onMouseUp={e => { (e.currentTarget as HTMLButtonElement).style.transform = ''; }}
         >
-          {/* Shine — CSS ::after approach via inline pseudo-equivalent div */}
+          {/* Shine effect */}
           <div
             className="absolute top-0 h-full w-1/3 -skew-x-12 bg-white/30 opacity-0 group-hover:opacity-100 pointer-events-none"
             style={{ left: '-40%', transition: 'left 0.4s ease, opacity 0.2s' }}
@@ -214,7 +269,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
             }}
             ref={el => {
               if (!el) return;
-              // Trigger shine on parent hover
               const parent = el.parentElement;
               if (!parent) return;
               const enter = () => { el.style.left = '140%'; };
