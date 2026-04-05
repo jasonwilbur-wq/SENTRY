@@ -282,7 +282,7 @@ def list_categories():
     conn = get_connection()
     rows = conn.execute(
         "SELECT category, COUNT(*) as cnt FROM vendors "
-        "GROUP BY category ORDER BY cnt DESC"
+        "GROUP BY category HAVING cnt > 0 ORDER BY cnt DESC"
     ).fetchall()
     conn.close()
     return {
