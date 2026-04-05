@@ -18,6 +18,7 @@ const PAGE_SIZE = 20;
 interface VendorContextValue {
   vendors:        Vendor[];
   categories:     string[];
+  categoryCounts: Record<string, number>;
   loading:        boolean;
   backendOffline: boolean;
   // Counts
@@ -44,6 +45,7 @@ const VendorContext = createContext<VendorContextValue | null>(null);
 export const VendorProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [vendors,        setVendors]        = useState<Vendor[]>([]);
   const [categories,     setCategories]     = useState<string[]>(['All']);
+  const [categoryCounts, setCategoryCounts] = useState<Record<string, number>>({});
   const [loading,        setLoading]        = useState(true);
   const [backendOffline, setBackendOffline] = useState(false);
   const [total,          setTotal]          = useState(0);
@@ -97,7 +99,10 @@ export const VendorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // ── Bootstrap categories list (one-time) ───────────────────────────
   useEffect(() => {
     fetchCategories()
-      .then(d => setCategories(['All', ...d.categories]))
+      .then(d => {
+        setCategories(['All', ...d.categories]);
+        if (d.category_counts) setCategoryCounts(d.category_counts);
+      })
       .catch(() => {/* categories are non-critical */});
   }, []);
 
@@ -112,7 +117,7 @@ export const VendorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   return (
     <VendorContext.Provider value={{
-      vendors, categories, loading, backendOffline,
+      vendors, categories, categoryCounts, loading, backendOffline,
       total, totalPages, search, category, riskLevel, hasVar, sort, page,
       setSearch, setCategory, setRiskLevel, setHasVar, setSort, setPage,
     }}>

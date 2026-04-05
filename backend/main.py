@@ -276,15 +276,19 @@ def list_vendors(
 
 
 # NOTE: /categories MUST be registered before /{vendor_id} to avoid shadowing
-@app.get("/api/vendors/categories", response_model=CategoriesResponse)
+@app.get("/api/vendors/categories")
 def list_categories():
-    """Return distinct vendor categories."""
+    """Return vendor categories with counts, sorted by count descending."""
     conn = get_connection()
     rows = conn.execute(
-        "SELECT DISTINCT category FROM vendors ORDER BY category"
+        "SELECT category, COUNT(*) as cnt FROM vendors "
+        "GROUP BY category ORDER BY cnt DESC"
     ).fetchall()
     conn.close()
-    return CategoriesResponse(categories=[r["category"] for r in rows])
+    return {
+        "categories": [r["category"] for r in rows],
+        "category_counts": {r["category"]: r["cnt"] for r in rows},
+    }
 
 
 @app.get("/api/vendors/{vendor_id}", response_model=VendorOut)

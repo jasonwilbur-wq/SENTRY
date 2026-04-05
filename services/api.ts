@@ -157,7 +157,7 @@ export async function fetchVendors(params?: VendorsParams): Promise<VendorsRespo
   return request(`/api/vendors${query}`);
 }
 
-export async function fetchCategories(): Promise<{ categories: string[] }> {
+export async function fetchCategories(): Promise<{ categories: string[]; category_counts: Record<string, number> }> {
   return request('/api/vendors/categories');
 }
 
