@@ -3,13 +3,16 @@
  *
  * Architecture:
  *  - VendorStatsPanel: live analytics dashboard (KPIs + charts)
- *  - Pill category filter + risk filter bar
+ *  - Pill category filter + server-side risk filter bar
+ *  - Sort dropdown (rating, name, risk, last assessed)
+ *  - Ctrl+K keyboard shortcut for search focus
+ *  - VAR filter toggle
  *  - VendorCard3D grid with 3D glass cards
  *  - Pagination
  *
  * All data comes from VendorContext (server-side filtering).
  */
-import React, { Fragment, useCallback, useEffect, useState } from 'react';
+import React, { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { useVendors } from '../context/VendorContext';
 import { Vendor, DirectoryStats, fetchStats } from '../services/api';
 import { VendorDetailModal } from './VendorDetailModal';
@@ -18,6 +21,14 @@ import { VendorCard3D } from './VendorCard3D';
 import { VendorStatsPanel } from './VendorStatsPanel';
 
 const PAGE_SIZE = 18; // divisible by 2 and 3 for clean grids
+
+// ── Sort options ─────────────────────────────────────────────────────────────
+const SORT_OPTIONS = [
+  { value: 'rating',        label: '⭐ Top Rated' },
+  { value: 'name',          label: 'A→Z Name' },
+  { value: 'risk',          label: '⚠️ Risk Level' },
+  { value: 'last_assessed', label: '📅 Recently Assessed' },
+];
 
 // ── Risk quick-filter pills ──────────────────────────────────────────────────
 const RISK_PILLS = [
@@ -56,12 +67,6 @@ const PINNED_CATS: Record<string, string> = {
   'Edge AI/IoT':                                              'Edge AI/IoT',
 };
 
-// ── Helper: client-side risk filter on top of server results ─────────────────
-function applyRiskFilter(vendors: Vendor[], risk: string): Vendor[] {
-  if (!risk) return vendors;
-  return vendors.filter(v => v.risk_level === risk);
-}
-
 // ── Loading skeleton ─────────────────────────────────────────────────────────
 function Skeleton() {
   return (
@@ -84,15 +89,15 @@ function StatsSkeleton() {
 export const VendorDashboard: React.FC = () => {
   const {
     vendors, categories, loading, backendOffline,
-    total, totalPages, search, category, page,
-    setSearch, setCategory, setPage,
+    total, totalPages, search, category, riskLevel, hasVar, sort, page,
+    setSearch, setCategory, setRiskLevel, setHasVar, setSort, setPage,
   } = useVendors();
 
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
-  const [riskFilter,     setRiskFilter]     = useState('');
   const [phaseFilter,    setPhaseFilter]    = useState(0);
   const [stats,          setStats]          = useState<DirectoryStats | null>(null);
   const [statsLoading,   setStatsLoading]   = useState(true);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   // ── Fetch stats once on mount ──────────────────────────────────────────────
   useEffect(() => {
@@ -102,19 +107,36 @@ export const VendorDashboard: React.FC = () => {
       .finally(() => setStatsLoading(false));
   }, []);
 
+  // ── Ctrl+K keyboard shortcut for search focus ──────────────────────────────
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        searchRef.current?.focus();
+        searchRef.current?.select();
+      }
+      // Escape clears search when focused
+      if (e.key === 'Escape' && document.activeElement === searchRef.current) {
+        setSearch('');
+        searchRef.current?.blur();
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [setSearch]);
+
   const handleOpenVendor  = useCallback((v: Vendor) => setSelectedVendor(v), []);
   const handleCloseModal  = useCallback(() => setSelectedVendor(null), []);
   const handleClearFilter = useCallback(() => {
-    setSearch(''); setCategory('All'); setRiskFilter(''); setPhaseFilter(0);
-  }, [setSearch, setCategory]);
+    setSearch(''); setCategory('All'); setRiskLevel(''); setHasVar('');
+    setSort('rating'); setPhaseFilter(0);
+  }, [setSearch, setCategory, setRiskLevel, setHasVar, setSort]);
 
-  // Apply client-side risk + phase filters on top of server-paginated results
-  const displayed = vendors
-    .filter(v => !riskFilter  || v.risk_level === riskFilter)
-    .filter(v => !phaseFilter || (v.linked_projects ?? []).some(
-      lp => lp.est_phase_index === phaseFilter
-    ));
-  const hasFilters = !!(search || category !== 'All' || riskFilter || phaseFilter);
+  // Phase filter is still client-side (project associations are nested)
+  const displayed = vendors.filter(v =>
+    !phaseFilter || (v.linked_projects ?? []).some(lp => lp.est_phase_index === phaseFilter)
+  );
+  const hasFilters = !!(search || category !== 'All' || riskLevel || hasVar || phaseFilter || sort !== 'rating');
 
   // Categories: only show the pinned ones that exist in the DB
   const pinnedCategories = ['All', ...categories.filter(c => c !== 'All' && PINNED_CATS[c])];
@@ -134,7 +156,7 @@ export const VendorDashboard: React.FC = () => {
       <div
         className="sticky top-0 z-20 bg-sentry-bg/90 backdrop-blur-md pt-2 pb-4 space-y-3"
       >
-        {/* Title row + search */}
+        {/* Title row + search + sort */}
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
           <div>
             <h2 className="text-xl font-black" style={{ color: 'var(--s-text)' }}>
@@ -150,41 +172,80 @@ export const VendorDashboard: React.FC = () => {
             )}
           </div>
 
-          {/* Search input */}
-          <div className="relative w-full md:w-80">
-            <label htmlFor="vd-search" className="sr-only">Search vendors or products</label>
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
-                 style={{ color: 'var(--s-text-dim)' }}
-                 fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z" />
-            </svg>
-            <input
-              id="vd-search"
-              type="search"
-              placeholder="Search vendors, products…"
-              className="w-full rounded-xl pl-9 pr-10 py-2.5 text-sm placeholder-slate-600"
-              style={{
-                background: 'var(--s-input-bg)',
-                border: '1px solid var(--s-border-mid)',
-                color: 'var(--s-text)',
-                outline: 'none',
-                transition: 'border-color 0.15s, box-shadow 0.15s',
-              }}
-              // Focus ring handled via #vd-search:focus-visible in styles.css
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-            />
-            {search && (
-              <button
-                onClick={() => setSearch('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
-                style={{ color: '#475569' }}
-                aria-label="Clear search"
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            {/* Search input with Ctrl+K hint */}
+            <div className="relative flex-1 md:w-80">
+              <label htmlFor="vd-search" className="sr-only">Search vendors, products, categories…</label>
+              <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                   style={{ color: 'var(--s-text-dim)' }}
+                   fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z" />
+              </svg>
+              <input
+                ref={searchRef}
+                id="vd-search"
+                type="search"
+                placeholder="Search vendors, products, categories…"
+                className="w-full rounded-xl pl-9 pr-16 py-2.5 text-sm placeholder-slate-600"
+                style={{
+                  background: 'var(--s-input-bg)',
+                  border: '1px solid var(--s-border-mid)',
+                  color: 'var(--s-text)',
+                  outline: 'none',
+                  transition: 'border-color 0.15s, box-shadow 0.15s',
+                }}
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
+              {/* Ctrl+K hint or clear button */}
+              {search ? (
+                <button
+                  onClick={() => setSearch('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                  style={{ color: '#475569' }}
+                  aria-label="Clear search"
+                >
+                  ✕
+                </button>
+              ) : (
+                <kbd
+                  className="absolute right-3 top-1/2 -translate-y-1/2 px-1.5 py-0.5 rounded text-[10px] font-mono pointer-events-none"
+                  style={{
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    color: '#475569',
+                  }}
+                >
+                  Ctrl+K
+                </kbd>
+              )}
+            </div>
+
+            {/* Sort dropdown */}
+            <div className="relative shrink-0">
+              <label htmlFor="vd-sort" className="sr-only">Sort vendors</label>
+              <select
+                id="vd-sort"
+                value={sort}
+                onChange={e => setSort(e.target.value)}
+                className="appearance-none rounded-xl px-3 py-2.5 pr-8 text-xs font-semibold cursor-pointer"
+                style={{
+                  background: 'var(--s-input-bg)',
+                  border: '1px solid var(--s-border-mid)',
+                  color: 'var(--s-text)',
+                  outline: 'none',
+                }}
               >
-                ✕
-              </button>
-            )}
+                {SORT_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+              <svg className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none"
+                   style={{ color: 'var(--s-text-dim)' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
           </div>
         </div>
 
@@ -216,17 +277,17 @@ export const VendorDashboard: React.FC = () => {
           })}
         </div>
 
-        {/* Risk pills */}
+        {/* Risk pills + VAR filter toggle */}
         <div className="flex flex-wrap gap-2 items-center">
           <span className="text-[10px] uppercase tracking-wider text-slate-600 font-bold mr-1">Risk:</span>
           {RISK_PILLS.map(p => (
             <button
               key={p.value}
-              onClick={() => setRiskFilter(p.value)}
+              onClick={() => setRiskLevel(riskLevel === p.value ? '' : p.value)}
               className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
-                riskFilter === p.value ? 'text-white' : ''
+                riskLevel === p.value ? 'text-white' : ''
               }`}
-              style={riskFilter === p.value ? {
+              style={riskLevel === p.value ? {
                 backgroundColor: p.color + '33',
                 borderColor: p.color,
                 boxShadow: `0 0 10px ${p.color}55`,
@@ -240,6 +301,36 @@ export const VendorDashboard: React.FC = () => {
               {p.label}
             </button>
           ))}
+
+          {/* Divider */}
+          <div className="w-px h-5 mx-1" style={{ background: 'var(--s-border-mid)' }} />
+
+          {/* VAR toggle pills */}
+          <span className="text-[10px] uppercase tracking-wider text-slate-600 font-bold mr-1">VAR:</span>
+          {[
+            { label: 'All',       value: '' },
+            { label: '✓ Has VAR', value: 'yes' },
+            { label: '✕ No VAR',  value: 'no' },
+          ].map(p => (
+            <button
+              key={p.value}
+              onClick={() => setHasVar(hasVar === p.value ? '' : p.value)}
+              className="px-3 py-1 rounded-full text-xs font-semibold border transition-all"
+              style={hasVar === p.value ? {
+                background: 'rgba(34,197,94,0.18)',
+                borderColor: 'rgba(34,197,94,0.6)',
+                color: '#22c55e',
+                boxShadow: '0 0 10px rgba(34,197,94,0.35)',
+              } : {
+                background: 'var(--s-input-bg)',
+                color: 'var(--s-text-dim)',
+                borderColor: 'var(--s-border)',
+              }}
+            >
+              {p.label}
+            </button>
+          ))}
+
           {hasFilters && (
             <button
               onClick={handleClearFilter}

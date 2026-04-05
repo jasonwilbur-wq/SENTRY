@@ -189,11 +189,11 @@ export const VendorCard3D: React.FC<VendorCard3DProps> = ({ vendor, onClick, dec
         <span className="text-[9px] font-black tracking-widest px-2 py-0.5 rounded-full border" style={risk.badgeStyle}>
           {risk.label}
         </span>
-        {/* VAR badge */}
+        {/* VAR badge with count */}
         {vendor.has_var && (
           <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border"
             style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e', borderColor: 'rgba(34,197,94,0.5)' }}>
-            ✓ VAR
+            ✓ {vendor.var_count > 1 ? `${vendor.var_count} VARs` : 'VAR'}
           </span>
         )}
         {/* Decision band */}

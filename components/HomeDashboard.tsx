@@ -330,7 +330,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({ onNavigate }) => {
       }}
     >
       {/* ── Welcome banner ──────────────────────────────────────────────── */}
-      <div className="mb-8">
+      <div className="mb-6">
         <div className="flex items-center gap-3 mb-1">
           <h2 className="text-3xl font-black tracking-tight" style={{ color: 'var(--s-text)' }}>
             Welcome to{' '}
@@ -345,6 +345,32 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({ onNavigate }) => {
           Walmart Enterprise Security's single source of truth for emerging-tech vendor risk.
           Select a module below to get started.
         </p>
+      </div>
+
+      {/* ── AI Disclaimer ──────────────────────────────────────────────── */}
+      <div
+        className="mb-8 rounded-xl px-5 py-4 flex gap-4 items-start"
+        style={{
+          background: 'rgba(255, 194, 32, 0.06)',
+          border: '1px solid rgba(255, 194, 32, 0.25)',
+        }}
+        role="note"
+        aria-label="AI use disclaimer"
+      >
+        <span className="text-lg shrink-0" aria-hidden>⚠️</span>
+        <div>
+          <p className="text-[11px] font-bold uppercase tracking-widest mb-1" style={{ color: '#FFC220' }}>
+            AI Notice — Internal Use Only
+          </p>
+          <p className="text-[11px] leading-relaxed" style={{ color: 'var(--s-text-muted)' }}>
+            SENTRY includes an AI-powered chat assistant intended exclusively for Walmart Emerging Technology
+            Security team members. <strong style={{ color: 'var(--s-text)' }}>Do not enter highly sensitive,
+            classified, personally identifiable, or regulated information</strong> (e.g. HIPAA, financial data,
+            or confidential vendor contract terms) into the chat. AI-generated responses are informational only
+            and do not constitute official security assessments, legal advice, or formal vendor decisions.
+            All outputs must be reviewed and validated by a qualified team member.
+          </p>
+        </div>
       </div>
 
       {/* ── Live KPI strip ──────────────────────────────────────────── */}

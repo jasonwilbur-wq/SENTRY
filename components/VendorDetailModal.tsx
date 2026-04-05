@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, 
   BarChart, Bar, XAxis, YAxis, Tooltip, Cell 
 } from 'recharts';
-import { Vendor, getDownloadUrl } from '../services/api';
+import { Vendor, VarReport, fetchVendorVarReports, getDownloadUrl } from '../services/api';
 
 interface VendorDetailModalProps {
   vendor: Vendor;
@@ -25,6 +25,172 @@ const TABS: { id: Tab; label: string }[] = [
 const RISK_COLOR: Record<string, string> = {
   Low: '#22c55e', Medium: '#eab308', High: '#f97316', Critical: '#ef4444',
 };
+
+// ── Decision band color helper ───────────────────────────────────────────────
+const BAND_COLOR: Record<string, string> = {
+  Advance: '#22c55e', 'Research Further': '#60a5fa', Defer: '#f97316', Reject: '#ef4444',
+};
+
+// ── DocsTab — fetches & displays ALL VAR reports for a vendor ─────────────────
+function DocsTab({ vendor }: { vendor: Vendor }) {
+  const [varReports, setVarReports] = useState<VarReport[]>([]);
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState(false);
+
+  useEffect(() => {
+    if (!vendor.has_var) { setLoading(false); return; }
+    fetchVendorVarReports(vendor.id)
+      .then(data => setVarReports(data.reports))
+      .catch(() => setError(true))
+      .finally(() => setLoading(false));
+  }, [vendor.id, vendor.has_var]);
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2].map(i => (
+          <div key={i} className="h-20 rounded-xl bg-slate-800/60 animate-pulse border border-slate-700/40" />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {/* Header with count */}
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+          VAR Reports
+          {varReports.length > 0 && (
+            <span
+              className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold"
+              style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }}
+            >
+              {varReports.length}
+            </span>
+          )}
+        </h3>
+      </div>
+
+      {/* VAR report list */}
+      {varReports.length > 0 ? (
+        varReports.map(report => {
+          const bandCol = BAND_COLOR[report.decision_band] ?? '#64748b';
+          const hasScores = report.overall_score !== null;
+          return (
+            <a
+              key={report.id}
+              href={getDownloadUrl(report.id)}
+              download
+              className="block p-4 bg-slate-900 border border-slate-700 hover:border-wmt-blue
+                         hover:shadow-[0_0_15px_rgba(0,83,226,0.2)] rounded-xl group transition-all"
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-lg bg-blue-900/20 border border-blue-900/50
+                                  flex items-center justify-center text-blue-400 shrink-0">
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-bold text-white group-hover:text-wmt-blue transition-colors text-sm
+                                  truncate max-w-[320px]">
+                      {report.filename || 'Vendor Assessment Report'}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                      <span className="text-xs text-slate-500">{report.report_date || 'Unknown date'}</span>
+                      <span className="text-slate-700">•</span>
+                      <span className="text-xs text-slate-500">{report.report_version}</span>
+                      <span className="text-slate-700">•</span>
+                      <span className="text-xs text-slate-500 italic">{report.match_method}</span>
+                      {/* Decision band pill */}
+                      {report.decision_band && (
+                        <>
+                          <span className="text-slate-700">•</span>
+                          <span
+                            className="text-[10px] font-bold px-1.5 py-0.5 rounded-full border"
+                            style={{
+                              background: `${bandCol}18`,
+                              color: bandCol,
+                              borderColor: `${bandCol}44`,
+                            }}
+                          >
+                            {report.decision_band}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                    {/* Score row */}
+                    {hasScores && (
+                      <div className="flex gap-3 mt-2 flex-wrap">
+                        {[
+                          ['Overall', report.overall_score],
+                          ['Compliance', report.compliance_score],
+                          ['Risk', report.risk_score],
+                          ['Maturity', report.maturity_score],
+                          ['Integration', report.integration_score],
+                          ['ROI', report.roi_score],
+                        ].filter(([, v]) => v != null).map(([label, val]) => (
+                          <span key={label as string} className="text-[10px]">
+                            <span className="text-slate-600">{label}:</span>{' '}
+                            <span className={`font-bold ${
+                              (val as number) >= 4 ? 'text-green-400' :
+                              (val as number) >= 3 ? 'text-yellow-400' : 'text-red-400'
+                            }`}>
+                              {(val as number).toFixed(1)}
+                            </span>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 text-slate-500 group-hover:text-wmt-blue
+                                transition-colors shrink-0 ml-4">
+                  <span className="text-xs font-semibold uppercase tracking-wider hidden sm:inline">Download</span>
+                  <svg className="w-4 h-4 group-hover:translate-y-0.5 transition-transform"
+                       fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                  </svg>
+                </div>
+              </div>
+            </a>
+          );
+        })
+      ) : (
+        <div className="p-6 bg-slate-900/50 border border-dashed border-slate-800 rounded-xl text-center">
+          <p className="text-slate-400 font-medium mb-1">No VAR Reports Found</p>
+          <p className="text-slate-600 text-xs">This vendor has not been fully assessed yet.</p>
+        </div>
+      )}
+
+      {error && (
+        <p className="text-xs text-red-400">Failed to load VAR reports. Backend may be offline.</p>
+      )}
+
+      {/* NDA placeholder */}
+      <div className="p-4 bg-slate-900/30 border border-slate-800 rounded-xl flex items-center
+                      justify-between opacity-60 hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-lg bg-slate-800 flex items-center justify-center text-slate-500 shrink-0">
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+          </div>
+          <div>
+            <p className="font-bold text-slate-400 text-sm">Non-Disclosure Agreement (NDA)</p>
+            <p className="text-xs text-slate-600">Status: Unknown</p>
+          </div>
+        </div>
+        <span className="text-xs text-slate-600 italic px-3 py-1 bg-slate-800 rounded-full">Not Linked</span>
+      </div>
+    </div>
+  );
+}
 
 export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor, onClose }) => {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
@@ -498,65 +664,9 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor, on
             </div>
           )}
 
-          {/* ── TAB: DOCUMENTS ──────────────────────────────────────────────── */}
+          {/* ── TAB: DOCUMENTS ────────────────────────────────────────────────────── */}
           {activeTab === 'docs' && (
-            <div className="space-y-4">
-              {/* VAR Report Download */}
-              {vendor.has_var && vendor.latest_var_id ? (
-                <a 
-                  href={getDownloadUrl(vendor.latest_var_id)}
-                  download
-                  className="block p-4 bg-slate-900 border border-slate-700 hover:border-wmt-blue hover:shadow-[0_0_15px_rgba(0,83,226,0.2)] rounded-xl group transition-all"
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-lg bg-blue-900/20 border border-blue-900/50 flex items-center justify-center text-blue-400 shrink-0">
-                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                      </div>
-                      <div>
-                        <p className="font-bold text-white group-hover:text-wmt-blue transition-colors text-sm">
-                          Vendor Assessment Report (VAR)
-                        </p>
-                        <div className="flex items-center gap-2 mt-1">
-                           <span className="text-xs text-slate-500">Version 1.0</span>
-                           <span className="text-slate-700">•</span>
-                           <span className="text-xs text-slate-500">{vendor.last_assessed || 'Recent'}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 text-slate-500 group-hover:text-wmt-blue transition-colors">
-                      <span className="text-xs font-semibold uppercase tracking-wider">Download</span>
-                      <svg className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                      </svg>
-                    </div>
-                  </div>
-                </a>
-              ) : (
-                <div className="p-6 bg-slate-900/50 border border-dashed border-slate-800 rounded-xl text-center">
-                    <p className="text-slate-400 font-medium mb-1">No VAR Report Found</p>
-                    <p className="text-slate-600 text-xs">This vendor has not been fully assessed yet.</p>
-                </div>
-              )}
-              
-              {/* Placeholder for NDA/Contracts */}
-              <div className="p-4 bg-slate-900/30 border border-slate-800 rounded-xl flex items-center justify-between opacity-60 hover:opacity-100 transition-opacity">
-                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-lg bg-slate-800 flex items-center justify-center text-slate-500 shrink-0">
-                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="font-bold text-slate-400 text-sm">Non-Disclosure Agreement (NDA)</p>
-                      <p className="text-xs text-slate-600">Status: Unknown</p>
-                    </div>
-                 </div>
-                 <span className="text-xs text-slate-600 italic px-3 py-1 bg-slate-800 rounded-full">Not Linked</span>
-              </div>
-            </div>
+            <DocsTab vendor={vendor} />
           )}
 
         </div>

@@ -167,7 +167,7 @@ export const ChatAssistant: React.FC = () => {
               />
             </h3>
             <p className="text-[9px] uppercase tracking-widest" style={{ color: 'var(--s-text-dim)' }}>
-              Powered by Google Gemini · Context-Aware
+              AI-Powered · Context-Aware · Internal Use Only
             </p>
           </div>
         </div>
@@ -231,6 +231,22 @@ export const ChatAssistant: React.FC = () => {
           </div>
         )}
         <div ref={messagesEndRef} />
+      </div>
+
+      {/* Disclaimer strip */}
+      <div
+        className="px-3 py-2 shrink-0 flex items-start gap-2"
+        style={{
+          borderTop: '1px solid rgba(255,194,32,0.2)',
+          background: 'rgba(255,194,32,0.04)',
+        }}
+        role="note"
+      >
+        <span className="text-[9px] shrink-0 mt-px" aria-hidden>⚠️</span>
+        <p className="text-[9px] leading-relaxed" style={{ color: 'var(--s-text-dim)' }}>
+          Do not enter highly sensitive, classified, or personally identifiable information.
+          Responses are informational only — not official assessments or decisions.
+        </p>
       </div>
 
       {/* Input */}

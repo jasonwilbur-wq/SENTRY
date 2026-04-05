@@ -98,6 +98,7 @@ export interface Vendor {
   last_assessed: string;
   risk_level: 'Low' | 'Medium' | 'High' | 'Critical';
   has_var: boolean;
+  var_count: number;              // Total VAR reports linked to this vendor
   latest_var_id: string | null;   // Phase 2 — null when vendor has no VARs yet
   all_products: VendorProduct[];
   
@@ -128,6 +129,9 @@ export interface Vendor {
 export interface VendorsParams {
   category?: string;
   search?: string;
+  risk_level?: string;
+  has_var?: 'yes' | 'no' | '';
+  sort?: string;
   page?: number;
   page_size?: number;
 }
@@ -143,9 +147,12 @@ export interface VendorsResponse {
 export async function fetchVendors(params?: VendorsParams): Promise<VendorsResponse> {
   const qs = new URLSearchParams();
   if (params?.category && params.category !== 'All') qs.set('category', params.category);
-  if (params?.search)    qs.set('search',    params.search);
-  if (params?.page)      qs.set('page',      String(params.page));
-  if (params?.page_size) qs.set('page_size', String(params.page_size));
+  if (params?.search)     qs.set('search',     params.search);
+  if (params?.risk_level) qs.set('risk_level', params.risk_level);
+  if (params?.has_var)    qs.set('has_var',    params.has_var);
+  if (params?.sort)       qs.set('sort',       params.sort);
+  if (params?.page)       qs.set('page',       String(params.page));
+  if (params?.page_size)  qs.set('page_size',  String(params.page_size));
   const query = qs.toString() ? `?${qs}` : '';
   return request(`/api/vendors${query}`);
 }

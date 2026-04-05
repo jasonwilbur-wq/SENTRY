@@ -1,13 +1,14 @@
 {
   "id": "regulatory-briefing",
   "title": "SENTRY Regulatory Intelligence Briefing \u2014 Global Security & Emerging Technology",
-  "summary": "As of March 2026, SENTRY's regulatory tracker covers 362 unique obligations across 57 jurisdictions, spanning AI, Biometrics, ALPR/LPR, Drones/UAS, and Data Privacy technologies. 85 Red and 186 Amber obligations require immediate attention. Top 3 actions: (1) Validate AI governance controls against EU AI Act and state-level RAISE Act requirements; (2) Review ALPR/LPR data retention compliance for enacted state laws; (3) Confirm biometric consent and disclosure posture across all US store deployments.",
-  "created_at": "2026-03-02T16:35:33Z",
-  "data_through": "2026-02-28",
+  "summary": "As of March 2026, SENTRY's regulatory tracker covers 429 unique obligations across 60 jurisdictions. 98 Red and 219 Amber obligations require immediate attention.",
+  "created_at": "2026-04-05T03:05:49Z",
+  "data_through": "2026-03-31",
   "jurisdictions": [
     "Alabama, USA",
     "Arizona, USA",
     "California, USA",
+    "Cheyenne, Wy",
     "China",
     "Colorado, USA",
     "Connecticut, USA",
@@ -46,12 +47,14 @@
     "Ontario",
     "Ontario, Canada",
     "Oregon, USA",
+    "Pennsylvania, USA",
     "Prosser, Wa",
     "San Francisco",
     "San Jose, Ca",
     "Santa Cruz, Ca",
     "Scotland",
     "South Korea",
+    "Spain",
     "Tennessee, USA",
     "Texas, USA",
     "Turkey",
@@ -64,22 +67,24 @@
     "Weston, Mo"
   ],
   "stats": {
-    "total_obligations": 362,
-    "red": 85,
-    "amber": 186,
-    "yellow": 82,
-    "green": 9,
-    "enacted": 145,
-    "proposed": 217,
+    "total_obligations": 429,
+    "red": 98,
+    "amber": 219,
+    "yellow": 93,
+    "green": 19,
+    "enacted": 163,
+    "proposed": 266,
     "tech_breakdown": {
-      "AI": 107,
-      "Data Privacy": 73,
-      "Biometrics": 60,
-      "ALPR/LPR": 53,
-      "Drones/UAS": 28,
-      "Automated Decision Systems": 17,
-      "Surveillance": 6,
-      "Audio Recording/Analytics": 5,
+      "AI": 130,
+      "Data Privacy": 81,
+      "Biometrics": 66,
+      "ALPR/LPR": 64,
+      "Drones/UAS": 32,
+      "Automated Decision Systems": 19,
+      "Other": 9,
+      "Surveillance": 8,
+      "Audio Recording/Analytics": 7,
+      "Robotics": 2,
       "Cyber-Physical": 2,
       "ORC": 1,
       "Weapons Detection": 1,
@@ -87,11 +92,9 @@
       "Hardware / Communications": 1,
       "LiDAR": 1,
       "Access Control / Theft": 1,
-      "Robotics": 1,
       "Access Control": 1,
       "Cybersecurity": 1,
-      "Digital ID": 1,
-      "Other": 1
+      "Digital ID": 1
     }
   },
   "obligations": [
@@ -3786,6 +3789,554 @@
       ]
     },
     {
+      "id": "REG-A005FD22",
+      "jurisdiction": "United States (Federal)",
+      "title": "State Privacy Laws",
+      "summary": "Illinois, Massachusetts, Minnesota, New York, and Washington have enacted privacy laws blocking or restricting license plate readers[cite: 551, 553].",
+      "tech_category": "ALPR/LPR",
+      "effective_date": "2026-03-08",
+      "deadline": null,
+      "criticality": 5,
+      "evidence_status": "Partially",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 4,
+        "score": 20,
+        "rag": "Red",
+        "reason": "Tech=ALPR/LPR, Status=Enacted, Juris=United States (Federal): I=5/5 L=4/5 S=20"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF PR.AC-3",
+          "description": "ALPR/LPR compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-ALPR-01",
+          "description": "Internal ALPR/LPR governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Illinois, Massachusetts, Minnesota, New York, and Washington have enacted privacy laws blocking or restricting license plate readers[cite: 551, 553].",
+      "status": "Enacted",
+      "provenance": [
+        "regulatory_intel_analyzed_2026-03-08.csv"
+      ]
+    },
+    {
+      "id": "REG-B2084E29",
+      "jurisdiction": "United States (Federal)",
+      "title": "Federal Statute (War Dept.)",
+      "summary": "The War Dept. formally labeled AI firm Anthropic a national security threat and designated it a supply-chain risk[cite: 175, 177].",
+      "tech_category": "AI",
+      "effective_date": "2026-03-08",
+      "deadline": null,
+      "criticality": 5,
+      "evidence_status": "Partially",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 4,
+        "score": 20,
+        "rag": "Red",
+        "reason": "Tech=AI, Status=Enacted, Juris=United States (Federal): I=5/5 L=4/5 S=20"
+      },
+      "controls": [
+        {
+          "control_id": "NIST AI RMF GOVERN-1.1",
+          "description": "AI compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-AI-01",
+          "description": "Internal AI governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "The War Dept. formally labeled AI firm Anthropic a national security threat and designated it a supply-chain risk[cite: 175, 177].",
+      "status": "Enacted",
+      "provenance": [
+        "regulatory_intel_analyzed_2026-03-08.csv"
+      ]
+    },
+    {
+      "id": "REG-6A693D69",
+      "jurisdiction": "United States (Federal)",
+      "title": "National Cyber Strategy",
+      "summary": "White House strategy emphasizing cybersecurity in infrastructure and technological supply chains; references cryptocurrencies. [cite: 395, 397, 401]",
+      "tech_category": "AI",
+      "effective_date": "2026-03-09",
+      "deadline": null,
+      "criticality": 5,
+      "evidence_status": "Partially",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 4,
+        "score": 20,
+        "rag": "Red",
+        "reason": "Tech=AI, Status=Enacted, Juris=United States (Federal): I=5/5 L=4/5 S=20"
+      },
+      "controls": [
+        {
+          "control_id": "NIST AI RMF GOVERN-1.1",
+          "description": "AI compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-AI-01",
+          "description": "Internal AI governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "White House strategy emphasizing cybersecurity in infrastructure and technological supply chains; references cryptocurrencies. [cite: 395, 397, 401]",
+      "status": "Enacted",
+      "provenance": [
+        "regulatory_intel_analyzed_2026-03-09.csv"
+      ]
+    },
+    {
+      "id": "REG-CEED01E5",
+      "jurisdiction": "European Union",
+      "title": "EU AI Act (Regulation 2024/1689)",
+      "summary": "Full enforceability for foundations models and digital enforcement begins August 2026.",
+      "tech_category": "AI",
+      "effective_date": "2024-05-01",
+      "deadline": null,
+      "criticality": 5,
+      "evidence_status": "Partially",
+      "evidence_links": [
+        "https://www.bruegel.org/news/eu-digital-enforcement-authority"
+      ],
+      "risk": {
+        "impact": 5,
+        "likelihood": 4,
+        "score": 20,
+        "rag": "Red",
+        "reason": "Tech=AI, Status=Enacted, Juris=European Union: I=5/5 L=4/5 S=20"
+      },
+      "controls": [
+        {
+          "control_id": "NIST AI RMF GOVERN-1.1",
+          "description": "AI compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": "https://www.bruegel.org/news/eu-digital-enforcement-authority"
+        },
+        {
+          "control_id": "GS-AI-01",
+          "description": "Internal AI governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Full enforceability for foundations models and digital enforcement begins August 2026.",
+      "status": "Enacted",
+      "provenance": [
+        "regulatory_tech_tracker_2026-03-06_v2.csv"
+      ]
+    },
+    {
+      "id": "REG-0BD8E7EF",
+      "jurisdiction": "New Mexico, USA",
+      "title": "ALPR Regulation Bill",
+      "summary": "Prevents sharing ALPR data with out-of-state agencies for immigration enforcement.",
+      "tech_category": "ALPR/LPR",
+      "effective_date": "2026-03-07",
+      "deadline": null,
+      "criticality": 5,
+      "evidence_status": "Partially",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 4,
+        "score": 20,
+        "rag": "Red",
+        "reason": "Tech=ALPR/LPR, Status=Enacted, Juris=New Mexico, USA: I=5/5 L=4/5 S=20"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF PR.AC-3",
+          "description": "ALPR/LPR compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-ALPR-01",
+          "description": "Internal ALPR/LPR governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Prevents sharing ALPR data with out-of-state agencies for immigration enforcement.",
+      "status": "Enacted",
+      "provenance": [
+        "regulatory_tech_tracker_2026-03-07.csv"
+      ]
+    },
+    {
+      "id": "REG-EAC87AC9",
+      "jurisdiction": "United States (Federal)",
+      "title": "Executive Order No. 14179",
+      "summary": "Imposes federal oversight of AI models while prioritizing American leadership over strict regulation.",
+      "tech_category": "AI",
+      "effective_date": "2025-12-01",
+      "deadline": null,
+      "criticality": 5,
+      "evidence_status": "Partially",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 4,
+        "score": 20,
+        "rag": "Red",
+        "reason": "Tech=AI, Status=Enacted, Juris=United States (Federal): I=5/5 L=4/5 S=20"
+      },
+      "controls": [
+        {
+          "control_id": "NIST AI RMF GOVERN-1.1",
+          "description": "AI compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-AI-01",
+          "description": "Internal AI governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Imposes federal oversight of AI models while prioritizing American leadership over strict regulation.",
+      "status": "Enacted",
+      "provenance": [
+        "policy_tracker_2026-03-02.csv"
+      ]
+    },
+    {
+      "id": "REG-2788B722",
+      "jurisdiction": "United States (Federal)",
+      "title": "Anthropic Supply Chain Risk Designation",
+      "summary": "US government declared Anthropic a supply chain risk to national security citing surveillance concerns.",
+      "tech_category": "AI",
+      "effective_date": "2026-03-02",
+      "deadline": null,
+      "criticality": 5,
+      "evidence_status": "Partially",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 4,
+        "score": 20,
+        "rag": "Red",
+        "reason": "Tech=AI, Status=Enacted, Juris=United States (Federal): I=5/5 L=4/5 S=20"
+      },
+      "controls": [
+        {
+          "control_id": "NIST AI RMF GOVERN-1.1",
+          "description": "AI compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-AI-01",
+          "description": "Internal AI governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "US government declared Anthropic a supply chain risk to national security citing surveillance concerns.",
+      "status": "Enacted",
+      "provenance": [
+        "policy_tracker_2026-03-02.csv"
+      ]
+    },
+    {
+      "id": "REG-EA9FE03D",
+      "jurisdiction": "Spain",
+      "title": "Spanish DPA Guidance on AI Images (GDPR)",
+      "summary": "Clarifies that inputting images into AI systems triggers GDPR compliance obligations.",
+      "tech_category": "AI",
+      "effective_date": "2026-03-02",
+      "deadline": null,
+      "criticality": 5,
+      "evidence_status": "Partially",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 4,
+        "score": 20,
+        "rag": "Red",
+        "reason": "Tech=AI, Status=Enacted, Juris=Spain: I=5/5 L=4/5 S=20"
+      },
+      "controls": [
+        {
+          "control_id": "NIST AI RMF GOVERN-1.1",
+          "description": "AI compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-AI-01",
+          "description": "Internal AI governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Clarifies that inputting images into AI systems triggers GDPR compliance obligations.",
+      "status": "Enacted",
+      "provenance": [
+        "policy_tracker_2026-03-02.csv"
+      ]
+    },
+    {
+      "id": "REG-C4537172",
+      "jurisdiction": "United States (Federal)",
+      "title": "Drone Export Controls Reform",
+      "summary": "Commerce Department streamlined drone export controls to simplify trade with US allies.",
+      "tech_category": "Drones/UAS",
+      "effective_date": "2026-03-02",
+      "deadline": null,
+      "criticality": 5,
+      "evidence_status": "Partially",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 4,
+        "score": 20,
+        "rag": "Red",
+        "reason": "Tech=Drones/UAS, Status=Enacted, Juris=United States (Federal): I=5/5 L=4/5 S=20"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF PR.IP-1",
+          "description": "Drones/UAS compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-UAS-01",
+          "description": "Internal Drones/UAS governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Commerce Department streamlined drone export controls to simplify trade with US allies.",
+      "status": "Enacted",
+      "provenance": [
+        "policy_tracker_2026-03-02.csv"
+      ]
+    },
+    {
+      "id": "REG-416E31FB",
+      "jurisdiction": "United States (Federal)",
+      "title": "President Trump Executive Order on AI",
+      "summary": "Ensures a National Policy Framework for Artificial Intelligence; demands US government agencies phase out specific AI models over mass surveillance risks.",
+      "tech_category": "AI",
+      "effective_date": "2026-03-03",
+      "deadline": null,
+      "criticality": 5,
+      "evidence_status": "Partially",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 4,
+        "score": 20,
+        "rag": "Red",
+        "reason": "Tech=AI, Status=Enacted, Juris=United States (Federal): I=5/5 L=4/5 S=20"
+      },
+      "controls": [
+        {
+          "control_id": "NIST AI RMF GOVERN-1.1",
+          "description": "AI compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-AI-01",
+          "description": "Internal AI governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Ensures a National Policy Framework for Artificial Intelligence; demands US government agencies phase out specific AI models over mass surveillance risks.",
+      "status": "Enacted",
+      "provenance": [
+        "laws_regulations_tracker_2026-03-03.csv"
+      ]
+    },
+    {
+      "id": "REG-50895B53",
+      "jurisdiction": "United States (Federal)",
+      "title": "US Treasury AI Risk Management Framework (FS AI RMF)",
+      "summary": "Treasury released AI Risk Management Resources operationalizing the NIST AI Risk Management Framework for financial institutions.",
+      "tech_category": "AI",
+      "effective_date": "2026-03-03",
+      "deadline": null,
+      "criticality": 5,
+      "evidence_status": "Partially",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 4,
+        "score": 20,
+        "rag": "Red",
+        "reason": "Tech=AI, Status=Enacted, Juris=United States (Federal): I=5/5 L=4/5 S=20"
+      },
+      "controls": [
+        {
+          "control_id": "NIST AI RMF GOVERN-1.1",
+          "description": "AI compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-AI-01",
+          "description": "Internal AI governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Treasury released AI Risk Management Resources operationalizing the NIST AI Risk Management Framework for financial institutions.",
+      "status": "Enacted",
+      "provenance": [
+        "laws_regulations_tracker_2026-03-03.csv"
+      ]
+    },
+    {
+      "id": "REG-65BFEFC9",
+      "jurisdiction": "Virginia, USA",
+      "title": "Virginia ALPR Regulations",
+      "summary": "State report reveals multiple law enforcement agencies are violating state rules and compliance requirements regarding the use of automatic license plate readers.",
+      "tech_category": "ALPR/LPR",
+      "effective_date": "2026-03-03",
+      "deadline": null,
+      "criticality": 5,
+      "evidence_status": "Partially",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 4,
+        "score": 20,
+        "rag": "Red",
+        "reason": "Tech=ALPR/LPR, Status=Enacted, Juris=Virginia, USA: I=5/5 L=4/5 S=20"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF PR.AC-3",
+          "description": "ALPR/LPR compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-ALPR-01",
+          "description": "Internal ALPR/LPR governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "State report reveals multiple law enforcement agencies are violating state rules and compliance requirements regarding the use of automatic license plate readers.",
+      "status": "Enacted",
+      "provenance": [
+        "laws_regulations_tracker_2026-03-03.csv"
+      ]
+    },
+    {
+      "id": "REG-E57C1DB2",
+      "jurisdiction": "Illinois, USA",
+      "title": "Illinois Biometric Information Privacy Act (BIPA)",
+      "summary": "$4.7M class action settlement reached against Neutrogena (Kenvue Inc.) over Skin360 app allegedly violating BIPA written consent rules.",
+      "tech_category": "Biometrics",
+      "effective_date": "2026-03-03",
+      "deadline": null,
+      "criticality": 5,
+      "evidence_status": "Partially",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 4,
+        "score": 20,
+        "rag": "Red",
+        "reason": "Tech=Biometrics, Status=Enacted, Juris=Illinois, USA: I=5/5 L=4/5 S=20"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF PR.AC-1",
+          "description": "Biometrics compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-BIO-01",
+          "description": "Internal Biometrics governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "$4.7M class action settlement reached against Neutrogena (Kenvue Inc.) over Skin360 app allegedly violating BIPA written consent rules.",
+      "status": "Enacted",
+      "provenance": [
+        "laws_regulations_tracker_2026-03-03.csv"
+      ]
+    },
+    {
       "id": "REG-3132D450",
       "jurisdiction": "California, USA",
       "title": "Board of Supervisors Motion",
@@ -4865,6 +5416,90 @@
       "status": "Enacted",
       "provenance": [
         "Regulatory Data - 202602_CLEAN.xlsx:row174"
+      ]
+    },
+    {
+      "id": "REG-786015C8",
+      "jurisdiction": "New York, USA",
+      "title": "Dynamic Pricing Law",
+      "summary": "New York became the first state to pass a law regulating dynamic pricing[cite: 547, 549].",
+      "tech_category": "Data Privacy",
+      "effective_date": "2026-03-08",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Partially",
+      "evidence_links": [],
+      "risk": {
+        "impact": 4,
+        "likelihood": 4,
+        "score": 16,
+        "rag": "Amber",
+        "reason": "Tech=Data Privacy, Status=Enacted, Juris=New York, USA: I=4/5 L=4/5 S=16"
+      },
+      "controls": [
+        {
+          "control_id": "ISO 27001 A.18.1.4",
+          "description": "Data Privacy compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-PRIV-01",
+          "description": "Internal Data Privacy governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "New York became the first state to pass a law regulating dynamic pricing[cite: 547, 549].",
+      "status": "Enacted",
+      "provenance": [
+        "regulatory_intel_analyzed_2026-03-08.csv"
+      ]
+    },
+    {
+      "id": "REG-F3FDA86C",
+      "jurisdiction": "Connecticut, USA",
+      "title": "Data Privacy Act",
+      "summary": "Categorizes biometric and neural data as sensitive; requiring stricter consent and handling for data privacy. [cite: 71, 75]",
+      "tech_category": "Data Privacy",
+      "effective_date": "2026-03-09",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Partially",
+      "evidence_links": [],
+      "risk": {
+        "impact": 4,
+        "likelihood": 4,
+        "score": 16,
+        "rag": "Amber",
+        "reason": "Tech=Data Privacy, Status=Enacted, Juris=Connecticut, USA: I=4/5 L=4/5 S=16"
+      },
+      "controls": [
+        {
+          "control_id": "ISO 27001 A.18.1.4",
+          "description": "Data Privacy compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-PRIV-01",
+          "description": "Internal Data Privacy governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Categorizes biometric and neural data as sensitive; requiring stricter consent and handling for data privacy. [cite: 71, 75]",
+      "status": "Enacted",
+      "provenance": [
+        "regulatory_intel_analyzed_2026-03-09.csv"
       ]
     },
     {
@@ -11848,6 +12483,1324 @@
       ]
     },
     {
+      "id": "REG-D50A346D",
+      "jurisdiction": "United States (Federal)",
+      "title": "Bipartisan Senate Bill",
+      "summary": "The Department of Transportation would be prohibited from entering contracts that involve the use of light detection and ranging (LiDAR) devices from Chinese vendors[cite: 348, 350].",
+      "tech_category": "Drones/UAS",
+      "effective_date": "2026-03-08",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=Drones/UAS, Status=Proposed, Juris=United States (Federal): I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF PR.IP-1",
+          "description": "Drones/UAS compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-UAS-01",
+          "description": "Internal Drones/UAS governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "The Department of Transportation would be prohibited from entering contracts that involve the use of light detection and ranging (LiDAR) devices from Chinese vendors[cite: 348, 350].",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_intel_analyzed_2026-03-08.csv"
+      ]
+    },
+    {
+      "id": "REG-27B3F9AA",
+      "jurisdiction": "United States (Federal)",
+      "title": "AI Chip Export Rules",
+      "summary": "The Trump administration is reviewing rules to control exports of AI chips more closely, requiring security guarantees for data centers and limiting direct exports to China[cite: 445, 447, 449, 451].",
+      "tech_category": "AI",
+      "effective_date": "2026-03-08",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=AI, Status=Proposed, Juris=United States (Federal): I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "NIST AI RMF GOVERN-1.1",
+          "description": "AI compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-AI-01",
+          "description": "Internal AI governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "The Trump administration is reviewing rules to control exports of AI chips more closely, requiring security guarantees for data centers and limiting direct exports to China[cite: 445, 447, 449, 451].",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_intel_analyzed_2026-03-08.csv"
+      ]
+    },
+    {
+      "id": "REG-DDF5734B",
+      "jurisdiction": "United States (Federal)",
+      "title": "DHS Travel Records System",
+      "summary": "The Department of Homeland Security wants to build a system to surveil Americans' travel records for law enforcement queries[cite: 555, 557].",
+      "tech_category": "Data Privacy",
+      "effective_date": "2026-03-08",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=Data Privacy, Status=Proposed, Juris=United States (Federal): I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "ISO 27001 A.18.1.4",
+          "description": "Data Privacy compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-PRIV-01",
+          "description": "Internal Data Privacy governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "The Department of Homeland Security wants to build a system to surveil Americans' travel records for law enforcement queries[cite: 555, 557].",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_intel_analyzed_2026-03-08.csv"
+      ]
+    },
+    {
+      "id": "REG-B9C884CA",
+      "jurisdiction": "United States (Federal)",
+      "title": "10 U.S.C. \u00a7 3252 (Supply Chain Risk)",
+      "summary": "Designates entities as national security supply chain risks if they enable potential sabotage or malicious functions by adversaries. [cite: 466, 468]",
+      "tech_category": "AI",
+      "effective_date": "2026-03-09",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=AI, Status=Proposed, Juris=United States (Federal): I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "NIST AI RMF GOVERN-1.1",
+          "description": "AI compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-AI-01",
+          "description": "Internal AI governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Designates entities as national security supply chain risks if they enable potential sabotage or malicious functions by adversaries. [cite: 466, 468]",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_intel_analyzed_2026-03-09.csv"
+      ]
+    },
+    {
+      "id": "REG-742EC187",
+      "jurisdiction": "New York, USA",
+      "title": "Meta Smart Glasses Lawsuit",
+      "summary": "Legal challenge against Meta for potential facial recognition features in smart glasses under NY privacy standards. [cite: 104, 106]",
+      "tech_category": "Biometrics",
+      "effective_date": "2026-03-09",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=Biometrics, Status=Proposed, Juris=New York, USA: I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF PR.AC-1",
+          "description": "Biometrics compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-BIO-01",
+          "description": "Internal Biometrics governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Legal challenge against Meta for potential facial recognition features in smart glasses under NY privacy standards. [cite: 104, 106]",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_intel_analyzed_2026-03-09.csv"
+      ]
+    },
+    {
+      "id": "REG-1D868D40",
+      "jurisdiction": "United States (Federal)",
+      "title": "Flock Contract Cancellation",
+      "summary": "Denver committee to take up canceling license plate reader contract over privacy and federal data-sharing concerns. [cite: 318, 320]",
+      "tech_category": "ALPR/LPR",
+      "effective_date": "2026-03-09",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=ALPR/LPR, Status=Proposed, Juris=United States (Federal): I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF PR.AC-3",
+          "description": "ALPR/LPR compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-ALPR-01",
+          "description": "Internal ALPR/LPR governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Denver committee to take up canceling license plate reader contract over privacy and federal data-sharing concerns. [cite: 318, 320]",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_intel_analyzed_2026-03-09.csv"
+      ]
+    },
+    {
+      "id": "REG-2A327966",
+      "jurisdiction": "United States (Federal)",
+      "title": "Flock Policy Review",
+      "summary": "City officials reviewing data collection and storage policies for license plate reader cameras due to privacy pushback. [cite: 313, 315]",
+      "tech_category": "ALPR/LPR",
+      "effective_date": "2026-03-09",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=ALPR/LPR, Status=Proposed, Juris=United States (Federal): I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF PR.AC-3",
+          "description": "ALPR/LPR compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-ALPR-01",
+          "description": "Internal ALPR/LPR governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "City officials reviewing data collection and storage policies for license plate reader cameras due to privacy pushback. [cite: 313, 315]",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_intel_analyzed_2026-03-09.csv"
+      ]
+    },
+    {
+      "id": "REG-3D6CFBC8",
+      "jurisdiction": "United States (Federal)",
+      "title": "Online Age-Verification Laws",
+      "summary": "Roughly half of U.S. states enacting or advancing laws requiring facial scans or ID for age verification, raising surveillance concerns. [cite: 214, 216]",
+      "tech_category": "Data Privacy",
+      "effective_date": "2026-03-09",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=Data Privacy, Status=Proposed, Juris=United States (Federal): I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "ISO 27001 A.18.1.4",
+          "description": "Data Privacy compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-PRIV-01",
+          "description": "Internal Data Privacy governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Roughly half of U.S. states enacting or advancing laws requiring facial scans or ID for age verification, raising surveillance concerns. [cite: 214, 216]",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_intel_analyzed_2026-03-09.csv"
+      ]
+    },
+    {
+      "id": "REG-1B3D5A32",
+      "jurisdiction": "European Union",
+      "title": "EU AI Act / GDPR",
+      "summary": "Legal barriers for fully automated AI triage systems requiring compliance with both data privacy and AI safety frameworks. [cite: 295, 297]",
+      "tech_category": "AI",
+      "effective_date": "2026-03-09",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=AI, Status=Proposed, Juris=European Union: I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "NIST AI RMF GOVERN-1.1",
+          "description": "AI compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-AI-01",
+          "description": "Internal AI governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Legal barriers for fully automated AI triage systems requiring compliance with both data privacy and AI safety frameworks. [cite: 295, 297]",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_intel_analyzed_2026-03-09.csv"
+      ]
+    },
+    {
+      "id": "REG-636F076A",
+      "jurisdiction": "United States (Federal)",
+      "title": "Grocery Store Surveillance Report (PIRG)",
+      "summary": "Warning against expansion of facial recognition in grocery stores for scanning faces at the end of aisles.",
+      "tech_category": "Biometrics",
+      "effective_date": "2026-03-06",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [
+        "https://pirg.org/news/facial-recognition-grocery-stores-problem"
+      ],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=Biometrics, Status=Proposed, Juris=United States (Federal): I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF PR.AC-1",
+          "description": "Biometrics compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": "https://pirg.org/news/facial-recognition-grocery-stores-problem"
+        },
+        {
+          "control_id": "GS-BIO-01",
+          "description": "Internal Biometrics governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Warning against expansion of facial recognition in grocery stores for scanning faces at the end of aisles.",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_tech_tracker_2026-03-06_v2.csv"
+      ]
+    },
+    {
+      "id": "REG-AE978B87",
+      "jurisdiction": "United States (Federal)",
+      "title": "LiDAR DOT Bill",
+      "summary": "Bipartisan bill to stop the Department of Transportation from using certain LiDAR technologies.",
+      "tech_category": "Drones/UAS",
+      "effective_date": "2026-03-06",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [
+        "https://www.budd.senate.gov/news/budd-bill-to-stop-dot-lidar"
+      ],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=Drones/UAS, Status=Proposed, Juris=United States (Federal): I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF PR.IP-1",
+          "description": "Drones/UAS compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": "https://www.budd.senate.gov/news/budd-bill-to-stop-dot-lidar"
+        },
+        {
+          "control_id": "GS-UAS-01",
+          "description": "Internal Drones/UAS governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Bipartisan bill to stop the Department of Transportation from using certain LiDAR technologies.",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_tech_tracker_2026-03-06_v2.csv"
+      ]
+    },
+    {
+      "id": "REG-CE27D98B",
+      "jurisdiction": "United States (Federal)",
+      "title": "Los Angeles License Plate Ordinance",
+      "summary": "Local demand for the removal of AI license plate surveillance systems within Los Angeles.",
+      "tech_category": "ALPR/LPR",
+      "effective_date": "2026-03-06",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [
+        "https://www.uscannenbergmedia.com/2026/03/la-license-plate-surveillance"
+      ],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=ALPR/LPR, Status=Proposed, Juris=United States (Federal): I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF PR.AC-3",
+          "description": "ALPR/LPR compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": "https://www.uscannenbergmedia.com/2026/03/la-license-plate-surveillance"
+        },
+        {
+          "control_id": "GS-ALPR-01",
+          "description": "Internal ALPR/LPR governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Local demand for the removal of AI license plate surveillance systems within Los Angeles.",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_tech_tracker_2026-03-06_v2.csv"
+      ]
+    },
+    {
+      "id": "REG-C37F7E63",
+      "jurisdiction": "United States (Federal)",
+      "title": "EO: National Policy Framework for AI",
+      "summary": "White House Executive Order focused on ensuring a national policy framework for AI safety and development.",
+      "tech_category": "AI",
+      "effective_date": "2025-12-11",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [
+        "https://www.jdsupra.com/legalnews/march-2026-federal-deadlines-ai-regulatory"
+      ],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=AI, Status=Proposed, Juris=United States (Federal): I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "NIST AI RMF GOVERN-1.1",
+          "description": "AI compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": "https://www.jdsupra.com/legalnews/march-2026-federal-deadlines-ai-regulatory"
+        },
+        {
+          "control_id": "GS-AI-01",
+          "description": "Internal AI governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "White House Executive Order focused on ensuring a national policy framework for AI safety and development.",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_tech_tracker_2026-03-06_v2.csv"
+      ]
+    },
+    {
+      "id": "REG-FC2B379B",
+      "jurisdiction": "United States (Federal)",
+      "title": "EO: Preemption of State AI Laws",
+      "summary": "Reported Executive Order designed to block states from individually regulating AI to ensure federal consistency.",
+      "tech_category": "AI",
+      "effective_date": "2026-03-04",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [
+        "https://www.politico.com/news/trump-ai-executive-order"
+      ],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=AI, Status=Proposed, Juris=United States (Federal): I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "NIST AI RMF GOVERN-1.1",
+          "description": "AI compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": "https://www.politico.com/news/trump-ai-executive-order"
+        },
+        {
+          "control_id": "GS-AI-01",
+          "description": "Internal AI governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Reported Executive Order designed to block states from individually regulating AI to ensure federal consistency.",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_tech_tracker_2026-03-06_v2.csv"
+      ]
+    },
+    {
+      "id": "REG-776BADAF",
+      "jurisdiction": "United States (Federal)",
+      "title": "AI Chip Export Permits",
+      "summary": "New regulations requiring permits for global sales of advanced AI chips to strategic rivals like China.",
+      "tech_category": "AI",
+      "effective_date": "2026-03-06",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [
+        "https://techcrunch.com/2026/03/06/us-ai-chip-export-controls"
+      ],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=AI, Status=Proposed, Juris=United States (Federal): I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "NIST AI RMF GOVERN-1.1",
+          "description": "AI compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": "https://techcrunch.com/2026/03/06/us-ai-chip-export-controls"
+        },
+        {
+          "control_id": "GS-AI-01",
+          "description": "Internal AI governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "New regulations requiring permits for global sales of advanced AI chips to strategic rivals like China.",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_tech_tracker_2026-03-06_v2.csv"
+      ]
+    },
+    {
+      "id": "REG-92916881",
+      "jurisdiction": "United States (Federal)",
+      "title": "FTC Tech Enforcement (Unfair Practices)",
+      "summary": "FTC charting a new course on tech enforcement using the FTC Act to address unfair AI surveillance practices.",
+      "tech_category": "AI",
+      "effective_date": "2026-03-06",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [
+        "https://cybersecuritynews.com/ftc-tech-enforcement-mufarrige"
+      ],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=AI, Status=Proposed, Juris=United States (Federal): I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "NIST AI RMF GOVERN-1.1",
+          "description": "AI compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": "https://cybersecuritynews.com/ftc-tech-enforcement-mufarrige"
+        },
+        {
+          "control_id": "GS-AI-01",
+          "description": "Internal AI governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "FTC charting a new course on tech enforcement using the FTC Act to address unfair AI surveillance practices.",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_tech_tracker_2026-03-06_v2.csv"
+      ]
+    },
+    {
+      "id": "REG-4EDDBCA7",
+      "jurisdiction": "United States (Federal)",
+      "title": "National AI Safety Institute Plan",
+      "summary": "Australia's official plan to recruit and establish an AI Safety Institute for comprehensive regulation.",
+      "tech_category": "AI",
+      "effective_date": "2026-03-06",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [
+        "https://theconversation.com/australia-ai-safety-plan"
+      ],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=AI, Status=Proposed, Juris=United States (Federal): I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "NIST AI RMF GOVERN-1.1",
+          "description": "AI compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": "https://theconversation.com/australia-ai-safety-plan"
+        },
+        {
+          "control_id": "GS-AI-01",
+          "description": "Internal AI governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Australia's official plan to recruit and establish an AI Safety Institute for comprehensive regulation.",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_tech_tracker_2026-03-06_v2.csv"
+      ]
+    },
+    {
+      "id": "REG-948EC1AF",
+      "jurisdiction": "United States (Federal)",
+      "title": "NIST AI and Facial Recognition Oversight",
+      "summary": "NIST nominee pressed by Senate regarding oversight of AI standards and facial recognition tech.",
+      "tech_category": "Biometrics",
+      "effective_date": "2026-03-07",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=Biometrics, Status=Proposed, Juris=United States (Federal): I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF PR.AC-1",
+          "description": "Biometrics compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-BIO-01",
+          "description": "Internal Biometrics governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "NIST nominee pressed by Senate regarding oversight of AI standards and facial recognition tech.",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_tech_tracker_2026-03-07.csv"
+      ]
+    },
+    {
+      "id": "REG-FCF6D553",
+      "jurisdiction": "United States (Federal)",
+      "title": "FAA Section 2209 / Safer Skies Act",
+      "summary": "Gives amusement parks counter-drone authority and security monitoring tools.",
+      "tech_category": "Drones/UAS",
+      "effective_date": "2026-03-07",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=Drones/UAS, Status=Proposed, Juris=United States (Federal): I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF PR.IP-1",
+          "description": "Drones/UAS compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-UAS-01",
+          "description": "Internal Drones/UAS governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Gives amusement parks counter-drone authority and security monitoring tools.",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_tech_tracker_2026-03-07.csv"
+      ]
+    },
+    {
+      "id": "REG-3D414D67",
+      "jurisdiction": "Spain",
+      "title": "GDPR Agentic AI Guidance",
+      "summary": "AEPD issued guidance mapping GDPR obligations to agentic AI architectures.",
+      "tech_category": "AI",
+      "effective_date": "2026-03-07",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=AI, Status=Proposed, Juris=Spain: I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "NIST AI RMF GOVERN-1.1",
+          "description": "AI compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-AI-01",
+          "description": "Internal AI governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "AEPD issued guidance mapping GDPR obligations to agentic AI architectures.",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_tech_tracker_2026-03-07.csv"
+      ]
+    },
+    {
+      "id": "REG-B0F50075",
+      "jurisdiction": "United States (Federal)",
+      "title": "Commerce Department AI Chip Export Controls",
+      "summary": "Sweeping controls on AI chip exports to limit global AI training and surveillance.",
+      "tech_category": "AI",
+      "effective_date": "2026-03-07",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=AI, Status=Proposed, Juris=United States (Federal): I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "NIST AI RMF GOVERN-1.1",
+          "description": "AI compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-AI-01",
+          "description": "Internal AI governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Sweeping controls on AI chip exports to limit global AI training and surveillance.",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_tech_tracker_2026-03-07.csv"
+      ]
+    },
+    {
+      "id": "REG-72FC3B21",
+      "jurisdiction": "Maryland, USA",
+      "title": "AI Toy Safety Act",
+      "summary": "Establishes AI regulatory framework and mandates data breach notification for consumers.",
+      "tech_category": "AI",
+      "effective_date": "2026-03-07",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=AI, Status=Proposed, Juris=Maryland, USA: I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "NIST AI RMF GOVERN-1.1",
+          "description": "AI compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-AI-01",
+          "description": "Internal AI governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Establishes AI regulatory framework and mandates data breach notification for consumers.",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_tech_tracker_2026-03-07.csv"
+      ]
+    },
+    {
+      "id": "REG-119A7585",
+      "jurisdiction": "United States (Federal)",
+      "title": "FTC Act Section 5 / PADFAA",
+      "summary": "FTC to treat violations involving AI surveillance as unfair or deceptive practices.",
+      "tech_category": "Data Privacy",
+      "effective_date": "2026-03-07",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=Data Privacy, Status=Proposed, Juris=United States (Federal): I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "ISO 27001 A.18.1.4",
+          "description": "Data Privacy compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-PRIV-01",
+          "description": "Internal Data Privacy governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "FTC to treat violations involving AI surveillance as unfair or deceptive practices.",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_tech_tracker_2026-03-07.csv"
+      ]
+    },
+    {
+      "id": "REG-13762AEC",
+      "jurisdiction": "United States (Federal)",
+      "title": "National AI Safety Institute Regulation",
+      "summary": "Plan to establish an AI Safety Institute but lacks comprehensive regulatory frameworks.",
+      "tech_category": "AI",
+      "effective_date": "2026-03-07",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=AI, Status=Proposed, Juris=United States (Federal): I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "NIST AI RMF GOVERN-1.1",
+          "description": "AI compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-AI-01",
+          "description": "Internal AI governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Plan to establish an AI Safety Institute but lacks comprehensive regulatory frameworks.",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_tech_tracker_2026-03-07.csv"
+      ]
+    },
+    {
+      "id": "REG-4A505EAC",
+      "jurisdiction": "Minnesota, USA",
+      "title": "HF 3794",
+      "summary": "Prohibits surveillance/algorithmic pricing based on consumer data.",
+      "tech_category": "AI",
+      "effective_date": "2026-03-07",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=AI, Status=Proposed, Juris=Minnesota, USA: I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "NIST AI RMF GOVERN-1.1",
+          "description": "AI compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-AI-01",
+          "description": "Internal AI governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Prohibits surveillance/algorithmic pricing based on consumer data.",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_tech_tracker_2026-03-07.csv"
+      ]
+    },
+    {
+      "id": "REG-63EF8969",
+      "jurisdiction": "United States (Federal)",
+      "title": "Section 702",
+      "summary": "Moves to tighten the 9/11-era US law that authorizes government collection of foreign intelligence.",
+      "tech_category": "Data Privacy",
+      "effective_date": "2026-03-01",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=Data Privacy, Status=Proposed, Juris=United States (Federal): I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "ISO 27001 A.18.1.4",
+          "description": "Data Privacy compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-PRIV-01",
+          "description": "Internal Data Privacy governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Moves to tighten the 9/11-era US law that authorizes government collection of foreign intelligence.",
+      "status": "Proposed",
+      "provenance": [
+        "policy_tracker_2026-03-01.csv"
+      ]
+    },
+    {
+      "id": "REG-4C314D5E",
+      "jurisdiction": "Virginia, USA",
+      "title": "Virginia State Law on ALPR",
+      "summary": "Law enforcement agencies are violating state law regarding the use of automatic license plate readers.",
+      "tech_category": "ALPR/LPR",
+      "effective_date": "2026-03-01",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=ALPR/LPR, Status=Proposed, Juris=Virginia, USA: I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF PR.AC-3",
+          "description": "ALPR/LPR compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-ALPR-01",
+          "description": "Internal ALPR/LPR governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Law enforcement agencies are violating state law regarding the use of automatic license plate readers.",
+      "status": "Proposed",
+      "provenance": [
+        "policy_tracker_2026-03-01.csv"
+      ]
+    },
+    {
+      "id": "REG-C746108C",
+      "jurisdiction": "Washington, USA",
+      "title": "Washington AI Detection Guardrails",
+      "summary": "Prohibits using biometric data as the sole basis for disciplinary decisions and outlaws biometric surveillance.",
+      "tech_category": "Biometrics",
+      "effective_date": "2026-03-02",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=Biometrics, Status=Proposed, Juris=Washington, USA: I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF PR.AC-1",
+          "description": "Biometrics compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-BIO-01",
+          "description": "Internal Biometrics governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Prohibits using biometric data as the sole basis for disciplinary decisions and outlaws biometric surveillance.",
+      "status": "Proposed",
+      "provenance": [
+        "policy_tracker_2026-03-02.csv"
+      ]
+    },
+    {
+      "id": "REG-CA4C1891",
+      "jurisdiction": "New York, USA",
+      "title": "NYC Facial Recognition Ban Bills",
+      "summary": "Two local bills introduced to ban landlords and businesses, including stores, from collecting biometric data and using facial recognition software.",
+      "tech_category": "Biometrics",
+      "effective_date": "2026-03-03",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=Biometrics, Status=Proposed, Juris=New York, USA: I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF PR.AC-1",
+          "description": "Biometrics compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-BIO-01",
+          "description": "Internal Biometrics governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Two local bills introduced to ban landlords and businesses, including stores, from collecting biometric data and using facial recognition software.",
+      "status": "Proposed",
+      "provenance": [
+        "laws_regulations_tracker_2026-03-03.csv"
+      ]
+    },
+    {
+      "id": "REG-DBFF3619",
+      "jurisdiction": "Washington, USA",
+      "title": "Senate Bill 5886 / AI Guardrails",
+      "summary": "Lawmakers moving forward with guardrails on AI detection and chatbots prohibiting predictive risk scoring and biometric surveillance.",
+      "tech_category": "AI",
+      "effective_date": "2026-03-03",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=AI, Status=Proposed, Juris=Washington, USA: I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "NIST AI RMF GOVERN-1.1",
+          "description": "AI compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-AI-01",
+          "description": "Internal AI governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Lawmakers moving forward with guardrails on AI detection and chatbots prohibiting predictive risk scoring and biometric surveillance.",
+      "status": "Proposed",
+      "provenance": [
+        "laws_regulations_tracker_2026-03-03.csv"
+      ]
+    },
+    {
+      "id": "REG-4009D0CF",
+      "jurisdiction": "United States (Federal)",
+      "title": "Social Media / Search Engine AI Ban",
+      "summary": "eSafety commission warns of cracking down on app stores and search engines leveraging \"emotion AI\" following the country's social media ban.",
+      "tech_category": "AI",
+      "effective_date": "2026-03-03",
+      "deadline": null,
+      "criticality": 4,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 5,
+        "likelihood": 3,
+        "score": 15,
+        "rag": "Amber",
+        "reason": "Tech=AI, Status=Proposed, Juris=United States (Federal): I=5/5 L=3/5 S=15"
+      },
+      "controls": [
+        {
+          "control_id": "NIST AI RMF GOVERN-1.1",
+          "description": "AI compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-AI-01",
+          "description": "Internal AI governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "eSafety commission warns of cracking down on app stores and search engines leveraging \"emotion AI\" following the country's social media ban.",
+      "status": "Proposed",
+      "provenance": [
+        "laws_regulations_tracker_2026-03-03.csv"
+      ]
+    },
+    {
       "id": "REG-8F61710F",
       "jurisdiction": "United States (Federal)",
       "title": "FISA Section 702",
@@ -14191,6 +16144,300 @@
       ]
     },
     {
+      "id": "REG-EBE15D2E",
+      "jurisdiction": "Pennsylvania, USA",
+      "title": "Senate Bill 1205",
+      "summary": "Would amend the state's Unfair Trade Practices and Consumer Protection Law to ban surveillance pricing[cite: 211, 213].",
+      "tech_category": "Data Privacy",
+      "effective_date": "2026-03-08",
+      "deadline": null,
+      "criticality": 3,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 4,
+        "likelihood": 3,
+        "score": 12,
+        "rag": "Yellow",
+        "reason": "Tech=Data Privacy, Status=Proposed, Juris=Pennsylvania, USA: I=4/5 L=3/5 S=12"
+      },
+      "controls": [
+        {
+          "control_id": "ISO 27001 A.18.1.4",
+          "description": "Data Privacy compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-PRIV-01",
+          "description": "Internal Data Privacy governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Would amend the state's Unfair Trade Practices and Consumer Protection Law to ban surveillance pricing[cite: 211, 213].",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_intel_analyzed_2026-03-08.csv"
+      ]
+    },
+    {
+      "id": "REG-CA02EAAD",
+      "jurisdiction": "Washington, USA",
+      "title": "License Plate Reader Limits",
+      "summary": "House lawmakers approved the state's first limits on license plate reader cameras[cite: 267, 269].",
+      "tech_category": "ALPR/LPR",
+      "effective_date": "2026-03-08",
+      "deadline": null,
+      "criticality": 3,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 4,
+        "likelihood": 3,
+        "score": 12,
+        "rag": "Yellow",
+        "reason": "Tech=ALPR/LPR, Status=Proposed, Juris=Washington, USA: I=4/5 L=3/5 S=12"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF PR.AC-3",
+          "description": "ALPR/LPR compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-ALPR-01",
+          "description": "Internal ALPR/LPR governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "House lawmakers approved the state's first limits on license plate reader cameras[cite: 267, 269].",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_intel_analyzed_2026-03-08.csv"
+      ]
+    },
+    {
+      "id": "REG-7F05C33C",
+      "jurisdiction": "Virginia, USA",
+      "title": "Surveillance Camera Laws",
+      "summary": "State investigation into local law enforcement agencies breaking regulations regarding the use of surveillance cameras. [cite: 222, 224]",
+      "tech_category": "Surveillance",
+      "effective_date": "2026-03-09",
+      "deadline": null,
+      "criticality": 3,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 4,
+        "likelihood": 3,
+        "score": 12,
+        "rag": "Yellow",
+        "reason": "Tech=Surveillance, Status=Proposed, Juris=Virginia, USA: I=4/5 L=3/5 S=12"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF DE.CM-1",
+          "description": "Surveillance compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-CAM-01",
+          "description": "Internal Surveillance governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "State investigation into local law enforcement agencies breaking regulations regarding the use of surveillance cameras. [cite: 222, 224]",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_intel_analyzed_2026-03-09.csv"
+      ]
+    },
+    {
+      "id": "REG-DABF0488",
+      "jurisdiction": "Cheyenne, Wy",
+      "title": "Flock License Plate Cams Removal",
+      "summary": "Privacy advocates are trying to get Flock ALPR cameras removed from Cheyenne.",
+      "tech_category": "ALPR/LPR",
+      "effective_date": "2026-03-01",
+      "deadline": null,
+      "criticality": 3,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 4,
+        "likelihood": 3,
+        "score": 12,
+        "rag": "Yellow",
+        "reason": "Tech=ALPR/LPR, Status=Proposed, Juris=Cheyenne, Wy: I=4/5 L=3/5 S=12"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF PR.AC-3",
+          "description": "ALPR/LPR compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-ALPR-01",
+          "description": "Internal ALPR/LPR governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Privacy advocates are trying to get Flock ALPR cameras removed from Cheyenne.",
+      "status": "Proposed",
+      "provenance": [
+        "policy_tracker_2026-03-01.csv"
+      ]
+    },
+    {
+      "id": "REG-23142569",
+      "jurisdiction": "South Korea",
+      "title": "Prevention of Divulgence and Protection of Industrial Technology Act",
+      "summary": "Court broadens trade secret crimes following Apple supplier leak to China.",
+      "tech_category": "Data Privacy",
+      "effective_date": "2026-03-01",
+      "deadline": null,
+      "criticality": 3,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 4,
+        "likelihood": 3,
+        "score": 12,
+        "rag": "Yellow",
+        "reason": "Tech=Data Privacy, Status=Proposed, Juris=South Korea: I=4/5 L=3/5 S=12"
+      },
+      "controls": [
+        {
+          "control_id": "ISO 27001 A.18.1.4",
+          "description": "Data Privacy compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-PRIV-01",
+          "description": "Internal Data Privacy governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Court broadens trade secret crimes following Apple supplier leak to China.",
+      "status": "Proposed",
+      "provenance": [
+        "policy_tracker_2026-03-01.csv"
+      ]
+    },
+    {
+      "id": "REG-628B158C",
+      "jurisdiction": "California, USA",
+      "title": "Class Action Lawsuit Against Flock Safety",
+      "summary": "Active class action lawsuit alleges Flock license plate readers violate California privacy law.",
+      "tech_category": "ALPR/LPR",
+      "effective_date": "2026-03-02",
+      "deadline": null,
+      "criticality": 3,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 4,
+        "likelihood": 3,
+        "score": 12,
+        "rag": "Yellow",
+        "reason": "Tech=ALPR/LPR, Status=Proposed, Juris=California, USA: I=4/5 L=3/5 S=12"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF PR.AC-3",
+          "description": "ALPR/LPR compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-ALPR-01",
+          "description": "Internal ALPR/LPR governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Active class action lawsuit alleges Flock license plate readers violate California privacy law.",
+      "status": "Proposed",
+      "provenance": [
+        "policy_tracker_2026-03-02.csv"
+      ]
+    },
+    {
+      "id": "REG-CD58129C",
+      "jurisdiction": "California, USA",
+      "title": "Flock ALPR Class Action / California Law",
+      "summary": "Class action lawsuit alleging Flock's license plate reading cameras violate California privacy laws by sharing data without proper governance.",
+      "tech_category": "ALPR/LPR",
+      "effective_date": "2026-03-03",
+      "deadline": null,
+      "criticality": 3,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 4,
+        "likelihood": 3,
+        "score": 12,
+        "rag": "Yellow",
+        "reason": "Tech=ALPR/LPR, Status=Proposed, Juris=California, USA: I=4/5 L=3/5 S=12"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF PR.AC-3",
+          "description": "ALPR/LPR compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-ALPR-01",
+          "description": "Internal ALPR/LPR governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Class action lawsuit alleging Flock's license plate reading cameras violate California privacy laws by sharing data without proper governance.",
+      "status": "Proposed",
+      "provenance": [
+        "laws_regulations_tracker_2026-03-03.csv"
+      ]
+    },
+    {
       "id": "REG-4F29E7D0",
       "jurisdiction": "European Union",
       "title": "ETSI EN 304 223 (AI Security Standard)",
@@ -15151,6 +17398,136 @@
       ]
     },
     {
+      "id": "REG-07EAB140",
+      "jurisdiction": "United States (Federal)",
+      "title": "Two-Party Consent Laws (Workplace)",
+      "summary": "Legal concerns over AI-powered notetaking tools in states requiring all-party consent for recording.",
+      "tech_category": "Audio Recording/Analytics",
+      "effective_date": "2026-03-06",
+      "deadline": null,
+      "criticality": 3,
+      "evidence_status": "Unknown",
+      "evidence_links": [
+        "https://www.jdsupra.com/legalnews/risks-of-ai-powered-notetaking-recording"
+      ],
+      "risk": {
+        "impact": 3,
+        "likelihood": 3,
+        "score": 9,
+        "rag": "Yellow",
+        "reason": "Tech=Audio Recording/Analytics, Status=Proposed, Juris=United States (Federal): I=3/5 L=3/5 S=9"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF ID.GV-1",
+          "description": "Audio Recording/Analytics compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": "https://www.jdsupra.com/legalnews/risks-of-ai-powered-notetaking-recording"
+        },
+        {
+          "control_id": "GS-GOV-01",
+          "description": "Internal Audio Recording/Analytics governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Legal concerns over AI-powered notetaking tools in states requiring all-party consent for recording.",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_tech_tracker_2026-03-06_v2.csv"
+      ]
+    },
+    {
+      "id": "REG-D1DE940C",
+      "jurisdiction": "United States (Federal)",
+      "title": "SAFER Transport Act",
+      "summary": "Bill sponsored by Sen. Young to advance freight security and combat high cargo theft rates through enhanced monitoring.",
+      "tech_category": "Automated Decision Systems",
+      "effective_date": "2026-03-06",
+      "deadline": null,
+      "criticality": 3,
+      "evidence_status": "Unknown",
+      "evidence_links": [
+        "https://www.transporttopics.com/articles/cargo-theft-safer-transport-act"
+      ],
+      "risk": {
+        "impact": 3,
+        "likelihood": 3,
+        "score": 9,
+        "rag": "Yellow",
+        "reason": "Tech=Automated Decision Systems, Status=Proposed, Juris=United States (Federal): I=3/5 L=3/5 S=9"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF ID.GV-1",
+          "description": "Automated Decision Systems compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": "https://www.transporttopics.com/articles/cargo-theft-safer-transport-act"
+        },
+        {
+          "control_id": "GS-GOV-01",
+          "description": "Internal Automated Decision Systems governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Bill sponsored by Sen. Young to advance freight security and combat high cargo theft rates through enhanced monitoring.",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_tech_tracker_2026-03-06_v2.csv"
+      ]
+    },
+    {
+      "id": "REG-BA10864F",
+      "jurisdiction": "Florida, USA",
+      "title": "Florida surveillance powers bill",
+      "summary": "Proposed legislation states the primary goal is to conduct surveillance to expand state powers.",
+      "tech_category": "Surveillance",
+      "effective_date": "2026-03-01",
+      "deadline": null,
+      "criticality": 3,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 3,
+        "likelihood": 3,
+        "score": 9,
+        "rag": "Yellow",
+        "reason": "Tech=Surveillance, Status=Proposed, Juris=Florida, USA: I=3/5 L=3/5 S=9"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF DE.CM-1",
+          "description": "Surveillance compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-CAM-01",
+          "description": "Internal Surveillance governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Proposed legislation states the primary goal is to conduct surveillance to expand state powers.",
+      "status": "Proposed",
+      "provenance": [
+        "policy_tracker_2026-03-01.csv"
+      ]
+    },
+    {
       "id": "REG-699452CD",
       "jurisdiction": "United Kingdom",
       "title": "Biometrics and Surveillance Camera Commissioner Guidance",
@@ -15408,6 +17785,48 @@
       "status": "Enacted",
       "provenance": [
         "Regulatory Data - 202602_CLEAN.xlsx:row146"
+      ]
+    },
+    {
+      "id": "REG-696C4FB3",
+      "jurisdiction": "Illinois, USA",
+      "title": "Sidewalk Delivery Robot Ordinance",
+      "summary": "City ordinance effectively barring commercial autonomous delivery robot operations on city sidewalks.",
+      "tech_category": "Robotics",
+      "effective_date": "2026-03-03",
+      "deadline": null,
+      "criticality": 2,
+      "evidence_status": "Partially",
+      "evidence_links": [],
+      "risk": {
+        "impact": 2,
+        "likelihood": 4,
+        "score": 8,
+        "rag": "Yellow",
+        "reason": "Tech=Robotics, Status=Enacted, Juris=Illinois, USA: I=2/5 L=4/5 S=8"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF PR.IP-2",
+          "description": "Robotics compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-ROBOT-01",
+          "description": "Internal Robotics governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "City ordinance effectively barring commercial autonomous delivery robot operations on city sidewalks.",
+      "status": "Enacted",
+      "provenance": [
+        "laws_regulations_tracker_2026-03-03.csv"
       ]
     },
     {
@@ -15801,59 +18220,477 @@
       "provenance": [
         "Regulatory Data - 202602_CLEAN.xlsx:row141"
       ]
+    },
+    {
+      "id": "REG-4907661C",
+      "jurisdiction": "Maine, USA",
+      "title": "Workplace Surveillance Legislation",
+      "summary": "Takes legislative action against surveillance and monitoring tools in the workplace.",
+      "tech_category": "Automated Decision Systems",
+      "effective_date": "2026-03-07",
+      "deadline": null,
+      "criticality": 2,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 2,
+        "likelihood": 3,
+        "score": 6,
+        "rag": "Green",
+        "reason": "Tech=Automated Decision Systems, Status=Proposed, Juris=Maine, USA: I=2/5 L=3/5 S=6"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF ID.GV-1",
+          "description": "Automated Decision Systems compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-GOV-01",
+          "description": "Internal Automated Decision Systems governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Takes legislative action against surveillance and monitoring tools in the workplace.",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_tech_tracker_2026-03-07.csv"
+      ]
+    },
+    {
+      "id": "REG-521CD003",
+      "jurisdiction": "Florida, USA",
+      "title": "HB 945 (Florida CIA Bill)",
+      "summary": "Proposed legislation allowing the state to engage in domestic surveillance and counterintelligence activities.",
+      "tech_category": "Audio Recording/Analytics",
+      "effective_date": "2026-03-02",
+      "deadline": null,
+      "criticality": 2,
+      "evidence_status": "Unknown",
+      "evidence_links": [],
+      "risk": {
+        "impact": 2,
+        "likelihood": 3,
+        "score": 6,
+        "rag": "Green",
+        "reason": "Tech=Audio Recording/Analytics, Status=Proposed, Juris=Florida, USA: I=2/5 L=3/5 S=6"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF ID.GV-1",
+          "description": "Audio Recording/Analytics compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        },
+        {
+          "control_id": "GS-GOV-01",
+          "description": "Internal Audio Recording/Analytics governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Proposed legislation allowing the state to engage in domestic surveillance and counterintelligence activities.",
+      "status": "Proposed",
+      "provenance": [
+        "policy_tracker_2026-03-02.csv"
+      ]
+    },
+    {
+      "id": "REG-035D037E",
+      "jurisdiction": "Connecticut, USA",
+      "title": "Warehouse Worker Protection Law",
+      "summary": "Governor Ned Lamont signed a bill protecting warehouse workers from certain algorithmic monitoring and quotas.",
+      "tech_category": "Other",
+      "effective_date": "2026-03-06",
+      "deadline": null,
+      "criticality": 1,
+      "evidence_status": "Partially",
+      "evidence_links": [
+        "https://teamster.org/2026/03/connecticut-passes-warehouse-worker-protection"
+      ],
+      "risk": {
+        "impact": 1,
+        "likelihood": 4,
+        "score": 4,
+        "rag": "Green",
+        "reason": "Tech=Other, Status=Enacted, Juris=Connecticut, USA: I=1/5 L=4/5 S=4"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF ID.GV-1",
+          "description": "Other compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": "https://teamster.org/2026/03/connecticut-passes-warehouse-worker-protection"
+        },
+        {
+          "control_id": "GS-GOV-01",
+          "description": "Internal Other governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Governor Ned Lamont signed a bill protecting warehouse workers from certain algorithmic monitoring and quotas.",
+      "status": "Enacted",
+      "provenance": [
+        "regulatory_tech_tracker_2026-03-06_v2.csv"
+      ]
+    },
+    {
+      "id": "REG-71243FEE",
+      "jurisdiction": "Montana, USA",
+      "title": "Location Tracking Privacy Law",
+      "summary": "Montana became the first state to pass a law specifically restricting government use of targeted advertising for location tracking.",
+      "tech_category": "Other",
+      "effective_date": "2025-12-31",
+      "deadline": null,
+      "criticality": 1,
+      "evidence_status": "Partially",
+      "evidence_links": [
+        "https://www.eff.org/deeplinks/government-advertising-surveillance"
+      ],
+      "risk": {
+        "impact": 1,
+        "likelihood": 4,
+        "score": 4,
+        "rag": "Green",
+        "reason": "Tech=Other, Status=Enacted, Juris=Montana, USA: I=1/5 L=4/5 S=4"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF ID.GV-1",
+          "description": "Other compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": "https://www.eff.org/deeplinks/government-advertising-surveillance"
+        },
+        {
+          "control_id": "GS-GOV-01",
+          "description": "Internal Other governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Montana became the first state to pass a law specifically restricting government use of targeted advertising for location tracking.",
+      "status": "Enacted",
+      "provenance": [
+        "regulatory_tech_tracker_2026-03-06_v2.csv"
+      ]
+    },
+    {
+      "id": "REG-C6B7A25F",
+      "jurisdiction": "New York, USA",
+      "title": "Biometric Identifier Bill",
+      "summary": "Bill introduced by Shahana Hanif to ban private businesses from using biometric tools like voice and facial recognition to track customers.",
+      "tech_category": "Other",
+      "effective_date": "2026-03-06",
+      "deadline": null,
+      "criticality": 1,
+      "evidence_status": "Unknown",
+      "evidence_links": [
+        "https://biometricupdate.com/202603/nyc-restrictions-biometric-surveillance"
+      ],
+      "risk": {
+        "impact": 1,
+        "likelihood": 3,
+        "score": 3,
+        "rag": "Green",
+        "reason": "Tech=Other, Status=Proposed, Juris=New York, USA: I=1/5 L=3/5 S=3"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF ID.GV-1",
+          "description": "Other compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": "https://biometricupdate.com/202603/nyc-restrictions-biometric-surveillance"
+        },
+        {
+          "control_id": "GS-GOV-01",
+          "description": "Internal Other governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Bill introduced by Shahana Hanif to ban private businesses from using biometric tools like voice and facial recognition to track customers.",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_tech_tracker_2026-03-06_v2.csv"
+      ]
+    },
+    {
+      "id": "REG-15FDFE19",
+      "jurisdiction": "Connecticut, USA",
+      "title": "Senate Bill 117 (Data Breach)",
+      "summary": "Raises the stakes on data breach response involving electronic personal information and security protocols.",
+      "tech_category": "Other",
+      "effective_date": "2026-03-06",
+      "deadline": null,
+      "criticality": 1,
+      "evidence_status": "Unknown",
+      "evidence_links": [
+        "https://www.mondaq.com/unitedstates/security/ct-senate-bill-117"
+      ],
+      "risk": {
+        "impact": 1,
+        "likelihood": 3,
+        "score": 3,
+        "rag": "Green",
+        "reason": "Tech=Other, Status=Proposed, Juris=Connecticut, USA: I=1/5 L=3/5 S=3"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF ID.GV-1",
+          "description": "Other compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": "https://www.mondaq.com/unitedstates/security/ct-senate-bill-117"
+        },
+        {
+          "control_id": "GS-GOV-01",
+          "description": "Internal Other governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Raises the stakes on data breach response involving electronic personal information and security protocols.",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_tech_tracker_2026-03-06_v2.csv"
+      ]
+    },
+    {
+      "id": "REG-18F9014E",
+      "jurisdiction": "California, USA",
+      "title": "AB 2021 (Whistleblower Protection)",
+      "summary": "Sponsored by CalPrivacy to protect whistleblowers regarding privacy and security violations.",
+      "tech_category": "Other",
+      "effective_date": "2026-03-06",
+      "deadline": null,
+      "criticality": 1,
+      "evidence_status": "Unknown",
+      "evidence_links": [
+        "https://www.blankrome.com/publications/br-privacy-security-ai-download-march-2026"
+      ],
+      "risk": {
+        "impact": 1,
+        "likelihood": 3,
+        "score": 3,
+        "rag": "Green",
+        "reason": "Tech=Other, Status=Proposed, Juris=California, USA: I=1/5 L=3/5 S=3"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF ID.GV-1",
+          "description": "Other compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": "https://www.blankrome.com/publications/br-privacy-security-ai-download-march-2026"
+        },
+        {
+          "control_id": "GS-GOV-01",
+          "description": "Internal Other governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Sponsored by CalPrivacy to protect whistleblowers regarding privacy and security violations.",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_tech_tracker_2026-03-06_v2.csv"
+      ]
+    },
+    {
+      "id": "REG-348E0979",
+      "jurisdiction": "Arizona, USA",
+      "title": "License Plate Reader Regulation Bill",
+      "summary": "Legislation to codify standards for police use of automated license plate readers; currently facing pushback.",
+      "tech_category": "Other",
+      "effective_date": "2026-03-06",
+      "deadline": null,
+      "criticality": 1,
+      "evidence_status": "Unknown",
+      "evidence_links": [
+        "https://www.tucsonsentinel.com/local/report/arizona-license-plate-reader-bill"
+      ],
+      "risk": {
+        "impact": 1,
+        "likelihood": 3,
+        "score": 3,
+        "rag": "Green",
+        "reason": "Tech=Other, Status=Proposed, Juris=Arizona, USA: I=1/5 L=3/5 S=3"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF ID.GV-1",
+          "description": "Other compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": "https://www.tucsonsentinel.com/local/report/arizona-license-plate-reader-bill"
+        },
+        {
+          "control_id": "GS-GOV-01",
+          "description": "Internal Other governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "Legislation to codify standards for police use of automated license plate readers; currently facing pushback.",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_tech_tracker_2026-03-06_v2.csv"
+      ]
+    },
+    {
+      "id": "REG-CC0E4B76",
+      "jurisdiction": "Connecticut, USA",
+      "title": "Statewide LPR Policy",
+      "summary": "New policy issued regarding automated license plate cameras for police departments across the state.",
+      "tech_category": "Other",
+      "effective_date": "2026-01-28",
+      "deadline": null,
+      "criticality": 1,
+      "evidence_status": "Unknown",
+      "evidence_links": [
+        "https://www.ctinsider.com/news/ct-license-plate-cameras-police"
+      ],
+      "risk": {
+        "impact": 1,
+        "likelihood": 3,
+        "score": 3,
+        "rag": "Green",
+        "reason": "Tech=Other, Status=Proposed, Juris=Connecticut, USA: I=1/5 L=3/5 S=3"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF ID.GV-1",
+          "description": "Other compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": "https://www.ctinsider.com/news/ct-license-plate-cameras-police"
+        },
+        {
+          "control_id": "GS-GOV-01",
+          "description": "Internal Other governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "New policy issued regarding automated license plate cameras for police departments across the state.",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_tech_tracker_2026-03-06_v2.csv"
+      ]
+    },
+    {
+      "id": "REG-ADC7E7C7",
+      "jurisdiction": "Tennessee, USA",
+      "title": "UFCW Retail Worker Bills",
+      "summary": "State lawmakers considering bills to manage the consequences of technologies shifting operational burdens to retail workers.",
+      "tech_category": "Other",
+      "effective_date": "2026-03-06",
+      "deadline": null,
+      "criticality": 1,
+      "evidence_status": "Unknown",
+      "evidence_links": [
+        "https://www.vitallaw.com/news/tennessee-retail-employee-legislation"
+      ],
+      "risk": {
+        "impact": 1,
+        "likelihood": 3,
+        "score": 3,
+        "rag": "Green",
+        "reason": "Tech=Other, Status=Proposed, Juris=Tennessee, USA: I=1/5 L=3/5 S=3"
+      },
+      "controls": [
+        {
+          "control_id": "NIST CSF ID.GV-1",
+          "description": "Other compliance review",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": "https://www.vitallaw.com/news/tennessee-retail-employee-legislation"
+        },
+        {
+          "control_id": "GS-GOV-01",
+          "description": "Internal Other governance control",
+          "owner": "Global Security & Emerging Technology",
+          "status": "Partial",
+          "last_reviewed": "2026-03-31",
+          "evidence_link": ""
+        }
+      ],
+      "full_description": "State lawmakers considering bills to manage the consequences of technologies shifting operational burdens to retail workers.",
+      "status": "Proposed",
+      "provenance": [
+        "regulatory_tech_tracker_2026-03-06_v2.csv"
+      ]
     }
   ],
   "top_actions": [
     {
       "title": "AI Governance Review",
-      "description": "Conduct cross-functional review of AI use cases against EU AI Act, NY RAISE Act, and Colorado AI Act requirements. Map controls to NIST AI RMF.",
-      "owner": "Global Security & Emerging Technology / Legal",
+      "description": "Review AI use cases against EU AI Act, NY RAISE Act, Colorado AI Act.",
+      "owner": "GS&ET / Legal",
       "priority": "High",
       "eta": "2026-04-30"
     },
     {
       "title": "Biometric Consent Audit",
-      "description": "Audit biometric data collection at all US store locations for BIPA (IL), TX CUBI, WA MY Health MY Data, and NYC Admin Code compliance.",
+      "description": "Audit biometric data at all US locations for BIPA, TX CUBI, WA compliance.",
       "owner": "Privacy / Legal / Store Ops",
       "priority": "High",
       "eta": "2026-04-15"
     },
     {
-      "title": "ALPR Data Retention Policy Update",
-      "description": "Update ALPR data retention schedules to comply with enacted state laws (VA, MN, NM, WA). Document evidence of policy enforcement.",
-      "owner": "Global Security / Legal",
+      "title": "ALPR Data Retention Update",
+      "description": "Update ALPR retention schedules for enacted state laws.",
+      "owner": "GS / Legal",
       "priority": "High",
       "eta": "2026-05-01"
-    },
-    {
-      "title": "UAS / Drone Vendor Compliance Review",
-      "description": "Verify all drone vendors are not on FCC prohibited list and comply with FAA Part 107 requirements.",
-      "owner": "Global Security / Procurement",
-      "priority": "Med",
-      "eta": "2026-05-15"
-    },
-    {
-      "title": "State-Level ORC Compliance Mapping",
-      "description": "Map CORCA (H.R. 2853) and state ORC laws to existing loss prevention programs and identify reporting obligation gaps.",
-      "owner": "Asset Protection / Legal",
-      "priority": "Med",
-      "eta": "2026-06-01"
     }
   ],
   "assumptions": [
-    "INFERENCE: Both input files are Excel (.xlsx), not CSV. The CLEAN sheets (202601_CLEAN, 202602_CLEAN) were used as Dataset A (regulatory obligations). No compliance_evidence.csv was found; evidence_status is heuristically assigned as Partially for Enacted laws and Unknown for Proposed.",
-    "SCHEMA MAPPING: Location -> jurisdiction, Type of Technology -> tech_category, Name of Law... -> title, Status -> evidence_status (after normalisation), Detailed Description -> summary/full_description, Date Enacted or Proposed -> effective_date, Source Link(s) -> evidence_links.",
-    "No compliance_evidence.csv was provided. Control mappings are generated from NIST CSF/AI RMF and internal GS tag templates. All evidence_status values should be validated by compliance team.",
-    "Deadline dates are not present in the source data; deadline fields are set to null. Legal team should populate these.",
-    "Risk scores are heuristic: Impact derived from tech sensitivity + jurisdiction scope + penalty language detection. Likelihood derived from enactment status. All top-12 assessments should be validated by Legal and Security.",
-    "Duplicate detection uses Location + Law Name as composite key. Cross-file duplicates with slightly different location strings may not have been caught."
+    "March 2026 data merged from 7 CSV files in Migrated Files/Downloads.",
+    "Deduplication by jurisdiction + law name composite key.",
+    "Risk scores are heuristic \u2014 validate Red/Amber items with Legal."
   ],
   "confidence": "Med",
   "schema_version": "1.0",
   "ingestion_notes": {
-    "202601_CLEAN.xlsx": "245 rows ingested from 202601_CLEAN sheet",
-    "202602_CLEAN.xlsx": "179 rows ingested from 202602_CLEAN sheet",
-    "dedup_removed": 62,
-    "final_obligations": 362
+    "march_files": 7,
+    "new_obligations_added": 0,
+    "total_obligations": 429
   }
 }

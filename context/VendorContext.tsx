@@ -24,13 +24,19 @@ interface VendorContextValue {
   total:      number;   // total matching vendors across all pages
   totalPages: number;
   // Controlled filter state (read-only from consumers)
-  search:   string;
-  category: string;
-  page:     number;
+  search:     string;
+  category:   string;
+  riskLevel:  string;
+  hasVar:     string;   // 'yes' | 'no' | ''
+  sort:       string;
+  page:       number;
   // Setters
-  setSearch:   (s: string) => void;
-  setCategory: (c: string) => void;
-  setPage:     (p: number) => void;
+  setSearch:    (s: string) => void;
+  setCategory:  (c: string) => void;
+  setRiskLevel: (r: string) => void;
+  setHasVar:    (h: string) => void;
+  setSort:      (s: string) => void;
+  setPage:      (p: number) => void;
 }
 
 const VendorContext = createContext<VendorContextValue | null>(null);
@@ -44,10 +50,13 @@ export const VendorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [totalPages,     setTotalPages]     = useState(1);
 
   // Filter state
-  const [search,          setSearchRaw]   = useState('');
-  const [debouncedSearch, setDebounced]   = useState('');
-  const [category,        setCategoryRaw] = useState('All');
-  const [page,            setPageRaw]     = useState(1);
+  const [search,          setSearchRaw]    = useState('');
+  const [debouncedSearch, setDebounced]    = useState('');
+  const [category,        setCategoryRaw]  = useState('All');
+  const [riskLevel,       setRiskLevelRaw] = useState('');
+  const [hasVar,          setHasVarRaw]    = useState('');
+  const [sort,            setSortRaw]      = useState('rating');
+  const [page,            setPageRaw]      = useState(1);
 
   // ── Debounce search ────────────────────────────────────────────────────
   useEffect(() => {
@@ -55,17 +64,20 @@ export const VendorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return () => clearTimeout(timer);
   }, [search]);
 
-  // ── Fetch whenever debounced search / category / page changes ────────────
+  // ── Fetch whenever debounced search / category / risk / hasVar / sort / page changes ────
   useEffect(() => {
     let cancelled = false;
     const run = async () => {
       setLoading(true);
       try {
         const data = await fetchVendors({
-          search:    debouncedSearch || undefined,
-          category:  category !== 'All' ? category : undefined,
+          search:     debouncedSearch || undefined,
+          category:   category !== 'All' ? category : undefined,
+          risk_level: riskLevel || undefined,
+          has_var:    (hasVar as 'yes' | 'no' | '') || undefined,
+          sort:       sort || undefined,
           page,
-          page_size: PAGE_SIZE,
+          page_size:  PAGE_SIZE,
         });
         if (cancelled) return;
         setVendors(data.vendors);
@@ -80,7 +92,7 @@ export const VendorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
     run();
     return () => { cancelled = true; };
-  }, [debouncedSearch, category, page]);
+  }, [debouncedSearch, category, riskLevel, hasVar, sort, page]);
 
   // ── Bootstrap categories list (one-time) ───────────────────────────
   useEffect(() => {
@@ -89,17 +101,20 @@ export const VendorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       .catch(() => {/* categories are non-critical */});
   }, []);
 
-  // ── Public setters ────────────────────────────────────────────────────
-  // Changing search or category always resets to page 1
-  const setSearch   = useCallback((s: string) => { setSearchRaw(s);  setPageRaw(1); }, []);
-  const setCategory = useCallback((c: string) => { setCategoryRaw(c); setPageRaw(1); }, []);
-  const setPage     = useCallback((p: number) => { setPageRaw(p); }, []);
+  // ── Public setters ──────────────────────────────────────────────────────────────────
+  // Changing search, category, risk, or hasVar always resets to page 1
+  const setSearch    = useCallback((s: string) => { setSearchRaw(s);    setPageRaw(1); }, []);
+  const setCategory  = useCallback((c: string) => { setCategoryRaw(c);  setPageRaw(1); }, []);
+  const setRiskLevel = useCallback((r: string) => { setRiskLevelRaw(r); setPageRaw(1); }, []);
+  const setHasVar    = useCallback((h: string) => { setHasVarRaw(h);    setPageRaw(1); }, []);
+  const setSort      = useCallback((s: string) => { setSortRaw(s);      setPageRaw(1); }, []);
+  const setPage      = useCallback((p: number) => { setPageRaw(p); }, []);
 
   return (
     <VendorContext.Provider value={{
       vendors, categories, loading, backendOffline,
-      total, totalPages, search, category, page,
-      setSearch, setCategory, setPage,
+      total, totalPages, search, category, riskLevel, hasVar, sort, page,
+      setSearch, setCategory, setRiskLevel, setHasVar, setSort, setPage,
     }}>
       {children}
     </VendorContext.Provider>

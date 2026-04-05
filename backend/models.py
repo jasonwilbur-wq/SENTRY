@@ -35,6 +35,7 @@ class VendorOut(BaseModel):
     last_assessed: str = ""
     risk_level: str = "Medium"
     has_var: bool = False
+    var_count: int = 0           # Total VAR reports linked to this vendor
     latest_var_id: str = ""      # Phase 2 — used for download proxy
     
     # Extended fields

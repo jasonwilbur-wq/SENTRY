@@ -93,11 +93,13 @@ def _group_products(
     var_vendor_ids: set[str] | None = None,
     latest_var_ids: dict[str, str] | None = None,
     linked_map: dict[str, list[dict]] | None = None,
+    var_count_map: dict[str, int] | None = None,
 ) -> list[VendorOut]:
     """Group multiple product rows for the same company into one VendorOut."""
     var_ids     = var_vendor_ids or set()
     var_id_map  = latest_var_ids or {}   # vendor_id -> latest var_report.id
     prj_map     = linked_map or {}       # lowercase company_name -> [{project...}]
+    vc_map      = var_count_map or {}    # vendor_id -> count of VAR reports
     companies: dict[str, VendorOut] = {}
     for row in rows:
         name = row["company_name"]
@@ -126,6 +128,7 @@ def _group_products(
                 risk_level=row["risk_level"],
                 last_assessed=row["last_assessed"],
                 has_var=has_v,
+                var_count=vc_map.get(row["id"], 0),
                 latest_var_id=var_id_map.get(row["id"], ""),
                 all_products=[product],
                 # Extended fields
@@ -153,16 +156,19 @@ def _group_products(
 
 @app.get("/api/vendors", response_model=VendorsResponse)
 def list_vendors(
-    category: str | None = Query(None),
-    search:   str | None = Query(None),
-    page:      int = Query(1,  ge=1),
-    page_size: int = Query(20, ge=1, le=500),
+    category:   str | None = Query(None),
+    search:     str | None = Query(None),
+    risk_level: str | None = Query(None),
+    has_var:    str | None = Query(None),    # 'yes' or 'no'
+    sort:       str | None = Query(None),    # name, rating, risk, last_assessed
+    page:       int = Query(1,  ge=1),
+    page_size:  int = Query(20, ge=1, le=500),
 ):
-    """Return vendors paginated, optionally filtered by category or search term.
+    """Return vendors paginated, optionally filtered by category, search term,
+    risk level, or VAR status. Supports sort parameter.
 
-    Grouping (multiple products per company) happens in Python after the DB
-    fetch — SQLite has ~1,931 rows so this is sub-millisecond.
-    Raised cap to 500 to support the Risk Map 3D view which needs all vendors.
+    Search covers: company_name, technology_product, category, description,
+    risk_level, and vendor_status.
     """
     conn = get_connection()
     params: list[str] = []
@@ -171,21 +177,42 @@ def list_vendors(
     if category and category != "All":
         clauses.append("category = ?")
         params.append(category)
+    if risk_level:
+        clauses.append("risk_level = ?")
+        params.append(risk_level)
     if search:
         clauses.append(
-            "(LOWER(company_name) LIKE ? OR LOWER(technology_product) LIKE ?)"
+            "(LOWER(company_name) LIKE ? OR LOWER(technology_product) LIKE ?"
+            " OR LOWER(category) LIKE ? OR LOWER(description) LIKE ?"
+            " OR LOWER(risk_level) LIKE ? OR LOWER(vendor_status) LIKE ?)"
         )
         term = f"%{search.lower()}%"
-        params.extend([term, term])
+        params.extend([term, term, term, term, term, term])
+
+    # Sort mapping — default is rating DESC
+    SORT_MAP = {
+        "name":          "company_name ASC",
+        "rating":        "overall_rating DESC",
+        "risk":          "CASE risk_level WHEN 'Critical' THEN 0 WHEN 'High' THEN 1 WHEN 'Medium' THEN 2 ELSE 3 END ASC",
+        "last_assessed":  "last_assessed DESC",
+    }
+    order_clause = SORT_MAP.get(sort or "", "overall_rating DESC")
 
     where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
-    query = f"SELECT * FROM vendors {where} ORDER BY overall_rating DESC"
+    query = f"SELECT * FROM vendors {where} ORDER BY {order_clause}"
 
     rows = [dict(r) for r in conn.execute(query, params).fetchall()]
 
     # Fetch vendor IDs that have VAR reports
     var_ids = {
         r[0] for r in conn.execute("SELECT DISTINCT vendor_id FROM var_reports").fetchall()
+    }
+    # VAR count per vendor
+    var_count_map = {
+        r[0]: r[1]
+        for r in conn.execute(
+            "SELECT vendor_id, COUNT(*) FROM var_reports GROUP BY vendor_id"
+        ).fetchall()
     }
     # Latest VAR id per vendor (for download proxy)
     latest_var_ids = {
@@ -225,7 +252,13 @@ def list_vendors(
     conn.close()
 
     # Group multiple-product rows into logical vendors
-    all_vendors = _group_products(rows, var_ids, latest_var_ids, linked_map)
+    all_vendors = _group_products(rows, var_ids, latest_var_ids, linked_map, var_count_map)
+
+    # Apply has_var filter after grouping (needs computed has_var field)
+    if has_var == "yes":
+        all_vendors = [v for v in all_vendors if v.has_var]
+    elif has_var == "no":
+        all_vendors = [v for v in all_vendors if not v.has_var]
 
     total       = len(all_vendors)
     total_pages = max(1, math.ceil(total / page_size))
