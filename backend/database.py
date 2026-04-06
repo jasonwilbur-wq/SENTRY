@@ -177,9 +177,30 @@ CREATE TABLE IF NOT EXISTS project_vendors (
 """
 
 
+def _safe_add_column(conn: sqlite3.Connection, table: str, column: str, sql: str) -> None:
+    """Add a column if it doesn't already exist. Idempotent.
+
+    Silently skips if the table itself doesn't exist (e.g. fresh DB
+    where import scripts haven't run yet).
+    """
+    # Check if table exists first
+    table_exists = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?", (table,)
+    ).fetchone()
+    if not table_exists:
+        return
+    cols = {r[1] for r in conn.execute(f"PRAGMA table_info({table})").fetchall()}
+    if column not in cols:
+        conn.execute(sql)
+
+
 def init_db() -> None:
     """Create tables if they don't exist."""
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+    # Lazy import to avoid circular dependency (audit imports auth, not db).
+    from audit import CREATE_AUDIT_LOG, CREATE_AUDIT_INDEXES
+
     with get_connection() as conn:
         conn.execute(CREATE_TABLE)
         conn.execute(CREATE_VAR_REPORTS)
@@ -187,15 +208,30 @@ def init_db() -> None:
         conn.execute(CREATE_INCIDENTS)
         conn.execute(CREATE_PROJECTS)
         conn.execute(CREATE_PROJECT_VENDORS)
-        # Safe migrations — add any columns that may be missing from older DBs
-        cols = {r[1] for r in conn.execute("PRAGMA table_info(projects)").fetchall()}
-        migrations = [
-            ("exit_reason",  "ALTER TABLE projects ADD COLUMN exit_reason TEXT DEFAULT ''"),
-            ("apm_entries",  "ALTER TABLE projects ADD COLUMN apm_entries TEXT DEFAULT '[]'"),
-            ("erpa_entries", "ALTER TABLE projects ADD COLUMN erpa_entries TEXT DEFAULT '[]'"),
-            ("ssp_entries",  "ALTER TABLE projects ADD COLUMN ssp_entries TEXT DEFAULT '[]'"),
-        ]
-        for col_name, sql in migrations:
-            if col_name not in cols:
-                conn.execute(sql)
+        conn.execute(CREATE_AUDIT_LOG)
+        for idx_sql in CREATE_AUDIT_INDEXES:
+            conn.execute(idx_sql)
+
+        # Safe migrations — add columns that may be missing from older DBs
+        _safe_add_column(
+            conn, "projects", "exit_reason",
+            "ALTER TABLE projects ADD COLUMN exit_reason TEXT DEFAULT ''",
+        )
+        _safe_add_column(
+            conn, "projects", "apm_entries",
+            "ALTER TABLE projects ADD COLUMN apm_entries TEXT DEFAULT '[]'",
+        )
+        _safe_add_column(
+            conn, "projects", "erpa_entries",
+            "ALTER TABLE projects ADD COLUMN erpa_entries TEXT DEFAULT '[]'",
+        )
+        _safe_add_column(
+            conn, "projects", "ssp_entries",
+            "ALTER TABLE projects ADD COLUMN ssp_entries TEXT DEFAULT '[]'",
+        )
+        # PR-01: soft-delete column for competitor events
+        _safe_add_column(
+            conn, "competitor_events", "deleted_at",
+            "ALTER TABLE competitor_events ADD COLUMN deleted_at TEXT DEFAULT NULL",
+        )
         conn.commit()

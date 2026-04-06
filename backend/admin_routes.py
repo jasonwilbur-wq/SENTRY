@@ -3,7 +3,8 @@
 Endpoints for VAR management, score extraction, and manual linking.
 All routes live under /api/admin/.
 
-NOTE: These are internal-only; add auth middleware before exposing externally.
+All admin write endpoints require admin privileges (see auth.py).
+All mutations are recorded in the audit_log (see audit.py).
 """
 from __future__ import annotations
 
@@ -20,6 +21,10 @@ from fastapi import APIRouter, HTTPException, Query, BackgroundTasks
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+from fastapi import Depends
+
+from auth import SentryUser, require_admin, get_current_user
+from audit import log_mutation, snapshot_row
 from database import get_connection
 
 try:
@@ -106,7 +111,9 @@ class AdminStats(BaseModel):
 # ── Stats ─────────────────────────────────────────────────────────────────────
 
 @router.get("/stats", response_model=AdminStats)
-def get_admin_stats() -> AdminStats:
+def get_admin_stats(
+    user: SentryUser = Depends(require_admin),
+) -> AdminStats:
     """Dashboard-level stats for the admin panel."""
     conn = get_connection()
     total_vendors = conn.execute("SELECT COUNT(*) FROM vendors").fetchone()[0]
@@ -144,6 +151,7 @@ def get_admin_stats() -> AdminStats:
 
 @router.get("/vars", response_model=VarListResponse)
 def list_admin_vars(
+    user: SentryUser = Depends(require_admin),
     page: int = Query(1, ge=1),
     page_size: int = Query(25, ge=1, le=100),
     search: str | None = Query(None),
@@ -349,27 +357,77 @@ async def _download_and_extract(var_id: str) -> ExtractResult:
 
 
 @router.post("/vars/{var_id}/extract-scores", response_model=ExtractResult)
-async def extract_var_scores(var_id: str) -> ExtractResult:
+async def extract_var_scores(
+    var_id: str,
+    user: SentryUser = Depends(require_admin),
+) -> ExtractResult:
     """Download and extract scores from a single VAR DOCX."""
-    return await _download_and_extract(var_id)
+    result = await _download_and_extract(var_id)
+    if result.success:
+        conn = get_connection()
+        try:
+            log_mutation(
+                conn, user, "extract_scores", "var_report", var_id,
+                new_value={"overall_score": result.overall_score, "decision_band": result.decision_band},
+            )
+            conn.commit()
+        finally:
+            conn.close()
+    return result
 
 
 @router.post("/vars/extract-batch", response_model=BatchExtractResponse)
 async def extract_batch_scores(
+    user: SentryUser = Depends(require_admin),
     limit: int = Query(50, ge=1, le=200, description="Max VARs to process"),
     overwrite: bool = Query(False, description="Re-extract even if already scored"),
+    confirm: bool = Query(False, description="Must be true to execute when overwrite=true"),
 ) -> BatchExtractResponse:
     """Bulk-extract scores for unscored VARs (up to `limit`).
 
+    When overwrite=true, requires confirm=true to proceed. Without confirm,
+    returns a dry-run preview of which VARs would be affected.
+
     Processes concurrently in batches of 5 to avoid hammering SharePoint.
     """
+    # Approval gate: overwrite requires explicit confirmation
+    if overwrite and not confirm:
+        conn = get_connection()
+        try:
+            rows = conn.execute(
+                "SELECT id, filename, overall_score, decision_band "
+                "FROM var_reports WHERE overall_score IS NOT NULL LIMIT ?",
+                (limit,),
+            ).fetchall()
+        finally:
+            conn.close()
+        return BatchExtractResponse(
+            total=len(rows),
+            succeeded=0,
+            failed=0,
+            skipped=len(rows),
+            results=[
+                ExtractResult(
+                    var_id=r["id"],
+                    filename=r["filename"],
+                    success=False,
+                    overall_score=r["overall_score"],
+                    decision_band=r["decision_band"] or "",
+                    error="DRY RUN — add confirm=true to overwrite these scores",
+                )
+                for r in rows
+            ],
+        )
+
     conn = get_connection()
-    where = "" if overwrite else "WHERE overall_score IS NULL"
-    rows = conn.execute(
-        f"SELECT id, filename FROM var_reports {where} "
-        f"ORDER BY filename LIMIT ?", (limit,)
-    ).fetchall()
-    conn.close()
+    try:
+        where = "" if overwrite else "WHERE overall_score IS NULL"
+        rows = conn.execute(
+            f"SELECT id, filename FROM var_reports {where} "
+            f"ORDER BY filename LIMIT ?", (limit,)
+        ).fetchall()
+    finally:
+        conn.close()
 
     if not rows:
         return BatchExtractResponse(
@@ -393,6 +451,18 @@ async def extract_batch_scores(
             else:
                 failed += 1
 
+    # Audit log for the batch operation
+    conn = get_connection()
+    try:
+        log_mutation(
+            conn, user, "batch_extract", "var_report", "batch",
+            new_value={"succeeded": succeeded, "failed": failed, "skipped": skipped},
+            metadata={"overwrite": overwrite, "limit": limit, "confirm": confirm},
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
     return BatchExtractResponse(
         total=len(rows),
         succeeded=succeeded,
@@ -405,30 +475,39 @@ async def extract_batch_scores(
 # ── Manual VAR Linking ────────────────────────────────────────────────────────
 
 @router.patch("/vars/{var_id}/link")
-def link_var_to_vendor(var_id: str, body: LinkVarRequest) -> dict:
+def link_var_to_vendor(
+    var_id: str,
+    body: LinkVarRequest,
+    user: SentryUser = Depends(require_admin),
+) -> dict:
     """Manually link a VAR report to a vendor."""
     conn = get_connection()
+    try:
+        var_row = conn.execute(
+            "SELECT id, vendor_id FROM var_reports WHERE id = ?", (var_id,)
+        ).fetchone()
+        if not var_row:
+            raise HTTPException(status_code=404, detail="VAR not found")
 
-    var_row = conn.execute(
-        "SELECT id FROM var_reports WHERE id = ?", (var_id,)
-    ).fetchone()
-    if not var_row:
+        vendor_row = conn.execute(
+            "SELECT id, company_name FROM vendors WHERE id = ?", (body.vendor_id,)
+        ).fetchone()
+        if not vendor_row:
+            raise HTTPException(status_code=404, detail="Vendor not found")
+
+        old_vendor_id = var_row["vendor_id"]
+        conn.execute(
+            "UPDATE var_reports SET vendor_id=?, match_method='manual' WHERE id=?",
+            (body.vendor_id, var_id)
+        )
+        log_mutation(
+            conn, user, "link", "var_report", var_id,
+            old_value={"vendor_id": old_vendor_id},
+            new_value={"vendor_id": body.vendor_id, "company_name": vendor_row["company_name"]},
+        )
+        conn.commit()
+    finally:
         conn.close()
-        raise HTTPException(status_code=404, detail="VAR not found")
-
-    vendor_row = conn.execute(
-        "SELECT id, company_name FROM vendors WHERE id = ?", (body.vendor_id,)
-    ).fetchone()
-    if not vendor_row:
-        conn.close()
-        raise HTTPException(status_code=404, detail="Vendor not found")
-
-    conn.execute(
-        "UPDATE var_reports SET vendor_id=?, match_method='manual' WHERE id=?",
-        (body.vendor_id, var_id)
-    )
-    conn.commit()
-    conn.close()
 
     return {
         "success": True,
@@ -439,19 +518,48 @@ def link_var_to_vendor(var_id: str, body: LinkVarRequest) -> dict:
 
 
 @router.delete("/vars/{var_id}/link")
-def unlink_var(var_id: str) -> dict:
-    """Unlink a VAR from its vendor (sets vendor_id to empty)."""
+def unlink_var(
+    var_id: str,
+    confirm: bool = Query(False, description="Must be true to unlink"),
+    user: SentryUser = Depends(require_admin),
+) -> dict:
+    """Unlink a VAR from its vendor (sets vendor_id to empty).
+
+    Requires confirm=true. Without it, returns a preview of what would be unlinked.
+    """
     conn = get_connection()
-    row = conn.execute("SELECT id FROM var_reports WHERE id = ?", (var_id,)).fetchone()
-    if not row:
+    try:
+        row = conn.execute(
+            "SELECT vr.id, vr.vendor_id, vr.filename, COALESCE(v.company_name, 'Unknown') AS company_name "
+            "FROM var_reports vr LEFT JOIN vendors v ON vr.vendor_id = v.id "
+            "WHERE vr.id = ?",
+            (var_id,),
+        ).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="VAR not found")
+
+        if not confirm:
+            return {
+                "dry_run": True,
+                "var_id": var_id,
+                "filename": row["filename"],
+                "current_vendor_id": row["vendor_id"],
+                "current_vendor_name": row["company_name"],
+                "message": "Add confirm=true to unlink this VAR from its vendor.",
+            }
+
+        log_mutation(
+            conn, user, "unlink", "var_report", var_id,
+            old_value={"vendor_id": row["vendor_id"], "company_name": row["company_name"]},
+            new_value={"vendor_id": "", "match_method": "unlinked"},
+        )
+        conn.execute(
+            "UPDATE var_reports SET vendor_id='', match_method='unlinked' WHERE id=?",
+            (var_id,)
+        )
+        conn.commit()
+    finally:
         conn.close()
-        raise HTTPException(status_code=404, detail="VAR not found")
-    conn.execute(
-        "UPDATE var_reports SET vendor_id='', match_method='unlinked' WHERE id=?",
-        (var_id,)
-    )
-    conn.commit()
-    conn.close()
     return {"success": True, "var_id": var_id}
 
 
@@ -461,6 +569,7 @@ def unlink_var(var_id: str) -> dict:
 def search_vendors_for_linking(
     q: str = Query(..., min_length=2),
     limit: int = Query(10, ge=1, le=50),
+    user: SentryUser = Depends(require_admin),
 ) -> dict:
     """Quick vendor name search for the linking modal."""
     conn = get_connection()
@@ -544,6 +653,7 @@ class CompetitorEventsListResponse(BaseModel):
 
 @router.get("/competitor-events", response_model=CompetitorEventsListResponse)
 def list_competitor_events(
+    user: SentryUser = Depends(require_admin),
     competitor: str | None = Query(None),
     category: str | None = Query(None),
     month: str | None = Query(None),
@@ -554,7 +664,7 @@ def list_competitor_events(
     """Admin: List competitor events with filters and pagination."""
     conn = get_connection()
     params: list[Any] = []
-    clauses: list[str] = []
+    clauses: list[str] = ["deleted_at IS NULL"]
 
     if competitor:
         clauses.append("competitor = ?")
@@ -622,13 +732,19 @@ def list_competitor_events(
 
 
 @router.get("/competitor-events/{event_id}", response_model=CompetitorEventOut)
-def get_competitor_event(event_id: int) -> CompetitorEventOut:
+def get_competitor_event(
+    event_id: int,
+    user: SentryUser = Depends(require_admin),
+) -> CompetitorEventOut:
     """Admin: Get single competitor event by ID."""
     conn = get_connection()
-    row = conn.execute(
-        "SELECT * FROM competitor_events WHERE id = ?", (event_id,)
-    ).fetchone()
-    conn.close()
+    try:
+        row = conn.execute(
+            "SELECT * FROM competitor_events WHERE id = ? AND deleted_at IS NULL",
+            (event_id,),
+        ).fetchone()
+    finally:
+        conn.close()
 
     if not row:
         raise HTTPException(status_code=404, detail="Event not found")
@@ -653,44 +769,53 @@ def get_competitor_event(event_id: int) -> CompetitorEventOut:
 
 
 @router.post("/competitor-events", response_model=CompetitorEventOut)
-def create_competitor_event(event: CompetitorEventCreate) -> CompetitorEventOut:
+def create_competitor_event(
+    event: CompetitorEventCreate,
+    user: SentryUser = Depends(require_admin),
+) -> CompetitorEventOut:
     """Admin: Create a new competitor event."""
     conn = get_connection()
-    cursor = conn.cursor()
+    try:
+        cursor = conn.cursor()
 
-    cursor.execute(
-        """
-        INSERT INTO competitor_events (
-            event_date, competitor, event_title, event_type, detailed_description,
-            category, location, security_implication, operational_impact,
-            financial_impact, reputational_impact, source_link,
-            analyst_notes, source_month
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            event.event_date,
-            event.competitor,
-            event.event_title,
-            event.event_type,
-            event.detailed_description,
-            event.category,
-            event.location,
-            event.security_implication,
-            event.operational_impact,
-            event.financial_impact,
-            event.reputational_impact,
-            event.source_link,
-            event.analyst_notes,
-            event.source_month,
-        ),
-    )
-    event_id = cursor.lastrowid
-    conn.commit()
+        cursor.execute(
+            """
+            INSERT INTO competitor_events (
+                event_date, competitor, event_title, event_type, detailed_description,
+                category, location, security_implication, operational_impact,
+                financial_impact, reputational_impact, source_link,
+                analyst_notes, source_month
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                event.event_date,
+                event.competitor,
+                event.event_title,
+                event.event_type,
+                event.detailed_description,
+                event.category,
+                event.location,
+                event.security_implication,
+                event.operational_impact,
+                event.financial_impact,
+                event.reputational_impact,
+                event.source_link,
+                event.analyst_notes,
+                event.source_month,
+            ),
+        )
+        event_id = cursor.lastrowid
+        log_mutation(
+            conn, user, "create", "competitor_event", str(event_id),
+            new_value=event.model_dump(),
+        )
+        conn.commit()
 
-    row = conn.execute(
-        "SELECT * FROM competitor_events WHERE id = ?", (event_id,)
-    ).fetchone()
-    conn.close()
+        row = conn.execute(
+            "SELECT * FROM competitor_events WHERE id = ?", (event_id,)
+        ).fetchone()
+    finally:
+        conn.close()
 
     return CompetitorEventOut(
         id=row["id"],
@@ -713,81 +838,108 @@ def create_competitor_event(event: CompetitorEventCreate) -> CompetitorEventOut:
 
 @router.patch("/competitor-events/{event_id}", response_model=CompetitorEventOut)
 def update_competitor_event(
-    event_id: int, update: CompetitorEventUpdate
+    event_id: int,
+    update: CompetitorEventUpdate,
+    user: SentryUser = Depends(require_admin),
 ) -> CompetitorEventOut:
     """Admin: Update competitor event fields."""
     conn = get_connection()
+    try:
+        existing = conn.execute(
+            "SELECT * FROM competitor_events WHERE id = ? AND deleted_at IS NULL",
+            (event_id,),
+        ).fetchone()
+        if not existing:
+            raise HTTPException(status_code=404, detail="Event not found")
 
-    # Check if event exists
-    existing = conn.execute(
-        "SELECT id FROM competitor_events WHERE id = ?", (event_id,)
-    ).fetchone()
-    if not existing:
+        change_data = update.model_dump(exclude_unset=True)
+        updates = []
+        params = []
+        for field, value in change_data.items():
+            if value is not None:
+                updates.append(f"{field} = ?")
+                params.append(value)
+
+        if not updates:
+            return CompetitorEventOut(**{k: existing[k] for k in CompetitorEventOut.model_fields})
+
+        old_snapshot = {k: existing[k] for k in change_data if existing[k] is not None}
+
+        params.append(event_id)
+        conn.execute(
+            f"UPDATE competitor_events SET {', '.join(updates)} WHERE id = ?", params
+        )
+        log_mutation(
+            conn, user, "update", "competitor_event", str(event_id),
+            old_value=old_snapshot,
+            new_value=change_data,
+        )
+        conn.commit()
+
+        row = conn.execute(
+            "SELECT * FROM competitor_events WHERE id = ?", (event_id,)
+        ).fetchone()
+    finally:
         conn.close()
-        raise HTTPException(status_code=404, detail="Event not found")
 
-    # Build dynamic UPDATE query for non-None fields
-    updates = []
-    params = []
-    for field, value in update.model_dump(exclude_unset=True).items():
-        if value is not None:
-            updates.append(f"{field} = ?")
-            params.append(value)
-
-    if not updates:
-        # No fields to update
-        conn.close()
-        return get_competitor_event(event_id)
-
-    params.append(event_id)
-    conn.execute(
-        f"UPDATE competitor_events SET {', '.join(updates)} WHERE id = ?", params
-    )
-    conn.commit()
-
-    row = conn.execute(
-        "SELECT * FROM competitor_events WHERE id = ?", (event_id,)
-    ).fetchone()
-    conn.close()
-
-    return CompetitorEventOut(
-        id=row["id"],
-        event_date=row["event_date"],
-        competitor=row["competitor"],
-        event_title=row["event_title"],
-        event_type=row["event_type"],
-        detailed_description=row["detailed_description"],
-        category=row["category"],
-        location=row["location"],
-        security_implication=row["security_implication"],
-        operational_impact=row["operational_impact"],
-        financial_impact=row["financial_impact"],
-        reputational_impact=row["reputational_impact"],
-        source_link=row["source_link"],
-        analyst_notes=row["analyst_notes"],
-        source_month=row["source_month"],
-    )
+    return CompetitorEventOut(**{k: row[k] for k in CompetitorEventOut.model_fields})
 
 
 @router.delete("/competitor-events/{event_id}")
-def delete_competitor_event(event_id: int) -> dict:
-    """Admin: Delete a competitor event."""
+def delete_competitor_event(
+    event_id: int,
+    confirm: bool = Query(False, description="Must be true to delete"),
+    permanent: bool = Query(False, description="Hard-delete instead of soft-delete (admin only)"),
+    user: SentryUser = Depends(require_admin),
+) -> dict:
+    """Admin: Soft-delete a competitor event.
+
+    Sets deleted_at timestamp. Use permanent=true for hard-delete (irreversible).
+    Both modes require confirm=true.
+    """
     conn = get_connection()
+    try:
+        row = conn.execute(
+            "SELECT id, competitor, event_title FROM competitor_events "
+            "WHERE id = ? AND deleted_at IS NULL",
+            (event_id,),
+        ).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Event not found")
 
-    row = conn.execute(
-        "SELECT id, competitor, event_title FROM competitor_events WHERE id = ?",
-        (event_id,),
-    ).fetchone()
-    if not row:
+        if not confirm:
+            return {
+                "dry_run": True,
+                "event_id": event_id,
+                "competitor": row["competitor"],
+                "event_title": row["event_title"],
+                "message": "Add confirm=true to delete this event.",
+            }
+
+        if permanent:
+            conn.execute("DELETE FROM competitor_events WHERE id = ?", (event_id,))
+            action = "hard_delete"
+        else:
+            from datetime import datetime, timezone
+            now = datetime.now(timezone.utc).isoformat()
+            conn.execute(
+                "UPDATE competitor_events SET deleted_at = ? WHERE id = ?",
+                (now, event_id),
+            )
+            action = "soft_delete"
+
+        log_mutation(
+            conn, user, action, "competitor_event", str(event_id),
+            old_value={"competitor": row["competitor"], "event_title": row["event_title"]},
+            metadata={"permanent": permanent},
+        )
+        conn.commit()
+    finally:
         conn.close()
-        raise HTTPException(status_code=404, detail="Event not found")
-
-    conn.execute("DELETE FROM competitor_events WHERE id = ?", (event_id,))
-    conn.commit()
-    conn.close()
 
     return {
         "success": True,
+        "action": action,
         "deleted_id": event_id,
         "competitor": row["competitor"],
         "event_title": row["event_title"],

@@ -270,7 +270,7 @@ const OrbitalScene: React.FC<OrbitalSceneProps> = ({ projects, onProjectClick })
       positions.set(project.project_id, [x, y, z]);
     });
 
-    return projects.map(p => positions.get(p.project_id) || [0, 0, 0]);
+    return projects.map(p => (positions.get(p.project_id) ?? [0, 0, 0]) as [number, number, number]);
   }, [projects]);
 
   return (
@@ -329,18 +329,18 @@ const OrbitalScene: React.FC<OrbitalSceneProps> = ({ projects, onProjectClick })
 
       {/* Ring Guides (Visual helpers) */}
       {[8, 12, 16].map((radius, idx) => {
-        const points = [];
+        const points: THREE.Vector3[] = [];
         for (let i = 0; i <= 64; i++) {
           const angle = (i / 64) * Math.PI * 2;
           points.push(new THREE.Vector3(Math.cos(angle) * radius, 0, Math.sin(angle) * radius));
         }
         const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
-        const color = idx === 0 ? '#22c55e' : idx === 1 ? '#ffc220' : '#ef4444';
-        return (
-          <line key={`ring-${idx}`} geometry={lineGeometry}>
-            <lineBasicMaterial attach="material" color={color} opacity={0.15} transparent />
-          </line>
-        );
+        const lineMaterial = new THREE.LineBasicMaterial({
+          color: idx === 0 ? '#22c55e' : idx === 1 ? '#ffc220' : '#ef4444',
+          opacity: 0.15, transparent: true,
+        });
+        const lineObj = new THREE.Line(lineGeometry, lineMaterial);
+        return <primitive key={`ring-${idx}`} object={lineObj} />;
       })}
 
       {/* Project Orbs */}

@@ -179,11 +179,78 @@ const IconAdmin = () => (
   </svg>
 );
 
-// ── Helper: format number with "+" for large counts ───────────────────────────
+// ── Helper: format number with "+" for large counts ─────────────────────
 const fmt = (n: number | undefined | null): string =>
   n != null ? n.toLocaleString() : '—';
 
-// ── Main component ────────────────────────────────────────────────────────────
+// ── Collapsible AI Disclaimer ─────────────────────────────────────────────────
+const AI_DISMISSED_KEY = 'sentry-ai-disclaimer-dismissed';
+
+const AiDisclaimer: React.FC = () => {
+  const [dismissed, setDismissed] = useState(
+    () => localStorage.getItem(AI_DISMISSED_KEY) === '1'
+  );
+
+  if (dismissed) {
+    return (
+      <button
+        onClick={() => {
+          setDismissed(false);
+          localStorage.removeItem(AI_DISMISSED_KEY);
+        }}
+        className="mb-4 rounded-lg px-4 py-2 flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest transition-colors hover:opacity-80"
+        style={{
+          background: 'rgba(255,194,32,0.06)',
+          border: '1px solid rgba(255,194,32,0.15)',
+          color: '#FFC220',
+        }}
+        aria-label="Show AI use disclaimer"
+      >
+        <span aria-hidden>⚠️</span> AI Notice — Click to expand
+      </button>
+    );
+  }
+
+  return (
+    <div
+      className="mb-8 rounded-xl px-5 py-4 flex gap-4 items-start relative"
+      style={{
+        background: 'rgba(255, 194, 32, 0.06)',
+        border: '1px solid rgba(255, 194, 32, 0.25)',
+      }}
+      role="note"
+      aria-label="AI use disclaimer"
+    >
+      <span className="text-lg shrink-0" aria-hidden>⚠️</span>
+      <div className="flex-1">
+        <p className="text-[11px] font-bold uppercase tracking-widest mb-1" style={{ color: '#FFC220' }}>
+          AI Notice — Internal Use Only
+        </p>
+        <p className="text-[11px] leading-relaxed" style={{ color: 'var(--s-text-muted)' }}>
+          SENTRY includes an AI-powered chat assistant intended exclusively for Walmart Emerging Technology
+          Security team members. <strong style={{ color: 'var(--s-text)' }}>Do not enter highly sensitive,
+          classified, personally identifiable, or regulated information</strong> (e.g. HIPAA, financial data,
+          or confidential vendor contract terms) into the chat. AI-generated responses are informational only
+          and do not constitute official security assessments, legal advice, or formal vendor decisions.
+          All outputs must be reviewed and validated by a qualified team member.
+        </p>
+      </div>
+      <button
+        onClick={() => {
+          setDismissed(true);
+          localStorage.setItem(AI_DISMISSED_KEY, '1');
+        }}
+        className="shrink-0 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider transition-colors hover:opacity-80"
+        style={{ color: '#FFC220', background: 'rgba(255,194,32,0.12)', border: '1px solid rgba(255,194,32,0.3)' }}
+        aria-label="Dismiss AI notice"
+      >
+        Got it
+      </button>
+    </div>
+  );
+};
+
+// ── Main component ─────────────────────────────────────────────────────────────────
 
 export const HomeDashboard: React.FC<HomeDashboardProps> = ({ onNavigate }) => {
   const [stats, setStats]         = useState<DirectoryStats | null>(null);
@@ -247,7 +314,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({ onNavigate }) => {
   const projectStat = activeProjects != null ? `${activeProjects} Active` : 'Loading…';
 
   // CSO — static (data file, not a DB table)
-  const csoStat = '5 Exec Profiles';
+  const csoStat = '4 Exec Profiles';
 
   // ── Module groups ────────────────────────────────────────────────────────
   const intelligenceModules = [
@@ -388,31 +455,8 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({ onNavigate }) => {
         </p>
       </div>
 
-      {/* ── AI Disclaimer ──────────────────────────────────────────────── */}
-      <div
-        className="mb-8 rounded-xl px-5 py-4 flex gap-4 items-start"
-        style={{
-          background: 'rgba(255, 194, 32, 0.06)',
-          border: '1px solid rgba(255, 194, 32, 0.25)',
-        }}
-        role="note"
-        aria-label="AI use disclaimer"
-      >
-        <span className="text-lg shrink-0" aria-hidden>⚠️</span>
-        <div>
-          <p className="text-[11px] font-bold uppercase tracking-widest mb-1" style={{ color: '#FFC220' }}>
-            AI Notice — Internal Use Only
-          </p>
-          <p className="text-[11px] leading-relaxed" style={{ color: 'var(--s-text-muted)' }}>
-            SENTRY includes an AI-powered chat assistant intended exclusively for Walmart Emerging Technology
-            Security team members. <strong style={{ color: 'var(--s-text)' }}>Do not enter highly sensitive,
-            classified, personally identifiable, or regulated information</strong> (e.g. HIPAA, financial data,
-            or confidential vendor contract terms) into the chat. AI-generated responses are informational only
-            and do not constitute official security assessments, legal advice, or formal vendor decisions.
-            All outputs must be reviewed and validated by a qualified team member.
-          </p>
-        </div>
-      </div>
+      {/* ── AI Disclaimer (collapsible) ────────────────────────────────── */}
+      <AiDisclaimer />
 
       {/* ── Live KPI strip ──────────────────────────────────────────── */}
       <div className="flex flex-wrap gap-3 mb-8">
@@ -474,7 +518,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({ onNavigate }) => {
         className="text-center text-[10px] font-mono uppercase tracking-widest pb-6"
         style={{ color: 'var(--s-text-faint)' }}
       >
-        SENTRY v2.0 · Walmart Internal Only · Eagle WiFi or VPN Required
+        SENTRY v2.1 · Walmart Internal Only · Eagle WiFi or VPN Required
       </p>
     </div>
   );

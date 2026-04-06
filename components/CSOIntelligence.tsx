@@ -181,7 +181,8 @@ export function CSOIntelligence() {
             ))}
           </div>
           {/* Hero text */}
-          <div className="relative z-10 h-full flex flex-col items-center justify-start pt-8 text-center px-6">
+          <div className="relative z-10 h-full flex flex-col items-center justify-start pt-6 text-center px-6"
+            style={{ textShadow: '0 2px 12px rgba(0,0,0,0.8)' }}>
             <p className="text-[10px] font-bold text-wmt-yellow tracking-[0.2em] uppercase mb-2">
               Enterprise Security &nbsp;•&nbsp; Executive Threat Intelligence
             </p>

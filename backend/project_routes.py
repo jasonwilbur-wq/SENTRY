@@ -12,8 +12,10 @@ import json
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 
+from auth import SentryUser, get_current_user, require_admin
+from audit import log_mutation, snapshot_row
 from database import get_connection
 from models import (
     ComplianceEntry, NdaEntry,
@@ -225,8 +227,12 @@ def get_project(project_id: str):
 # ── PATCH /api/projects/{project_id} ─────────────────────────────────────────
 
 @ROUTER.patch("/{project_id}", response_model=ProjectOut)
-def update_project(project_id: str, body: ProjectUpdate):
-    """Partial update — only supplied fields are written."""
+def update_project(
+    project_id: str,
+    body: ProjectUpdate,
+    user: SentryUser = Depends(get_current_user),
+):
+    """Partial update — only supplied fields are written. Audit-logged."""
     with get_connection() as conn:
         row = conn.execute(
             "SELECT * FROM projects WHERE project_id = ?", (project_id,)
@@ -256,11 +262,18 @@ def update_project(project_id: str, body: ProjectUpdate):
                 updates[field] = data[field]
 
         if updates:
+            # Capture old values for audit trail
+            old_snapshot = {k: dict(row).get(k) for k in updates}
             updates["updated_at"] = datetime.now(timezone.utc).isoformat()
             set_clause = ", ".join(f"{k} = ?" for k in updates)
             conn.execute(
                 f"UPDATE projects SET {set_clause} WHERE project_id = ?",
                 (*updates.values(), project_id),
+            )
+            log_mutation(
+                conn, user, "update", "project", project_id,
+                old_value=old_snapshot,
+                new_value={k: v for k, v in updates.items() if k != "updated_at"},
             )
             conn.commit()
 
@@ -274,14 +287,44 @@ def update_project(project_id: str, body: ProjectUpdate):
 # ── DELETE /api/projects/{project_id} ───────────────────────────────────────
 
 @ROUTER.delete("/{project_id}", status_code=204)
-def delete_project(project_id: str):
-    """Permanently delete a project and all its vendor entries (CASCADE)."""
+def delete_project(
+    project_id: str,
+    confirm: bool = Query(False, description="Must be true to delete"),
+    user: SentryUser = Depends(require_admin),
+):
+    """Permanently delete a project and all its vendor entries (CASCADE).
+
+    Requires confirm=true. Without it, returns a preview.
+    """
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT 1 FROM projects WHERE project_id = ?", (project_id,)
+            "SELECT project_id, project_name FROM projects WHERE project_id = ?",
+            (project_id,),
         ).fetchone()
         if row is None:
             raise HTTPException(status_code=404, detail=f"Project '{project_id}' not found")
+
+        if not confirm:
+            vendor_count = conn.execute(
+                "SELECT COUNT(*) FROM project_vendors WHERE project_id = ?",
+                (project_id,),
+            ).fetchone()[0]
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "dry_run": True,
+                    "project_id": project_id,
+                    "project_name": row["project_name"],
+                    "vendor_count": vendor_count,
+                    "message": "Add confirm=true to permanently delete this project.",
+                },
+            )
+
+        log_mutation(
+            conn, user, "delete", "project", project_id,
+            old_value={"project_name": row["project_name"]},
+        )
         conn.execute("DELETE FROM projects WHERE project_id = ?", (project_id,))
         conn.commit()
 
@@ -303,8 +346,12 @@ def list_project_vendors(project_id: str):
 # ── POST /api/projects/{project_id}/vendors ───────────────────────────────────
 
 @ROUTER.post("/{project_id}/vendors", response_model=ProjectVendor, status_code=201)
-def add_project_vendor(project_id: str, body: ProjectVendorCreate):
-    """Add a vendor to a project."""
+def add_project_vendor(
+    project_id: str,
+    body: ProjectVendorCreate,
+    user: SentryUser = Depends(get_current_user),
+):
+    """Add a vendor to a project. Audit-logged."""
     with get_connection() as conn:
         exists = conn.execute(
             "SELECT 1 FROM projects WHERE project_id = ?", (project_id,)
@@ -323,6 +370,10 @@ def add_project_vendor(project_id: str, body: ProjectVendorCreate):
             (entry_id, project_id, body.vendor_name, body.vendor_id,
              body.role, body.status, body.notes, now, now),
         )
+        log_mutation(
+            conn, user, "create", "project_vendor", entry_id,
+            new_value={"vendor_name": body.vendor_name, "project_id": project_id},
+        )
         conn.commit()
         row = conn.execute(
             "SELECT * FROM project_vendors WHERE id = ?", (entry_id,)
@@ -340,8 +391,13 @@ def add_project_vendor(project_id: str, body: ProjectVendorCreate):
 # ── PATCH /api/projects/{project_id}/vendors/{entry_id} ──────────────────────
 
 @ROUTER.patch("/{project_id}/vendors/{entry_id}", response_model=ProjectVendor)
-def update_project_vendor(project_id: str, entry_id: str, body: ProjectVendorUpdate):
-    """Update a vendor entry on a project."""
+def update_project_vendor(
+    project_id: str,
+    entry_id: str,
+    body: ProjectVendorUpdate,
+    user: SentryUser = Depends(get_current_user),
+):
+    """Update a vendor entry on a project. Audit-logged."""
     with get_connection() as conn:
         row = conn.execute(
             "SELECT * FROM project_vendors WHERE id = ? AND project_id = ?",
@@ -354,11 +410,17 @@ def update_project_vendor(project_id: str, entry_id: str, body: ProjectVendorUpd
         if not data:
             return ProjectVendor(**dict(row))
 
+        old_snapshot = {k: dict(row).get(k) for k in data if k != "updated_at"}
         data["updated_at"] = datetime.now(timezone.utc).isoformat()
         set_clause = ", ".join(f"{k} = ?" for k in data)
         conn.execute(
             f"UPDATE project_vendors SET {set_clause} WHERE id = ?",
             (*data.values(), entry_id),
+        )
+        log_mutation(
+            conn, user, "update", "project_vendor", entry_id,
+            old_value=old_snapshot,
+            new_value={k: v for k, v in data.items() if k != "updated_at"},
         )
         conn.commit()
         updated = conn.execute(
@@ -377,14 +439,37 @@ def update_project_vendor(project_id: str, entry_id: str, body: ProjectVendorUpd
 # ── DELETE /api/projects/{project_id}/vendors/{entry_id} ─────────────────────
 
 @ROUTER.delete("/{project_id}/vendors/{entry_id}", status_code=204)
-def remove_project_vendor(project_id: str, entry_id: str):
-    """Remove a vendor from a project."""
+def remove_project_vendor(
+    project_id: str,
+    entry_id: str,
+    confirm: bool = Query(False, description="Must be true to remove"),
+    user: SentryUser = Depends(get_current_user),
+):
+    """Remove a vendor from a project. Requires confirm=true."""
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT 1 FROM project_vendors WHERE id = ? AND project_id = ?",
+            "SELECT id, vendor_name, project_id FROM project_vendors "
+            "WHERE id = ? AND project_id = ?",
             (entry_id, project_id),
         ).fetchone()
         if row is None:
             raise HTTPException(status_code=404, detail="Vendor entry not found")
+
+        if not confirm:
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "dry_run": True,
+                    "entry_id": entry_id,
+                    "vendor_name": row["vendor_name"],
+                    "message": "Add confirm=true to remove this vendor.",
+                },
+            )
+
+        log_mutation(
+            conn, user, "delete", "project_vendor", entry_id,
+            old_value={"vendor_name": row["vendor_name"], "project_id": project_id},
+        )
         conn.execute("DELETE FROM project_vendors WHERE id = ?", (entry_id,))
         conn.commit()

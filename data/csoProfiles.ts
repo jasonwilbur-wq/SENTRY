@@ -12,7 +12,7 @@ export interface Source {
 
 export interface Finding {
   id: string;
-  type: 'thought_leadership' | 'incident_response' | 'partnership' | 'decision' | 'org_change';
+  type: 'thought_leadership' | 'incident_response' | 'partnership' | 'decision' | 'org_change' | 'regulatory';
   headline: string;
   date: string;
   impactScore: number;

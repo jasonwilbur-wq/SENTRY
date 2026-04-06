@@ -149,11 +149,14 @@ const SHORT_NAMES: Record<string, string> = {
   'Video Analytics/AI':                               'V-Analytics',
   'Cloud Security':                                   'Cloud Sec',
   'Edge AI/IoT':                                      'Edge AI/IoT',
+  'Access Control & Identity':                        'Access Ctrl',
+  'Access Control':                                   'Access Ctrl',
+  'Robotics & Automation':                            'Robotics',
 };
 
 function CategoryBars({ cats }: { cats: { category: string; count: number; avg_rating: number }[] }) {
   const data = cats.slice(0, 8).map(c => ({
-    name: SHORT_NAMES[c.category] ?? c.category.slice(0, 12),
+    name: SHORT_NAMES[c.category] ?? c.category.slice(0, 16),
     count: c.count,
   }));
   return (
@@ -165,7 +168,7 @@ function CategoryBars({ cats }: { cats: { category: string; count: number; avg_r
         <BarChart data={data} layout="vertical" margin={{ top: 0, right: 50, bottom: 0, left: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" horizontal={false} />
           <XAxis type="number" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
-          <YAxis type="category" dataKey="name" width={80} tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
+          <YAxis type="category" dataKey="name" width={90} tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
           <Tooltip
             contentStyle={TOOLTIP_STYLE}
             cursor={{ fill: 'rgba(255,255,255,0.04)' }}
@@ -338,7 +341,7 @@ export const VendorStatsPanel: React.FC<VendorStatsPanelProps> = ({ stats }) => 
                   <div key={cat.category}>
                     <div className="flex items-center justify-between mb-0.5">
                       <span className="text-[10px] text-slate-400 truncate max-w-[110px]">
-                        {SHORT_NAMES[cat.category] ?? cat.category.slice(0, 12)}
+                        {SHORT_NAMES[cat.category] ?? cat.category.slice(0, 16)}
                       </span>
                       <span className="text-[10px] font-bold shrink-0 ml-1" style={{ color: hue }}>
                         {cat.avg_rating.toFixed(2)}
