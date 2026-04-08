@@ -71,13 +71,27 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
     allow_methods=["GET", "POST", "PATCH", "DELETE"],
-    allow_headers=["Content-Type", "Authorization"],
+    allow_headers=["Content-Type", "Authorization", "X-Sentry-User"],
 )
 
 # ── Admin router (Phase 3) ────────────────────────────────────
 app.include_router(admin_router)
 from admin_routes import competitor_router
 app.include_router(competitor_router)
+
+
+# ── Health / auth status ──────────────────────────────────────────────────────
+
+@app.get("/api/health")
+def health_check():
+    """Health check — includes auth posture so frontend can show warnings."""
+    from auth import get_auth_status
+    auth_status = get_auth_status()
+    return {
+        "status": "ok",
+        "version": "2.1.0",
+        **auth_status,
+    }
 from regulatory_routes import ROUTER as regulatory_router
 app.include_router(regulatory_router)
 from incident_routes import ROUTER as incident_router
@@ -1037,3 +1051,36 @@ def competitor_categories():
     ).fetchall()
     conn.close()
     return {"categories": [r[0] for r in rows]}
+
+
+@app.get("/api/competitors/cso-candidates")
+def competitor_cso_candidates(limit: int = Query(25, ge=1, le=100)):
+    """High-priority competitor events for executive brief workflows."""
+    conn = get_connection()
+    rows = conn.execute(
+        """
+        SELECT id, event_date, competitor, event_title, event_type,
+               category, location, security_implication, detailed_description,
+               analyst_notes, source_link, source_month,
+               walmart_relevance_score, priority_tier, signal_type,
+               recommended_owner, why_walmart_cares,
+               strategic_score, security_score, operational_score,
+               customer_trust_score, novelty_score, urgency_score,
+               confidence_score, escalate_to_cso, scoring_version
+        FROM competitor_events
+        WHERE (deleted_at IS NULL OR deleted_at = '')
+          AND (
+                escalate_to_cso = 1
+                OR priority_tier = 'CSO Brief'
+                OR walmart_relevance_score >= 85
+          )
+        ORDER BY walmart_relevance_score DESC, event_date DESC
+        LIMIT ?
+        """,
+        (limit,),
+    ).fetchall()
+    conn.close()
+    return {
+        "count": len(rows),
+        "events": [dict(r) for r in rows],
+    }

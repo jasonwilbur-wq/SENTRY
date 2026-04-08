@@ -514,6 +514,21 @@ export interface CompetitorEvent {
   analyst_notes: string | null;
   source_link: string | null;
   source_month: string | null;
+  confidence_level?: string | null;
+  walmart_relevance_score?: number | null;
+  priority_tier?: string | null;
+  signal_type?: string | null;
+  recommended_owner?: string | null;
+  why_walmart_cares?: string | null;
+  strategic_score?: number | null;
+  security_score?: number | null;
+  operational_score?: number | null;
+  customer_trust_score?: number | null;
+  novelty_score?: number | null;
+  urgency_score?: number | null;
+  confidence_score?: number | null;
+  escalate_to_cso?: number | null;
+  scoring_version?: string | null;
 }
 
 export interface CompetitorEventCreate {
@@ -531,6 +546,7 @@ export interface CompetitorEventCreate {
   analyst_notes?: string;
   source_link?: string;
   source_month?: string;
+  confidence_level?: string;
 }
 
 export interface CompetitorEventUpdate {
@@ -548,6 +564,7 @@ export interface CompetitorEventUpdate {
   analyst_notes?: string;
   source_link?: string;
   source_month?: string;
+  confidence_level?: string;
 }
 
 export interface CompetitorEventsResponse {
@@ -615,6 +632,12 @@ export async function fetchCompetitorEvents(params?: {
 
 export async function fetchCompetitorCategories(): Promise<{ categories: string[] }> {
   return request('/api/competitors/categories');
+}
+
+export async function fetchCompetitorCSOCandidates(
+  limit = 25,
+): Promise<{ count: number; events: CompetitorEvent[] }> {
+  return request(`/api/competitors/cso-candidates?limit=${limit}`);
 }
 
 // ── Regulatory Intelligence ──────────────────────────────────────────────────

@@ -259,19 +259,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({ onNavigate }) => {
   const [regStats, setRegStats]   = useState<RegulatorySummary | null>(null);
   const [projData, setProjData]   = useState<{ projects: ProjectListItem[]; total: number } | null>(null);
   const [mounted, setMounted]     = useState(false);
-  const { reducedMotion, theme }  = useTheme();
-
-  // Home screen is always dark — restore the user's real theme on leave.
-  useEffect(() => {
-    const root = document.documentElement;
-    root.setAttribute('data-theme', 'dark');
-    root.classList.add('dark');
-    return () => {
-      root.setAttribute('data-theme', theme);
-      if (theme === 'dark') root.classList.add('dark');
-      else                  root.classList.remove('dark');
-    };
-  }, [theme]);
+  const { reducedMotion }  = useTheme();
 
   // Fetch all stats in parallel on mount
   useEffect(() => {

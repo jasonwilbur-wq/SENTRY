@@ -26,6 +26,7 @@ from fastapi import Depends
 from auth import SentryUser, require_admin, get_current_user
 from audit import log_mutation, snapshot_row
 from database import get_connection
+from competitor_scoring import score_event
 
 try:
     from sharepoint_auth import get_token, download_url_for_item
@@ -606,6 +607,7 @@ class CompetitorEventCreate(BaseModel):
     source_link: str = ""
     analyst_notes: str = ""
     source_month: str = ""
+    confidence_level: str = ""
 
 
 class CompetitorEventUpdate(BaseModel):
@@ -623,6 +625,7 @@ class CompetitorEventUpdate(BaseModel):
     source_link: str | None = None
     analyst_notes: str | None = None
     source_month: str | None = None
+    confidence_level: str | None = None
 
 
 class CompetitorEventOut(BaseModel):
@@ -641,6 +644,21 @@ class CompetitorEventOut(BaseModel):
     source_link: str | None
     analyst_notes: str | None
     source_month: str | None
+    confidence_level: str | None = None
+    walmart_relevance_score: float | None = None
+    priority_tier: str | None = None
+    signal_type: str | None = None
+    recommended_owner: str | None = None
+    why_walmart_cares: str | None = None
+    strategic_score: float | None = None
+    security_score: float | None = None
+    operational_score: float | None = None
+    customer_trust_score: float | None = None
+    novelty_score: float | None = None
+    urgency_score: float | None = None
+    confidence_score: float | None = None
+    escalate_to_cso: int | None = None
+    scoring_version: str | None = None
 
 
 class CompetitorEventsListResponse(BaseModel):
@@ -749,23 +767,7 @@ def get_competitor_event(
     if not row:
         raise HTTPException(status_code=404, detail="Event not found")
 
-    return CompetitorEventOut(
-        id=row["id"],
-        event_date=row["event_date"],
-        competitor=row["competitor"],
-        event_title=row["event_title"],
-        event_type=row["event_type"],
-        detailed_description=row["detailed_description"],
-        category=row["category"],
-        location=row["location"],
-        security_implication=row["security_implication"],
-        operational_impact=row["operational_impact"],
-        financial_impact=row["financial_impact"],
-        reputational_impact=row["reputational_impact"],
-        source_link=row["source_link"],
-        analyst_notes=row["analyst_notes"],
-        source_month=row["source_month"],
-    )
+    return CompetitorEventOut(**{k: row[k] for k in CompetitorEventOut.model_fields})
 
 
 @router.post("/competitor-events", response_model=CompetitorEventOut)
@@ -778,14 +780,22 @@ def create_competitor_event(
     try:
         cursor = conn.cursor()
 
+        payload = event.model_dump()
+        scored = score_event(payload)
+
         cursor.execute(
             """
             INSERT INTO competitor_events (
                 event_date, competitor, event_title, event_type, detailed_description,
                 category, location, security_implication, operational_impact,
                 financial_impact, reputational_impact, source_link,
-                analyst_notes, source_month
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                analyst_notes, source_month, confidence_level,
+                walmart_relevance_score, priority_tier, signal_type,
+                recommended_owner, why_walmart_cares,
+                strategic_score, security_score, operational_score,
+                customer_trust_score, novelty_score, urgency_score,
+                confidence_score, escalate_to_cso, scoring_version
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 event.event_date,
@@ -802,6 +812,21 @@ def create_competitor_event(
                 event.source_link,
                 event.analyst_notes,
                 event.source_month,
+                event.confidence_level,
+                scored["walmart_relevance_score"],
+                scored["priority_tier"],
+                scored["signal_type"],
+                scored["recommended_owner"],
+                scored["why_walmart_cares"],
+                scored["strategic_score"],
+                scored["security_score"],
+                scored["operational_score"],
+                scored["customer_trust_score"],
+                scored["novelty_score"],
+                scored["urgency_score"],
+                scored["confidence_score"],
+                scored["escalate_to_cso"],
+                scored["scoring_version"],
             ),
         )
         event_id = cursor.lastrowid
@@ -817,23 +842,7 @@ def create_competitor_event(
     finally:
         conn.close()
 
-    return CompetitorEventOut(
-        id=row["id"],
-        event_date=row["event_date"],
-        competitor=row["competitor"],
-        event_title=row["event_title"],
-        event_type=row["event_type"],
-        detailed_description=row["detailed_description"],
-        category=row["category"],
-        location=row["location"],
-        security_implication=row["security_implication"],
-        operational_impact=row["operational_impact"],
-        financial_impact=row["financial_impact"],
-        reputational_impact=row["reputational_impact"],
-        source_link=row["source_link"],
-        analyst_notes=row["analyst_notes"],
-        source_month=row["source_month"],
-    )
+    return CompetitorEventOut(**{k: row[k] for k in CompetitorEventOut.model_fields})
 
 
 @router.patch("/competitor-events/{event_id}", response_model=CompetitorEventOut)
@@ -869,10 +878,44 @@ def update_competitor_event(
         conn.execute(
             f"UPDATE competitor_events SET {', '.join(updates)} WHERE id = ?", params
         )
+
+        rescored_row = conn.execute(
+            "SELECT * FROM competitor_events WHERE id = ?", (event_id,)
+        ).fetchone()
+        rescored = score_event(dict(rescored_row))
+        conn.execute(
+            """
+            UPDATE competitor_events
+            SET walmart_relevance_score=?, priority_tier=?, signal_type=?,
+                recommended_owner=?, why_walmart_cares=?,
+                strategic_score=?, security_score=?, operational_score=?,
+                customer_trust_score=?, novelty_score=?, urgency_score=?,
+                confidence_score=?, escalate_to_cso=?, scoring_version=?
+            WHERE id=?
+            """,
+            (
+                rescored["walmart_relevance_score"],
+                rescored["priority_tier"],
+                rescored["signal_type"],
+                rescored["recommended_owner"],
+                rescored["why_walmart_cares"],
+                rescored["strategic_score"],
+                rescored["security_score"],
+                rescored["operational_score"],
+                rescored["customer_trust_score"],
+                rescored["novelty_score"],
+                rescored["urgency_score"],
+                rescored["confidence_score"],
+                rescored["escalate_to_cso"],
+                rescored["scoring_version"],
+                event_id,
+            ),
+        )
+
         log_mutation(
             conn, user, "update", "competitor_event", str(event_id),
             old_value=old_snapshot,
-            new_value=change_data,
+            new_value={**change_data, **rescored},
         )
         conn.commit()
 
@@ -1209,3 +1252,103 @@ def get_competitor_categories() -> dict[str, list[str]]:
     """).fetchall()
     conn.close()
     return {"categories": [r["category"] for r in rows]}
+
+
+@router.post("/competitor-events/rescore")
+def rescore_competitor_events(
+    user: SentryUser = Depends(require_admin),
+    limit: int = Query(500, ge=1, le=5000),
+    only_unscored: bool = Query(False),
+) -> dict:
+    """Admin: recompute Walmart relevance scoring for competitor events."""
+    conn = get_connection()
+    try:
+        where = "WHERE deleted_at IS NULL"
+        if only_unscored:
+            where += " AND walmart_relevance_score IS NULL"
+
+        rows = conn.execute(
+            f"SELECT * FROM competitor_events {where} ORDER BY id DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+
+        updated = 0
+        escalated = 0
+        for row in rows:
+            scored = score_event(dict(row))
+            conn.execute(
+                """
+                UPDATE competitor_events
+                SET walmart_relevance_score=?, priority_tier=?, signal_type=?,
+                    recommended_owner=?, why_walmart_cares=?,
+                    strategic_score=?, security_score=?, operational_score=?,
+                    customer_trust_score=?, novelty_score=?, urgency_score=?,
+                    confidence_score=?, escalate_to_cso=?, scoring_version=?
+                WHERE id=?
+                """,
+                (
+                    scored["walmart_relevance_score"],
+                    scored["priority_tier"],
+                    scored["signal_type"],
+                    scored["recommended_owner"],
+                    scored["why_walmart_cares"],
+                    scored["strategic_score"],
+                    scored["security_score"],
+                    scored["operational_score"],
+                    scored["customer_trust_score"],
+                    scored["novelty_score"],
+                    scored["urgency_score"],
+                    scored["confidence_score"],
+                    scored["escalate_to_cso"],
+                    scored["scoring_version"],
+                    row["id"],
+                ),
+            )
+            updated += 1
+            escalated += int(scored["escalate_to_cso"])
+
+        log_mutation(
+            conn, user, "rescore", "competitor_event", "batch",
+            new_value={"updated": updated, "escalated": escalated},
+            metadata={"limit": limit, "only_unscored": only_unscored},
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    return {
+        "success": True,
+        "updated": updated,
+        "cso_escalation_candidates": escalated,
+    }
+
+
+@competitor_router.get("/cso-candidates", response_model=dict)
+def get_cso_candidates(
+    limit: int = Query(25, ge=1, le=100),
+) -> dict:
+    """Public: high-priority competitor events for executive brief workflows."""
+    conn = get_connection()
+    rows = conn.execute(
+        """
+        SELECT *
+        FROM competitor_events
+        WHERE (deleted_at IS NULL OR deleted_at = '')
+          AND (
+                escalate_to_cso = 1
+                OR priority_tier = 'CSO Brief'
+                OR walmart_relevance_score >= 85
+          )
+        ORDER BY walmart_relevance_score DESC, event_date DESC
+        LIMIT ?
+        """,
+        (limit,),
+    ).fetchall()
+    conn.close()
+    return {
+        "count": len(rows),
+        "events": [
+            {k: r[k] for k in CompetitorEventOut.model_fields}
+            for r in rows
+        ],
+    }

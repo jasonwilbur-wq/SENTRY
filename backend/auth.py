@@ -15,14 +15,20 @@ Usage:
         ...
 
 Environment variables:
-    SENTRY_AUTH_MODE       = "off" | "header"   (default: "off")
+    SENTRY_AUTH_MODE       = "header" | "off"   (default: "header")
     SENTRY_ADMIN_USERS     = comma-separated list of admin user IDs
     SENTRY_ALLOWED_USERS   = comma-separated list of all allowed user IDs
                              (admins are automatically included)
+
+Security posture:
+    Default is SECURE (header auth enforced).  Setting SENTRY_AUTH_MODE=off
+    is a deliberate dev-only bypass that logs a loud warning on startup.
+    Never deploy with AUTH_MODE=off in shared or production environments.
 """
 from __future__ import annotations
 
 import os
+import sys
 from dataclasses import dataclass
 
 from fastapi import Depends, HTTPException, Request
@@ -36,14 +42,28 @@ def _parse_csv_env(key: str, default: str = "") -> set[str]:
     return {v.strip().lower() for v in raw.split(",") if v.strip()}
 
 
-AUTH_MODE: str = os.environ.get("SENTRY_AUTH_MODE", "off").lower()
+# SECURITY: default is "header" — auth is ON unless explicitly overridden.
+AUTH_MODE: str = os.environ.get("SENTRY_AUTH_MODE", "header").lower()
 
 ADMIN_USERS: set[str] = _parse_csv_env("SENTRY_ADMIN_USERS")
 ALLOWED_USERS: set[str] = _parse_csv_env("SENTRY_ALLOWED_USERS") | ADMIN_USERS
 
 # Header name for Phase 1 auth.
-# ASSUMED: Phase 1 — upgrade to MSAL token validation in a future PR.
 AUTH_HEADER = "X-Sentry-User"
+
+# ── Startup warning for insecure mode ─────────────────────────────────────────
+
+if AUTH_MODE == "off":
+    _warn = (
+        "\n"
+        "  ╔══════════════════════════════════════════════════════════════╗\n"
+        "  ║  ⚠️  SENTRY_AUTH_MODE=off — AUTHENTICATION IS DISABLED     ║\n"
+        "  ║  All users are treated as anonymous admins.                 ║\n"
+        "  ║  DO NOT use this setting in shared or production envs.      ║\n"
+        "  ║  Set SENTRY_AUTH_MODE=header for secured operation.         ║\n"
+        "  ╚══════════════════════════════════════════════════════════════╝\n"
+    )
+    print(_warn, file=sys.stderr)
 
 
 # ── User model ────────────────────────────────────────────────────────────────
@@ -60,7 +80,8 @@ class SentryUser:
         return self.role == "admin"
 
 
-# ── Anonymous fallback (AUTH_MODE=off) ────────────────────────────────────────
+# ── Anonymous fallback (AUTH_MODE=off only) ───────────────────────────────────
+# This grants full admin access — intentionally loud and scary.
 
 _ANONYMOUS_ADMIN = SentryUser(id="anonymous", role="admin")
 
@@ -70,11 +91,11 @@ _ANONYMOUS_ADMIN = SentryUser(id="anonymous", role="admin")
 def get_current_user(request: Request) -> SentryUser:
     """Extract and validate the calling user's identity.
 
-    When AUTH_MODE is "off", returns an anonymous admin — this preserves
-    backward compatibility for dev workflows where no auth header is sent.
+    When AUTH_MODE is "off" (explicit dev bypass), returns an anonymous admin.
+    This requires setting SENTRY_AUTH_MODE=off deliberately.
 
-    When AUTH_MODE is "header", validates X-Sentry-User against the allowlist
-    and returns a typed SentryUser with the correct role.
+    When AUTH_MODE is "header" (the default), validates X-Sentry-User against
+    the allowlist and returns a typed SentryUser with the correct role.
 
     Raises:
         HTTPException 401: if auth is required but no identity is provided.
@@ -115,3 +136,16 @@ def require_admin(user: SentryUser = Depends(get_current_user)) -> SentryUser:
             detail="Admin privileges required for this operation.",
         )
     return user
+
+
+def get_auth_status() -> dict:
+    """Return current auth posture for /api/health and frontend banner."""
+    return {
+        "auth_mode": AUTH_MODE,
+        "auth_enabled": AUTH_MODE != "off",
+        "auth_warning": (
+            "⚠️ Authentication is DISABLED (SENTRY_AUTH_MODE=off). "
+            "All users have anonymous admin access. "
+            "This environment is NOT safe for shared or production use."
+        ) if AUTH_MODE == "off" else None,
+    }

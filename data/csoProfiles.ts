@@ -1,7 +1,7 @@
 /**
  * CSO Intelligence — Executive Profile data.
  * Sourced from OSINT scans. Keep data here, not in the component.
- * Last updated: 2026-03-02
+ * Last updated: 2026-04-07
  */
 
 export interface Source {
@@ -52,7 +52,7 @@ export const CSO_PROFILES: ExecutiveProfile[] = [
     company: 'Amazon',
     threatLevel: 'CRITICAL',
     profileImage: '/images/executives/stephen-schmidt.jpg',
-    bio: 'Amazon CSO driving passwordless authentication, AI-powered security, and industry standard-setting. Leading 1,800+ DPRK infiltration blocks. Most aggressive competitor CSO.',
+    bio: 'Amazon CSO with sustained influence across identity, insider-risk, cyber-physical resilience, and AI security automation. March signals reinforce centralized security ownership and resilient-operations messaging at hyperscale.',
     keyFindings: [
       {
         id: 'ss-f1',
@@ -95,25 +95,26 @@ export const CSO_PROFILES: ExecutiveProfile[] = [
       },
     ],
     recentActivity: [
+      { date: '2026-03-31', title: 'Regional resilience signal highlighted in March executive monitoring', type: 'Resilience Signal', impact: 'Cyber-physical disruption narrative raises cloud resiliency expectations' },
+      { date: '2026-03-02', title: 'Amazon senior leadership roster reconfirmed', type: 'Governance Signal', impact: 'Continues to publicly center CSO decision authority at enterprise level' },
       { date: '2026-02-12', title: 'CyberScoop Safe Mode: How Amazon Killed the Password', type: 'Media Appearance', impact: 'High visibility thought leadership on passwordless + identity unification' },
       { date: '2026-01-23', title: 'LinkedIn Article: Why Strong Authentication Is Your Most Important Security Control', type: 'Thought Leadership', impact: 'Direct disclosure of Midway authentication system and U2F enforcement' },
       { date: '2026-01-02', title: 'DPRK Hiring Fraud Disclosure', type: 'Incident Response', impact: '1,800+ blocked attempts — sets industry standard for insider risk detection' },
-      { date: '2025-11-24', title: 'ATA (Autonomous Threat Analysis) Launch', type: 'Product Innovation', impact: 'Agentic AI for bug hunting — weeks to hours acceleration' },
     ],
     strategicThreats: [
-      '🔥 CRITICAL: Setting industry standards for passwordless auth and eliminating password-based lateral movement',
-      '🔥 CRITICAL: 1,800+ DPRK hiring blocks demonstrate advanced insider-risk detection — raising competitive bar',
-      '⚠️ HIGH: Autonomous Threat Analysis (ATA) AI agents accelerating security testing — machine-speed defense',
-      '⚠️ HIGH: "No exceptions" Midway authentication — universal phishing-resistant MFA across all environments',
-      '⚠️ HIGH: Public thought leadership via LinkedIn, CyberScoop — influencing enterprise security standards',
+      '🔥 CRITICAL: Industry standard-setting on passwordless identity and exception elimination remains active',
+      '🔥 CRITICAL: 1,800+ DPRK hiring blocks demonstrate advanced insider-risk detection at scale',
+      '⚠️ HIGH: March resilience/cyber-physical signal adds pressure on cloud continuity narratives',
+      '⚠️ HIGH: Autonomous Threat Analysis (ATA) AI agents continue to reinforce machine-speed security positioning',
+      '⚠️ HIGH: Public thought leadership cadence continues shaping enterprise identity expectations',
     ],
     recommendations: [
-      '🔥 IMMEDIATE: Benchmark Walmart\'s identity coverage vs Amazon\'s "no exceptions" Midway model',
-      '🔥 IMMEDIATE: Review DPRK screening protocols — Amazon blocking 1,800+ vs Walmart\'s current posture',
-      '⚡ 30-DAY: Launch CSO thought leadership campaign to counter Amazon\'s standard-setting narrative',
-      '⚡ 30-DAY: Accelerate passwordless MFA rollout — Amazon is eliminating passwords entirely',
-      '⚡ 90-DAY: Evaluate agentic AI for security testing to match ATA\'s weeks-to-hours acceleration',
-      '🎯 6-MONTH: Position Jerrad as industry voice on identity, AI security, and insider-risk detection',
+      '🔥 IMMEDIATE: Re-baseline Walmart identity exception governance against Amazon\'s no-exceptions model',
+      '🔥 IMMEDIATE: Re-test insider-risk hiring controls against DPRK-style infiltration patterns',
+      '⚡ 30-DAY: Run resilience tabletop for regional cloud disruption + cyber-physical scenario overlap',
+      '⚡ 30-DAY: Accelerate passwordless MFA roadmap with measurable coverage metrics',
+      '⚡ 90-DAY: Expand agentic AI security testing with explicit time-to-detection improvements',
+      '🎯 6-MONTH: Strengthen executive external narrative on identity, resilience, and AI security governance',
     ],
   },
 
@@ -125,7 +126,7 @@ export const CSO_PROFILES: ExecutiveProfile[] = [
     company: 'AWS (Amazon Web Services)',
     threatLevel: 'HIGH',
     profileImage: '/images/executives/amy-herzog.jpg',
-    bio: 'AWS CISO (appointed June 2025) driving AI-powered SOC automation, AWS Security Agent rollout, and "security-as-enabler" messaging. 11-minute vulnerability detection (from 27 hours). Influencing enterprise expectations.',
+    bio: 'AWS CISO driving productized security automation, threat-intelligence visibility, and secure-AI operations messaging. March signals raise maturity posture around autonomous testing workflows and public secure-release discipline.',
     keyFindings: [
       {
         id: 'ah-f1',
@@ -162,25 +163,25 @@ export const CSO_PROFILES: ExecutiveProfile[] = [
       },
     ],
     recentActivity: [
+      { date: '2026-03-31', title: 'March executive signals highlight autonomous testing maturity', type: 'Product Signal', impact: 'Raises benchmark for 24/7 AI-driven security testing workflows' },
+      { date: '2026-03-31', title: 'Threat-intelligence and partner-coordination posture surfaced', type: 'Threat Intel Signal', impact: 'Strengthens trust narrative for early warning and response' },
+      { date: '2026-03-31', title: 'AI tooling vulnerability disclosure/patch cycle noted', type: 'Security Engineering Signal', impact: 'Supports secure-release credibility for AI-era platform operations' },
       { date: '2026-02-26', title: 'AWS Security Agent Multi-Agent Architecture Disclosure', type: 'Technical Publication', impact: 'Detailed agentic AI penetration testing approach — credibility building' },
-      { date: '2026-02-09', title: 'AWS Security Agent IAM/API Migration Announcement', type: 'Product Decision', impact: 'Preparing for public API/SDK support — enabling enterprise automation' },
       { date: '2026-01-22', title: 'GitHub Enterprise Cloud Integration Launch', type: 'Partnership', impact: 'Developer workflow embedding — automated remediation PRs' },
-      { date: '2026-01-07', title: 'WSJ Feature: GenAI SOC Efficiency Metrics', type: 'Media Coverage', impact: '11-minute vuln detection (from 27 hours) — operational proof points' },
-      { date: '2026-01-05', title: 'Continuous Observability Messaging', type: 'Thought Leadership', impact: 'Framing SOC modernization as urgent requirement' },
     ],
     strategicThreats: [
-      '🔥 CRITICAL: 11-minute vulnerability detection (from 27 hours) via GenAI — operational AI security leadership',
-      '⚠️ HIGH: AWS Security Agent GitHub integration — embedding security in developer workflows',
-      '⚠️ HIGH: Multi-agent penetration testing disclosure — technical credibility for agentic AI approach',
-      '⚠️ HIGH: "Security-as-enabler" messaging at re:Inforce — influencing enterprise AI adoption narratives',
-      '⚠️ MEDIUM: Continuous observability + automation advocacy — setting SOC modernization standards',
+      '🔥 CRITICAL: AWS continues moving from AI-security messaging to operationalized autonomous workflows',
+      '⚠️ HIGH: Security Agent + developer embedding strategy can reset enterprise AppSec expectations',
+      '⚠️ HIGH: Threat-intel-to-action narrative improves AWS trust positioning in high-stakes deployments',
+      '⚠️ HIGH: Secure-release handling of AI tooling vulnerabilities can become procurement differentiator',
+      '⚠️ MEDIUM: Continuous observability + automation advocacy still shapes SOC modernization benchmark',
     ],
     recommendations: [
-      '🔥 IMMEDIATE: Benchmark Walmart SOC automation vs AWS\'s 11-minute detection metrics',
-      '🔥 IMMEDIATE: Evaluate AWS Security Agent competitive positioning vs Walmart\'s AppSec tooling',
-      '⚡ 30-DAY: Launch measurable AI security metrics to counter AWS\'s operational proof points',
-      '⚡ 90-DAY: Develop developer-embedded security workflow to match AWS\'s GitHub integration strategy',
-      '🎯 6-MONTH: Position Walmart security as AI enabler (counter Herzog\'s "security-as-catalyst" messaging)',
+      '🔥 IMMEDIATE: Compare Walmart AppSec automation maturity against AWS autonomous testing posture',
+      '🔥 IMMEDIATE: Define measurable time-to-detect/time-to-context metrics for executive scorecards',
+      '⚡ 30-DAY: Tighten secure-release communication for AI tooling vulnerabilities and remediations',
+      '⚡ 90-DAY: Expand developer-embedded security workflows with closed-loop remediation controls',
+      '🎯 6-MONTH: Position Walmart security narrative around measured outcomes, not platform claims',
     ],
   },
 
@@ -193,7 +194,7 @@ export const CSO_PROFILES: ExecutiveProfile[] = [
     company: 'Amazon Web Services (AWS)',
     threatLevel: 'HIGH',
     profileImage: '/images/executives/chet-kapoor.jpg',
-    bio: 'Joined AWS Oct 2025 from DataStax CEO role, reporting directly to AWS CEO Matt Garman. Charter: scale security services and observability to meet AI-era telemetry demands. Advocates AI-driven signal parsing, RAG accuracy, and agentic software as core pillars — signals sustained AWS investment in AI-native security tooling.',
+    bio: 'AWS VP for Security Services and Observability. March signals emphasize telemetry centralization, org-scale posture ingestion, and security-data convergence for AI-era incident readiness across enterprise and regulated environments.',
     keyFindings: [
       {
         id: 'ck-f1',
@@ -241,23 +242,24 @@ export const CSO_PROFILES: ExecutiveProfile[] = [
       },
     ],
     recentActivity: [
-      { date: '2026-02-27', title: 'Semafor Interview: AI Agents Will Exponentially Expand Security Signals', type: 'Media Appearance', impact: 'Frames AWS\'s telemetry-scale thesis — signals roadmap toward AI-driven observability products' },
-      { date: '2026-01-30', title: 'Leaked AWS Org Chart: Kapoor in CEO Direct-Report Set', type: 'Org Signal', impact: 'Confirms security/observability elevated to top-tier AWS strategic priority' },
-      { date: '2025-10-13', title: 'Hired as VP, Security Services & Observability', type: 'Org Change', impact: 'CEO email explicitly tied hire to AI-driven security needs — mandate established' },
+      { date: '2026-03-30', title: 'Org-wide Security Hub CSPM ingestion into CloudWatch pipelines signaled', type: 'Platform Capability', impact: 'Converges security posture telemetry with observability workflows at scale' },
+      { date: '2026-03-30', title: 'Security Hub GovCloud expansion highlighted in executive report', type: 'Regulated Market Signal', impact: 'Extends centralized risk analytics pattern into government cloud environments' },
+      { date: '2026-03-05', title: 'CloudWatch centralization rules by source/type noted', type: 'Operational Feature Signal', impact: 'Reduces multi-account, multi-region ingestion friction' },
+      { date: '2026-02-27', title: 'Semafor Interview: AI Agents Will Exponentially Expand Security Signals', type: 'Media Appearance', impact: 'Frames AWS telemetry-scale thesis and AI parsing need' },
     ],
     strategicThreats: [
-      '⚠️ HIGH: Direct CEO reporting line elevates security/observability budget velocity and decision authority at AWS',
-      '⚠️ HIGH: Telemetry-scale thesis signals AWS product push — AI-native signal ingestion at enterprise scale',
-      '⚠️ HIGH: RAG + agentic focus from DataStax background informs AWS\'s AI security governance roadmap',
-      '📡 MEDIUM: Kapoor\'s public media profile is rising — expected to become a high-visibility competitor voice in 2026',
-      '📡 MEDIUM: Confidence cap PROVISIONAL — limited in-window, executive-attributed AWS artifacts yet located',
+      '⚠️ HIGH: Telemetry-first platform moves are now shipping as concrete capability updates',
+      '⚠️ HIGH: Org-scale security-to-observability convergence can increase AWS customer stickiness',
+      '⚠️ HIGH: GovCloud analytics expansion boosts AWS competitiveness in regulated procurement cycles',
+      '📡 MEDIUM: Messaging remains tightly aligned to measurable platform shifts (higher credibility)',
+      '📡 MEDIUM: Pre-window CEO-reporting signal still implies elevated budget and governance influence',
     ],
     recommendations: [
-      '⚡ 30-DAY: Monitor Kapoor\'s AWS blog/keynote cadence — expected to accelerate as mandate matures',
-      '⚡ 30-DAY: Assess Walmart\'s observability coverage vs AWS\'s likely telemetry-scale product push',
-      '⚡ 90-DAY: Track AWS Security Services portfolio expansion under Kapoor — new product announcements expected',
-      '🎯 6-MONTH: Evaluate agentic/RAG security governance posture to prepare for AWS\'s AI-era security narrative',
-      '🔍 ONGOING: Next OSINT run — search Kapoor on aws.amazon.com/blogs/security, re:Inforce speaker lists, LinkedIn',
+      '🔥 IMMEDIATE: Benchmark Walmart telemetry centralization architecture against AWS org-wide patterns',
+      '⚡ 30-DAY: Identify and reduce friction in multi-account security log governance and routing',
+      '⚡ 90-DAY: Build converged security + observability KPI scorecard for leadership governance reviews',
+      '🎯 6-MONTH: Strengthen AI-incident readiness playbooks across cyber, fraud, and platform operations',
+      '🔍 ONGOING: Track Kapoor-linked AWS announcements for additional telemetry and response automation moves',
     ],
   },
 
@@ -270,7 +272,7 @@ export const CSO_PROFILES: ExecutiveProfile[] = [
     company: 'Target Corporation',
     threatLevel: 'MEDIUM',
     profileImage: '/images/executives/rich-agostino.jpg',
-    bio: 'Long-standing Target CISO navigating a turbulent leadership transition (new CEO Feb 2026, 500 layoffs, senior exec reshuffling). Historically focused on cyber-physical convergence, security-vs-customer-experience balance, and community intelligence sharing via RH-ISAC. Post-breach rebuilder turned industry collaborator.',
+    bio: 'Target CISO with March 2026 signals centered on SEC-grade governance transparency, in-house defensive capability disclosure, vendor exposure framing, and AI acceleration under enterprise technology investment.',
     keyFindings: [
       {
         id: 'ra-f1',
@@ -347,32 +349,109 @@ export const CSO_PROFILES: ExecutiveProfile[] = [
       },
     ],
     recentActivity: [
-      { date: '2026-02-10', title: '~500 Roles Eliminated (Supply Chain + Store Districts)', type: 'Org Risk Signal', impact: 'Insider-risk window: elevated offboarding exposure, access transition complexity' },
-      { date: '2026-02-06', title: 'New COO Appointed; CCO Exit Announced', type: 'Stakeholder Change', impact: 'CISO must re-validate risk ownership and access pathways for new leadership' },
-      { date: '2026-02-01', title: 'Michael Fiddelke Becomes CEO', type: 'Leadership Transition', impact: 'New CEO resets priorities — Agostino\'s security ROI narrative becomes critical' },
-      { date: '2026-01-21', title: 'Two New Board Directors Elected', type: 'Governance Change', impact: 'Audit & Risk committee refresh — heightened scrutiny on security posture expected' },
-      { date: '2024-05-15', title: 'RH-ISAC Podcast — Ep. 50 Feature', type: 'Industry Engagement', impact: 'Cyber-physical convergence + community tool-sharing as strategic posture' },
+      { date: '2026-03-11', title: 'Target Form 10-K Item 1C cybersecurity governance disclosure', type: 'Regulatory Filing', impact: 'Board + Audit & Risk oversight and in-house operating model clarified' },
+      { date: '2026-03-11', title: '10-K risk factors include vendor incidents and AI-enabled threat evolution', type: 'Regulatory Filing', impact: 'Confirms vendor exposure framing and AI threat acceleration awareness' },
+      { date: '2026-03-03', title: 'Target announces incremental $2B 2026 investment and technology acceleration', type: 'Strategic Messaging', impact: 'Likely expands governance and assurance needs around AI and data risk' },
+      { date: '2026-02-10', title: '~500 Roles Eliminated (Supply Chain + Store Districts)', type: 'Org Risk Signal', impact: 'Insider-risk window remains relevant during transitions' },
+      { date: '2024-05-15', title: 'RH-ISAC Podcast — Ep. 50 Feature', type: 'Industry Engagement', impact: 'Cyber-physical convergence + collaboration posture context' },
     ],
     strategicThreats: [
-      '⚠️ HIGH: Leadership upheaval (new CEO, COO, board) creates security governance gaps and reprioritization risk',
-      '⚠️ HIGH: 500 layoffs open insider-risk window — elevated offboarding, access transition, and vendor handoff exposure',
-      '📡 MEDIUM: Cyber-physical convergence investments at Target stores directly parallel Walmart\'s retail security needs',
-      '📡 MEDIUM: RH-ISAC community tool-sharing — Target\'s threat intel contributions may surface Walmart-adjacent risks',
-      '📡 LOW: Limited in-window CISO-attributed content — signal visibility is low vs Amazon counterparts',
+      '⚠️ HIGH: SEC Item 1C governance transparency provides clearer benchmark for investor/regulator cyber posture',
+      '⚠️ HIGH: Explicit vendor-incident framing in risk factors highlights third-party exposure governance pressure',
+      '📡 MEDIUM: Technology + AI acceleration increases control, assurance, and model-risk oversight requirements',
+      '📡 MEDIUM: In-house fusion center/threat intel/testing disclosures signal sustained detection-response maturity investment',
+      '📡 MEDIUM: Cyber + fraud operating-model convergence remains strategically relevant for retail competition',
     ],
     recommendations: [
-      '🔥 IMMEDIATE: Monitor Target\'s offboarding practices — current insider-risk window is elevated (500 departures)',
-      '⚡ 30-DAY: Watch Fiddelke\'s early CEO priorities — security funding signals will emerge in earnings calls / 10-Q',
-      '⚡ 30-DAY: Note that Stephen B. Bratspies (new Target board/Audit & Risk) is a former Walmart executive — monitor for any cross-org intelligence relevance',
-      '⚡ 90-DAY: Track Target\'s cyber-physical convergence investments — parallels to Walmart store security roadmap',
-      '🎯 6-MONTH: RH-ISAC cadence monitoring — Agostino public appearances likely to increase post-stabilization',
+      '🔥 IMMEDIATE: Benchmark Walmart cyber governance narrative against Target\'s SEC Item 1C disclosure depth',
+      '🔥 IMMEDIATE: Re-assess vendor-risk reporting and assurance language for board/investor readiness',
+      '⚡ 30-DAY: Track how Target allocates $2B tech acceleration spend toward AI controls and resilience programs',
+      '⚡ 90-DAY: Monitor cyber-fraud convergence signals for transferable operating-model tactics',
+      '🎯 6-MONTH: Watch for renewed Agostino public cadence (NRF/RSAC/RH-ISAC style engagements)',
     ],
   },
+
+  // ── Becky Hall (Amazon Global Security) ───────────────────────────────────
+  // OSINT scan: 2026-03 | Confidence: PROVISIONAL / Medium
+  {
+    id: 'becky-hall',
+    name: 'Becky Hall',
+    title: 'VP, Global Security (Unverified)',
+    company: 'Amazon',
+    threatLevel: 'MEDIUM',
+    profileImage: '/images/executives/becky-hall.jpg',
+    bio: 'Profile remains PROVISIONAL: March 2026 review still did not confirm Becky Hall as Amazon VP of Global Security via primary public sources. Signals are useful for context, but executive attribution confidence stays capped until first-party validation.',
+    keyFindings: [
+      {
+        id: 'bh-f1',
+        type: 'org_change',
+        headline: 'Target identity/title could not be corroborated in primary public sources',
+        date: '2026-03-01',
+        impactScore: 10,
+        riskColor: 'YELLOW',
+        summary: 'Open-source scanning did not locate a primary, publicly accessible Amazon source confirming Becky Hall as VP of Global Security. Publicly listed leadership pages surfaced other security leaders.',
+        whyItMatters: 'Identity-resolution risk is high. Without validated identity/title, downstream attribution (strategy, incidents, speaking, vendor influence) can be noisy and misdirect CSO monitoring.',
+        sources: [{ publisher: 'Amazon S-Team Leadership Page', url: 'https://www.aboutamazon.com/about-us/leadership', date: '2026-03-01' }],
+      },
+      {
+        id: 'bh-f2',
+        type: 'org_change',
+        headline: 'Amazon publicly positions Steve Schmidt as enterprise Chief Security Officer',
+        date: '2026-03-02',
+        impactScore: 10,
+        riskColor: 'YELLOW',
+        summary: 'Amazon\'s public senior-leadership materials continue to identify Steve Schmidt as Chief Security Officer, reinforcing consolidated top-level security ownership.',
+        whyItMatters: 'Clarifies decision authority concentration at Amazon security leadership level. Useful context while lower-visibility VP identity remains unresolved.',
+        sources: [{ publisher: 'Amazon S-Team Leadership Page', url: 'https://www.aboutamazon.com/about-us/leadership', date: '2026-03-02' }],
+      },
+      {
+        id: 'bh-f3',
+        type: 'partnership',
+        headline: 'Amazon recognized as 2026 SIA Member of the Year during ISC West week',
+        date: '2026-03-24',
+        impactScore: 8,
+        riskColor: 'YELLOW',
+        summary: 'Security Industry Association announced Amazon as 2026 SIA Member of the Year, with recognition presented during ISC West week.',
+        whyItMatters: 'Indicates sustained Amazon presence in physical-security ecosystem and standards networks that influence cyber-physical security practices.',
+        sources: [{ publisher: 'Security Industry Association', url: 'https://www.securityindustry.org/2026-sia-members-of-the-year/', date: '2026-03-24' }],
+      },
+      {
+        id: 'bh-f4',
+        type: 'thought_leadership',
+        headline: 'Media reporting highlights internal AI-usage monitoring concerns at Amazon',
+        date: '2026-03-11',
+        impactScore: 8,
+        riskColor: 'YELLOW',
+        summary: 'Major media reporting described employee concerns regarding AI-driven productivity pressure and perceived dashboard-based monitoring of AI tool usage; Amazon disputed broad characterization.',
+        whyItMatters: 'Whether fully accurate or not, this narrative can influence workforce trust, insider-risk dynamics, and external perception of Amazon\'s AI governance posture.',
+        sources: [{ publisher: 'The Guardian', url: 'https://www.theguardian.com/technology/2026/mar/11/amazon-ai-productivity-pressure-report', date: '2026-03-11' }],
+      },
+    ],
+    recentActivity: [
+      { date: '2026-03-24', title: 'Amazon SIA Member of the Year Recognition (ISC West Week)', type: 'Industry Recognition', impact: 'Strengthens cyber-physical network influence visibility' },
+      { date: '2026-03-11', title: 'AI Monitoring Narrative in Major Media', type: 'Public Narrative Signal', impact: 'Potential workforce and reputation pressure around AI governance' },
+      { date: '2026-03-02', title: 'Amazon Leadership Roster Reviewed', type: 'Leadership Signal', impact: 'Reinforces CSO-level decision authority concentration' },
+      { date: '2026-03-01', title: 'Identity/Title Corroboration Gap Recorded', type: 'Data Quality Signal', impact: 'Confidence remains capped until first-party role validation' },
+    ],
+    strategicThreats: [
+      '⚠️ HIGH: Identity-resolution uncertainty still creates attribution risk for executive-level reporting',
+      '📡 MEDIUM: Amazon physical-security ecosystem visibility (SIA recognition) supports cyber-physical influence',
+      '📡 MEDIUM: AI monitoring/pressure narratives can affect insider-risk and workforce trust dynamics',
+      '📡 MEDIUM: Public CSO roster continuity reinforces centralized Amazon security prioritization',
+    ],
+    recommendations: [
+      '🔥 IMMEDIATE: Do not elevate this profile above PROVISIONAL until role/title is first-party verified',
+      '⚡ 30-DAY: Track SIA/ISC West follow-on announcements for concrete Amazon physical-security signals',
+      '⚡ 30-DAY: Monitor AI workforce-surveillance narrative drift and potential insider-risk implications',
+      '⚡ 90-DAY: Keep explicit confidence tags and source quality notes in all Becky-profile briefings',
+    ],
+  },
+
 ];
 
 // Derived threat-summary counts for the hero badges
 export const THREAT_COUNTS = {
   critical: CSO_PROFILES.flatMap(p => p.keyFindings).filter(f => f.riskColor === 'ORANGE' || f.riskColor === 'RED').length,
   high:     CSO_PROFILES.flatMap(p => p.keyFindings).filter(f => f.riskColor === 'YELLOW').length,
-  updated:  'Mar 2, 2026',
+  updated:  'Apr 7, 2026',
 };

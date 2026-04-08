@@ -30,7 +30,7 @@ def _temp_db(tmp_path, monkeypatch):
 
 @pytest.fixture()
 def client_off():
-    """TestClient with AUTH_MODE=off (default — backward-compat dev mode)."""
+    """TestClient with AUTH_MODE=off (explicit dev bypass mode)."""
     os.environ["SENTRY_AUTH_MODE"] = "off"
     # Reload auth module to pick up env change
     import auth

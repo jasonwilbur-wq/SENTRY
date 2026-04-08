@@ -234,4 +234,79 @@ def init_db() -> None:
             conn, "competitor_events", "deleted_at",
             "ALTER TABLE competitor_events ADD COLUMN deleted_at TEXT DEFAULT NULL",
         )
+
+        # Competitor intelligence relevance-scoring fields (v1 rules engine)
+        _safe_add_column(
+            conn, "competitor_events", "walmart_relevance_score",
+            "ALTER TABLE competitor_events ADD COLUMN walmart_relevance_score REAL DEFAULT NULL",
+        )
+        _safe_add_column(
+            conn, "competitor_events", "priority_tier",
+            "ALTER TABLE competitor_events ADD COLUMN priority_tier TEXT DEFAULT ''",
+        )
+        _safe_add_column(
+            conn, "competitor_events", "signal_type",
+            "ALTER TABLE competitor_events ADD COLUMN signal_type TEXT DEFAULT ''",
+        )
+        _safe_add_column(
+            conn, "competitor_events", "recommended_owner",
+            "ALTER TABLE competitor_events ADD COLUMN recommended_owner TEXT DEFAULT ''",
+        )
+        _safe_add_column(
+            conn, "competitor_events", "why_walmart_cares",
+            "ALTER TABLE competitor_events ADD COLUMN why_walmart_cares TEXT DEFAULT ''",
+        )
+        _safe_add_column(
+            conn, "competitor_events", "strategic_score",
+            "ALTER TABLE competitor_events ADD COLUMN strategic_score REAL DEFAULT NULL",
+        )
+        _safe_add_column(
+            conn, "competitor_events", "security_score",
+            "ALTER TABLE competitor_events ADD COLUMN security_score REAL DEFAULT NULL",
+        )
+        _safe_add_column(
+            conn, "competitor_events", "operational_score",
+        "ALTER TABLE competitor_events ADD COLUMN operational_score REAL DEFAULT NULL",
+        )
+        _safe_add_column(
+            conn, "competitor_events", "customer_trust_score",
+            "ALTER TABLE competitor_events ADD COLUMN customer_trust_score REAL DEFAULT NULL",
+        )
+        _safe_add_column(
+            conn, "competitor_events", "novelty_score",
+            "ALTER TABLE competitor_events ADD COLUMN novelty_score REAL DEFAULT NULL",
+        )
+        _safe_add_column(
+            conn, "competitor_events", "urgency_score",
+            "ALTER TABLE competitor_events ADD COLUMN urgency_score REAL DEFAULT NULL",
+        )
+        _safe_add_column(
+            conn, "competitor_events", "confidence_score",
+            "ALTER TABLE competitor_events ADD COLUMN confidence_score REAL DEFAULT NULL",
+        )
+        _safe_add_column(
+            conn, "competitor_events", "escalate_to_cso",
+            "ALTER TABLE competitor_events ADD COLUMN escalate_to_cso INTEGER DEFAULT 0",
+        )
+        _safe_add_column(
+            conn, "competitor_events", "scoring_version",
+            "ALTER TABLE competitor_events ADD COLUMN scoring_version TEXT DEFAULT ''",
+        )
+
+        # Query performance indexes for priority workflows.
+        # Guard: only create if competitor_events table exists (it's
+        # created by import scripts, not init_db).
+        if conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='competitor_events'"
+        ).fetchone():
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_comp_event_priority ON competitor_events(priority_tier)"
+            )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_comp_event_escalate ON competitor_events(escalate_to_cso)"
+            )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_comp_event_relevance ON competitor_events(walmart_relevance_score)"
+            )
+
         conn.commit()

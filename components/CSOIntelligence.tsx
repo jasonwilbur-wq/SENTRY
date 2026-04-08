@@ -45,10 +45,18 @@ function ThreatBadge({ level }: { level: string }) {
   );
 }
 
-function FindingCard({ finding, isOpen, onToggle }: { finding: Finding; isOpen: boolean; onToggle: () => void }) {
+function FindingCard({ finding, isOpen, onToggle, onOpenFeedback }: {
+  finding: Finding;
+  isOpen: boolean;
+  onToggle: () => void;
+  onOpenFeedback?: (finding: Finding) => void;
+}) {
   const rs = RISK_STYLES[finding.riskColor] ?? RISK_STYLES.GREEN;
   return (
-    <div onClick={onToggle}
+    <div onClick={() => {
+      onToggle();
+      onOpenFeedback?.(finding);
+    }}
       className="rounded-xl border transition-all duration-200 cursor-pointer"
       style={{ background: 'var(--s-modal-inner)', borderColor: isOpen ? '#0053e2' : 'var(--s-border-mid)' }}>
       <div className="p-4">
@@ -95,13 +103,19 @@ function FindingCard({ finding, isOpen, onToggle }: { finding: Finding; isOpen: 
   );
 }
 
-function ExecutiveCard({ exec, isSelected, onToggle }: {
-  exec: ExecutiveProfile; isSelected: boolean; onToggle: () => void;
+function ExecutiveCard({ exec, isSelected, onToggle, onOpenFeedback }: {
+  exec: ExecutiveProfile;
+  isSelected: boolean;
+  onToggle: () => void;
+  onOpenFeedback?: (exec: ExecutiveProfile) => void;
 }) {
   const ts = THREAT_STYLES[exec.threatLevel] ?? THREAT_STYLES.LOW;
   const orangeCount = exec.keyFindings.filter(f => f.riskColor === 'ORANGE' || f.riskColor === 'RED').length;
   return (
-    <div onClick={onToggle} className="rounded-2xl border cursor-pointer transition-all duration-300 hover:scale-[1.01] shadow-xl overflow-hidden"
+    <div onClick={() => {
+      onToggle();
+      onOpenFeedback?.(exec);
+    }} className="rounded-2xl border cursor-pointer transition-all duration-300 hover:scale-[1.01] shadow-xl overflow-hidden"
       style={{
         background: 'var(--s-card)',
         borderColor: isSelected ? '#0053e2' : 'var(--s-border-mid)',
@@ -148,11 +162,12 @@ function ExecutiveCard({ exec, isSelected, onToggle }: {
 export function CSOIntelligence() {
   const [selectedExec, setSelectedExec]       = useState<string | null>(null);
   const [openFinding, setOpenFinding]         = useState<string | null>(null);
+  const [enableFlare, setEnableFlare]         = useState(true);
 
   const active = CSO_PROFILES.find(e => e.id === selectedExec);
 
-  const toggleExec = (id: string) => {
-    setSelectedExec(prev => prev === id ? null : id);
+  const openExecDetails = (exec: ExecutiveProfile) => {
+    setSelectedExec(exec.id);
     setOpenFinding(null);
   };
 
@@ -169,7 +184,7 @@ export function CSOIntelligence() {
             style={{ opacity: 0.05,
               backgroundImage: 'linear-gradient(rgba(0,83,226,.6) 1px,transparent 1px),linear-gradient(90deg,rgba(0,83,226,.6) 1px,transparent 1px)',
               backgroundSize: '48px 48px' }} />
-          <div className="absolute inset-0 z-0"><CSORadar3D /></div>
+          <div className="absolute inset-0 z-0"><CSORadar3D enableFlare={enableFlare} enablePing={false} /></div>
           {/* Threat ring legend */}
           <div className="absolute bottom-5 left-6 z-10 flex flex-col gap-1.5">
             {(['CRITICAL','HIGH','MEDIUM','LOW'] as const).map(l => (
@@ -194,6 +209,21 @@ export function CSOIntelligence() {
             <p className="text-sm max-w-xl mb-5" style={{ color: 'var(--s-text-muted)' }}>
               Competitor executive tracking — security leadership threat posture, org changes &amp; strategic risk.
             </p>
+            <div className="flex flex-wrap gap-2 justify-center mb-2">
+              <button
+                type="button"
+                onClick={() => setEnableFlare(v => !v)}
+                className="px-3 py-1.5 rounded-full text-xs font-bold border"
+                style={{
+                  background: enableFlare ? 'rgba(255,194,32,0.15)' : 'rgba(100,116,139,0.15)',
+                  color: enableFlare ? '#FFC220' : '#94a3b8',
+                  borderColor: enableFlare ? 'rgba(255,194,32,0.45)' : 'rgba(100,116,139,0.4)',
+                }}
+              >
+                {enableFlare ? '✨ Flare ON' : '✨ Flare OFF'}
+              </button>
+            </div>
+
             <div className="flex flex-wrap gap-2 justify-center">
               <span className="px-3 py-1.5 rounded-full text-xs font-bold border"
                 style={{ background: 'rgba(234,17,0,0.15)', color: '#ff6b6b', borderColor: 'rgba(234,17,0,0.4)' }}>
@@ -217,18 +247,46 @@ export function CSOIntelligence() {
         {CSO_PROFILES.map(exec => (
           <ExecutiveCard key={exec.id} exec={exec}
             isSelected={selectedExec === exec.id}
-            onToggle={() => toggleExec(exec.id)} />
+            onToggle={() => openExecDetails(exec)}
+            onOpenFeedback={openExecDetails} />
         ))}
       </div>
 
-      {/* ── Expanded Detail Panel ─────────────────────────────────────────── */}
+      {/* ── Full Intelligence Modal ───────────────────────────────────────── */}
       {active && (
-        <div className="max-w-7xl mx-auto rounded-2xl overflow-hidden shadow-2xl"
-          style={{ background: 'var(--s-card)', border: '2px solid #0053e2' }}>
-          <div className="p-6 sm:p-8">
-            <h2 className="text-2xl font-black mb-6 pb-4" style={{ borderBottom: '1px solid var(--s-border)', color: 'var(--s-text)' }}>
-              🔍 Intelligence Detail — {active.name}
-            </h2>
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4"
+          style={{ background: 'rgba(2,6,23,0.72)' }}
+          onClick={() => {
+            setSelectedExec(null);
+            setOpenFinding(null);
+          }}
+        >
+          <div
+            className="w-full max-w-6xl max-h-[92vh] overflow-y-auto rounded-2xl shadow-2xl"
+            style={{ background: 'var(--s-card)', border: '2px solid #0053e2' }}
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Intelligence detail for ${active.name}`}
+          >
+            <div className="p-6 sm:p-8">
+              <div className="flex items-start justify-between gap-4 mb-6 pb-4" style={{ borderBottom: '1px solid var(--s-border)' }}>
+                <h2 className="text-2xl font-black" style={{ color: 'var(--s-text)' }}>
+                  🔍 Intelligence Detail — {active.name}
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedExec(null);
+                    setOpenFinding(null);
+                  }}
+                  className="px-3 py-1.5 rounded text-xs font-bold border shrink-0"
+                  style={{ borderColor: 'var(--s-border)', color: 'var(--s-text-muted)' }}
+                >
+                  Close
+                </button>
+              </div>
 
             {/* Strategic Threats */}
             <section className="mb-8">
@@ -285,6 +343,7 @@ export function CSOIntelligence() {
             </section>
           </div>
         </div>
+      </div>
       )}
     </div>
   );

@@ -43,7 +43,15 @@ function addRing(scene: THREE.Scene, radius: number, color: number, opacity: num
   scene.add(halo);
 }
 
-export const CSORadar3D: React.FC = () => {
+type CSORadar3DProps = {
+  enableFlare?: boolean;
+  enablePing?: boolean;
+};
+
+export const CSORadar3D: React.FC<CSORadar3DProps> = ({
+  enableFlare = true,
+  enablePing = true,
+}) => {
   const mountRef = useRef<HTMLDivElement>(null);
   const wrapRef  = useRef<HTMLDivElement>(null);
   const tipRef   = useRef<HTMLDivElement>(null);
@@ -126,8 +134,9 @@ export const CSORadar3D: React.FC = () => {
 
     // Exec nodes
     const nodes: Array<{
-      mesh: THREE.Mesh; glow: THREE.Mesh;
+      mesh: THREE.Mesh; glow: THREE.Mesh; flare: THREE.Mesh;
       angle: number; radius: number; exec: (typeof EXECS)[0];
+      pulse: number; recentlyHit: boolean;
     }> = [];
 
     EXECS.forEach(exec => {
@@ -157,7 +166,17 @@ export const CSORadar3D: React.FC = () => {
       glow.position.copy(mesh.position);
       scene.add(glow);
 
-      nodes.push({ mesh, glow, angle, radius, exec });
+      const flare = new THREE.Mesh(
+        new THREE.SphereGeometry(2.2, 16, 16),
+        new THREE.MeshBasicMaterial({
+          color: col, transparent: true, opacity: 0,
+          side: THREE.BackSide, blending: THREE.AdditiveBlending,
+        }),
+      );
+      flare.position.copy(mesh.position);
+      scene.add(flare);
+
+      nodes.push({ mesh, glow, flare, angle, radius, exec, pulse: 0, recentlyHit: false });
     });
 
     // Sweep beam group
@@ -200,6 +219,41 @@ export const CSORadar3D: React.FC = () => {
     };
     renderer.domElement.addEventListener('mousemove', onMM);
 
+    // Audio ping setup (lazy init to satisfy browser gesture policies)
+    let audioCtx: AudioContext | null = null;
+    const ensureAudio = () => {
+      if (!enablePing) return null;
+      if (!audioCtx) {
+        const Ctx = (window.AudioContext || (window as any).webkitAudioContext);
+        if (!Ctx) return null;
+        audioCtx = new Ctx();
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume().catch(() => undefined);
+      return audioCtx;
+    };
+
+    const ping = (freq = 820) => {
+      if (!enablePing) return;
+      const ctx = ensureAudio();
+      if (!ctx) return;
+      const now = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now);
+      osc.frequency.exponentialRampToValueAtTime(freq * 0.78, now + 0.08);
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(0.06, now + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.13);
+    };
+
+    const onPointerDown = () => { ensureAudio(); };
+    renderer.domElement.addEventListener('pointerdown', onPointerDown, { passive: true });
+
     // Animate
     let rafId = 0;
     let sweepAngle = 0;
@@ -215,16 +269,46 @@ export const CSORadar3D: React.FC = () => {
       (core.material as THREE.MeshStandardMaterial).emissiveIntensity =
         0.7 + Math.sin(t * 1.8) * 0.2;
 
-      // Blip when sweep crosses node
+      // Planet glow-up when sweep needle passes
+      const tau = Math.PI * 2;
+      const sweepHead = ((sweepAngle % tau) + tau) % tau;
       nodes.forEach((n, idx) => {
-        const nodeA  = Math.atan2(n.mesh.position.z, n.mesh.position.x);
-        const sa     = ((sweepAngle % (Math.PI * 2)) + Math.PI * 4) % (Math.PI * 2);
-        const na     = (nodeA + Math.PI * 4) % (Math.PI * 2);
-        const diff   = (sa - na + Math.PI * 4) % (Math.PI * 2);
-        const isLit  = diff < 0.35;
-        const mat    = n.mesh.material as THREE.MeshStandardMaterial;
-        mat.emissiveIntensity = isLit ? 1.8 : (0.4 + Math.sin(t * 2 + idx * 1.3) * 0.1);
-        n.glow.scale.setScalar(isLit ? 2.2 : (1.0 + Math.sin(t + idx) * 0.08));
+        const nodeA = ((Math.atan2(n.mesh.position.z, n.mesh.position.x) % tau) + tau) % tau;
+        let delta = Math.abs(sweepHead - nodeA);
+        if (delta > Math.PI) delta = tau - delta; // shortest angular distance
+
+        // Proximity glow while needle approaches/passes node
+        const window = 0.28;
+        const proximity = Math.max(0, 1 - delta / window);
+
+        // Trigger a stronger pulse right at crossover
+        const crossed = delta < 0.045;
+        if (crossed && !n.recentlyHit) {
+          n.pulse = 1;
+          ping(760 + idx * 45);
+          n.recentlyHit = true;
+        }
+        if (delta > 0.12) n.recentlyHit = false;
+        n.pulse *= 0.92;
+
+        const mat = n.mesh.material as THREE.MeshStandardMaterial;
+        const idle = 0.42 + Math.sin(t * 2 + idx * 1.3) * 0.08;
+        const litBoost = proximity * 1.9;
+        const pulseBoost = n.pulse * 2.2;
+        mat.emissiveIntensity = idle + litBoost + pulseBoost;
+
+        const glowMat = n.glow.material as THREE.MeshBasicMaterial;
+        glowMat.opacity = 0.14 + proximity * 0.25 + n.pulse * 0.5;
+
+        const baseScale = 1.0 + Math.sin(t + idx) * 0.06;
+        const litScale = proximity * 0.9;
+        const pulseScale = n.pulse * 1.2;
+        n.glow.scale.setScalar(baseScale + litScale + pulseScale);
+
+        const flareMat = n.flare.material as THREE.MeshBasicMaterial;
+        const flareBoost = enableFlare ? (proximity * 0.35 + n.pulse * 0.9) : 0;
+        flareMat.opacity = flareBoost;
+        n.flare.scale.setScalar(1 + flareBoost * 1.8);
       });
 
       // Hover tooltip
@@ -266,6 +350,11 @@ export const CSORadar3D: React.FC = () => {
       cancelAnimationFrame(rafId);
       window.removeEventListener('resize', onResize);
       renderer.domElement.removeEventListener('mousemove', onMM);
+      renderer.domElement.removeEventListener('pointerdown', onPointerDown);
+      if (audioCtx) {
+        audioCtx.close().catch(() => undefined);
+        audioCtx = null;
+      }
       renderer.dispose();
       if (el.contains(renderer.domElement)) el.removeChild(renderer.domElement);
     };

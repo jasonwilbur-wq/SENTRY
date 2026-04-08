@@ -1,5 +1,11 @@
 import { useState, useEffect } from 'react';
-import { fetchCompetitorStats, fetchCompetitorEntities, fetchCompetitorEvents } from '../services/api';
+import {
+  fetchCompetitorStats,
+  fetchCompetitorEntities,
+  fetchCompetitorEvents,
+  fetchCompetitorCSOCandidates,
+  type CompetitorEvent,
+} from '../services/api';
 import { CompetitorThreat3D, type ThreatNode } from './CompetitorThreat3D';
 
 interface CompetitorProfile {
@@ -15,14 +21,6 @@ interface CompetitorProfile {
   monthlyJson: string;
 }
 
-interface CompetitorEvent {
-  id: number;
-  event_date: string;
-  event_title: string;
-  category: string;
-  detailed_description?: string;
-  security_implication?: string;
-}
 
 // Map competitor names to their local logo files
 const COMPETITOR_LOGOS: { [key: string]: string } = {
@@ -75,6 +73,48 @@ function getLogoUrl(name: string): string | null {
   return COMPETITOR_LOGOS[name] || null;
 }
 
+function getPriorityChip(priority?: string | null) {
+  const p = (priority || '').toLowerCase();
+  if (p.includes('cso')) {
+    return { bg: 'rgba(234,17,0,0.15)', color: '#ff6b6b', border: 'rgba(234,17,0,0.45)' };
+  }
+  if (p.includes('leadership')) {
+    return { bg: 'rgba(255,194,32,0.15)', color: '#FFC220', border: 'rgba(255,194,32,0.45)' };
+  }
+  if (p.includes('analyst')) {
+    return { bg: 'rgba(0,83,226,0.15)', color: '#60a5fa', border: 'rgba(0,83,226,0.45)' };
+  }
+  return { bg: 'rgba(100,116,139,0.18)', color: '#94a3b8', border: 'rgba(100,116,139,0.45)' };
+}
+
+function normalizeName(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function inferOwner(event: CompetitorEvent) {
+  if (event.recommended_owner) return event.recommended_owner;
+  const category = (event.category || '').toLowerCase();
+  if (category.includes('cyber')) return 'CISO / Cyber Defense';
+  if (category.includes('orc') || category.includes('theft')) return 'Asset Protection Leadership';
+  if (category.includes('legal') || category.includes('regulatory')) return 'Legal & Compliance';
+  if (category.includes('strategic') || category.includes('technology')) return 'Strategy & Emerging Tech';
+  return 'Competitive Intelligence';
+}
+
+function inferAction(event: CompetitorEvent) {
+  const score = Math.round(event.walmart_relevance_score || 0);
+  if (score >= 90) return 'Escalate in next CSO briefing cycle with cross-functional owner alignment.';
+  if (score >= 80) return 'Assign owner this week and validate Walmart exposure + mitigations.';
+  if (score >= 70) return 'Track in weekly intel rhythm and prepare options memo for leadership.';
+  return 'Monitor signal trend; no immediate executive escalation required.';
+}
+
+function inferSoWhat(event: CompetitorEvent) {
+  if (event.why_walmart_cares) return event.why_walmart_cares;
+  if (event.security_implication) return event.security_implication;
+  return 'Potential downstream impact on Walmart security, trust, or operating resilience requires analyst review.';
+}
+
 // Component for logo with fallback to letter avatar
 function CompetitorLogo({ name, size = 'md' }: { name: string; size?: 'sm' | 'md' | 'lg' }) {
   const [logoFailed, setLogoFailed] = useState(false);
@@ -117,50 +157,148 @@ export function CompetitorIntelligence() {
   const [competitors, setCompetitors] = useState<CompetitorProfile[]>([]);
   const [recentEvents, setRecentEvents] = useState<CompetitorEvent[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
+  const [csoCandidates, setCsoCandidates] = useState<CompetitorEvent[]>([]);
+  const [allEvents, setAllEvents] = useState<CompetitorEvent[]>([]);
 
   // Load initial stats and competitors
   useEffect(() => {
-    Promise.all([
+    Promise.allSettled([
       fetchCompetitorStats(),
       fetchCompetitorEntities(100), // Get all competitors
-    ]).then(([s, e]) => {
-      setStats(s);
-      setCompetitors(e.entities.map((ent: any) => ({
-        name: ent.name,
-        totalEvents: ent.event_count,
-        cyberEvents: ent.cyber_count,
-        orcEvents: ent.orc_count || 0,
-        recallEvents: ent.recall_count,
-        legalEvents: ent.legal_count || 0,
-        techEvents: ent.tech_count || 0,
-        threatLevel: getThreatLevel(ent.event_count),
-        topCategory: ent.top_category || 'Other',
-        monthlyJson: ent.monthly_json || '{}',
-      })));
+      fetchCompetitorCSOCandidates(6),
+      fetchCompetitorEvents({ page: 1, page_size: 200 }),
+    ]).then(([statsRes, entitiesRes, csoRes, eventsRes]) => {
+      if (statsRes.status === 'fulfilled') {
+        setStats(statsRes.value);
+      }
+
+      if (entitiesRes.status === 'fulfilled') {
+        setCompetitors(entitiesRes.value.entities.map((ent: any) => ({
+          name: ent.name,
+          totalEvents: ent.event_count,
+          cyberEvents: ent.cyber_count,
+          orcEvents: ent.orc_count || 0,
+          recallEvents: ent.recall_count,
+          legalEvents: ent.legal_count || 0,
+          techEvents: ent.tech_count || 0,
+          threatLevel: getThreatLevel(ent.event_count),
+          topCategory: ent.top_category || 'Other',
+          monthlyJson: ent.monthly_json || '{}',
+        })));
+      } else {
+        setCompetitors([]);
+      }
+
+      if (eventsRes.status === 'fulfilled') {
+        setAllEvents(eventsRes.value.events || []);
+      } else {
+        setAllEvents([]);
+      }
+
+      if (csoRes.status === 'fulfilled' && (csoRes.value.events || []).length > 0) {
+        setCsoCandidates(csoRes.value.events || []);
+      } else if (eventsRes.status === 'fulfilled') {
+        const fallback = (eventsRes.value.events || [])
+          .filter(e => (e.walmart_relevance_score || 0) >= 75)
+          .sort((a, b) => (b.walmart_relevance_score || 0) - (a.walmart_relevance_score || 0))
+          .slice(0, 6);
+        setCsoCandidates(fallback);
+      } else {
+        setCsoCandidates([]);
+      }
     }).finally(() => setLoading(false));
   }, []);
 
   // Load recent events when a competitor is selected
   useEffect(() => {
-    if (selectedCompetitor) {
-      setLoadingEvents(true);
-      fetchCompetitorEvents({
-        competitor: selectedCompetitor,
-        page: 1,
-        page_size: 5,
-      }).then(response => {
-        setRecentEvents(response.events);
-      }).finally(() => setLoadingEvents(false));
-    } else {
+    if (!selectedCompetitor) {
       setRecentEvents([]);
+      return;
     }
-  }, [selectedCompetitor]);
+
+    const selectedNormalized = normalizeName(selectedCompetitor);
+    setLoadingEvents(true);
+
+    fetchCompetitorEvents({
+      competitor: selectedCompetitor,
+      page: 1,
+      page_size: 8,
+    })
+      .then((response) => {
+        if ((response.events || []).length > 0) {
+          setRecentEvents(response.events);
+          return;
+        }
+
+        return fetchCompetitorEvents({ page: 1, page_size: 200 }).then((fallback) => {
+          const matches = (fallback.events || [])
+            .filter((event) => normalizeName(event.competitor || '').includes(selectedNormalized)
+              || selectedNormalized.includes(normalizeName(event.competitor || '')))
+            .slice(0, 8);
+          setRecentEvents(matches);
+        });
+      })
+      .catch(() => {
+        const matches = (allEvents || [])
+          .filter((event) => normalizeName(event.competitor || '').includes(selectedNormalized)
+            || selectedNormalized.includes(normalizeName(event.competitor || '')))
+          .slice(0, 8);
+        setRecentEvents(matches);
+      })
+      .finally(() => setLoadingEvents(false));
+  }, [selectedCompetitor, allEvents]);
 
   const getCompetitor = (name: string) => competitors.find(c => c.name === name);
+
+  const topCompetitor = competitors.length > 0
+    ? [...competitors].sort((a, b) => b.totalEvents - a.totalEvents)[0]
+    : null;
+
+  const highRiskEvents = allEvents.filter((event) => (event.walmart_relevance_score || 0) >= 75);
+  const highRiskShare = stats?.total ? Math.round((highRiskEvents.length / stats.total) * 100) : 0;
+
+  const executiveBriefings = [
+    {
+      title: 'Competitive Concentration Risk',
+      insight: topCompetitor
+        ? `${topCompetitor.name} leads activity with ${topCompetitor.totalEvents} events (${Math.round((topCompetitor.totalEvents / Math.max(stats?.total || 1, 1)) * 100)}% share). Top category: ${topCompetitor.topCategory}.`
+        : 'Competitor concentration data is still loading.',
+      action: 'Pressure-test Walmart controls and investments against the top competitor playbook.',
+      owner: 'Chief Security Office + Strategy',
+    },
+    {
+      title: 'CSO Escalation Readiness',
+      insight: `${csoCandidates.length} candidate events currently queued for executive review.${csoCandidates.length === 0 ? ' No candidates are currently crossing escalation thresholds.' : ''}`,
+      action: csoCandidates.length > 0
+        ? 'Lock briefing order by score and assign response owners before the next executive sync.'
+        : 'Run rescore and validate calibration thresholds to avoid missed escalation signals.',
+      owner: 'Competitive Intelligence Lead',
+    },
+    {
+      title: 'High-Relevance Signal Load',
+      insight: `${highRiskEvents.length} events are scored 75+ (${highRiskShare}% of indexed activity), indicating elevated cross-functional decision demand.`,
+      action: 'Convert top signals into decision memos with risk, cost, and timing options.',
+      owner: 'Intel PMO + Domain Analysts',
+    },
+    {
+      title: 'Coverage & Detection Confidence',
+      insight: `Tracking ${competitors.length} competitors across ${(stats?.total ?? 0).toLocaleString()} indexed events; confidence improves as scoring coverage expands.`,
+      action: 'Expand source coverage and close low-confidence gaps before quarterly leadership review.',
+      owner: 'Data Engineering + Intel Ops',
+    },
+  ];
 
   const handleCardClick = (name: string) => {
     setSelectedCompetitor(prev => prev === name ? null : name);
   };
+
+  useEffect(() => {
+    const onEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSelectedCompetitor(null);
+    };
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
+  }, []);
 
   if (loading) {
     return (
@@ -249,18 +387,67 @@ export function CompetitorIntelligence() {
         </div>
       </div>
 
+      {/* CSO Brief Queue */}
+      <div className="max-w-7xl mx-auto mb-8">
+        <div className="rounded-xl border p-5" style={{ background: 'var(--s-card)', borderColor: 'var(--s-border)' }}>
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <h2 className="text-2xl font-bold">🚨 CSO Brief Queue</h2>
+            <span className="px-3 py-1 rounded-full text-xs font-bold border" style={{ background: 'rgba(234,17,0,0.15)', color: '#ff6b6b', borderColor: 'rgba(234,17,0,0.45)' }}>
+              {csoCandidates.length} Candidates
+            </span>
+          </div>
+
+          {csoCandidates.length === 0 ? (
+            <p className="text-sm" style={{ color: 'var(--s-text-dim)' }}>
+              No high-priority candidates yet. Run rescore from admin to refresh.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              {csoCandidates.map((event) => {
+                const chip = getPriorityChip(event.priority_tier);
+                return (
+                  <div key={event.id} className="rounded-lg border p-4" style={{ background: 'var(--s-modal-inner)', borderColor: 'var(--s-border)' }}>
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold border" style={{ background: chip.bg, color: chip.color, borderColor: chip.border }}>
+                        {event.priority_tier || 'Unscored'}
+                      </span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold border" style={{ background: 'rgba(0,83,226,0.15)', color: '#60a5fa', borderColor: 'rgba(0,83,226,0.45)' }}>
+                        Score: {Math.round(event.walmart_relevance_score || 0)}
+                      </span>
+                      <span className="text-[10px]" style={{ color: 'var(--s-text-dim)' }}>
+                        {event.event_date ? new Date(event.event_date).toLocaleDateString() : 'N/A'}
+                      </span>
+                    </div>
+                    <p className="text-sm font-bold mb-1" style={{ color: 'var(--s-text)' }}>
+                      {event.competitor}: {event.event_title || 'Untitled Event'}
+                    </p>
+                    <p className="text-xs mb-2" style={{ color: 'var(--s-text-muted)' }}>
+                      <span className="font-bold" style={{ color: '#93c5fd' }}>So what:</span> {inferSoWhat(event)}
+                    </p>
+                    <p className="text-xs mb-1" style={{ color: '#FFC220' }}>
+                      <span className="font-bold">Recommended action:</span> {inferAction(event)}
+                    </p>
+                    <p className="text-[11px]" style={{ color: 'var(--s-text-dim)' }}>
+                      <span className="font-bold">Proposed owner:</span> {inferOwner(event)}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Key Insights */}
       <div className="max-w-7xl mx-auto mb-8">
         <h2 className="text-2xl font-bold mb-4">💡 Executive Intelligence</h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {[
-            `🔥 Amazon dominates: ${competitors.find(c => c.name === 'Amazon')?.totalEvents || 147} events (${Math.round(((competitors.find(c => c.name === 'Amazon')?.totalEvents || 147) / (stats?.total || 337)) * 100)}% of all activity) — 3× more than nearest competitor. Technology and Strategic categories show aggressive innovation.`,
-            `⚠️ ORC/Theft epidemic: ${stats?.orc || 52} events across all competitors (15% of activity). Target, Kroger, and Costco show concentrated regional organized crime.`,
-            `🔐 Cyber threats rising: ${stats?.cyber || 33} cyber events (10% of activity). Amazon, Kroger, and Target are primary targets. Digital security posture gaps vs Amazon's advanced controls.`,
-            `📦 Recall pressure: ${stats?.recall || 18} recall events, primarily food safety. Costco leads with supply chain quality control challenges.`,
-          ].map((text, i) => (
+          {executiveBriefings.map((brief, i) => (
             <div key={i} className="p-5 rounded-lg border-l-4 border" style={{ background: 'var(--s-card)', borderLeftColor: '#FFC220', borderColor: 'var(--s-border)' }}>
-              <p className="text-sm leading-relaxed" style={{ color: 'var(--s-text-muted)' }}>{text}</p>
+              <h3 className="text-sm font-extrabold mb-2" style={{ color: '#60a5fa' }}>{brief.title}</h3>
+              <p className="text-sm leading-relaxed mb-3" style={{ color: 'var(--s-text-muted)' }}>{brief.insight}</p>
+              <p className="text-xs mb-1" style={{ color: '#FFC220' }}><span className="font-bold">Action:</span> {brief.action}</p>
+              <p className="text-xs" style={{ color: 'var(--s-text-dim)' }}><span className="font-bold">Owner:</span> {brief.owner}</p>
             </div>
           ))}
         </div>
@@ -336,19 +523,41 @@ export function CompetitorIntelligence() {
         </div>
       </div>
 
-      {/* Expanded Competitor Detail */}
+      {/* Competitor Detail Modal */}
       {selectedCompetitor && (
-        <div className="max-w-7xl mx-auto mb-8">
-          <div className="rounded-lg border-2 shadow-2xl overflow-hidden" style={{ background: 'var(--s-card)', borderColor: '#0053e2' }}>
-            <div className="p-8">
-              <div className="flex items-center gap-4 mb-6 pb-4" style={{ borderBottom: '1px solid var(--s-border)' }}>
-                <CompetitorLogo name={selectedCompetitor} size="lg" />
+        <div
+          className="fixed inset-0 z-[90] flex items-center justify-center p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${selectedCompetitor} details`}
+          onClick={() => setSelectedCompetitor(null)}
+        >
+          <div className="absolute inset-0" style={{ background: 'rgba(2,6,23,0.72)' }} />
+
+          <div
+            className="relative w-full max-w-6xl max-h-[90vh] overflow-y-auto rounded-xl border-2 shadow-2xl"
+            style={{ background: 'var(--s-card)', borderColor: '#0053e2' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 border-b" style={{ background: 'var(--s-card)', borderColor: 'var(--s-border)' }}>
+              <div className="flex items-center gap-3">
+                <CompetitorLogo name={selectedCompetitor} size="md" />
                 <div>
-                  <h2 className="text-3xl font-bold" style={{ color: 'var(--s-text)' }}>{selectedCompetitor}</h2>
-                  <p style={{ color: 'var(--s-text-muted)' }}>Detailed Intelligence Report</p>
+                  <h2 className="text-2xl font-bold" style={{ color: 'var(--s-text)' }}>{selectedCompetitor}</h2>
+                  <p className="text-sm" style={{ color: 'var(--s-text-muted)' }}>Detailed Intelligence Report</p>
                 </div>
               </div>
+              <button
+                type="button"
+                onClick={() => setSelectedCompetitor(null)}
+                className="px-3 py-1.5 rounded-md text-sm font-bold border"
+                style={{ background: 'white', color: '#1f2937', borderColor: 'var(--s-border)' }}
+              >
+                Close ✕
+              </button>
+            </div>
 
+            <div className="p-6">
               {/* Stats Summary */}
               <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
                 {(() => {
@@ -401,33 +610,57 @@ export function CompetitorIntelligence() {
                   </div>
                 ) : (
                   <div className="space-y-3">
-                    {recentEvents.map((event) => (
-                      <div key={event.id} className="p-5 rounded-lg border" style={{ background: 'var(--s-modal-inner)', borderColor: 'var(--s-border)' }}>
-                        <div className="flex items-start justify-between mb-2">
-                          <div className="flex-1">
-                            <span className="text-xs" style={{ color: 'var(--s-text-dim)' }}>
-                              {event.event_date ? new Date(event.event_date).toLocaleDateString() : 'N/A'}
+                    {recentEvents.map((event) => {
+                      const chip = getPriorityChip(event.priority_tier);
+                      return (
+                        <div key={event.id} className="p-5 rounded-lg border" style={{ background: 'var(--s-modal-inner)', borderColor: 'var(--s-border)' }}>
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex-1">
+                              <span className="text-xs" style={{ color: 'var(--s-text-dim)' }}>
+                                {event.event_date ? new Date(event.event_date).toLocaleDateString() : 'N/A'}
+                              </span>
+                              <h4 className="font-bold mt-1" style={{ color: 'var(--s-text)' }}>{event.event_title}</h4>
+                            </div>
+                            <span className="px-2 py-1 rounded text-xs ml-2" style={{ background: 'rgba(0,83,226,0.15)', color: '#60a5fa' }}>
+                              {event.category}
                             </span>
-                            <h4 className="font-bold mt-1" style={{ color: 'var(--s-text)' }}>{event.event_title}</h4>
                           </div>
-                          <span className="px-2 py-1 rounded text-xs ml-2" style={{ background: 'rgba(0,83,226,0.15)', color: '#60a5fa' }}>
-                            {event.category}
-                          </span>
+
+                          <div className="flex flex-wrap items-center gap-2 mb-2">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold border" style={{ background: chip.bg, color: chip.color, borderColor: chip.border }}>
+                              {event.priority_tier || 'Unscored'}
+                            </span>
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold border" style={{ background: 'rgba(0,83,226,0.15)', color: '#60a5fa', borderColor: 'rgba(0,83,226,0.45)' }}>
+                              Score: {Math.round(event.walmart_relevance_score || 0)}
+                            </span>
+                            {event.signal_type && (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold border" style={{ background: 'rgba(255,194,32,0.15)', color: '#FFC220', borderColor: 'rgba(255,194,32,0.45)' }}>
+                                {event.signal_type}
+                              </span>
+                            )}
+                          </div>
+
+                          {event.why_walmart_cares && (
+                            <p className="text-sm mt-2" style={{ color: '#93c5fd' }}>
+                              <strong>Why Walmart Cares:</strong> {event.why_walmart_cares}
+                            </p>
+                          )}
+
+                          {event.detailed_description && (
+                            <p className="text-sm mt-2" style={{ color: 'var(--s-text-muted)' }}>
+                              {event.detailed_description.length > 200
+                                ? `${event.detailed_description.slice(0, 200)}...`
+                                : event.detailed_description}
+                            </p>
+                          )}
+                          {event.security_implication && (
+                            <p className="text-sm text-yellow-400 mt-2">
+                              <strong>Security Impact:</strong> {event.security_implication}
+                            </p>
+                          )}
                         </div>
-                        {event.detailed_description && (
-                          <p className="text-sm mt-2" style={{ color: 'var(--s-text-muted)' }}>
-                            {event.detailed_description.length > 200
-                              ? `${event.detailed_description.slice(0, 200)}...`
-                              : event.detailed_description}
-                          </p>
-                        )}
-                        {event.security_implication && (
-                          <p className="text-sm text-yellow-400 mt-2">
-                            <strong>Security Impact:</strong> {event.security_implication}
-                          </p>
-                        )}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>

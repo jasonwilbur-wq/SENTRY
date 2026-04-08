@@ -58,8 +58,19 @@ const AppShell: React.FC<{
 }> = ({ currentView, setCurrentView }) => {
   const { reducedMotion } = useTheme();
   const { backendOffline } = useVendors();
+  const [authWarning,   setAuthWarning]   = useState<string | null>(null);
   const [chatOpen,      setChatOpen]      = useState(false);
   const [paletteOpen,   setPaletteOpen]   = useState(false);
+
+  // Fetch auth posture from /api/health on mount — show banner if auth is off
+  useEffect(() => {
+    fetch('/api/health')
+      .then(r => r.json())
+      .then(data => {
+        if (data.auth_warning) setAuthWarning(data.auth_warning);
+      })
+      .catch(() => { /* backend offline — handled elsewhere */ });
+  }, []);
   const [chatDismissed, setChatDismissed] = useState(
     () => localStorage.getItem('sentry-ai-dismissed') === '1'
   );
@@ -157,6 +168,22 @@ const AppShell: React.FC<{
               </span>
             </div>
           </header>
+
+          {/* Auth-disabled warning banner — shown when SENTRY_AUTH_MODE=off */}
+          {authWarning && (
+            <div
+              role="alert"
+              className="shrink-0 flex items-center gap-3 px-8 py-2.5 text-xs font-bold border-b"
+              style={{
+                background: 'rgba(234,17,0,0.10)',
+                borderColor: 'rgba(234,17,0,0.30)',
+                color: '#ff6b6b',
+              }}
+            >
+              <span className="text-base" aria-hidden="true">🔓</span>
+              <span>{authWarning}</span>
+            </div>
+          )}
 
           {/* Page body — Project Admin gets zero padding so its panels fill edge-to-edge */}
           <div className={`flex-1 overflow-hidden ${
