@@ -143,12 +143,54 @@ class ChatResponse(BaseModel):
     response: str
 
 
-# ── Forms ───────────────────────────────────────────────────────────────
+# ── Forms ─────────────────────────────────────────────────────────────────────
 
 class FormResponse(BaseModel):
     success: bool
     ref_id: str
     message: str
+    status: str = "SUBMITTED"
+
+
+class AssessmentRequest(BaseModel):
+    vendor_name: str
+    assessment_type: str
+    contact_name: str
+    contact_email: str
+    category: str = ""
+    urgency: str = "normal"
+    notes: str = ""
+
+
+class LabVisitRequest(BaseModel):
+    contact_name: str
+    contact_email: str
+    preferred_date: str
+    preferred_slot: str
+    equipment: str = ""
+    attendees: int = 1
+    notes: str = ""
+
+
+class ServiceRequestOut(BaseModel):
+    id: str
+    ref_id: str
+    request_type: str
+    status: str
+    created_by: str
+    created_at: str
+    updated_at: str
+    contact_name: str
+    contact_email: str
+    notes: str
+    vendor_name: str | None = None
+    assessment_type: str | None = None
+    category: str | None = None
+    urgency: str | None = None
+    preferred_date: str | None = None
+    preferred_slot: str | None = None
+    equipment: str | None = None
+    attendees: int | None = None
 
 
 # ── Projects ─────────────────────────────────────────────────────────────

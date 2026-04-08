@@ -41,9 +41,14 @@ export const RequestAssessment: React.FC = () => {
         setError('Submission failed. Please try again.');
       }
     } catch (err) {
-      // Backend offline — still show success with local ref for demo
-      setRefId(`DEMO-${crypto.randomUUID().slice(0, 8).toUpperCase()}`);
-      setSubmitted(true);
+      const msg = err instanceof Error ? err.message : 'Submission failed.';
+      if (msg.includes('422')) {
+        setError('Validation error — please check your form fields and try again.');
+      } else if (msg.includes('401') || msg.includes('403')) {
+        setError('Authentication required. Please configure your identity.');
+      } else {
+        setError(`Submission failed: ${msg}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -55,8 +60,9 @@ export const RequestAssessment: React.FC = () => {
         <div className="bg-green-900/30 border border-green-700 rounded-lg p-8 max-w-md text-center">
           <div className="text-5xl mb-4">✅</div>
           <h2 className="text-2xl font-bold text-green-400 mb-2">Assessment Submitted</h2>
-          <p className="text-slate-300 mb-4">Your request has been queued with the SENTRY GRC workflow.</p>
+          <p className="text-slate-300 mb-4">Your request has been saved and is awaiting triage.</p>
           <p className="text-xs font-mono text-sentry-accent bg-slate-900 px-3 py-1 rounded border border-slate-700">Ref: {refId}</p>
+          <p className="text-xs text-slate-500 mt-2">Status: SUBMITTED</p>
           <button
             onClick={() => { setSubmitted(false); setForm({ vendor_name: '', assessment_type: '', contact_name: '', contact_email: '', category: '', urgency: 'normal', notes: '' }); }}
             className="mt-6 text-sm text-slate-400 hover:text-white underline"

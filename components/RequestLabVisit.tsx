@@ -38,10 +38,15 @@ export const RequestLabVisit: React.FC = () => {
       } else {
         setError('Submission failed. Please try again.');
       }
-    } catch {
-      // Graceful demo fallback
-      setRefId(`LAB-${crypto.randomUUID().slice(0, 8).toUpperCase()}`);
-      setSubmitted(true);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Submission failed.';
+      if (msg.includes('422')) {
+        setError('Validation error — please check your form fields and try again.');
+      } else if (msg.includes('401') || msg.includes('403')) {
+        setError('Authentication required. Please configure your identity.');
+      } else {
+        setError(`Submission failed: ${msg}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -53,8 +58,9 @@ export const RequestLabVisit: React.FC = () => {
         <div className="bg-green-900/30 border border-green-700 rounded-lg p-8 max-w-md text-center">
           <div className="text-5xl mb-4">🔬</div>
           <h2 className="text-2xl font-bold text-green-400 mb-2">Lab Visit Requested</h2>
-          <p className="text-slate-300 mb-4">The Emerging Technology Lab team will confirm within 48h.</p>
+          <p className="text-slate-300 mb-4">Your request has been saved and is awaiting confirmation.</p>
           <p className="text-xs font-mono text-sentry-accent bg-slate-900 px-3 py-1 rounded border border-slate-700">Ref: {refId}</p>
+          <p className="text-xs text-slate-500 mt-2">Status: SUBMITTED</p>
           <button
             onClick={() => { setSubmitted(false); setForm({ contact_name: '', contact_email: '', preferred_date: '', preferred_slot: '', equipment: '', attendees: '1', notes: '' }); }}
             className="mt-6 text-sm text-slate-400 hover:text-white underline"

@@ -795,20 +795,10 @@ Be concise and professional. Use markdown **bold** and bullet lists where helpfu
         )
 
 
-# ── Forms (local stubs — generate ref IDs) ──────────────────────────
+# ── Service request forms (real persistence) ───────────────────────────────
 
-@app.post("/api/assessment", response_model=FormResponse)
-def submit_assessment(data: dict):
-    """Accept a security assessment request."""
-    ref = f"SENTRY-ASM-{uuid.uuid4().hex[:8].upper()}"
-    return FormResponse(success=True, ref_id=ref, message="Assessment queued.")
-
-
-@app.post("/api/lab-visit", response_model=FormResponse)
-def submit_lab_visit(data: dict):
-    """Accept a lab visit request."""
-    ref = f"SENTRY-LAB-{uuid.uuid4().hex[:8].upper()}"
-    return FormResponse(success=True, ref_id=ref, message="Lab visit requested.")
+from request_routes import router as request_router
+app.include_router(request_router)
 
 
 # ── Morning Brief ─────────────────────────────────────────────────────────

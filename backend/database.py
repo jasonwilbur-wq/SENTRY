@@ -177,6 +177,36 @@ CREATE TABLE IF NOT EXISTS project_vendors (
 """
 
 
+CREATE_SERVICE_REQUESTS = """
+CREATE TABLE IF NOT EXISTS service_requests (
+    id              TEXT PRIMARY KEY,
+    ref_id          TEXT NOT NULL UNIQUE,
+    request_type    TEXT NOT NULL,
+    status          TEXT NOT NULL DEFAULT 'SUBMITTED',
+    created_by      TEXT NOT NULL DEFAULT 'anonymous',
+    created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    contact_name    TEXT NOT NULL,
+    contact_email   TEXT NOT NULL,
+    notes           TEXT DEFAULT '',
+    vendor_name     TEXT DEFAULT NULL,
+    assessment_type TEXT DEFAULT NULL,
+    category        TEXT DEFAULT NULL,
+    urgency         TEXT DEFAULT NULL,
+    preferred_date  TEXT DEFAULT NULL,
+    preferred_slot  TEXT DEFAULT NULL,
+    equipment       TEXT DEFAULT NULL,
+    attendees       INTEGER DEFAULT NULL
+);
+"""
+
+CREATE_SERVICE_REQUESTS_INDEXES = [
+    "CREATE INDEX IF NOT EXISTS idx_svcreq_ref ON service_requests(ref_id);",
+    "CREATE INDEX IF NOT EXISTS idx_svcreq_type ON service_requests(request_type, status);",
+    "CREATE INDEX IF NOT EXISTS idx_svcreq_created_by ON service_requests(created_by);",
+]
+
+
 def _safe_add_column(conn: sqlite3.Connection, table: str, column: str, sql: str) -> None:
     """Add a column if it doesn't already exist. Idempotent.
 
@@ -208,8 +238,11 @@ def init_db() -> None:
         conn.execute(CREATE_INCIDENTS)
         conn.execute(CREATE_PROJECTS)
         conn.execute(CREATE_PROJECT_VENDORS)
+        conn.execute(CREATE_SERVICE_REQUESTS)
         conn.execute(CREATE_AUDIT_LOG)
         for idx_sql in CREATE_AUDIT_INDEXES:
+            conn.execute(idx_sql)
+        for idx_sql in CREATE_SERVICE_REQUESTS_INDEXES:
             conn.execute(idx_sql)
 
         # Safe migrations — add columns that may be missing from older DBs
