@@ -284,3 +284,51 @@ class TestHealthEndpoint:
         body = resp.json()
         assert body["auth_enabled"] is False
         assert "anonymous admin" in body["auth_warning"]
+
+
+# ── 7. /api/auth/me identity verification ───────────────────────────────
+
+class TestAuthMe:
+    """Verify /api/auth/me returns correct user identity."""
+
+    def test_whoami_returns_admin_identity(self, client_default):
+        resp = client_default.get(
+            "/api/auth/me",
+            headers={"X-Sentry-User": "admin_alice"},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["id"] == "admin_alice"
+        assert body["role"] == "admin"
+        assert body["is_admin"] is True
+
+    def test_whoami_returns_user_identity(self, client_default):
+        resp = client_default.get(
+            "/api/auth/me",
+            headers={"X-Sentry-User": "viewer_bob"},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["id"] == "viewer_bob"
+        assert body["role"] == "user"
+        assert body["is_admin"] is False
+
+    def test_whoami_no_header_returns_401(self, client_default):
+        resp = client_default.get("/api/auth/me")
+        assert resp.status_code == 401
+
+    def test_whoami_unknown_user_returns_403(self, client_default):
+        resp = client_default.get(
+            "/api/auth/me",
+            headers={"X-Sentry-User": "hacker_eve"},
+        )
+        assert resp.status_code == 403
+
+    def test_whoami_off_mode_returns_anonymous(self, client_off):
+        """In off mode, /api/auth/me returns anonymous admin without header."""
+        resp = client_off.get("/api/auth/me")
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["id"] == "anonymous"
+        assert body["role"] == "admin"
+        assert body["is_admin"] is True

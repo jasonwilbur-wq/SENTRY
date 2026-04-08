@@ -15,12 +15,60 @@ const API_BASE: string = import.meta.env.VITE_API_URL ?? '';
 /** Default request timeout in ms. Override per-call for slow endpoints (LLM). */
 const DEFAULT_TIMEOUT_MS = 30_000;
 
+// ── Auth identity (module-level, set by AuthContext) ────────────────────────
+// When auth_mode is "header", every request includes X-Sentry-User.
+// setSentryUser() is called once by AuthContext on mount.
+
+let _sentryUser: string | null = null;
+
+/** Set the current user identity for all subsequent API requests. */
+export function setSentryUser(userId: string | null): void {
+  _sentryUser = userId?.trim().toLowerCase() || null;
+}
+
+/** Get the current user identity (for display in UI). */
+export function getSentryUser(): string | null {
+  return _sentryUser;
+}
+
+/** Build auth headers based on configured identity. */
+function _authHeaders(): Record<string, string> {
+  if (_sentryUser) return { 'X-Sentry-User': _sentryUser };
+  return {};
+}
+
 /**
  * Returns the full URL for a VAR report download via the backend proxy.
  * Works in dev (relative) and production (absolute Cloud Run URL).
  */
 export function getDownloadUrl(varId: string): string {
   return `${API_BASE}/api/vars/download/${varId}`;
+}
+
+// ── Health & Auth verification ──────────────────────────────────────────────
+
+export interface HealthResponse {
+  status: string;
+  version: string;
+  auth_mode: string;
+  auth_enabled: boolean;
+  auth_warning: string | null;
+}
+
+export interface AuthMeResponse {
+  id: string;
+  role: string;
+  is_admin: boolean;
+}
+
+/** Fetch backend health + auth posture (public, no auth required). */
+export async function fetchHealth(): Promise<HealthResponse> {
+  return request('/api/health');
+}
+
+/** Verify the current user identity against the backend. */
+export async function fetchAuthMe(): Promise<AuthMeResponse> {
+  return request('/api/auth/me');
 }
 
 async function request<T>(
@@ -32,9 +80,13 @@ async function request<T>(
   const timerId = setTimeout(() => controller.abort(), timeoutMs);
 
   try {
-    const headers: HeadersInit = fetchOptions.method && fetchOptions.method !== 'GET'
-      ? { 'Content-Type': 'application/json' }
-      : {};
+    const headers: HeadersInit = {
+      ..._authHeaders(),
+      ...(fetchOptions.method && fetchOptions.method !== 'GET'
+        ? { 'Content-Type': 'application/json' }
+        : {}),
+      ...fetchOptions.headers,
+    };
     const res = await fetch(`${API_BASE}${path}`, {
       ...fetchOptions,
       headers: { ...headers, ...fetchOptions.headers },

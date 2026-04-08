@@ -17,10 +17,11 @@ import uuid
 from contextlib import asynccontextmanager
 
 import httpx
-from fastapi import FastAPI, Query
+from fastapi import Depends, FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, RedirectResponse
 
+from auth import get_current_user, SentryUser
 from database import get_connection, init_db
 from admin_routes import router as admin_router
 from models import (
@@ -91,6 +92,20 @@ def health_check():
         "status": "ok",
         "version": "2.1.0",
         **auth_status,
+    }
+
+
+@app.get("/api/auth/me")
+def whoami(user: SentryUser = Depends(get_current_user)):
+    """Return the authenticated user's identity and role.
+
+    Used by the frontend to verify the X-Sentry-User header is accepted
+    and to display the current user's identity in the UI.
+    """
+    return {
+        "id": user.id,
+        "role": user.role,
+        "is_admin": user.is_admin,
     }
 from regulatory_routes import ROUTER as regulatory_router
 app.include_router(regulatory_router)

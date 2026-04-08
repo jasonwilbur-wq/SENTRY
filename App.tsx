@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, lazy, Suspense } from 'react';
 import { ViewState } from './types';
 import { VendorProvider, useVendors } from './context/VendorContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { LandingPage } from './components/LandingPage';
 import { Sidebar } from './components/Sidebar';
 import { PageTransition } from './components/PageTransition';
@@ -58,19 +59,9 @@ const AppShell: React.FC<{
 }> = ({ currentView, setCurrentView }) => {
   const { reducedMotion } = useTheme();
   const { backendOffline } = useVendors();
-  const [authWarning,   setAuthWarning]   = useState<string | null>(null);
+  const { user, authWarning, authError, isReady } = useAuth();
   const [chatOpen,      setChatOpen]      = useState(false);
   const [paletteOpen,   setPaletteOpen]   = useState(false);
-
-  // Fetch auth posture from /api/health on mount — show banner if auth is off
-  useEffect(() => {
-    fetch('/api/health')
-      .then(r => r.json())
-      .then(data => {
-        if (data.auth_warning) setAuthWarning(data.auth_warning);
-      })
-      .catch(() => { /* backend offline — handled elsewhere */ });
-  }, []);
   const [chatDismissed, setChatDismissed] = useState(
     () => localStorage.getItem('sentry-ai-dismissed') === '1'
   );
@@ -148,24 +139,62 @@ const AppShell: React.FC<{
               </div>
             </div>
 
-            <div
-              className="flex items-center gap-2 px-3 py-1.5 rounded-full shrink-0"
-              style={backendOffline
-                ? { background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }
-                : { background: 'rgba(34,197,94,0.08)',  border: '1px solid rgba(34,197,94,0.2)' }}
-            >
-              <div className="relative flex items-center justify-center">
-                <div className={`w-1.5 h-1.5 rounded-full ${backendOffline ? 'bg-red-400' : 'bg-green-400'}`} />
-                {!backendOffline && (
-                  <div className="absolute w-1.5 h-1.5 rounded-full bg-green-400 animate-ping-ring" style={{ opacity: 0.5 }} />
-                )}
-              </div>
-              <span
-                className="text-[10px] font-bold uppercase tracking-widest"
-                style={{ color: backendOffline ? '#f87171' : '#4ade80' }}
+            <div className="flex items-center gap-3 shrink-0">
+              {/* Authenticated user pill */}
+              {user && (
+                <div
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full"
+                  style={{
+                    background: user.is_admin
+                      ? 'rgba(255,194,32,0.08)'
+                      : 'rgba(0,83,226,0.08)',
+                    border: `1px solid ${
+                      user.is_admin
+                        ? 'rgba(255,194,32,0.25)'
+                        : 'rgba(0,83,226,0.25)'
+                    }`,
+                  }}
+                >
+                  <span
+                    className="text-[10px] font-bold uppercase tracking-widest"
+                    style={{ color: user.is_admin ? '#ffc220' : '#60a5fa' }}
+                  >
+                    {user.id === 'anonymous' ? 'Anonymous' : user.id}
+                  </span>
+                  <span
+                    className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full"
+                    style={{
+                      background: user.is_admin
+                        ? 'rgba(255,194,32,0.15)'
+                        : 'rgba(0,83,226,0.15)',
+                      color: user.is_admin ? '#ffc220' : '#60a5fa',
+                    }}
+                  >
+                    {user.role}
+                  </span>
+                </div>
+              )}
+
+              {/* Backend status indicator */}
+              <div
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full"
+                style={backendOffline
+                  ? { background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }
+                  : { background: 'rgba(34,197,94,0.08)',  border: '1px solid rgba(34,197,94,0.2)' }}
               >
-                {backendOffline ? 'Backend Offline' : 'System Online'}
-              </span>
+                <div className="relative flex items-center justify-center">
+                  <div className={`w-1.5 h-1.5 rounded-full ${backendOffline ? 'bg-red-400' : 'bg-green-400'}`} />
+                  {!backendOffline && (
+                    <div className="absolute w-1.5 h-1.5 rounded-full bg-green-400 animate-ping-ring" style={{ opacity: 0.5 }} />
+                  )}
+                </div>
+                <span
+                  className="text-[10px] font-bold uppercase tracking-widest"
+                  style={{ color: backendOffline ? '#f87171' : '#4ade80' }}
+                >
+                  {backendOffline ? 'Backend Offline' : 'System Online'}
+                </span>
+              </div>
             </div>
           </header>
 
@@ -175,13 +204,29 @@ const AppShell: React.FC<{
               role="alert"
               className="shrink-0 flex items-center gap-3 px-8 py-2.5 text-xs font-bold border-b"
               style={{
+                background: 'rgba(255,194,32,0.08)',
+                borderColor: 'rgba(255,194,32,0.25)',
+                color: '#ffc220',
+              }}
+            >
+              <span className="text-base" aria-hidden="true">🔓</span>
+              <span>{authWarning}</span>
+            </div>
+          )}
+
+          {/* Auth-required error banner — shown when identity is missing or rejected */}
+          {authError && (
+            <div
+              role="alert"
+              className="shrink-0 flex items-center gap-3 px-8 py-3 text-xs font-bold border-b"
+              style={{
                 background: 'rgba(234,17,0,0.10)',
                 borderColor: 'rgba(234,17,0,0.30)',
                 color: '#ff6b6b',
               }}
             >
-              <span className="text-base" aria-hidden="true">🔓</span>
-              <span>{authWarning}</span>
+              <span className="text-base" aria-hidden="true">🚫</span>
+              <span>{authError}</span>
             </div>
           )}
 
@@ -397,15 +442,17 @@ const App: React.FC = () => {
   return (
     // ThemeProvider wraps everything so LandingBackground3D can read reducedMotion
     <ThemeProvider>
-      <VendorProvider>
-        {/* Accessible skip link — first focusable element in the DOM */}
-        <a href="#main-content" className="skip-nav">Skip to main content</a>
+      <AuthProvider>
+        <VendorProvider>
+          {/* Accessible skip link — first focusable element in the DOM */}
+          <a href="#main-content" className="skip-nav">Skip to main content</a>
 
-        {showLanding
-          ? <LandingPage onEnter={handleEnter} />
-          : <AppShell currentView={currentView} setCurrentView={setCurrentView} />
-        }
-      </VendorProvider>
+          {showLanding
+            ? <LandingPage onEnter={handleEnter} />
+            : <AppShell currentView={currentView} setCurrentView={setCurrentView} />
+          }
+        </VendorProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 };
