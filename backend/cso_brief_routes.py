@@ -1,395 +1,54 @@
-"""SENTRY CSO Briefing Pipeline — Routes (Step 2: generate + get).
+"""SENTRY CSO Briefing Pipeline — Route handlers.
 
-Endpoints for creating review-gated CSO briefs from scored competitor
-events and retrieving them with ordered items.
+Thin routing layer.  All business logic, models, and DB access live in
+cso_brief_helpers.py so this file stays under the 600-line budget.
 
-All routes live under /api/cso-briefs/.
+Endpoints:
+  POST   /api/cso-briefs/generate           — create a DRAFT brief
+  GET    /api/cso-briefs/{brief_id}         — retrieve brief + items
+  PATCH  /api/cso-briefs/{brief_id}         — edit brief metadata
+  PATCH  /api/cso-briefs/{brief_id}/items/{item_id} — edit item
+  POST   /api/cso-briefs/{brief_id}/validate — run quality gate
 """
 from __future__ import annotations
 
 import json
 import uuid
-from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends, HTTPException
 
 from auth import SentryUser, get_current_user
 from database import get_connection
+from cso_brief_helpers import (
+    MAX_ITEMS_CAP,
+    MAX_ITEMS_DEFAULT,
+    BriefItemOut,
+    BriefOut,
+    GenerateRequest,
+    GenerateResponse,
+    PatchBriefRequest,
+    PatchItemRequest,
+    ValidateResponse,
+    Violation,
+    confidence_from_score,
+    count_candidates,
+    create_brief_items,
+    create_brief_row,
+    fetch_brief,
+    fetch_brief_item,
+    fetch_brief_items,
+    fetch_candidate_events,
+    log_brief_audit,
+    require_brief_editable,
+    serialize_brief,
+    utcnow_iso,
+)
 
 ROUTER = APIRouter(prefix="/api/cso-briefs", tags=["cso-briefs"])
 
 
-# ── Constants ─────────────────────────────────────────────────────────────────
-
-MAX_ITEMS_DEFAULT = 20
-MAX_ITEMS_CAP = 100
-
-# Inclusion gates — only these values qualify for a CSO brief.
-ALLOWED_PRIORITY_TIERS = {"Leadership Watch", "CSO Brief"}
-ALLOWED_TRIAGE_STATUSES = {"REVIEWED", "ESCALATED"}
-
-# Fields captured in frozen_payload from the source competitor event row.
-FROZEN_PAYLOAD_FIELDS: list[str] = [
-    "id",
-    "competitor",
-    "event_title",
-    "event_date",
-    "source_link",
-    "confidence_level",
-    "walmart_relevance_score",
-    "priority_tier",
-    "triage_status",
-    "escalate_to_cso",
-    "why_walmart_cares",
-    "walmart_actionability_context",
-    "matched_vendor_id",
-    "matched_vendor_name",
-    "match_method",
-    "match_label",
-    "linked_active_projects_count",
-    "linked_projects",
-    "score_reason",
-    "category",
-    "detailed_description",
-    "security_implication",
-    "operational_impact",
-    "financial_impact",
-    "reputational_impact",
-    "analyst_notes",
-    "cso_candidate_reason",
-    "signal_type",
-    "recommended_owner",
-    "strategic_score",
-    "security_score",
-    "operational_score",
-    "customer_trust_score",
-    "novelty_score",
-    "urgency_score",
-    "confidence_score",
-    "confidence_effect",
-    "source_effect",
-    "location",
-    "source_month",
-]
-
-
-# ── Pydantic models ──────────────────────────────────────────────────────────
-
-class GenerateFilters(BaseModel):
-    date_from: str | None = None
-    date_to: str | None = None
-    competitor: list[str] | None = None
-    max_items: int = MAX_ITEMS_DEFAULT
-
-
-class GenerateRequest(BaseModel):
-    title: str
-    period_start: str
-    period_end: str
-    filters: GenerateFilters = Field(default_factory=GenerateFilters)
-
-
-class BriefItemOut(BaseModel):
-    id: str
-    brief_id: str
-    competitor_event_id: int
-    rank: int
-    analyst_commentary: str
-    uncertainty_note: str
-    owner_assignment: str
-    include_in_summary: int
-    frozen_payload: dict[str, Any]
-    created_at: str
-    updated_at: str
-
-
-class BriefOut(BaseModel):
-    id: str
-    title: str
-    period_start: str
-    period_end: str
-    status: str
-    created_by: str
-    created_at: str
-    updated_by: str
-    updated_at: str
-    submitted_at: str | None
-    submitted_by: str | None
-    approved_at: str | None
-    approved_by: str | None
-    published_draft_at: str | None
-    published_draft_by: str | None
-    executive_summary: str
-    review_notes: str
-    quality_gate_result: str
-    snapshot_version: int
-    items: list[BriefItemOut]
-
-
-class GenerateResponse(BaseModel):
-    brief: BriefOut
-    included_count: int
-    candidate_count: int
-
-
-# ── Repository / helpers ──────────────────────────────────────────────────────
-
-def _utcnow_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
-
-
-def _build_frozen_payload(row: dict) -> dict[str, Any]:
-    """Extract the canonical snapshot fields from a competitor event row."""
-    payload: dict[str, Any] = {}
-    for field in FROZEN_PAYLOAD_FIELDS:
-        val = row.get(field)
-        # sqlite3.Row doesn't support .get — already converted to dict upstream
-        payload[field] = val
-    return payload
-
-
-def _fetch_candidate_events(
-    conn,
-    *,
-    date_from: str | None = None,
-    date_to: str | None = None,
-    competitors: list[str] | None = None,
-    max_items: int = MAX_ITEMS_DEFAULT,
-) -> list[dict]:
-    """Query competitor events matching CSO brief inclusion criteria.
-
-    Returns rows as dicts, ordered by the approved ranking:
-      1. escalate_to_cso DESC
-      2. walmart_relevance_score DESC
-      3. event_date DESC
-    """
-    clauses = [
-        "deleted_at IS NULL",
-        "priority_tier IN ({})".format(
-            ", ".join("?" for _ in ALLOWED_PRIORITY_TIERS)
-        ),
-        "COALESCE(triage_status, 'UNREVIEWED') IN ({})".format(
-            ", ".join("?" for _ in ALLOWED_TRIAGE_STATUSES)
-        ),
-    ]
-    params: list[Any] = [
-        *ALLOWED_PRIORITY_TIERS,
-        *ALLOWED_TRIAGE_STATUSES,
-    ]
-
-    if date_from:
-        clauses.append("event_date >= ?")
-        params.append(date_from)
-    if date_to:
-        clauses.append("event_date <= ?")
-        params.append(date_to)
-    if competitors:
-        placeholders = ", ".join("?" for _ in competitors)
-        clauses.append(f"competitor IN ({placeholders})")
-        params.extend(competitors)
-
-    where = "WHERE " + " AND ".join(clauses)
-
-    capped = min(max_items, MAX_ITEMS_CAP)
-    params.append(capped)
-
-    sql = f"""
-        SELECT * FROM competitor_events
-        {where}
-        ORDER BY
-            COALESCE(escalate_to_cso, 0) DESC,
-            COALESCE(walmart_relevance_score, 0) DESC,
-            event_date DESC
-        LIMIT ?
-    """
-    rows = conn.execute(sql, params).fetchall()
-    return [dict(r) for r in rows]
-
-
-def _count_candidates(
-    conn,
-    *,
-    date_from: str | None = None,
-    date_to: str | None = None,
-    competitors: list[str] | None = None,
-) -> int:
-    """Count total matching candidate events (before LIMIT)."""
-    clauses = [
-        "deleted_at IS NULL",
-        "priority_tier IN ({})".format(
-            ", ".join("?" for _ in ALLOWED_PRIORITY_TIERS)
-        ),
-        "COALESCE(triage_status, 'UNREVIEWED') IN ({})".format(
-            ", ".join("?" for _ in ALLOWED_TRIAGE_STATUSES)
-        ),
-    ]
-    params: list[Any] = [
-        *ALLOWED_PRIORITY_TIERS,
-        *ALLOWED_TRIAGE_STATUSES,
-    ]
-
-    if date_from:
-        clauses.append("event_date >= ?")
-        params.append(date_from)
-    if date_to:
-        clauses.append("event_date <= ?")
-        params.append(date_to)
-    if competitors:
-        placeholders = ", ".join("?" for _ in competitors)
-        clauses.append(f"competitor IN ({placeholders})")
-        params.extend(competitors)
-
-    where = "WHERE " + " AND ".join(clauses)
-    row = conn.execute(
-        f"SELECT COUNT(*) FROM competitor_events {where}", params
-    ).fetchone()
-    return row[0]
-
-
-def _create_brief_row(
-    conn,
-    *,
-    brief_id: str,
-    title: str,
-    period_start: str,
-    period_end: str,
-    user_id: str,
-    now: str,
-) -> None:
-    """Insert the cso_briefs header row."""
-    conn.execute(
-        """
-        INSERT INTO cso_briefs (
-            id, title, period_start, period_end, status,
-            created_by, created_at, updated_by, updated_at,
-            snapshot_version
-        ) VALUES (?, ?, ?, ?, 'DRAFT', ?, ?, ?, ?, 1)
-        """,
-        (brief_id, title, period_start, period_end,
-         user_id, now, user_id, now),
-    )
-
-
-def _create_brief_items(
-    conn,
-    *,
-    brief_id: str,
-    events: list[dict],
-) -> list[dict]:
-    """Insert cso_brief_items rows for each included event.
-
-    Returns the item dicts (for response serialization).
-    """
-    now = _utcnow_iso()
-    items: list[dict] = []
-    for rank, event_row in enumerate(events, start=1):
-        item_id = str(uuid.uuid4())
-        frozen = _build_frozen_payload(event_row)
-        frozen_json = json.dumps(frozen, default=str, ensure_ascii=False)
-        conn.execute(
-            """
-            INSERT INTO cso_brief_items (
-                id, brief_id, competitor_event_id, rank,
-                analyst_commentary, uncertainty_note, owner_assignment,
-                include_in_summary, frozen_payload,
-                created_at, updated_at
-            ) VALUES (?, ?, ?, ?, '', '', '', 1, ?, ?, ?)
-            """,
-            (item_id, brief_id, event_row["id"], rank,
-             frozen_json, now, now),
-        )
-        items.append({
-            "id": item_id,
-            "brief_id": brief_id,
-            "competitor_event_id": event_row["id"],
-            "rank": rank,
-            "analyst_commentary": "",
-            "uncertainty_note": "",
-            "owner_assignment": "",
-            "include_in_summary": 1,
-            "frozen_payload": frozen,
-            "created_at": now,
-            "updated_at": now,
-        })
-    return items
-
-
-def _log_brief_audit(
-    conn,
-    *,
-    brief_id: str,
-    action: str,
-    actor_id: str,
-    old_value: str = "",
-    new_value: str = "",
-) -> None:
-    """Write a row to cso_brief_audit_log."""
-    conn.execute(
-        """
-        INSERT INTO cso_brief_audit_log
-            (brief_id, action, actor_id, old_value, new_value, created_at)
-        VALUES (?, ?, ?, ?, ?, ?)
-        """,
-        (brief_id, action, actor_id, old_value, new_value, _utcnow_iso()),
-    )
-
-
-def _fetch_brief(conn, brief_id: str) -> dict | None:
-    """Fetch a single cso_briefs row as dict, or None."""
-    row = conn.execute(
-        "SELECT * FROM cso_briefs WHERE id = ?", (brief_id,)
-    ).fetchone()
-    return dict(row) if row else None
-
-
-def _fetch_brief_items(conn, brief_id: str) -> list[dict]:
-    """Fetch ordered cso_brief_items for a brief."""
-    rows = conn.execute(
-        "SELECT * FROM cso_brief_items WHERE brief_id = ? ORDER BY rank",
-        (brief_id,),
-    ).fetchall()
-    items: list[dict] = []
-    for r in rows:
-        d = dict(r)
-        # Deserialize frozen_payload from JSON string → dict
-        raw = d.get("frozen_payload", "{}")
-        try:
-            d["frozen_payload"] = json.loads(raw) if isinstance(raw, str) else raw
-        except (json.JSONDecodeError, TypeError):
-            d["frozen_payload"] = {}
-        items.append(d)
-    return items
-
-
-def _serialize_brief(brief_row: dict, items: list[dict]) -> BriefOut:
-    """Build the BriefOut response from a brief row + item rows."""
-    return BriefOut(
-        id=brief_row["id"],
-        title=brief_row["title"],
-        period_start=brief_row["period_start"],
-        period_end=brief_row["period_end"],
-        status=brief_row["status"],
-        created_by=brief_row["created_by"],
-        created_at=brief_row["created_at"],
-        updated_by=brief_row["updated_by"],
-        updated_at=brief_row["updated_at"],
-        submitted_at=brief_row.get("submitted_at"),
-        submitted_by=brief_row.get("submitted_by"),
-        approved_at=brief_row.get("approved_at"),
-        approved_by=brief_row.get("approved_by"),
-        published_draft_at=brief_row.get("published_draft_at"),
-        published_draft_by=brief_row.get("published_draft_by"),
-        executive_summary=brief_row.get("executive_summary", ""),
-        review_notes=brief_row.get("review_notes", ""),
-        quality_gate_result=brief_row.get("quality_gate_result", ""),
-        snapshot_version=brief_row.get("snapshot_version", 1),
-        items=[BriefItemOut(**item) for item in items],
-    )
-
-
-# ── Route handlers ────────────────────────────────────────────────────────────
+# ── Generate ──────────────────────────────────────────────────────────────────
 
 @ROUTER.post("/generate", response_model=GenerateResponse)
 def generate_brief(
@@ -404,15 +63,14 @@ def generate_brief(
 
     conn = get_connection()
     try:
-        # Fetch candidate events matching inclusion criteria
-        events = _fetch_candidate_events(
+        events = fetch_candidate_events(
             conn,
             date_from=filters.date_from,
             date_to=filters.date_to,
             competitors=filters.competitor,
             max_items=max_items,
         )
-        candidate_count = _count_candidates(
+        candidate_count = count_candidates(
             conn,
             date_from=filters.date_from,
             date_to=filters.date_to,
@@ -420,10 +78,9 @@ def generate_brief(
         )
 
         brief_id = str(uuid.uuid4())
-        now = _utcnow_iso()
+        now = utcnow_iso()
 
-        # Single transaction: brief row + all item rows + audit
-        _create_brief_row(
+        create_brief_row(
             conn,
             brief_id=brief_id,
             title=body.title,
@@ -433,11 +90,9 @@ def generate_brief(
             now=now,
         )
 
-        items = _create_brief_items(
-            conn, brief_id=brief_id, events=events,
-        )
+        items = create_brief_items(conn, brief_id=brief_id, events=events)
 
-        _log_brief_audit(
+        log_brief_audit(
             conn,
             brief_id=brief_id,
             action="create",
@@ -453,19 +108,19 @@ def generate_brief(
         )
 
         conn.commit()
-
-        brief_row = _fetch_brief(conn, brief_id)
+        brief_row = fetch_brief(conn, brief_id)
     finally:
         conn.close()
 
-    assert brief_row is not None  # just created it
-
+    assert brief_row is not None
     return GenerateResponse(
-        brief=_serialize_brief(brief_row, items),
+        brief=serialize_brief(brief_row, items),
         included_count=len(events),
         candidate_count=candidate_count,
     )
 
+
+# ── Get ───────────────────────────────────────────────────────────────────────
 
 @ROUTER.get("/{brief_id}", response_model=BriefOut)
 def get_brief(
@@ -475,11 +130,249 @@ def get_brief(
     """Retrieve a CSO brief with ordered items."""
     conn = get_connection()
     try:
-        brief_row = _fetch_brief(conn, brief_id)
+        brief_row = fetch_brief(conn, brief_id)
         if not brief_row:
             raise HTTPException(status_code=404, detail="Brief not found")
-        items = _fetch_brief_items(conn, brief_id)
+        items = fetch_brief_items(conn, brief_id)
     finally:
         conn.close()
 
-    return _serialize_brief(brief_row, items)
+    return serialize_brief(brief_row, items)
+
+
+# ── Patch brief metadata ─────────────────────────────────────────────────────
+
+@ROUTER.patch("/{brief_id}", response_model=BriefOut)
+def patch_brief(
+    brief_id: str,
+    body: PatchBriefRequest,
+    user: SentryUser = Depends(get_current_user),
+) -> BriefOut:
+    """Edit brief metadata (executive_summary, review_notes).
+
+    Only allowed in DRAFT or IN_REVIEW states.
+    """
+    conn = get_connection()
+    try:
+        brief_row = fetch_brief(conn, brief_id)
+        if not brief_row:
+            raise HTTPException(status_code=404, detail="Brief not found")
+        require_brief_editable(brief_row)
+
+        old_vals: dict[str, str] = {}
+        updates: dict[str, str] = {}
+
+        if body.executive_summary is not None:
+            old_vals["executive_summary"] = brief_row.get("executive_summary", "")
+            updates["executive_summary"] = body.executive_summary
+        if body.review_notes is not None:
+            old_vals["review_notes"] = brief_row.get("review_notes", "")
+            updates["review_notes"] = body.review_notes
+
+        if not updates:
+            items = fetch_brief_items(conn, brief_id)
+            return serialize_brief(brief_row, items)
+
+        now = utcnow_iso()
+        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        params = list(updates.values()) + [now, user.id, brief_id]
+        conn.execute(
+            f"UPDATE cso_briefs SET {set_clause}, updated_at = ?, updated_by = ? WHERE id = ?",
+            params,
+        )
+
+        log_brief_audit(
+            conn,
+            brief_id=brief_id,
+            action="edit_brief",
+            actor_id=user.id,
+            old_value=json.dumps(old_vals),
+            new_value=json.dumps(updates),
+        )
+        conn.commit()
+
+        brief_row = fetch_brief(conn, brief_id)
+        items = fetch_brief_items(conn, brief_id)
+    finally:
+        conn.close()
+
+    assert brief_row is not None
+    return serialize_brief(brief_row, items)
+
+
+# ── Patch item ────────────────────────────────────────────────────────────────
+
+@ROUTER.patch("/{brief_id}/items/{item_id}", response_model=BriefItemOut)
+def patch_item(
+    brief_id: str,
+    item_id: str,
+    body: PatchItemRequest,
+    user: SentryUser = Depends(get_current_user),
+) -> BriefItemOut:
+    """Edit a brief item's analyst fields.
+
+    Only allowed in DRAFT or IN_REVIEW states.
+    frozen_payload is never mutated.
+    """
+    conn = get_connection()
+    try:
+        brief_row = fetch_brief(conn, brief_id)
+        if not brief_row:
+            raise HTTPException(status_code=404, detail="Brief not found")
+        require_brief_editable(brief_row)
+
+        item_row = fetch_brief_item(conn, brief_id, item_id)
+        if not item_row:
+            raise HTTPException(status_code=404, detail="Item not found")
+
+        old_vals: dict[str, Any] = {}
+        updates: dict[str, Any] = {}
+
+        for field in ("rank", "analyst_commentary", "uncertainty_note",
+                      "owner_assignment", "include_in_summary"):
+            val = getattr(body, field)
+            if val is not None:
+                old_vals[field] = item_row.get(field)
+                updates[field] = val
+
+        if not updates:
+            return BriefItemOut(**item_row)
+
+        now = utcnow_iso()
+        set_clause = ", ".join(f"{k} = ?" for k in updates)
+        params = list(updates.values()) + [now, item_id, brief_id]
+        conn.execute(
+            f"UPDATE cso_brief_items SET {set_clause}, updated_at = ? "
+            f"WHERE id = ? AND brief_id = ?",
+            params,
+        )
+
+        log_brief_audit(
+            conn,
+            brief_id=brief_id,
+            action="edit_item",
+            actor_id=user.id,
+            old_value=json.dumps(old_vals, default=str),
+            new_value=json.dumps(updates, default=str),
+        )
+        conn.commit()
+
+        updated = fetch_brief_item(conn, brief_id, item_id)
+    finally:
+        conn.close()
+
+    assert updated is not None
+    return BriefItemOut(**updated)
+
+
+# ── Validate ──────────────────────────────────────────────────────────────────
+
+@ROUTER.post("/{brief_id}/validate", response_model=ValidateResponse)
+def validate_brief(
+    brief_id: str,
+    user: SentryUser = Depends(get_current_user),
+) -> ValidateResponse:
+    """Run quality-gate checks and persist the result.
+
+    Validates against frozen_payload (the trust anchor) and item-level
+    analyst fields.  Does NOT query live competitor_events rows.
+    """
+    conn = get_connection()
+    try:
+        brief_row = fetch_brief(conn, brief_id)
+        if not brief_row:
+            raise HTTPException(status_code=404, detail="Brief not found")
+
+        items = fetch_brief_items(conn, brief_id)
+        included = [i for i in items if i.get("include_in_summary") == 1]
+
+        violations: list[Violation] = []
+
+        # ── Brief-level checks ─────────────────────────────────────────
+        if not (brief_row.get("executive_summary") or "").strip():
+            violations.append(Violation(
+                code="MISSING_EXECUTIVE_SUMMARY",
+                message="Brief executive_summary is required",
+                field="executive_summary",
+            ))
+
+        # ── Item-level checks (from frozen_payload + item fields) ──────
+        for item in included:
+            fp = item.get("frozen_payload", {})
+            iid = item["id"]
+
+            # source_link
+            src = (fp.get("source_link") or "").strip()
+            if not src:
+                violations.append(Violation(
+                    code="MISSING_SOURCE_LINK",
+                    message="Item source_link is required",
+                    item_id=iid,
+                    field="source_link",
+                ))
+            elif not (src.startswith("http://") or src.startswith("https://")):
+                violations.append(Violation(
+                    code="INVALID_SOURCE_LINK",
+                    message="source_link must start with http:// or https://",
+                    item_id=iid,
+                    field="source_link",
+                ))
+
+            # rationale: why_walmart_cares OR walmart_actionability_context
+            why = (fp.get("why_walmart_cares") or "").strip()
+            act = (fp.get("walmart_actionability_context") or "").strip()
+            if not why and not act:
+                violations.append(Violation(
+                    code="MISSING_RATIONALE",
+                    message="why_walmart_cares or walmart_actionability_context required",
+                    item_id=iid,
+                    field="why_walmart_cares",
+                ))
+
+            # owner_assignment (item-level analyst field)
+            if not (item.get("owner_assignment") or "").strip():
+                violations.append(Violation(
+                    code="MISSING_OWNER_ASSIGNMENT",
+                    message="owner_assignment is required for included items",
+                    item_id=iid,
+                    field="owner_assignment",
+                ))
+
+            # confidence: confidence_level present OR mapped from score
+            conf = (fp.get("confidence_level") or "").strip()
+            if not conf:
+                conf = confidence_from_score(fp.get("confidence_score"))
+            if not conf:
+                violations.append(Violation(
+                    code="MISSING_CONFIDENCE",
+                    message="confidence_level or mappable confidence_score required",
+                    item_id=iid,
+                    field="confidence_level",
+                ))
+
+        now = utcnow_iso()
+        result = ValidateResponse(
+            passed=len(violations) == 0,
+            violations=violations,
+            checked_at=now,
+            included_item_count=len(included),
+        )
+
+        result_json = result.model_dump_json()
+        conn.execute(
+            "UPDATE cso_briefs SET quality_gate_result = ?, updated_at = ?, updated_by = ? WHERE id = ?",
+            (result_json, now, user.id, brief_id),
+        )
+
+        log_brief_audit(
+            conn,
+            brief_id=brief_id,
+            action="validate",
+            actor_id=user.id,
+            new_value=result_json,
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+    return result
