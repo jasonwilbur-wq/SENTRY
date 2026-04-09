@@ -358,6 +358,11 @@ def build_snapshot_item(item: dict) -> SnapshotItemOut:
         confidence_level=fp.get("confidence_level"),
         why_walmart_cares=fp.get("why_walmart_cares"),
         walmart_actionability_context=fp.get("walmart_actionability_context"),
+        correlation_summary=(
+            fp.get("correlation_summary")
+            or fp.get("walmart_actionability_context")
+            or fp.get("why_walmart_cares")
+        ),
         detailed_description=fp.get("detailed_description"),
         security_implication=fp.get("security_implication"),
         analyst_commentary=item.get("analyst_commentary", ""),

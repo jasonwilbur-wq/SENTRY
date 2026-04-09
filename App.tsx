@@ -25,6 +25,8 @@ const CSOIntelligence        = lazy(() => import('./components/CSOIntelligence')
 const RegulatoryIntelligence = lazy(() => import('./components/RegulatoryIntelligence').then(m => ({ default: m.RegulatoryIntelligence })));
 const IncidentIntelligence   = lazy(() => import('./components/IncidentIntelligence').then(m => ({ default: m.IncidentIntelligence })));
 const VendorRiskMap3D        = lazy(() => import('./components/VendorRiskMap3D'));
+const RequestQueue           = lazy(() => import('./components/RequestQueue').then(m => ({ default: m.RequestQueue })));
+const CSOBriefRouteHost      = lazy(() => import('./components/cso/CSOBriefRouteHost').then(m => ({ default: m.CSOBriefRouteHost })));
 
 // ── View metadata (title + subtitle for each route) ─────────────────────────
 const VIEW_META: Record<ViewState, { title: string; subtitle: string }> = {
@@ -40,6 +42,7 @@ const VIEW_META: Record<ViewState, { title: string; subtitle: string }> = {
   [ViewState.INCIDENT_INTEL]:    { title: 'Incident Intelligence',   subtitle: 'Retail security incidents — ORC, cargo theft, cyber, violence & more.' },
   [ViewState.ARCHITECTURE]:      { title: 'SENTRY Architecture',     subtitle: 'GCP four-phase framework hierarchy.' },
   [ViewState.ADMIN]:             { title: 'VAR Administration',      subtitle: 'Manage VAR reports, extract scores, and fix vendor linkage.' },
+  [ViewState.REQUEST_QUEUE]:     { title: 'Request Triage Queue',     subtitle: 'Review, triage, and transition service requests through the lifecycle.' },
   [ViewState.PROJECT_ADMIN]:     { title: 'Project Administration',  subtitle: 'Manually update project metadata, compliance IDs, and EST phase gates.' },
   [ViewState.RISK_MAP]:          { title: 'Vendor Risk Galaxy',      subtitle: 'All vendors plotted in 3D space by risk level and category.' },
 };
@@ -248,6 +251,7 @@ const AppShell: React.FC<{
                 {currentView === ViewState.REQUEST_LAB_VISIT   && <RequestLabVisit />}
                 {currentView === ViewState.ARCHITECTURE        && <ArchitectureGraph />}
                 {currentView === ViewState.ADMIN               && <AdminPanel />}
+                {currentView === ViewState.REQUEST_QUEUE        && <RequestQueue />}
                 {currentView === ViewState.PROJECT_ADMIN        && <ProjectAdminPanel />}
                 {currentView === ViewState.RISK_MAP            && <VendorRiskMap3D />}
               </Suspense>
@@ -433,8 +437,10 @@ const AppShell: React.FC<{
 
 // ── Root component ───────────────────────────────────────────────────────────
 const App: React.FC = () => {
-  // Always start on the landing page — it's the intended entry experience.
-  const [showLanding, setShowLanding] = useState(true);
+  const isCSOPath = /^\/cso-briefs\/[^/]+\/(edit|view)\/?$/.test(window.location.pathname);
+
+  // Always start on the landing page unless we deep-link into CSO brief routes.
+  const [showLanding, setShowLanding] = useState(!isCSOPath);
   const [currentView, setCurrentView] = useState<ViewState>(ViewState.HOME);
 
   const handleEnter = useCallback(() => setShowLanding(false), []);
@@ -449,7 +455,13 @@ const App: React.FC = () => {
 
           {showLanding
             ? <LandingPage onEnter={handleEnter} />
-            : <AppShell currentView={currentView} setCurrentView={setCurrentView} />
+            : (
+              <Suspense fallback={<ViewSkeleton />}>
+                {isCSOPath
+                  ? <CSOBriefRouteHost />
+                  : <AppShell currentView={currentView} setCurrentView={setCurrentView} />}
+              </Suspense>
+            )
           }
         </VendorProvider>
       </AuthProvider>

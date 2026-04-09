@@ -394,6 +394,7 @@ class TestSnapshot:
         assert item["priority_tier"] == "CSO Brief"
         assert item["confidence_level"] == "high"
         assert item["why_walmart_cares"] == "Relevant to ops."
+        assert item["correlation_summary"] == "Relevant to ops."
         assert item["owner_assignment"] == "CISO"
         assert item["rank"] == 1
 

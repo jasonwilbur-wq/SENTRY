@@ -28,6 +28,7 @@ const ENTRIES: PaletteEntry[] = [
   { view: ViewState.RISK_MAP,           label: 'Risk Map 3D',          description: 'Vendors plotted in 3D space by risk and category',   group: 'Intelligence', keywords: 'risk map 3d scatter vendors globe' },
   { view: ViewState.ARCHITECTURE,       label: 'Architecture',         description: 'GCP four-phase framework hierarchy',                  group: 'System',       keywords: 'architecture gcp framework' },
   { view: ViewState.ADMIN,              label: 'VAR Admin',            description: 'Manage VAR reports, scores, and vendor linkage',     group: 'System',       keywords: 'admin var reports scores' },
+  { view: ViewState.REQUEST_QUEUE,      label: 'Request Queue',        description: 'Admin triage queue for assessment and lab requests', group: 'System',       keywords: 'request queue triage status workflow admin' },
 ];
 
 interface CommandPaletteProps {

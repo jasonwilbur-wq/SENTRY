@@ -45,6 +45,185 @@ export function getDownloadUrl(varId: string): string {
   return `${API_BASE}/api/vars/download/${varId}`;
 }
 
+// ── CSO Briefs ───────────────────────────────────────────────────────────────
+
+export type CSOBriefStatus = 'DRAFT' | 'IN_REVIEW' | 'APPROVED' | 'PUBLISHED_DRAFT';
+
+export interface CSOBriefItem {
+  id: string;
+  brief_id: string;
+  competitor_event_id: number;
+  rank: number;
+  analyst_commentary: string;
+  uncertainty_note: string;
+  owner_assignment: string;
+  include_in_summary: number;
+  frozen_payload: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CSOBrief {
+  id: string;
+  title: string;
+  period_start: string;
+  period_end: string;
+  status: CSOBriefStatus;
+  created_by: string;
+  created_at: string;
+  updated_by: string;
+  updated_at: string;
+  submitted_at: string | null;
+  submitted_by: string | null;
+  approved_at: string | null;
+  approved_by: string | null;
+  published_draft_at: string | null;
+  published_draft_by: string | null;
+  executive_summary: string;
+  review_notes: string;
+  quality_gate_result: string;
+  snapshot_version: number;
+  items: CSOBriefItem[];
+}
+
+export interface ValidationViolation {
+  code: string;
+  message: string;
+  item_id: string | null;
+  field: string | null;
+}
+
+export interface ValidationResult {
+  passed: boolean;
+  violations: ValidationViolation[];
+  checked_at: string;
+  included_item_count: number;
+}
+
+export interface CSOBriefTransitionResponse {
+  brief: CSOBrief;
+  from_status: CSOBriefStatus;
+  to_status: CSOBriefStatus;
+  transitioned_by: string;
+  validation: ValidationResult | null;
+}
+
+export interface CSOBriefSnapshotItem {
+  rank: number;
+  competitor: string;
+  event_title: string;
+  event_date: string | null;
+  category: string | null;
+  source_link: string | null;
+  priority_tier: string | null;
+  triage_status: string | null;
+  walmart_relevance_score: number | null;
+  confidence_level: string | null;
+  why_walmart_cares: string | null;
+  walmart_actionability_context: string | null;
+  correlation_summary: string | null;
+  detailed_description: string | null;
+  security_implication: string | null;
+  analyst_commentary: string;
+  uncertainty_note: string;
+  owner_assignment: string;
+  include_in_summary: number;
+}
+
+export interface CSOBriefSnapshot {
+  id: string;
+  title: string;
+  period_start: string;
+  period_end: string;
+  status: CSOBriefStatus;
+  executive_summary: string;
+  review_notes: string;
+  banner: string;
+  footer: string;
+  items: CSOBriefSnapshotItem[];
+  snapshot_version: number;
+  generated_at: string;
+}
+
+export interface CSOBriefAuditEntry {
+  id: number;
+  brief_id: string;
+  action: string;
+  actor_id: string;
+  old_value: string;
+  new_value: string;
+  created_at: string;
+}
+
+export interface CSOBriefAuditResponse {
+  entries: CSOBriefAuditEntry[];
+  total: number;
+  limit: number;
+  offset: number;
+}
+
+export async function fetchCSOBrief(briefId: string): Promise<CSOBrief> {
+  return request(`/api/cso-briefs/${encodeURIComponent(briefId)}`);
+}
+
+export async function patchCSOBrief(
+  briefId: string,
+  payload: { executive_summary?: string; review_notes?: string },
+): Promise<CSOBrief> {
+  return request(`/api/cso-briefs/${encodeURIComponent(briefId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function patchCSOBriefItem(
+  briefId: string,
+  itemId: string,
+  payload: {
+    rank?: number;
+    owner_assignment?: string;
+    analyst_commentary?: string;
+    uncertainty_note?: string;
+    include_in_summary?: number;
+  },
+): Promise<CSOBriefItem> {
+  return request(`/api/cso-briefs/${encodeURIComponent(briefId)}/items/${encodeURIComponent(itemId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function validateCSOBrief(briefId: string): Promise<ValidationResult> {
+  return request(`/api/cso-briefs/${encodeURIComponent(briefId)}/validate`, {
+    method: 'POST',
+  });
+}
+
+export async function transitionCSOBrief(
+  briefId: string,
+  payload: { to_status: CSOBriefStatus; note?: string },
+): Promise<CSOBriefTransitionResponse> {
+  return request(`/api/cso-briefs/${encodeURIComponent(briefId)}/transition`, {
+    method: 'POST',
+    body: JSON.stringify({ to_status: payload.to_status, note: payload.note ?? '' }),
+  });
+}
+
+export async function fetchCSOBriefSnapshot(briefId: string): Promise<CSOBriefSnapshot> {
+  return request(`/api/cso-briefs/${encodeURIComponent(briefId)}/snapshot`);
+}
+
+export async function fetchCSOBriefAudit(
+  briefId: string,
+  params?: { limit?: number; offset?: number },
+): Promise<CSOBriefAuditResponse> {
+  const qs = new URLSearchParams();
+  if (params?.limit != null) qs.set('limit', String(params.limit));
+  if (params?.offset != null) qs.set('offset', String(params.offset));
+  const q = qs.toString() ? `?${qs.toString()}` : '';
+  return request(`/api/cso-briefs/${encodeURIComponent(briefId)}/audit${q}`);
+}
+
 // ── Health & Auth verification ──────────────────────────────────────────────
 
 export interface HealthResponse {
@@ -391,6 +570,86 @@ export async function submitLabVisit(
   });
 }
 
+// ── Admin Request Queue ──────────────────────────────────────────────────────
+
+export interface ServiceRequestSummary {
+  ref_id: string;
+  request_type: string;
+  status: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  contact_name: string;
+  urgency: string | null;
+  vendor_name: string | null;
+}
+
+export interface ServiceRequestListResponse {
+  total: number;
+  requests: ServiceRequestSummary[];
+}
+
+export interface ServiceRequestDetail {
+  id: string;
+  ref_id: string;
+  request_type: string;
+  status: string;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  updated_by: string | null;
+  status_note: string;
+  contact_name: string;
+  contact_email: string;
+  notes: string;
+  vendor_name: string | null;
+  assessment_type: string | null;
+  category: string | null;
+  urgency: string | null;
+  preferred_date: string | null;
+  preferred_slot: string | null;
+  equipment: string | null;
+  attendees: number | null;
+}
+
+export interface StatusUpdateResponse {
+  ref_id: string;
+  old_status: string;
+  new_status: string;
+  updated_by: string;
+  updated_at: string;
+}
+
+/** Fetch admin request queue with optional filters. */
+export async function fetchAdminRequests(
+  filters?: { status?: string; request_type?: string },
+): Promise<ServiceRequestListResponse> {
+  const params = new URLSearchParams();
+  if (filters?.status) params.set('status', filters.status);
+  if (filters?.request_type) params.set('request_type', filters.request_type);
+  const qs = params.toString();
+  return request(`/api/admin/requests${qs ? '?' + qs : ''}`);
+}
+
+/** Fetch a single request by ref_id (requires auth — admin or owner). */
+export async function fetchRequestByRef(
+  refId: string,
+): Promise<ServiceRequestDetail> {
+  return request(`/api/requests/${encodeURIComponent(refId)}`);
+}
+
+/** Admin: update request status. */
+export async function updateRequestStatus(
+  refId: string,
+  status: string,
+  note?: string,
+): Promise<StatusUpdateResponse> {
+  return request(`/api/admin/requests/${encodeURIComponent(refId)}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ status, note: note ?? '' }),
+  });
+}
+
 // ── Public Stats ─────────────────────────────────────────────────────────────────────────
 
 export interface CategoryStat {
@@ -428,6 +687,12 @@ export interface AdminStats {
   extraction_coverage_pct: number;
 }
 
+export type ExtractionReviewStatus =
+  | 'NOT_EXTRACTED'
+  | 'EXTRACTED_PENDING_REVIEW'
+  | 'REVIEWED_ACCEPTED'
+  | 'REVIEWED_REJECTED';
+
 export interface VarAdminRow {
   id: string;
   vendor_id: string;
@@ -446,6 +711,12 @@ export interface VarAdminRow {
   viability_score: number | null;
   differentiation_score: number | null;
   cloud_dep_score: number | null;
+  extraction_review_status: ExtractionReviewStatus;
+  extraction_reviewed_by: string;
+  extraction_reviewed_at: string;
+  extraction_review_note: string;
+  extraction_last_run_at: string;
+  extraction_last_status: string;
   has_scores: boolean;
   item_id: string;
 }
@@ -460,12 +731,26 @@ export interface VarListResponse {
   vars: VarAdminRow[];
 }
 
+export type ExtractionStatus =
+  | 'SUCCESS'
+  | 'MISSING_ITEM_ID'
+  | 'AUTH_UNAVAILABLE'
+  | 'DOWNLOAD_FAILED'
+  | 'PARSE_FAILED'
+  | 'WRITE_BLOCKED'
+  | 'WRITE_FAILED'
+  | 'NOT_FOUND';
+
 export interface ExtractResult {
   var_id: string;
   filename: string;
   success: boolean;
+  status: ExtractionStatus;
   overall_score: number | null;
   decision_band: string;
+  confidence: number | null;
+  requires_review: boolean;
+  extracted_dimensions: number;
   error: string;
 }
 
@@ -474,6 +759,7 @@ export interface BatchExtractResponse {
   succeeded: number;
   failed: number;
   skipped: number;
+  status_counts: Record<string, number>;
   results: ExtractResult[];
 }
 
@@ -518,6 +804,41 @@ export async function linkVarToVendor(
   });
 }
 
+export interface VarReviewQueueRow {
+  id: string;
+  vendor_id: string;
+  company_name: string;
+  filename: string;
+  overall_score: number | null;
+  decision_band: string;
+  extraction_review_status: ExtractionReviewStatus;
+  extraction_last_status: string;
+  extraction_last_run_at: string;
+  extraction_reviewed_by: string;
+  extraction_reviewed_at: string;
+  extraction_review_note: string;
+}
+
+export interface VarReviewQueueResponse {
+  total: number;
+  items: VarReviewQueueRow[];
+}
+
+export async function fetchVarReviewQueue(limit = 100): Promise<VarReviewQueueResponse> {
+  return request(`/api/admin/vars/review-queue?limit=${limit}`);
+}
+
+export async function reviewVarExtraction(
+  varId: string,
+  action: 'ACCEPT' | 'REJECT',
+  note = '',
+): Promise<VarReviewQueueRow> {
+  return request(`/api/admin/vars/${varId}/review`, {
+    method: 'PATCH',
+    body: JSON.stringify({ action, note }),
+  });
+}
+
 export async function searchVendorsForLinking(
   q: string,
 ): Promise<{ results: { id: string; company_name: string; category: string }[] }> {
@@ -550,6 +871,8 @@ export interface CompetitorEntity {
   monthly_json: string;
 }
 
+export type CompetitorTriageStatus = 'UNREVIEWED' | 'REVIEWED' | 'DISMISSED' | 'ESCALATED';
+
 export interface CompetitorEvent {
   id: number;
   event_date: string | null;
@@ -580,7 +903,50 @@ export interface CompetitorEvent {
   urgency_score?: number | null;
   confidence_score?: number | null;
   escalate_to_cso?: number | null;
+  score_reason?: string | null;
+  confidence_effect?: string | null;
+  source_effect?: string | null;
+  cso_candidate_reason?: string | null;
   scoring_version?: string | null;
+  scored_at?: string | null;
+  triage_status?: CompetitorTriageStatus | null;
+  triaged_by?: string | null;
+  triaged_at?: string | null;
+  triage_note?: string | null;
+  matched_vendor_id?: string | null;
+  matched_vendor_name?: string | null;
+  match_method?: string | null;
+  match_label?: string | null;
+  match_confidence?: number | null;
+  match_explanation?: string | null;
+  linked_active_projects_count?: number;
+  linked_projects?: Array<{
+    project_id: string;
+    project_name: string;
+    lifecycle_state: string;
+    current_phase: string;
+    est_phase_index: number;
+    vendor_link_status: string;
+    vendor_role: string;
+  }>;
+  correlation_status?: 'MATCHED' | 'AMBIGUOUS' | 'NO_MATCH' | null;
+  candidate_vendor_names?: string[];
+  walmart_actionability_context?: string | null;
+}
+
+export interface CompetitorScoreDistribution {
+  unscored: number;
+  archive_low_signal: number;
+  analyst_follow_up: number;
+  leadership_watch: number;
+  cso_brief: number;
+}
+
+export interface CompetitorScoringSummary {
+  total: number;
+  cso_candidates: number;
+  avg_score: number;
+  distribution: CompetitorScoreDistribution;
 }
 
 export interface CompetitorEventCreate {
@@ -625,6 +991,11 @@ export interface CompetitorEventsResponse {
   page_size: number;
   total_pages: number;
   events: CompetitorEvent[];
+}
+
+export interface CompetitorTriageQueueResponse {
+  total: number;
+  items: CompetitorEvent[];
 }
 
 /** @deprecated Use CompetitorEventsResponse — identical shape. */
@@ -690,6 +1061,62 @@ export async function fetchCompetitorCSOCandidates(
   limit = 25,
 ): Promise<{ count: number; events: CompetitorEvent[] }> {
   return request(`/api/competitors/cso-candidates?limit=${limit}`);
+}
+
+export async function fetchAdminCompetitorScoringSummary(): Promise<CompetitorScoringSummary> {
+  return request('/api/admin/competitor-events/scoring-summary');
+}
+
+export async function fetchAdminCompetitorTriageQueue(params?: {
+  triage_status?: CompetitorTriageStatus;
+  priority_tier?: string;
+  limit?: number;
+}): Promise<CompetitorTriageQueueResponse> {
+  const qs = new URLSearchParams();
+  if (params?.triage_status) qs.set('triage_status', params.triage_status);
+  if (params?.priority_tier) qs.set('priority_tier', params.priority_tier);
+  if (params?.limit) qs.set('limit', String(params.limit));
+  const query = qs.toString() ? `?${qs}` : '';
+  return request(`/api/admin/competitor-events/triage-queue${query}`);
+}
+
+export async function triageAdminCompetitorEvent(
+  eventId: number,
+  triage_status: CompetitorTriageStatus,
+  triage_note = '',
+): Promise<CompetitorEvent> {
+  return request(`/api/admin/competitor-events/${eventId}/triage`, {
+    method: 'PATCH',
+    body: JSON.stringify({ triage_status, triage_note }),
+  });
+}
+
+export async function rescoreCompetitorEvents(params?: {
+  limit?: number;
+  only_unscored?: boolean;
+  preserve_manual?: boolean;
+}): Promise<{
+  success: boolean;
+  updated: number;
+  skipped_manual: number;
+  cso_escalation_candidates: number;
+  before: CompetitorScoreDistribution;
+  after: CompetitorScoreDistribution;
+  promoted: Array<{
+    id: number;
+    competitor: string;
+    event_title: string;
+    from_tier: string;
+    to_tier: string;
+    score: number;
+  }>;
+}> {
+  const qs = new URLSearchParams();
+  if (params?.limit) qs.set('limit', String(params.limit));
+  if (params?.only_unscored !== undefined) qs.set('only_unscored', String(params.only_unscored));
+  if (params?.preserve_manual !== undefined) qs.set('preserve_manual', String(params.preserve_manual));
+  const query = qs.toString() ? `?${qs}` : '';
+  return request(`/api/admin/competitor-events/rescore${query}`, { method: 'POST' });
 }
 
 // ── Regulatory Intelligence ──────────────────────────────────────────────────

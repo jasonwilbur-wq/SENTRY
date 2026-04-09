@@ -198,6 +198,7 @@ class SnapshotItemOut(BaseModel):
     confidence_level: str | None
     why_walmart_cares: str | None
     walmart_actionability_context: str | None
+    correlation_summary: str | None = None
     detailed_description: str | None
     security_implication: str | None
     analyst_commentary: str
