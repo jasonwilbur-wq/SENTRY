@@ -4,11 +4,14 @@ Thin routing layer.  All business logic, models, and DB access live in
 cso_brief_helpers.py so this file stays under the 600-line budget.
 
 Endpoints:
-  POST   /api/cso-briefs/generate           — create a DRAFT brief
-  GET    /api/cso-briefs/{brief_id}         — retrieve brief + items
-  PATCH  /api/cso-briefs/{brief_id}         — edit brief metadata
-  PATCH  /api/cso-briefs/{brief_id}/items/{item_id} — edit item
-  POST   /api/cso-briefs/{brief_id}/validate — run quality gate
+  POST   /api/cso-briefs/generate                   — create a DRAFT brief
+  GET    /api/cso-briefs/{brief_id}                  — retrieve brief + items
+  PATCH  /api/cso-briefs/{brief_id}                  — edit brief metadata
+  PATCH  /api/cso-briefs/{brief_id}/items/{item_id}  — edit item
+  POST   /api/cso-briefs/{brief_id}/validate         — run quality gate
+  POST   /api/cso-briefs/{brief_id}/transition       — state machine transition
+  GET    /api/cso-briefs/{brief_id}/snapshot          — read-only draft payload
+  GET    /api/cso-briefs/{brief_id}/audit             — paginated audit trail
 """
 from __future__ import annotations
 
@@ -21,26 +24,38 @@ from fastapi import APIRouter, Depends, HTTPException
 from auth import SentryUser, get_current_user
 from database import get_connection
 from cso_brief_helpers import (
+    ALLOWED_TRANSITIONS,
+    AUDIT_DEFAULT_LIMIT,
+    AUDIT_MAX_LIMIT,
     MAX_ITEMS_CAP,
     MAX_ITEMS_DEFAULT,
+    AuditEntryOut,
+    AuditListResponse,
     BriefItemOut,
     BriefOut,
     GenerateRequest,
     GenerateResponse,
     PatchBriefRequest,
     PatchItemRequest,
+    SnapshotResponse,
+    TransitionRequest,
+    TransitionResponse,
     ValidateResponse,
     Violation,
+    build_snapshot_item,
     confidence_from_score,
+    count_audit_entries,
     count_candidates,
     create_brief_items,
     create_brief_row,
+    fetch_audit_entries,
     fetch_brief,
     fetch_brief_item,
     fetch_brief_items,
     fetch_candidate_events,
     log_brief_audit,
     require_brief_editable,
+    run_validation,
     serialize_brief,
     utcnow_iso,
 )
@@ -283,96 +298,190 @@ def validate_brief(
         if not brief_row:
             raise HTTPException(status_code=404, detail="Brief not found")
 
-        items = fetch_brief_items(conn, brief_id)
-        included = [i for i in items if i.get("include_in_summary") == 1]
-
-        violations: list[Violation] = []
-
-        # ── Brief-level checks ─────────────────────────────────────────
-        if not (brief_row.get("executive_summary") or "").strip():
-            violations.append(Violation(
-                code="MISSING_EXECUTIVE_SUMMARY",
-                message="Brief executive_summary is required",
-                field="executive_summary",
-            ))
-
-        # ── Item-level checks (from frozen_payload + item fields) ──────
-        for item in included:
-            fp = item.get("frozen_payload", {})
-            iid = item["id"]
-
-            # source_link
-            src = (fp.get("source_link") or "").strip()
-            if not src:
-                violations.append(Violation(
-                    code="MISSING_SOURCE_LINK",
-                    message="Item source_link is required",
-                    item_id=iid,
-                    field="source_link",
-                ))
-            elif not (src.startswith("http://") or src.startswith("https://")):
-                violations.append(Violation(
-                    code="INVALID_SOURCE_LINK",
-                    message="source_link must start with http:// or https://",
-                    item_id=iid,
-                    field="source_link",
-                ))
-
-            # rationale: why_walmart_cares OR walmart_actionability_context
-            why = (fp.get("why_walmart_cares") or "").strip()
-            act = (fp.get("walmart_actionability_context") or "").strip()
-            if not why and not act:
-                violations.append(Violation(
-                    code="MISSING_RATIONALE",
-                    message="why_walmart_cares or walmart_actionability_context required",
-                    item_id=iid,
-                    field="why_walmart_cares",
-                ))
-
-            # owner_assignment (item-level analyst field)
-            if not (item.get("owner_assignment") or "").strip():
-                violations.append(Violation(
-                    code="MISSING_OWNER_ASSIGNMENT",
-                    message="owner_assignment is required for included items",
-                    item_id=iid,
-                    field="owner_assignment",
-                ))
-
-            # confidence: confidence_level present OR mapped from score
-            conf = (fp.get("confidence_level") or "").strip()
-            if not conf:
-                conf = confidence_from_score(fp.get("confidence_score"))
-            if not conf:
-                violations.append(Violation(
-                    code="MISSING_CONFIDENCE",
-                    message="confidence_level or mappable confidence_score required",
-                    item_id=iid,
-                    field="confidence_level",
-                ))
-
-        now = utcnow_iso()
-        result = ValidateResponse(
-            passed=len(violations) == 0,
-            violations=violations,
-            checked_at=now,
-            included_item_count=len(included),
-        )
-
+        result = run_validation(conn, brief_row)
         result_json = result.model_dump_json()
+        now = utcnow_iso()
+
         conn.execute(
             "UPDATE cso_briefs SET quality_gate_result = ?, updated_at = ?, updated_by = ? WHERE id = ?",
             (result_json, now, user.id, brief_id),
         )
-
         log_brief_audit(
-            conn,
-            brief_id=brief_id,
-            action="validate",
-            actor_id=user.id,
-            new_value=result_json,
+            conn, brief_id=brief_id, action="validate",
+            actor_id=user.id, new_value=result_json,
         )
         conn.commit()
     finally:
         conn.close()
 
     return result
+
+
+# ── Transition ────────────────────────────────────────────────────────────────
+
+@ROUTER.post("/{brief_id}/transition", response_model=TransitionResponse)
+def transition_brief(
+    brief_id: str,
+    body: TransitionRequest,
+    user: SentryUser = Depends(get_current_user),
+) -> TransitionResponse:
+    """Advance or revert a brief through the state machine.
+
+    Allowed transitions (role):
+      DRAFT → IN_REVIEW        (analyst/admin)
+      IN_REVIEW → DRAFT        (analyst/admin)
+      IN_REVIEW → APPROVED     (admin only — re-runs validation gate)
+      APPROVED → PUBLISHED_DRAFT (admin only)
+    """
+    conn = get_connection()
+    try:
+        brief_row = fetch_brief(conn, brief_id)
+        if not brief_row:
+            raise HTTPException(status_code=404, detail="Brief not found")
+
+        from_status = brief_row["status"]
+        to_status = body.to_status
+        key = (from_status, to_status)
+
+        # ── Transition validity ────────────────────────────────────────
+        required_role = ALLOWED_TRANSITIONS.get(key)
+        if required_role is None:
+            raise HTTPException(
+                status_code=409,
+                detail=f"Transition {from_status} → {to_status} is not allowed",
+            )
+
+        # ── Role enforcement ───────────────────────────────────────────
+        if required_role == "admin" and not user.is_admin:
+            raise HTTPException(
+                status_code=403,
+                detail=f"Admin privileges required for {from_status} → {to_status}",
+            )
+
+        # ── Approval gate: re-run validation server-side ───────────────
+        validation_result: ValidateResponse | None = None
+        if to_status == "APPROVED":
+            validation_result = run_validation(conn, brief_row)
+            if not validation_result.passed:
+                raise HTTPException(
+                    status_code=422,
+                    detail={
+                        "message": "Validation failed — approval blocked",
+                        "violations": [
+                            v.model_dump() for v in validation_result.violations
+                        ],
+                    },
+                )
+            # Persist fresh quality_gate_result
+            conn.execute(
+                "UPDATE cso_briefs SET quality_gate_result = ? WHERE id = ?",
+                (validation_result.model_dump_json(), brief_id),
+            )
+
+        # ── Apply transition ───────────────────────────────────────────
+        now = utcnow_iso()
+        stamp_cols: list[str] = ["status = ?", "updated_at = ?", "updated_by = ?"]
+        stamp_vals: list[Any] = [to_status, now, user.id]
+
+        if to_status == "IN_REVIEW":
+            stamp_cols += ["submitted_at = ?", "submitted_by = ?"]
+            stamp_vals += [now, user.id]
+        elif to_status == "APPROVED":
+            stamp_cols += ["approved_at = ?", "approved_by = ?"]
+            stamp_vals += [now, user.id]
+        elif to_status == "PUBLISHED_DRAFT":
+            stamp_cols += ["published_draft_at = ?", "published_draft_by = ?"]
+            stamp_vals += [now, user.id]
+
+        stamp_vals.append(brief_id)
+        conn.execute(
+            f"UPDATE cso_briefs SET {', '.join(stamp_cols)} WHERE id = ?",
+            stamp_vals,
+        )
+
+        log_brief_audit(
+            conn, brief_id=brief_id, action="transition",
+            actor_id=user.id,
+            old_value=json.dumps({"status": from_status}),
+            new_value=json.dumps({"status": to_status, "note": body.note}),
+        )
+        conn.commit()
+
+        brief_row = fetch_brief(conn, brief_id)
+        items = fetch_brief_items(conn, brief_id)
+    finally:
+        conn.close()
+
+    assert brief_row is not None
+    return TransitionResponse(
+        brief=serialize_brief(brief_row, items),
+        from_status=from_status,
+        to_status=to_status,
+        transitioned_by=user.id,
+        validation=validation_result,
+    )
+
+
+# ── Snapshot ──────────────────────────────────────────────────────────────────
+
+@ROUTER.get("/{brief_id}/snapshot", response_model=SnapshotResponse)
+def get_snapshot(
+    brief_id: str,
+    user: SentryUser = Depends(get_current_user),
+) -> SnapshotResponse:
+    """Read-only draft rendering payload for CSO view.
+
+    Renders from frozen_payload + analyst item edits.
+    Does NOT mutate DB state.
+    """
+    conn = get_connection()
+    try:
+        brief_row = fetch_brief(conn, brief_id)
+        if not brief_row:
+            raise HTTPException(status_code=404, detail="Brief not found")
+        items = fetch_brief_items(conn, brief_id)
+    finally:
+        conn.close()
+
+    return SnapshotResponse(
+        id=brief_row["id"],
+        title=brief_row["title"],
+        period_start=brief_row["period_start"],
+        period_end=brief_row["period_end"],
+        status=brief_row["status"],
+        executive_summary=brief_row.get("executive_summary", ""),
+        review_notes=brief_row.get("review_notes", ""),
+        items=[build_snapshot_item(i) for i in items],
+        snapshot_version=brief_row.get("snapshot_version", 1),
+        generated_at=utcnow_iso(),
+    )
+
+
+# ── Audit trail ───────────────────────────────────────────────────────────────
+
+@ROUTER.get("/{brief_id}/audit", response_model=AuditListResponse)
+def get_audit(
+    brief_id: str,
+    limit: int = AUDIT_DEFAULT_LIMIT,
+    offset: int = 0,
+    user: SentryUser = Depends(get_current_user),
+) -> AuditListResponse:
+    """Paginated audit trail for a brief, newest first."""
+    conn = get_connection()
+    try:
+        brief_row = fetch_brief(conn, brief_id)
+        if not brief_row:
+            raise HTTPException(status_code=404, detail="Brief not found")
+
+        capped = min(max(limit, 1), AUDIT_MAX_LIMIT)
+        entries = fetch_audit_entries(conn, brief_id, limit=capped, offset=offset)
+        total = count_audit_entries(conn, brief_id)
+    finally:
+        conn.close()
+
+    return AuditListResponse(
+        entries=[AuditEntryOut(**e) for e in entries],
+        total=total,
+        limit=capped,
+        offset=offset,
+    )

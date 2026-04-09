@@ -1,7 +1,7 @@
-"""SENTRY CSO Briefing Pipeline — Constants, models, and repository helpers.
+"""SENTRY CSO Briefing Pipeline — Repository helpers.
 
-Shared by route handlers in cso_brief_routes.py.  All database access
-for CSO briefs flows through these helpers so routes stay thin.
+All database access for CSO briefs flows through these helpers so
+route handlers stay thin.  Pure data models live in cso_brief_models.py.
 """
 from __future__ import annotations
 
@@ -11,160 +11,39 @@ from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import HTTPException
-from pydantic import BaseModel, Field
+
+# Re-export models + constants so existing imports from cso_brief_helpers
+# continue to work without touching every call-site.
+from cso_brief_models import (  # noqa: F401 — re-exports
+    ALLOWED_PRIORITY_TIERS,
+    ALLOWED_TRANSITIONS,
+    ALLOWED_TRIAGE_STATUSES,
+    AUDIT_DEFAULT_LIMIT,
+    AUDIT_MAX_LIMIT,
+    CONFIDENCE_BUCKETS,
+    EDITABLE_STATES,
+    FROZEN_PAYLOAD_FIELDS,
+    MAX_ITEMS_CAP,
+    MAX_ITEMS_DEFAULT,
+    AuditEntryOut,
+    AuditListResponse,
+    BriefItemOut,
+    BriefOut,
+    GenerateFilters,
+    GenerateRequest,
+    GenerateResponse,
+    PatchBriefRequest,
+    PatchItemRequest,
+    SnapshotItemOut,
+    SnapshotResponse,
+    TransitionRequest,
+    TransitionResponse,
+    ValidateResponse,
+    Violation,
+)
 
 
-# ── Constants ─────────────────────────────────────────────────────────────────
-
-MAX_ITEMS_DEFAULT = 20
-MAX_ITEMS_CAP = 100
-
-# Inclusion gates — only these values qualify for a CSO brief.
-ALLOWED_PRIORITY_TIERS = {"Leadership Watch", "CSO Brief"}
-ALLOWED_TRIAGE_STATUSES = {"REVIEWED", "ESCALATED"}
-
-# States where brief/item edits are permitted.
-EDITABLE_STATES = {"DRAFT", "IN_REVIEW"}
-
-# Confidence score → label mapping (used when confidence_level is absent).
-_CONFIDENCE_BUCKETS: list[tuple[float, str]] = [
-    (80.0, "high"),
-    (50.0, "medium"),
-    (0.0,  "low"),
-]
-
-# Fields captured in frozen_payload from the source competitor event row.
-FROZEN_PAYLOAD_FIELDS: list[str] = [
-    "id",
-    "competitor",
-    "event_title",
-    "event_date",
-    "source_link",
-    "confidence_level",
-    "walmart_relevance_score",
-    "priority_tier",
-    "triage_status",
-    "escalate_to_cso",
-    "why_walmart_cares",
-    "walmart_actionability_context",
-    "matched_vendor_id",
-    "matched_vendor_name",
-    "match_method",
-    "match_label",
-    "linked_active_projects_count",
-    "linked_projects",
-    "score_reason",
-    "category",
-    "detailed_description",
-    "security_implication",
-    "operational_impact",
-    "financial_impact",
-    "reputational_impact",
-    "analyst_notes",
-    "cso_candidate_reason",
-    "signal_type",
-    "recommended_owner",
-    "strategic_score",
-    "security_score",
-    "operational_score",
-    "customer_trust_score",
-    "novelty_score",
-    "urgency_score",
-    "confidence_score",
-    "confidence_effect",
-    "source_effect",
-    "location",
-    "source_month",
-]
-
-
-# ── Pydantic models ──────────────────────────────────────────────────────────
-
-class GenerateFilters(BaseModel):
-    date_from: str | None = None
-    date_to: str | None = None
-    competitor: list[str] | None = None
-    max_items: int = MAX_ITEMS_DEFAULT
-
-
-class GenerateRequest(BaseModel):
-    title: str
-    period_start: str
-    period_end: str
-    filters: GenerateFilters = Field(default_factory=GenerateFilters)
-
-
-class BriefItemOut(BaseModel):
-    id: str
-    brief_id: str
-    competitor_event_id: int
-    rank: int
-    analyst_commentary: str
-    uncertainty_note: str
-    owner_assignment: str
-    include_in_summary: int
-    frozen_payload: dict[str, Any]
-    created_at: str
-    updated_at: str
-
-
-class BriefOut(BaseModel):
-    id: str
-    title: str
-    period_start: str
-    period_end: str
-    status: str
-    created_by: str
-    created_at: str
-    updated_by: str
-    updated_at: str
-    submitted_at: str | None
-    submitted_by: str | None
-    approved_at: str | None
-    approved_by: str | None
-    published_draft_at: str | None
-    published_draft_by: str | None
-    executive_summary: str
-    review_notes: str
-    quality_gate_result: str
-    snapshot_version: int
-    items: list[BriefItemOut]
-
-
-class GenerateResponse(BaseModel):
-    brief: BriefOut
-    included_count: int
-    candidate_count: int
-
-
-class PatchBriefRequest(BaseModel):
-    executive_summary: str | None = None
-    review_notes: str | None = None
-
-
-class PatchItemRequest(BaseModel):
-    rank: int | None = None
-    analyst_commentary: str | None = None
-    uncertainty_note: str | None = None
-    owner_assignment: str | None = None
-    include_in_summary: int | None = None
-
-
-class Violation(BaseModel):
-    code: str
-    message: str
-    item_id: str | None = None
-    field: str | None = None
-
-
-class ValidateResponse(BaseModel):
-    passed: bool
-    violations: list[Violation]
-    checked_at: str
-    included_item_count: int
-
-
-# ── Repository / helpers ──────────────────────────────────────────────────────
+# ── Helpers ───────────────────────────────────────────────────────────────────
 
 def utcnow_iso() -> str:
     """UTC timestamp as ISO string."""
@@ -176,21 +55,27 @@ def build_frozen_payload(row: dict) -> dict[str, Any]:
     return {field: row.get(field) for field in FROZEN_PAYLOAD_FIELDS}
 
 
-def fetch_candidate_events(
-    conn,
-    *,
-    date_from: str | None = None,
-    date_to: str | None = None,
-    competitors: list[str] | None = None,
-    max_items: int = MAX_ITEMS_DEFAULT,
-) -> list[dict]:
-    """Query competitor events matching CSO brief inclusion criteria.
+def confidence_from_score(score: Any) -> str:
+    """Map a numeric confidence_score to a label bucket."""
+    try:
+        val = float(score)
+    except (TypeError, ValueError):
+        return ""
+    for threshold, label in CONFIDENCE_BUCKETS:
+        if val >= threshold:
+            return label
+    return "low"
 
-    Returns rows as dicts, ordered by the approved ranking:
-      1. escalate_to_cso DESC
-      2. walmart_relevance_score DESC
-      3. event_date DESC
-    """
+
+# ── Query helpers ─────────────────────────────────────────────────────────────
+
+def _build_candidate_where(
+    *,
+    date_from: str | None,
+    date_to: str | None,
+    competitors: list[str] | None,
+) -> tuple[str, list[Any]]:
+    """Build shared WHERE clause for candidate event queries."""
     clauses = [
         "deleted_at IS NULL",
         "priority_tier IN ({})".format(
@@ -200,10 +85,7 @@ def fetch_candidate_events(
             ", ".join("?" for _ in ALLOWED_TRIAGE_STATUSES)
         ),
     ]
-    params: list[Any] = [
-        *ALLOWED_PRIORITY_TIERS,
-        *ALLOWED_TRIAGE_STATUSES,
-    ]
+    params: list[Any] = [*ALLOWED_PRIORITY_TIERS, *ALLOWED_TRIAGE_STATUSES]
 
     if date_from:
         clauses.append("event_date >= ?")
@@ -212,15 +94,26 @@ def fetch_candidate_events(
         clauses.append("event_date <= ?")
         params.append(date_to)
     if competitors:
-        placeholders = ", ".join("?" for _ in competitors)
-        clauses.append(f"competitor IN ({placeholders})")
+        clauses.append(f"competitor IN ({', '.join('?' for _ in competitors)})")
         params.extend(competitors)
 
-    where = "WHERE " + " AND ".join(clauses)
+    return "WHERE " + " AND ".join(clauses), params
 
+
+def fetch_candidate_events(
+    conn,
+    *,
+    date_from: str | None = None,
+    date_to: str | None = None,
+    competitors: list[str] | None = None,
+    max_items: int = MAX_ITEMS_DEFAULT,
+) -> list[dict]:
+    """Query competitor events matching CSO brief inclusion criteria."""
+    where, params = _build_candidate_where(
+        date_from=date_from, date_to=date_to, competitors=competitors,
+    )
     capped = min(max_items, MAX_ITEMS_CAP)
     params.append(capped)
-
     sql = f"""
         SELECT * FROM competitor_events
         {where}
@@ -230,8 +123,7 @@ def fetch_candidate_events(
             event_date DESC
         LIMIT ?
     """
-    rows = conn.execute(sql, params).fetchall()
-    return [dict(r) for r in rows]
+    return [dict(r) for r in conn.execute(sql, params).fetchall()]
 
 
 def count_candidates(
@@ -242,49 +134,20 @@ def count_candidates(
     competitors: list[str] | None = None,
 ) -> int:
     """Count total matching candidate events (before LIMIT)."""
-    clauses = [
-        "deleted_at IS NULL",
-        "priority_tier IN ({})".format(
-            ", ".join("?" for _ in ALLOWED_PRIORITY_TIERS)
-        ),
-        "COALESCE(triage_status, 'UNREVIEWED') IN ({})".format(
-            ", ".join("?" for _ in ALLOWED_TRIAGE_STATUSES)
-        ),
-    ]
-    params: list[Any] = [
-        *ALLOWED_PRIORITY_TIERS,
-        *ALLOWED_TRIAGE_STATUSES,
-    ]
+    where, params = _build_candidate_where(
+        date_from=date_from, date_to=date_to, competitors=competitors,
+    )
+    return conn.execute(
+        f"SELECT COUNT(*) FROM competitor_events {where}", params,
+    ).fetchone()[0]
 
-    if date_from:
-        clauses.append("event_date >= ?")
-        params.append(date_from)
-    if date_to:
-        clauses.append("event_date <= ?")
-        params.append(date_to)
-    if competitors:
-        placeholders = ", ".join("?" for _ in competitors)
-        clauses.append(f"competitor IN ({placeholders})")
-        params.extend(competitors)
 
-    where = "WHERE " + " AND ".join(clauses)
-    row = conn.execute(
-        f"SELECT COUNT(*) FROM competitor_events {where}", params
-    ).fetchone()
-    return row[0]
-
+# ── Brief CRUD ────────────────────────────────────────────────────────────────
 
 def create_brief_row(
-    conn,
-    *,
-    brief_id: str,
-    title: str,
-    period_start: str,
-    period_end: str,
-    user_id: str,
-    now: str,
+    conn, *, brief_id: str, title: str, period_start: str,
+    period_end: str, user_id: str, now: str,
 ) -> None:
-    """Insert the cso_briefs header row."""
     conn.execute(
         """
         INSERT INTO cso_briefs (
@@ -293,21 +156,12 @@ def create_brief_row(
             snapshot_version
         ) VALUES (?, ?, ?, ?, 'DRAFT', ?, ?, ?, ?, 1)
         """,
-        (brief_id, title, period_start, period_end,
-         user_id, now, user_id, now),
+        (brief_id, title, period_start, period_end, user_id, now, user_id, now),
     )
 
 
-def create_brief_items(
-    conn,
-    *,
-    brief_id: str,
-    events: list[dict],
-) -> list[dict]:
-    """Insert cso_brief_items rows for each included event.
-
-    Returns the item dicts (for response serialization).
-    """
+def create_brief_items(conn, *, brief_id: str, events: list[dict]) -> list[dict]:
+    """Insert cso_brief_items rows; return item dicts for serialization."""
     now = utcnow_iso()
     items: list[dict] = []
     for rank, event_row in enumerate(events, start=1):
@@ -323,35 +177,24 @@ def create_brief_items(
                 created_at, updated_at
             ) VALUES (?, ?, ?, ?, '', '', '', 1, ?, ?, ?)
             """,
-            (item_id, brief_id, event_row["id"], rank,
-             frozen_json, now, now),
+            (item_id, brief_id, event_row["id"], rank, frozen_json, now, now),
         )
         items.append({
-            "id": item_id,
-            "brief_id": brief_id,
-            "competitor_event_id": event_row["id"],
-            "rank": rank,
-            "analyst_commentary": "",
-            "uncertainty_note": "",
-            "owner_assignment": "",
-            "include_in_summary": 1,
-            "frozen_payload": frozen,
-            "created_at": now,
-            "updated_at": now,
+            "id": item_id, "brief_id": brief_id,
+            "competitor_event_id": event_row["id"], "rank": rank,
+            "analyst_commentary": "", "uncertainty_note": "",
+            "owner_assignment": "", "include_in_summary": 1,
+            "frozen_payload": frozen, "created_at": now, "updated_at": now,
         })
     return items
 
 
+# ── Audit ─────────────────────────────────────────────────────────────────────
+
 def log_brief_audit(
-    conn,
-    *,
-    brief_id: str,
-    action: str,
-    actor_id: str,
-    old_value: str = "",
-    new_value: str = "",
+    conn, *, brief_id: str, action: str, actor_id: str,
+    old_value: str = "", new_value: str = "",
 ) -> None:
-    """Write a row to cso_brief_audit_log."""
     conn.execute(
         """
         INSERT INTO cso_brief_audit_log
@@ -362,8 +205,28 @@ def log_brief_audit(
     )
 
 
+def fetch_audit_entries(
+    conn, brief_id: str, *, limit: int = AUDIT_DEFAULT_LIMIT, offset: int = 0,
+) -> list[dict]:
+    capped = min(max(limit, 1), AUDIT_MAX_LIMIT)
+    rows = conn.execute(
+        "SELECT * FROM cso_brief_audit_log WHERE brief_id = ? "
+        "ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?",
+        (brief_id, capped, max(offset, 0)),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def count_audit_entries(conn, brief_id: str) -> int:
+    return conn.execute(
+        "SELECT COUNT(*) FROM cso_brief_audit_log WHERE brief_id = ?",
+        (brief_id,),
+    ).fetchone()[0]
+
+
+# ── Fetch helpers ─────────────────────────────────────────────────────────────
+
 def _deserialize_frozen(d: dict) -> dict:
-    """Parse frozen_payload from JSON string → dict in-place, return d."""
     raw = d.get("frozen_payload", "{}")
     try:
         d["frozen_payload"] = json.loads(raw) if isinstance(raw, str) else raw
@@ -373,15 +236,13 @@ def _deserialize_frozen(d: dict) -> dict:
 
 
 def fetch_brief(conn, brief_id: str) -> dict | None:
-    """Fetch a single cso_briefs row as dict, or None."""
     row = conn.execute(
-        "SELECT * FROM cso_briefs WHERE id = ?", (brief_id,)
+        "SELECT * FROM cso_briefs WHERE id = ?", (brief_id,),
     ).fetchone()
     return dict(row) if row else None
 
 
 def fetch_brief_items(conn, brief_id: str) -> list[dict]:
-    """Fetch ordered cso_brief_items for a brief."""
     rows = conn.execute(
         "SELECT * FROM cso_brief_items WHERE brief_id = ? ORDER BY rank",
         (brief_id,),
@@ -390,18 +251,14 @@ def fetch_brief_items(conn, brief_id: str) -> list[dict]:
 
 
 def fetch_brief_item(conn, brief_id: str, item_id: str) -> dict | None:
-    """Fetch a single cso_brief_items row as dict, or None."""
     row = conn.execute(
         "SELECT * FROM cso_brief_items WHERE id = ? AND brief_id = ?",
         (item_id, brief_id),
     ).fetchone()
-    if not row:
-        return None
-    return _deserialize_frozen(dict(row))
+    return _deserialize_frozen(dict(row)) if row else None
 
 
 def require_brief_editable(brief_row: dict) -> None:
-    """Raise 409 if brief is not in an editable state."""
     if brief_row["status"] not in EDITABLE_STATES:
         raise HTTPException(
             status_code=409,
@@ -409,17 +266,108 @@ def require_brief_editable(brief_row: dict) -> None:
         )
 
 
-def confidence_from_score(score: Any) -> str:
-    """Map a numeric confidence_score to a label bucket."""
-    try:
-        val = float(score)
-    except (TypeError, ValueError):
-        return ""
-    for threshold, label in _CONFIDENCE_BUCKETS:
-        if val >= threshold:
-            return label
-    return "low"
+# ── Validation ────────────────────────────────────────────────────────────────
 
+def run_validation(conn, brief_row: dict) -> ValidateResponse:
+    """Run quality-gate checks against frozen_payload + item analyst fields.
+
+    Shared by /validate and the approval transition gate.
+    Does NOT query live competitor_events rows.
+    """
+    brief_id = brief_row["id"]
+    items = fetch_brief_items(conn, brief_id)
+    included = [i for i in items if i.get("include_in_summary") == 1]
+
+    violations: list[Violation] = []
+
+    if not (brief_row.get("executive_summary") or "").strip():
+        violations.append(Violation(
+            code="MISSING_EXECUTIVE_SUMMARY",
+            message="Brief executive_summary is required",
+            field="executive_summary",
+        ))
+
+    for item in included:
+        fp = item.get("frozen_payload", {})
+        iid = item["id"]
+
+        src = (fp.get("source_link") or "").strip()
+        if not src:
+            violations.append(Violation(
+                code="MISSING_SOURCE_LINK",
+                message="Item source_link is required",
+                item_id=iid, field="source_link",
+            ))
+        elif not (src.startswith("http://") or src.startswith("https://")):
+            violations.append(Violation(
+                code="INVALID_SOURCE_LINK",
+                message="source_link must start with http:// or https://",
+                item_id=iid, field="source_link",
+            ))
+
+        why = (fp.get("why_walmart_cares") or "").strip()
+        act = (fp.get("walmart_actionability_context") or "").strip()
+        if not why and not act:
+            violations.append(Violation(
+                code="MISSING_RATIONALE",
+                message="why_walmart_cares or walmart_actionability_context required",
+                item_id=iid, field="why_walmart_cares",
+            ))
+
+        if not (item.get("owner_assignment") or "").strip():
+            violations.append(Violation(
+                code="MISSING_OWNER_ASSIGNMENT",
+                message="owner_assignment is required for included items",
+                item_id=iid, field="owner_assignment",
+            ))
+
+        conf = (fp.get("confidence_level") or "").strip()
+        if not conf:
+            conf = confidence_from_score(fp.get("confidence_score"))
+        if not conf:
+            violations.append(Violation(
+                code="MISSING_CONFIDENCE",
+                message="confidence_level or mappable confidence_score required",
+                item_id=iid, field="confidence_level",
+            ))
+
+    now = utcnow_iso()
+    return ValidateResponse(
+        passed=len(violations) == 0,
+        violations=violations,
+        checked_at=now,
+        included_item_count=len(included),
+    )
+
+
+# ── Snapshot ──────────────────────────────────────────────────────────────────
+
+def build_snapshot_item(item: dict) -> SnapshotItemOut:
+    """Build a read-only snapshot item from an item row + frozen_payload."""
+    fp = item.get("frozen_payload", {})
+    return SnapshotItemOut(
+        rank=item["rank"],
+        competitor=fp.get("competitor", ""),
+        event_title=fp.get("event_title", ""),
+        event_date=fp.get("event_date"),
+        category=fp.get("category"),
+        source_link=fp.get("source_link"),
+        priority_tier=fp.get("priority_tier"),
+        triage_status=fp.get("triage_status"),
+        walmart_relevance_score=fp.get("walmart_relevance_score"),
+        confidence_level=fp.get("confidence_level"),
+        why_walmart_cares=fp.get("why_walmart_cares"),
+        walmart_actionability_context=fp.get("walmart_actionability_context"),
+        detailed_description=fp.get("detailed_description"),
+        security_implication=fp.get("security_implication"),
+        analyst_commentary=item.get("analyst_commentary", ""),
+        uncertainty_note=item.get("uncertainty_note", ""),
+        owner_assignment=item.get("owner_assignment", ""),
+        include_in_summary=item.get("include_in_summary", 1),
+    )
+
+
+# ── Serialization ─────────────────────────────────────────────────────────────
 
 def serialize_brief(brief_row: dict, items: list[dict]) -> BriefOut:
     """Build the BriefOut response from a brief row + item rows."""
