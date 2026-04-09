@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS var_reports (
     id                   TEXT PRIMARY KEY,
     vendor_id            TEXT NOT NULL REFERENCES vendors(id),
     filename             TEXT NOT NULL,
+    item_id              TEXT DEFAULT '',
     sharepoint_url       TEXT DEFAULT '',
     report_date          TEXT DEFAULT '',
     report_version       TEXT DEFAULT 'v1',
@@ -57,6 +58,12 @@ CREATE TABLE IF NOT EXISTS var_reports (
     viability_score      REAL,
     differentiation_score REAL,
     cloud_dep_score      REAL,
+    extraction_review_status TEXT DEFAULT 'NOT_EXTRACTED',
+    extraction_reviewed_by TEXT DEFAULT '',
+    extraction_reviewed_at TEXT DEFAULT '',
+    extraction_review_note TEXT DEFAULT '',
+    extraction_last_run_at TEXT DEFAULT '',
+    extraction_last_status TEXT DEFAULT 'NOT_EXTRACTED',
     match_method         TEXT DEFAULT 'manual',
     created_at           TEXT DEFAULT (datetime('now'))
 );
@@ -75,6 +82,52 @@ CREATE TABLE IF NOT EXISTS vendor_highlights (
     initial_assessment      TEXT DEFAULT '',
     technical_assessment    TEXT DEFAULT '',
     notes                   TEXT DEFAULT ''
+);
+"""
+
+CREATE_COMPETITOR_EVENTS = """
+CREATE TABLE IF NOT EXISTS competitor_events (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_date TEXT,
+    competitor TEXT,
+    event_title TEXT,
+    event_type TEXT,
+    detailed_description TEXT,
+    category TEXT,
+    location TEXT,
+    security_implication TEXT,
+    operational_impact TEXT,
+    financial_impact TEXT,
+    reputational_impact TEXT,
+    source_link TEXT,
+    analyst_notes TEXT,
+    source_month TEXT,
+    deleted_at TEXT DEFAULT NULL,
+    confidence_level TEXT DEFAULT '',
+    walmart_relevance_score REAL DEFAULT NULL,
+    priority_tier TEXT DEFAULT '',
+    signal_type TEXT DEFAULT '',
+    recommended_owner TEXT DEFAULT '',
+    why_walmart_cares TEXT DEFAULT '',
+    strategic_score REAL DEFAULT NULL,
+    security_score REAL DEFAULT NULL,
+    operational_score REAL DEFAULT NULL,
+    customer_trust_score REAL DEFAULT NULL,
+    novelty_score REAL DEFAULT NULL,
+    urgency_score REAL DEFAULT NULL,
+    confidence_score REAL DEFAULT NULL,
+    escalate_to_cso INTEGER DEFAULT 0,
+    score_reason TEXT DEFAULT '',
+    confidence_effect TEXT DEFAULT '',
+    source_effect TEXT DEFAULT '',
+    cso_candidate_reason TEXT DEFAULT '',
+    scoring_version TEXT DEFAULT '',
+    scored_at TEXT DEFAULT '',
+    triage_status TEXT DEFAULT 'UNREVIEWED',
+    triaged_by TEXT DEFAULT '',
+    triaged_at TEXT DEFAULT '',
+    triage_note TEXT DEFAULT '',
+    created_at TEXT DEFAULT (datetime('now'))
 );
 """
 
@@ -186,6 +239,8 @@ CREATE TABLE IF NOT EXISTS service_requests (
     created_by      TEXT NOT NULL DEFAULT 'anonymous',
     created_at      TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at      TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_by      TEXT DEFAULT NULL,
+    status_note     TEXT DEFAULT '',
     contact_name    TEXT NOT NULL,
     contact_email   TEXT NOT NULL,
     notes           TEXT DEFAULT '',
@@ -207,6 +262,103 @@ CREATE_SERVICE_REQUESTS_INDEXES = [
 ]
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# CSO BRIEFING PIPELINE TABLES  (approved MVP spec — do not rename fields)
+# ══════════════════════════════════════════════════════════════════════════════
+
+CREATE_CSO_BRIEFS = """
+CREATE TABLE IF NOT EXISTS cso_briefs (
+    id                 TEXT    PRIMARY KEY,
+    title              TEXT    NOT NULL,
+    period_start       TEXT    NOT NULL,
+    period_end         TEXT    NOT NULL,
+    status             TEXT    NOT NULL DEFAULT 'DRAFT',
+    created_by         TEXT    NOT NULL,
+    created_at         TEXT    NOT NULL DEFAULT (datetime('now')),
+    updated_by         TEXT    NOT NULL,
+    updated_at         TEXT    NOT NULL DEFAULT (datetime('now')),
+    submitted_at       TEXT    DEFAULT NULL,
+    submitted_by       TEXT    DEFAULT NULL,
+    approved_at        TEXT    DEFAULT NULL,
+    approved_by        TEXT    DEFAULT NULL,
+    published_draft_at TEXT    DEFAULT NULL,
+    published_draft_by TEXT    DEFAULT NULL,
+    executive_summary  TEXT    DEFAULT '',
+    review_notes       TEXT    DEFAULT '',
+    quality_gate_result TEXT   DEFAULT '',
+    snapshot_version   INTEGER NOT NULL DEFAULT 1
+);
+"""
+
+CREATE_CSO_BRIEF_ITEMS = """
+CREATE TABLE IF NOT EXISTS cso_brief_items (
+    id                  TEXT    PRIMARY KEY,
+    brief_id            TEXT    NOT NULL REFERENCES cso_briefs(id) ON DELETE CASCADE,
+    competitor_event_id INTEGER NOT NULL REFERENCES competitor_events(id),
+    rank                INTEGER NOT NULL,
+    analyst_commentary  TEXT    DEFAULT '',
+    uncertainty_note    TEXT    DEFAULT '',
+    owner_assignment    TEXT    DEFAULT '',
+    include_in_summary  INTEGER NOT NULL DEFAULT 1,
+    frozen_payload      TEXT    NOT NULL,
+    created_at          TEXT    NOT NULL DEFAULT (datetime('now')),
+    updated_at          TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+"""
+
+CREATE_CSO_BRIEF_AUDIT_LOG = """
+CREATE TABLE IF NOT EXISTS cso_brief_audit_log (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    brief_id   TEXT    NOT NULL,
+    action     TEXT    NOT NULL,
+    actor_id   TEXT    NOT NULL,
+    old_value  TEXT    DEFAULT '',
+    new_value  TEXT    DEFAULT '',
+    created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+"""
+
+CREATE_CSO_BRIEF_INDEXES = [
+    "CREATE INDEX IF NOT EXISTS idx_cso_brief_status ON cso_briefs(status);",
+    "CREATE INDEX IF NOT EXISTS idx_cso_brief_items_brief ON cso_brief_items(brief_id);",
+    "CREATE INDEX IF NOT EXISTS idx_cso_brief_items_event ON cso_brief_items(competitor_event_id);",
+    "CREATE INDEX IF NOT EXISTS idx_cso_brief_audit_brief ON cso_brief_audit_log(brief_id);",
+    "CREATE INDEX IF NOT EXISTS idx_cso_brief_audit_ts ON cso_brief_audit_log(created_at);",
+]
+
+
+# Canonical competitor scoring/explainability columns expected by routes + scorer.
+COMPETITOR_SCORING_COLUMNS: list[tuple[str, str]] = [
+    ("confidence_level", "TEXT DEFAULT ''"),
+    ("walmart_relevance_score", "REAL DEFAULT NULL"),
+    ("priority_tier", "TEXT DEFAULT ''"),
+    ("signal_type", "TEXT DEFAULT ''"),
+    ("recommended_owner", "TEXT DEFAULT ''"),
+    ("why_walmart_cares", "TEXT DEFAULT ''"),
+    ("strategic_score", "REAL DEFAULT NULL"),
+    ("security_score", "REAL DEFAULT NULL"),
+    ("operational_score", "REAL DEFAULT NULL"),
+    ("customer_trust_score", "REAL DEFAULT NULL"),
+    ("novelty_score", "REAL DEFAULT NULL"),
+    ("urgency_score", "REAL DEFAULT NULL"),
+    ("confidence_score", "REAL DEFAULT NULL"),
+    ("escalate_to_cso", "INTEGER DEFAULT 0"),
+    ("score_reason", "TEXT DEFAULT ''"),
+    ("confidence_effect", "TEXT DEFAULT ''"),
+    ("source_effect", "TEXT DEFAULT ''"),
+    ("cso_candidate_reason", "TEXT DEFAULT ''"),
+    ("scoring_version", "TEXT DEFAULT ''"),
+    ("scored_at", "TEXT DEFAULT ''"),
+]
+
+COMPETITOR_TRIAGE_COLUMNS: list[tuple[str, str]] = [
+    ("triage_status", "TEXT DEFAULT 'UNREVIEWED'"),
+    ("triaged_by", "TEXT DEFAULT ''"),
+    ("triaged_at", "TEXT DEFAULT ''"),
+    ("triage_note", "TEXT DEFAULT ''"),
+]
+
+
 def _safe_add_column(conn: sqlite3.Connection, table: str, column: str, sql: str) -> None:
     """Add a column if it doesn't already exist. Idempotent.
 
@@ -224,6 +376,66 @@ def _safe_add_column(conn: sqlite3.Connection, table: str, column: str, sql: str
         conn.execute(sql)
 
 
+def _ensure_competitor_scoring_columns(conn: sqlite3.Connection) -> None:
+    """Idempotently add all competitor scoring columns expected by API/scorer."""
+    for column_name, column_def in COMPETITOR_SCORING_COLUMNS:
+        _safe_add_column(
+            conn,
+            "competitor_events",
+            column_name,
+            f"ALTER TABLE competitor_events ADD COLUMN {column_name} {column_def}",
+        )
+
+
+def _ensure_competitor_triage_columns(conn: sqlite3.Connection) -> None:
+    """Idempotently add triage workflow columns for competitor event review."""
+    for column_name, column_def in COMPETITOR_TRIAGE_COLUMNS:
+        _safe_add_column(
+            conn,
+            "competitor_events",
+            column_name,
+            f"ALTER TABLE competitor_events ADD COLUMN {column_name} {column_def}",
+        )
+
+
+# Canonical columns for cso_briefs / cso_brief_items that may be added
+# after the initial CREATE TABLE (safe for existing DBs with older schemas).
+_CSO_BRIEF_COLUMNS: list[tuple[str, str, str]] = [
+    # (table, column, column_def)
+    ("cso_briefs", "period_start",       "TEXT NOT NULL DEFAULT ''"),
+    ("cso_briefs", "period_end",         "TEXT NOT NULL DEFAULT ''"),
+    ("cso_briefs", "submitted_at",       "TEXT DEFAULT NULL"),
+    ("cso_briefs", "submitted_by",       "TEXT DEFAULT NULL"),
+    ("cso_briefs", "approved_at",        "TEXT DEFAULT NULL"),
+    ("cso_briefs", "approved_by",        "TEXT DEFAULT NULL"),
+    ("cso_briefs", "published_draft_at", "TEXT DEFAULT NULL"),
+    ("cso_briefs", "published_draft_by", "TEXT DEFAULT NULL"),
+    ("cso_briefs", "executive_summary",  "TEXT DEFAULT ''"),
+    ("cso_briefs", "review_notes",       "TEXT DEFAULT ''"),
+    ("cso_briefs", "quality_gate_result", "TEXT DEFAULT ''"),
+    ("cso_briefs", "snapshot_version",   "INTEGER NOT NULL DEFAULT 1"),
+    ("cso_brief_items", "analyst_commentary",  "TEXT DEFAULT ''"),
+    ("cso_brief_items", "uncertainty_note",    "TEXT DEFAULT ''"),
+    ("cso_brief_items", "owner_assignment",    "TEXT DEFAULT ''"),
+    ("cso_brief_items", "include_in_summary",  "INTEGER NOT NULL DEFAULT 1"),
+    ("cso_brief_items", "frozen_payload",      "TEXT NOT NULL DEFAULT '{}'"),
+]
+
+
+def _ensure_cso_brief_columns(conn: sqlite3.Connection) -> None:
+    """Idempotently add all CSO brief columns expected by the pipeline.
+
+    Safe for existing DBs: skips tables/columns that already exist.
+    """
+    for table, column_name, column_def in _CSO_BRIEF_COLUMNS:
+        _safe_add_column(
+            conn,
+            table,
+            column_name,
+            f"ALTER TABLE {table} ADD COLUMN {column_name} {column_def}",
+        )
+
+
 def init_db() -> None:
     """Create tables if they don't exist."""
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -235,6 +447,7 @@ def init_db() -> None:
         conn.execute(CREATE_TABLE)
         conn.execute(CREATE_VAR_REPORTS)
         conn.execute(CREATE_HIGHLIGHTS)
+        conn.execute(CREATE_COMPETITOR_EVENTS)
         conn.execute(CREATE_INCIDENTS)
         conn.execute(CREATE_PROJECTS)
         conn.execute(CREATE_PROJECT_VENDORS)
@@ -268,63 +481,9 @@ def init_db() -> None:
             "ALTER TABLE competitor_events ADD COLUMN deleted_at TEXT DEFAULT NULL",
         )
 
-        # Competitor intelligence relevance-scoring fields (v1 rules engine)
-        _safe_add_column(
-            conn, "competitor_events", "walmart_relevance_score",
-            "ALTER TABLE competitor_events ADD COLUMN walmart_relevance_score REAL DEFAULT NULL",
-        )
-        _safe_add_column(
-            conn, "competitor_events", "priority_tier",
-            "ALTER TABLE competitor_events ADD COLUMN priority_tier TEXT DEFAULT ''",
-        )
-        _safe_add_column(
-            conn, "competitor_events", "signal_type",
-            "ALTER TABLE competitor_events ADD COLUMN signal_type TEXT DEFAULT ''",
-        )
-        _safe_add_column(
-            conn, "competitor_events", "recommended_owner",
-            "ALTER TABLE competitor_events ADD COLUMN recommended_owner TEXT DEFAULT ''",
-        )
-        _safe_add_column(
-            conn, "competitor_events", "why_walmart_cares",
-            "ALTER TABLE competitor_events ADD COLUMN why_walmart_cares TEXT DEFAULT ''",
-        )
-        _safe_add_column(
-            conn, "competitor_events", "strategic_score",
-            "ALTER TABLE competitor_events ADD COLUMN strategic_score REAL DEFAULT NULL",
-        )
-        _safe_add_column(
-            conn, "competitor_events", "security_score",
-            "ALTER TABLE competitor_events ADD COLUMN security_score REAL DEFAULT NULL",
-        )
-        _safe_add_column(
-            conn, "competitor_events", "operational_score",
-        "ALTER TABLE competitor_events ADD COLUMN operational_score REAL DEFAULT NULL",
-        )
-        _safe_add_column(
-            conn, "competitor_events", "customer_trust_score",
-            "ALTER TABLE competitor_events ADD COLUMN customer_trust_score REAL DEFAULT NULL",
-        )
-        _safe_add_column(
-            conn, "competitor_events", "novelty_score",
-            "ALTER TABLE competitor_events ADD COLUMN novelty_score REAL DEFAULT NULL",
-        )
-        _safe_add_column(
-            conn, "competitor_events", "urgency_score",
-            "ALTER TABLE competitor_events ADD COLUMN urgency_score REAL DEFAULT NULL",
-        )
-        _safe_add_column(
-            conn, "competitor_events", "confidence_score",
-            "ALTER TABLE competitor_events ADD COLUMN confidence_score REAL DEFAULT NULL",
-        )
-        _safe_add_column(
-            conn, "competitor_events", "escalate_to_cso",
-            "ALTER TABLE competitor_events ADD COLUMN escalate_to_cso INTEGER DEFAULT 0",
-        )
-        _safe_add_column(
-            conn, "competitor_events", "scoring_version",
-            "ALTER TABLE competitor_events ADD COLUMN scoring_version TEXT DEFAULT ''",
-        )
+        # Competitor intelligence relevance-scoring fields (single canonical migration).
+        _ensure_competitor_scoring_columns(conn)
+        _ensure_competitor_triage_columns(conn)
 
         # Query performance indexes for priority workflows.
         # Guard: only create if competitor_events table exists (it's
@@ -341,5 +500,64 @@ def init_db() -> None:
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_comp_event_relevance ON competitor_events(walmart_relevance_score)"
             )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_comp_event_triage_status ON competitor_events(triage_status)"
+            )
+            conn.execute(
+                "CREATE INDEX IF NOT EXISTS idx_comp_event_triage_priority ON competitor_events(priority_tier, triage_status)"
+            )
+
+        # VAR linkage metadata (required for SharePoint-based extraction)
+        _safe_add_column(
+            conn, "var_reports", "item_id",
+            "ALTER TABLE var_reports ADD COLUMN item_id TEXT DEFAULT ''",
+        )
+
+        # Persisted extraction review workflow fields
+        _safe_add_column(
+            conn, "var_reports", "extraction_review_status",
+            "ALTER TABLE var_reports ADD COLUMN extraction_review_status TEXT DEFAULT 'NOT_EXTRACTED'",
+        )
+        _safe_add_column(
+            conn, "var_reports", "extraction_reviewed_by",
+            "ALTER TABLE var_reports ADD COLUMN extraction_reviewed_by TEXT DEFAULT ''",
+        )
+        _safe_add_column(
+            conn, "var_reports", "extraction_reviewed_at",
+            "ALTER TABLE var_reports ADD COLUMN extraction_reviewed_at TEXT DEFAULT ''",
+        )
+        _safe_add_column(
+            conn, "var_reports", "extraction_review_note",
+            "ALTER TABLE var_reports ADD COLUMN extraction_review_note TEXT DEFAULT ''",
+        )
+        _safe_add_column(
+            conn, "var_reports", "extraction_last_run_at",
+            "ALTER TABLE var_reports ADD COLUMN extraction_last_run_at TEXT DEFAULT ''",
+        )
+        _safe_add_column(
+            conn, "var_reports", "extraction_last_status",
+            "ALTER TABLE var_reports ADD COLUMN extraction_last_status TEXT DEFAULT 'NOT_EXTRACTED'",
+        )
+
+        # Service request triage columns (added after initial table creation)
+        _safe_add_column(
+            conn, "service_requests", "updated_by",
+            "ALTER TABLE service_requests ADD COLUMN updated_by TEXT DEFAULT NULL",
+        )
+        _safe_add_column(
+            conn, "service_requests", "status_note",
+            "ALTER TABLE service_requests ADD COLUMN status_note TEXT DEFAULT ''",
+        )
+
+        # ── CSO Briefing Pipeline tables ──────────────────────────────────
+        conn.execute(CREATE_CSO_BRIEFS)
+        conn.execute(CREATE_CSO_BRIEF_ITEMS)
+        conn.execute(CREATE_CSO_BRIEF_AUDIT_LOG)
+        for idx_sql in CREATE_CSO_BRIEF_INDEXES:
+            conn.execute(idx_sql)
+
+        # Idempotent migrations for cso_briefs — ensures columns added after
+        # initial table creation are present on older DBs.
+        _ensure_cso_brief_columns(conn)
 
         conn.commit()
