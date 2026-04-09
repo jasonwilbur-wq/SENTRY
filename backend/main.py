@@ -80,6 +80,10 @@ app.include_router(admin_router)
 from admin_routes import competitor_router
 app.include_router(competitor_router)
 
+# ── CSO Briefing Pipeline (MVP) ───────────────────────────────
+from cso_brief_routes import ROUTER as cso_brief_router
+app.include_router(cso_brief_router)
+
 
 # ── Health / auth status ──────────────────────────────────────────────────────
 
@@ -1071,13 +1075,15 @@ def competitor_cso_candidates(limit: int = Query(25, ge=1, le=100)):
                recommended_owner, why_walmart_cares,
                strategic_score, security_score, operational_score,
                customer_trust_score, novelty_score, urgency_score,
-               confidence_score, escalate_to_cso, scoring_version
+               confidence_score, escalate_to_cso,
+               score_reason, confidence_effect, source_effect, cso_candidate_reason,
+               scoring_version, scored_at
         FROM competitor_events
         WHERE (deleted_at IS NULL OR deleted_at = '')
           AND (
                 escalate_to_cso = 1
                 OR priority_tier = 'CSO Brief'
-                OR walmart_relevance_score >= 85
+                OR walmart_relevance_score >= 82
           )
         ORDER BY walmart_relevance_score DESC, event_date DESC
         LIMIT ?
