@@ -6,11 +6,18 @@ route handlers stay thin.  Pure data models live in cso_brief_models.py.
 from __future__ import annotations
 
 import json
+import re
 import uuid
 from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import HTTPException
+
+from competitor_enrichment import (
+    build_brief_readiness_enrichment,
+    evaluate_competitor_event_readiness,
+)
+from actionable_intelligence import build_actionable_intelligence
 
 # Re-export models + constants so existing imports from cso_brief_helpers
 # continue to work without touching every call-site.
@@ -21,7 +28,11 @@ from cso_brief_models import (  # noqa: F401 — re-exports
     AUDIT_DEFAULT_LIMIT,
     AUDIT_MAX_LIMIT,
     CONFIDENCE_BUCKETS,
+    DECISION_MODEL_VERSION,
     EDITABLE_STATES,
+    ANALYST_ACTIONS,
+    ANALYST_DECISION_SOURCES,
+    ANALYST_STATUSES,
     FROZEN_PAYLOAD_FIELDS,
     MAX_ITEMS_CAP,
     MAX_ITEMS_DEFAULT,
@@ -32,6 +43,8 @@ from cso_brief_models import (  # noqa: F401 — re-exports
     GenerateFilters,
     GenerateRequest,
     GenerateResponse,
+    GeneratePreflightSummary,
+    ExcludedItemSummary,
     PatchBriefRequest,
     PatchItemRequest,
     SnapshotItemOut,
@@ -51,8 +64,11 @@ def utcnow_iso() -> str:
 
 
 def build_frozen_payload(row: dict) -> dict[str, Any]:
-    """Extract the canonical snapshot fields from a competitor event row."""
-    return {field: row.get(field) for field in FROZEN_PAYLOAD_FIELDS}
+    """Extract canonical snapshot fields and enrich with actionable metadata."""
+    payload = {field: row.get(field) for field in FROZEN_PAYLOAD_FIELDS}
+    payload.update(build_actionable_intelligence({**row, **payload}))
+    payload["decision_model_version"] = DECISION_MODEL_VERSION
+    return payload
 
 
 def confidence_from_score(score: Any) -> str:
@@ -160,30 +176,199 @@ def create_brief_row(
     )
 
 
+def _is_http_url(url: str) -> bool:
+    return bool(re.match(r"^https?://", url.strip(), flags=re.IGNORECASE))
+
+
+def evaluate_event_readiness(event_row: dict) -> dict[str, Any]:
+    """Deterministic preflight-readiness check shared with competitor-event readiness."""
+    fp = build_frozen_payload(event_row)
+    patch, _warnings = build_brief_readiness_enrichment(fp)
+    enriched = {**fp, **patch}
+    readiness = evaluate_competitor_event_readiness(enriched)
+    return {
+        "is_brief_ready": readiness["is_brief_ready"],
+        "readiness_issues": list(readiness["readiness_issues"]),
+        "readiness_warnings": list(readiness.get("readiness_warnings") or []),
+        "frozen_payload": enriched,
+    }
+
+
+def partition_events_by_readiness(events: list[dict]) -> tuple[list[dict], list[dict]]:
+    """Split ordered candidate events into included/excluded by shared readiness logic.
+
+    Contract: generation excludes events with readiness-blocking source/rationale/
+    confidence defects before draft creation. Validation then operates on the
+    persisted brief/items only; it is not the primary entry point for events
+    that never became draft items.
+    """
+    included: list[dict] = []
+    excluded: list[dict] = []
+    for event in events:
+        readiness = evaluate_event_readiness(event)
+        enriched = {
+            **event,
+            **readiness["frozen_payload"],
+            "is_brief_ready": readiness["is_brief_ready"],
+            "readiness_issues": readiness["readiness_issues"],
+            "readiness_warnings": readiness["readiness_warnings"],
+        }
+        if readiness["is_brief_ready"]:
+            included.append(enriched)
+        else:
+            excluded.append(enriched)
+    return included, excluded
+
+
+def summarize_exclusions(excluded_events: list[dict], *, cap: int = 20) -> dict[str, Any]:
+    counts: dict[str, int] = {}
+    summaries: list[dict[str, Any]] = []
+
+    for ev in excluded_events:
+        issues = list(ev.get("readiness_issues") or [])
+        for code in issues:
+            counts[code] = counts.get(code, 0) + 1
+
+    for ev in excluded_events[:max(cap, 0)]:
+        summaries.append({
+            "competitor_event_id": int(ev.get("id")),
+            "competitor": ev.get("competitor"),
+            "event_title": ev.get("event_title"),
+            "readiness_issues": list(ev.get("readiness_issues") or []),
+        })
+
+    return {
+        "excluded_count": len(excluded_events),
+        "exclusion_reason_counts": counts,
+        "excluded_items": summaries,
+    }
+
+
+def _normalize_analyst_decision_for_action(
+    *,
+    action: str,
+    system_recommendation: str,
+) -> tuple[str, str]:
+    rec = (system_recommendation or "monitor_only").strip() or "monitor_only"
+    recommendation_map = {
+        "hold_due_to_readiness_issue": "hold",
+        "request_additional_evidence": "request_additional_evidence",
+        "monitor_only": "monitor_only",
+        "escalate_for_review": "escalate_for_review",
+        "include_in_brief": "include_in_brief",
+    }
+    recommended_decision = recommendation_map.get(rec, "monitor_only")
+
+    if action == "accept_recommendation":
+        return recommended_decision, "analyst_accept_recommendation"
+
+    source = "analyst_manual"
+    if action != recommended_decision:
+        source = "analyst_override_recommendation"
+    return action, source
+
+
+def apply_analyst_action_guardrails(
+    *,
+    frozen_payload: dict[str, Any],
+    action: str,
+    analyst_status: str,
+) -> tuple[str, str, int]:
+    if analyst_status not in ANALYST_STATUSES:
+        raise HTTPException(status_code=422, detail=f"Invalid analyst_status: {analyst_status}")
+    if action not in ANALYST_ACTIONS:
+        raise HTTPException(status_code=422, detail=f"Invalid analyst_decision: {action}")
+
+    recommendation = str(frozen_payload.get("recommended_action") or "monitor_only")
+    mapped_decision, source = _normalize_analyst_decision_for_action(
+        action=action,
+        system_recommendation=recommendation,
+    )
+    if source not in ANALYST_DECISION_SOURCES:
+        raise HTTPException(status_code=422, detail=f"Invalid analyst_decision_source: {source}")
+
+    readiness_blocked = int(frozen_payload.get("readiness_blocked") or 0)
+    confidence = str(frozen_payload.get("confidence") or frozen_payload.get("confidence_level") or "").lower()
+
+    if readiness_blocked and mapped_decision == "include_in_brief":
+        raise HTTPException(
+            status_code=422,
+            detail="Cannot include readiness-blocked item in brief. Resolve readiness or choose hold/request evidence.",
+        )
+
+    if mapped_decision == "request_additional_evidence":
+        # Always allowed; especially for weak/missing evidence.
+        pass
+
+    include_in_summary = 1
+    if mapped_decision in {"monitor_only", "hold", "dismiss", "request_additional_evidence"}:
+        include_in_summary = 0
+    elif mapped_decision in {"escalate_for_review", "include_in_brief"}:
+        include_in_summary = 1
+
+    # If low/unknown confidence tries to escalate/include, keep allowed but force in_review/decided explicitness by status choice.
+    if mapped_decision in {"escalate_for_review", "include_in_brief"} and not confidence:
+        # deterministic nudge enforced via status contract
+        if analyst_status == "unreviewed":
+            raise HTTPException(status_code=422, detail="Set analyst_status to in_review or decided when taking action on low/unknown confidence item")
+
+    return mapped_decision, source, include_in_summary
+
+
 def create_brief_items(conn, *, brief_id: str, events: list[dict]) -> list[dict]:
     """Insert cso_brief_items rows; return item dicts for serialization."""
     now = utcnow_iso()
+
+    # Deterministic decision-support ordering:
+    # 1) actionable-intelligence priority score desc
+    # 2) escalate_to_cso desc
+    # 3) walmart relevance desc
+    # 4) event date desc (lexicographic ISO)
+    # 5) id asc for absolute stability
+    scored_events: list[tuple[dict, dict[str, Any]]] = []
+    for ev in events:
+        actionable = build_actionable_intelligence(ev)
+        scored_events.append((ev, actionable))
+
+    scored_events.sort(
+        key=lambda pair: (
+            -float(pair[1].get("priority_score") or 0),
+            -int(pair[0].get("escalate_to_cso") or 0),
+            -float(pair[0].get("walmart_relevance_score") or 0),
+            -(int(str(pair[0].get("event_date") or "").replace("-", "") or 0)),
+            int(pair[0].get("id") or 0),
+        ),
+    )
+
     items: list[dict] = []
-    for rank, event_row in enumerate(events, start=1):
+    for rank, (event_row, actionable) in enumerate(scored_events, start=1):
         item_id = str(uuid.uuid4())
-        frozen = build_frozen_payload(event_row)
+        frozen = build_frozen_payload({**event_row, **actionable})
         frozen_json = json.dumps(frozen, default=str, ensure_ascii=False)
+        owner_assignment = (frozen.get("recommended_owner") or "").strip()
         conn.execute(
             """
             INSERT INTO cso_brief_items (
                 id, brief_id, competitor_event_id, rank,
                 analyst_commentary, uncertainty_note, owner_assignment,
-                include_in_summary, frozen_payload,
+                include_in_summary,
+                analyst_status, analyst_decision, analyst_note, analyst_decided_at, analyst_decision_source,
+                frozen_payload,
                 created_at, updated_at
-            ) VALUES (?, ?, ?, ?, '', '', '', 1, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, '', '', ?, 1, 'unreviewed', '', '', NULL, '', ?, ?, ?)
             """,
-            (item_id, brief_id, event_row["id"], rank, frozen_json, now, now),
+            (item_id, brief_id, event_row["id"], rank, owner_assignment, frozen_json, now, now),
         )
         items.append({
             "id": item_id, "brief_id": brief_id,
             "competitor_event_id": event_row["id"], "rank": rank,
             "analyst_commentary": "", "uncertainty_note": "",
-            "owner_assignment": "", "include_in_summary": 1,
+            "owner_assignment": owner_assignment, "include_in_summary": 1,
+            "analyst_status": "unreviewed",
+            "analyst_decision": "",
+            "analyst_note": "",
+            "analyst_decided_at": None,
+            "analyst_decision_source": "",
             "frozen_payload": frozen, "created_at": now, "updated_at": now,
         })
     return items
@@ -269,10 +454,13 @@ def require_brief_editable(brief_row: dict) -> None:
 # ── Validation ────────────────────────────────────────────────────────────────
 
 def run_validation(conn, brief_row: dict) -> ValidateResponse:
-    """Run quality-gate checks against frozen_payload + item analyst fields.
+    """Run quality-gate checks against persisted draft state.
 
     Shared by /validate and the approval transition gate.
-    Does NOT query live competitor_events rows.
+    Generation has already excluded readiness-blocking candidate events, so this
+    gate validates only the brief/items that were actually persisted, with item
+    fields read from frozen_payload plus analyst edits. It does NOT query live
+    competitor_events rows.
     """
     brief_id = brief_row["id"]
     items = fetch_brief_items(conn, brief_id)
@@ -345,6 +533,7 @@ def run_validation(conn, brief_row: dict) -> ValidateResponse:
 def build_snapshot_item(item: dict) -> SnapshotItemOut:
     """Build a read-only snapshot item from an item row + frozen_payload."""
     fp = item.get("frozen_payload", {})
+    actionable = build_actionable_intelligence(fp)
     return SnapshotItemOut(
         rank=item["rank"],
         competitor=fp.get("competitor", ""),
@@ -369,6 +558,40 @@ def build_snapshot_item(item: dict) -> SnapshotItemOut:
         uncertainty_note=item.get("uncertainty_note", ""),
         owner_assignment=item.get("owner_assignment", ""),
         include_in_summary=item.get("include_in_summary", 1),
+        decision_title=fp.get("title") or actionable.get("title"),
+        decision_summary=fp.get("summary") or actionable.get("summary"),
+        evidence_reference=fp.get("evidence_reference") or actionable.get("evidence_reference"),
+        rationale=fp.get("rationale") or actionable.get("rationale"),
+        confidence=fp.get("confidence") or actionable.get("confidence"),
+        severity=fp.get("severity") or actionable.get("severity"),
+        likelihood=fp.get("likelihood") or actionable.get("likelihood"),
+        impact_score=(
+            fp.get("impact_score")
+            if fp.get("impact_score") is not None
+            else actionable.get("impact_score")
+        ),
+        likelihood_score=(
+            fp.get("likelihood_score")
+            if fp.get("likelihood_score") is not None
+            else actionable.get("likelihood_score")
+        ),
+        priority_score=(
+            fp.get("priority_score")
+            if fp.get("priority_score") is not None
+            else actionable.get("priority_score")
+        ),
+        recommended_action=fp.get("recommended_action") or actionable.get("recommended_action"),
+        reason_codes=list(fp.get("reason_codes") or actionable.get("reason_codes") or []),
+        explanation=fp.get("explanation") or actionable.get("explanation"),
+        actionable_now=int(fp.get("actionable_now") if fp.get("actionable_now") is not None else actionable.get("actionable_now") or 0),
+        readiness_blocked=int(fp.get("readiness_blocked") if fp.get("readiness_blocked") is not None else actionable.get("readiness_blocked") or 0),
+        scoring_version=fp.get("scoring_version") or actionable.get("scoring_version"),
+        decision_model_version=DECISION_MODEL_VERSION,
+        analyst_status=item.get("analyst_status", "unreviewed") or "unreviewed",
+        analyst_decision=item.get("analyst_decision", "") or "",
+        analyst_note=item.get("analyst_note", "") or "",
+        analyst_decided_at=item.get("analyst_decided_at"),
+        analyst_decision_source=item.get("analyst_decision_source", "") or "",
     )
 
 
@@ -388,6 +611,13 @@ def serialize_brief(brief_row: dict, items: list[dict]) -> BriefOut:
         updated_at=brief_row["updated_at"],
         submitted_at=brief_row.get("submitted_at"),
         submitted_by=brief_row.get("submitted_by"),
+        reviewed_at=brief_row.get("reviewed_at"),
+        reviewed_by=brief_row.get("reviewed_by"),
+        reviewer_notes=brief_row.get("reviewer_notes", ""),
+        reviewer_attestation=brief_row.get("reviewer_attestation", ""),
+        changes_requested_at=brief_row.get("changes_requested_at"),
+        changes_requested_by=brief_row.get("changes_requested_by"),
+        changes_requested_reason=brief_row.get("changes_requested_reason", ""),
         approved_at=brief_row.get("approved_at"),
         approved_by=brief_row.get("approved_by"),
         published_draft_at=brief_row.get("published_draft_at"),

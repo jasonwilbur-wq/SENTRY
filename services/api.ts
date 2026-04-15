@@ -47,7 +47,17 @@ export function getDownloadUrl(varId: string): string {
 
 // ── CSO Briefs ───────────────────────────────────────────────────────────────
 
-export type CSOBriefStatus = 'DRAFT' | 'IN_REVIEW' | 'APPROVED' | 'PUBLISHED_DRAFT';
+export type CSOBriefStatus = 'DRAFT' | 'IN_REVIEW' | 'CHANGES_REQUESTED' | 'APPROVED' | 'PUBLISHED_DRAFT';
+
+export type AnalystStatus = 'unreviewed' | 'in_review' | 'decided' | 'blocked';
+export type AnalystDecision =
+  | 'accept_recommendation'
+  | 'include_in_brief'
+  | 'escalate_for_review'
+  | 'request_additional_evidence'
+  | 'monitor_only'
+  | 'hold'
+  | 'dismiss';
 
 export interface CSOBriefItem {
   id: string;
@@ -58,6 +68,11 @@ export interface CSOBriefItem {
   uncertainty_note: string;
   owner_assignment: string;
   include_in_summary: number;
+  analyst_status: AnalystStatus;
+  analyst_decision: string;
+  analyst_note: string;
+  analyst_decided_at: string | null;
+  analyst_decision_source: string;
   frozen_payload: Record<string, any>;
   created_at: string;
   updated_at: string;
@@ -75,6 +90,13 @@ export interface CSOBrief {
   updated_at: string;
   submitted_at: string | null;
   submitted_by: string | null;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  reviewer_notes: string;
+  reviewer_attestation: string;
+  changes_requested_at: string | null;
+  changes_requested_by: string | null;
+  changes_requested_reason: string;
   approved_at: string | null;
   approved_by: string | null;
   published_draft_at: string | null;
@@ -106,6 +128,7 @@ export interface CSOBriefTransitionResponse {
   to_status: CSOBriefStatus;
   transitioned_by: string;
   validation: ValidationResult | null;
+  decision_action: string | null;
 }
 
 export interface CSOBriefSnapshotItem {
@@ -128,6 +151,30 @@ export interface CSOBriefSnapshotItem {
   uncertainty_note: string;
   owner_assignment: string;
   include_in_summary: number;
+
+  // Actionable-intelligence decision model
+  decision_title?: string | null;
+  decision_summary?: string | null;
+  evidence_reference?: string | null;
+  rationale?: string | null;
+  confidence?: string | null;
+  severity?: string | null;
+  likelihood?: string | null;
+  impact_score?: number | null;
+  likelihood_score?: number | null;
+  priority_score?: number | null;
+  recommended_action?: string | null;
+  reason_codes?: string[];
+  explanation?: string | null;
+  actionable_now?: number;
+  readiness_blocked?: number;
+  scoring_version?: string | null;
+  decision_model_version?: string | null;
+  analyst_status?: AnalystStatus;
+  analyst_decision?: string;
+  analyst_note?: string;
+  analyst_decided_at?: string | null;
+  analyst_decision_source?: string;
 }
 
 export interface CSOBriefSnapshot {
@@ -162,6 +209,57 @@ export interface CSOBriefAuditResponse {
   offset: number;
 }
 
+export interface CSOBriefGenerateFilters {
+  date_from?: string;
+  date_to?: string;
+  competitor?: string[];
+  max_items?: number;
+}
+
+export interface CSOBriefGenerateRequest {
+  title: string;
+  period_start: string;
+  period_end: string;
+  filters?: CSOBriefGenerateFilters;
+}
+
+export interface CSOBriefExcludedItemSummary {
+  competitor_event_id: number;
+  competitor: string | null;
+  event_title: string | null;
+  readiness_issues: string[];
+}
+
+export interface CSOBriefGeneratePreflightSummary {
+  candidate_count: number;
+  included_count: number;
+  excluded_count: number;
+  exclusion_reason_counts: Record<string, number>;
+  excluded_items: CSOBriefExcludedItemSummary[];
+}
+
+export interface CSOBriefGenerateResponse {
+  brief: CSOBrief;
+  included_count: number;
+  candidate_count: number;
+  excluded_count: number;
+  exclusion_reason_counts: Record<string, number>;
+  excluded_items: CSOBriefExcludedItemSummary[];
+  preflight: CSOBriefGeneratePreflightSummary;
+}
+
+export async function generateCSOBrief(
+  payload: CSOBriefGenerateRequest,
+): Promise<CSOBriefGenerateResponse> {
+  return request('/api/cso-briefs/generate', {
+    method: 'POST',
+    body: JSON.stringify({
+      ...payload,
+      filters: payload.filters ?? {},
+    }),
+  });
+}
+
 export async function fetchCSOBrief(briefId: string): Promise<CSOBrief> {
   return request(`/api/cso-briefs/${encodeURIComponent(briefId)}`);
 }
@@ -185,6 +283,10 @@ export async function patchCSOBriefItem(
     analyst_commentary?: string;
     uncertainty_note?: string;
     include_in_summary?: number;
+    analyst_status?: AnalystStatus;
+    analyst_decision?: AnalystDecision;
+    analyst_note?: string;
+    analyst_decision_source?: string;
   },
 ): Promise<CSOBriefItem> {
   return request(`/api/cso-briefs/${encodeURIComponent(briefId)}/items/${encodeURIComponent(itemId)}`, {
@@ -201,11 +303,21 @@ export async function validateCSOBrief(briefId: string): Promise<ValidationResul
 
 export async function transitionCSOBrief(
   briefId: string,
-  payload: { to_status: CSOBriefStatus; note?: string },
+  payload: {
+    to_status: CSOBriefStatus;
+    note?: string;
+    reviewer_notes?: string;
+    reviewer_attest_ready?: boolean;
+  },
 ): Promise<CSOBriefTransitionResponse> {
   return request(`/api/cso-briefs/${encodeURIComponent(briefId)}/transition`, {
     method: 'POST',
-    body: JSON.stringify({ to_status: payload.to_status, note: payload.note ?? '' }),
+    body: JSON.stringify({
+      to_status: payload.to_status,
+      note: payload.note ?? '',
+      reviewer_notes: payload.reviewer_notes ?? '',
+      reviewer_attest_ready: payload.reviewer_attest_ready ?? false,
+    }),
   });
 }
 
@@ -932,6 +1044,11 @@ export interface CompetitorEvent {
   correlation_status?: 'MATCHED' | 'AMBIGUOUS' | 'NO_MATCH' | null;
   candidate_vendor_names?: string[];
   walmart_actionability_context?: string | null;
+  correlation_summary?: string | null;
+  is_brief_ready?: boolean;
+  readiness_issues?: string[];
+  readiness_warnings?: string[];
+  readiness_required_fields?: string[];
 }
 
 export interface CompetitorScoreDistribution {
@@ -1099,6 +1216,7 @@ export async function rescoreCompetitorEvents(params?: {
   success: boolean;
   updated: number;
   skipped_manual: number;
+  enrichment_field_updates: number;
   cso_escalation_candidates: number;
   before: CompetitorScoreDistribution;
   after: CompetitorScoreDistribution;
@@ -1117,6 +1235,31 @@ export async function rescoreCompetitorEvents(params?: {
   if (params?.preserve_manual !== undefined) qs.set('preserve_manual', String(params.preserve_manual));
   const query = qs.toString() ? `?${qs}` : '';
   return request(`/api/admin/competitor-events/rescore${query}`, { method: 'POST' });
+}
+
+export async function backfillCompetitorBriefReadiness(params?: {
+  limit?: number;
+  only_missing?: boolean;
+}): Promise<{
+  success: boolean;
+  processed_rows: number;
+  updated_rows: number;
+  field_updates: number;
+  warnings_total: number;
+  brief_ready_before: number;
+  brief_ready_after: number;
+  brief_ready_delta: number;
+  field_coverage_before: Record<string, number>;
+  field_coverage_after: Record<string, number>;
+  skipped_rows: number;
+  skipped_reasons: Record<string, number>;
+  updated_ids: number[];
+}> {
+  const qs = new URLSearchParams();
+  if (params?.limit) qs.set('limit', String(params.limit));
+  if (params?.only_missing !== undefined) qs.set('only_missing', String(params.only_missing));
+  const query = qs.toString() ? `?${qs}` : '';
+  return request(`/api/admin/competitor-events/backfill-brief-readiness${query}`, { method: 'POST' });
 }
 
 // ── Regulatory Intelligence ──────────────────────────────────────────────────

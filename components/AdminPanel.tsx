@@ -15,11 +15,14 @@ import {
   ExtractResult,
   VarAdminRow,
   VarListResponse,
+  VarReviewQueueRow,
   extractBatch,
   extractVarScores,
   fetchAdminStats,
   fetchAdminVars,
+  fetchVarReviewQueue,
   linkVarToVendor,
+  reviewVarExtraction,
   searchVendorsForLinking,
 } from '../services/api';
 import { CompetitorIntelAdmin } from './CompetitorIntelAdmin';
@@ -49,6 +52,22 @@ function ScorePill({ score }: { score: number | null }) {
     score >= 3.0 ? 'text-yellow-400' :
     score >= 2.0 ? 'text-orange-400' : 'text-red-400';
   return <span className={`font-mono font-bold text-sm ${color}`}>{score.toFixed(2)}</span>;
+}
+
+function ReviewStatusBadge({ status }: { status: string }) {
+  const cls =
+    status === 'EXTRACTED_PENDING_REVIEW'
+      ? 'bg-yellow-900/30 text-yellow-300 border-yellow-700'
+      : status === 'REVIEWED_ACCEPTED'
+        ? 'bg-green-900/30 text-green-300 border-green-700'
+        : status === 'REVIEWED_REJECTED'
+          ? 'bg-red-900/30 text-red-300 border-red-700'
+          : 'bg-slate-700 text-slate-300 border-slate-600';
+  return (
+    <span className={`px-2 py-0.5 rounded text-xs font-semibold border whitespace-nowrap ${cls}`}>
+      {status}
+    </span>
+  );
 }
 
 function StatCard({ label, value, sub, color }: {
@@ -155,6 +174,9 @@ function LinkModal({ varRow, onClose, onLinked }: LinkModalProps) {
 // ── Batch progress drawer ───────────────────────────────────────────────
 
 function BatchResultDrawer({ res, onClose }: { res: BatchExtractResponse; onClose: () => void }) {
+  const sortedStatuses = Object.entries(res.status_counts || {})
+    .sort((a, b) => b[1] - a[1]);
+
   return (
     <div className="fixed bottom-6 right-6 w-96 bg-sentry-card border border-slate-600 rounded-xl shadow-2xl z-40 p-5">
       <div className="flex justify-between items-center mb-3">
@@ -179,10 +201,22 @@ function BatchResultDrawer({ res, onClose }: { res: BatchExtractResponse; onClos
           <p className="text-xs text-slate-400">Skipped</p>
         </div>
       </div>
+      {sortedStatuses.length > 0 && (
+        <div className="mb-3 p-2 rounded bg-slate-800/60 border border-slate-700">
+          <p className="text-[11px] text-slate-400 uppercase tracking-wide mb-1">Status Breakdown</p>
+          <div className="flex flex-wrap gap-2">
+            {sortedStatuses.map(([status, count]) => (
+              <span key={status} className="text-xs text-slate-300 font-mono">
+                {status}: {count}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="max-h-48 overflow-y-auto space-y-1">
         {res.results.filter(r => !r.success).map(r => (
           <div key={r.var_id} className="text-xs text-red-400 truncate" title={r.error}>
-            ❌ {r.filename.slice(0, 40)}: {r.error}
+            ❌ [{r.status}] {r.filename.slice(0, 36)}: {r.error}
           </div>
         ))}
       </div>
@@ -203,6 +237,9 @@ export const AdminPanel: React.FC = () => {
   const [batchRunning, setBatchRunning] = useState(false);
   const [batchResult, setBatchResult]   = useState<BatchExtractResponse | null>(null);
   const [linkTarget, setLinkTarget]     = useState<VarAdminRow | null>(null);
+  const [reviewQueue, setReviewQueue]   = useState<VarReviewQueueRow[]>([]);
+  const [reviewBusy, setReviewBusy]     = useState<Set<string>>(new Set());
+  const [reviewError, setReviewError]   = useState('');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const PAGE_SIZE = 25;
@@ -222,7 +259,17 @@ export const AdminPanel: React.FC = () => {
     } catch {}
   }, []);
 
-  useEffect(() => { loadStats(); }, [loadStats]);
+  const loadReviewQueue = useCallback(async () => {
+    try {
+      const data = await fetchVarReviewQueue(100);
+      setReviewQueue(data.items);
+      setReviewError('');
+    } catch {
+      setReviewError('Failed to load review queue');
+    }
+  }, []);
+
+  useEffect(() => { loadStats(); loadReviewQueue(); }, [loadStats, loadReviewQueue]);
 
   useEffect(() => {
     clearTimeout(debounceRef.current);
@@ -234,16 +281,33 @@ export const AdminPanel: React.FC = () => {
     try {
       const res = await extractVarScores(varId);
       if (res.success) {
-        // Optimistically update the row
+        // Optimistically update the row (still review-required downstream)
         setVarList(prev => prev ? {
           ...prev,
           vars: prev.vars.map(v =>
             v.id === varId
-              ? { ...v, overall_score: res.overall_score, decision_band: res.decision_band, has_scores: true }
+              ? {
+                  ...v,
+                  overall_score: res.overall_score,
+                  decision_band: res.decision_band,
+                  has_scores: true,
+                  extraction_review_status: 'EXTRACTED_PENDING_REVIEW',
+                  extraction_last_status: 'SUCCESS',
+                }
               : v
           ),
         } : prev);
         loadStats();
+        loadReviewQueue();
+      } else {
+        setBatchResult({
+          total: 1,
+          succeeded: 0,
+          failed: 1,
+          skipped: 0,
+          status_counts: { [res.status]: 1 },
+          results: [res],
+        });
       }
     } finally {
       setExtracting(prev => { const s = new Set(prev); s.delete(varId); return s; });
@@ -257,8 +321,48 @@ export const AdminPanel: React.FC = () => {
       setBatchResult(res);
       await loadStats();
       await loadVars(page, search, scoredFilter);
+      await loadReviewQueue();
     } finally {
       setBatchRunning(false);
+    }
+  };
+
+  const handleReviewAction = async (varId: string, action: 'ACCEPT' | 'REJECT') => {
+    const note = window.prompt(
+      action === 'ACCEPT'
+        ? 'Optional acceptance note:'
+        : 'Optional rejection note (recommended):',
+      '',
+    );
+    if (note === null) return;
+
+    setReviewBusy(prev => new Set(prev).add(varId));
+    try {
+      const updated = await reviewVarExtraction(varId, action, note);
+      setReviewQueue(prev => prev.filter(item => item.id !== varId));
+      setVarList(prev => prev ? {
+        ...prev,
+        vars: prev.vars.map(v =>
+          v.id === varId
+            ? {
+                ...v,
+                extraction_review_status: updated.extraction_review_status,
+                extraction_reviewed_by: updated.extraction_reviewed_by,
+                extraction_reviewed_at: updated.extraction_reviewed_at,
+                extraction_review_note: updated.extraction_review_note,
+              }
+            : v,
+        ),
+      } : prev);
+      setReviewError('');
+    } catch {
+      setReviewError(`Failed to ${action.toLowerCase()} extraction for ${varId}`);
+    } finally {
+      setReviewBusy(prev => {
+        const s = new Set(prev);
+        s.delete(varId);
+        return s;
+      });
     }
   };
 
@@ -407,6 +511,7 @@ export const AdminPanel: React.FC = () => {
                 <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--s-text-dim)' }}>Vendor</th>
                 <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--s-text-dim)' }}>Score</th>
                 <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--s-text-dim)' }}>Band</th>
+                <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--s-text-dim)' }}>Extraction Review</th>
                 <th className="text-left px-4 py-3 font-semibold" style={{ color: 'var(--s-text-dim)' }}>Method</th>
                 <th className="text-right px-4 py-3 font-semibold" style={{ color: 'var(--s-text-dim)' }}>Actions</th>
               </tr>
@@ -433,6 +538,13 @@ export const AdminPanel: React.FC = () => {
                   </td>
                   <td className="px-4 py-3">
                     <BandBadge band={v.decision_band} />
+                    <p className="text-[11px] text-slate-500 mt-1">Draft extraction only — not final decision approval</p>
+                  </td>
+                  <td className="px-4 py-3">
+                    <ReviewStatusBadge status={v.extraction_review_status} />
+                    <p className="text-[11px] text-slate-500 mt-1 font-mono" title={v.extraction_last_status}>
+                      last: {v.extraction_last_status || 'NOT_EXTRACTED'}
+                    </p>
                   </td>
                   <td className="px-4 py-3">
                     <span className="text-slate-500 text-xs font-mono">{v.match_method || '—'}</span>
@@ -513,6 +625,57 @@ export const AdminPanel: React.FC = () => {
                 Next
               </button>
             </div>
+          </div>
+        )}
+      </div>
+
+      {/* Extraction review queue */}
+      <div className="bg-sentry-card border border-slate-700 rounded-lg p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-white font-bold">Extraction Review Queue</h3>
+          <button
+            onClick={loadReviewQueue}
+            className="px-3 py-1.5 text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 rounded"
+          >
+            Refresh
+          </button>
+        </div>
+        <p className="text-xs text-slate-400 mb-3">
+          Human review applies to extraction quality only. It does not auto-approve final VAR decisions.
+        </p>
+        {reviewError && <p className="text-xs text-red-400 mb-2">{reviewError}</p>}
+        {reviewQueue.length === 0 ? (
+          <p className="text-sm text-slate-500">No items pending review. Nice.</p>
+        ) : (
+          <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+            {reviewQueue.map(item => (
+              <div key={item.id} className="border border-slate-700 rounded p-3 bg-slate-800/40">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm text-white font-medium truncate" title={item.filename}>{item.filename}</p>
+                    <p className="text-xs text-slate-400">{item.company_name} · score {item.overall_score ?? '—'} · band {item.decision_band || '—'}</p>
+                    <p className="text-[11px] text-slate-500 font-mono mt-1">last_status: {item.extraction_last_status || 'NOT_EXTRACTED'}</p>
+                  </div>
+                  <ReviewStatusBadge status={item.extraction_review_status} />
+                </div>
+                <div className="flex gap-2 mt-3">
+                  <button
+                    onClick={() => handleReviewAction(item.id, 'ACCEPT')}
+                    disabled={reviewBusy.has(item.id)}
+                    className="px-3 py-1.5 text-xs rounded bg-green-700 hover:bg-green-600 disabled:opacity-50 text-white"
+                  >
+                    Accept Extraction
+                  </button>
+                  <button
+                    onClick={() => handleReviewAction(item.id, 'REJECT')}
+                    disabled={reviewBusy.has(item.id)}
+                    className="px-3 py-1.5 text-xs rounded bg-red-700 hover:bg-red-600 disabled:opacity-50 text-white"
+                  >
+                    Reject Extraction
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

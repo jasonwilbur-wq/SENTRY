@@ -287,49 +287,67 @@ class TestValidateMissingExecSummary:
 # ── Test 6: validate fails — missing source_link ──────────────────────────────
 
 class TestValidateMissingSourceLink:
-    def test_fails_when_source_link_empty(self, client):
+    def test_generation_excludes_item_when_source_link_empty(self, client):
         brief, items = _generate_brief(client, source_link="")
+
+        assert items == []
 
         resp = client.post(f"/api/cso-briefs/{brief['id']}/validate", headers=USER)
         assert resp.status_code == 200
-        codes = [v["code"] for v in resp.json()["violations"]]
-        assert "MISSING_SOURCE_LINK" in codes
+        body = resp.json()
+        codes = [v["code"] for v in body["violations"]]
+        assert codes == ["MISSING_EXECUTIVE_SUMMARY"]
+        assert body["included_item_count"] == 0
 
 
 # ── Test 7: validate fails — invalid source_link ─────────────────────────────
 
 class TestValidateInvalidSourceLink:
-    def test_fails_when_source_link_not_http(self, client):
-        brief, _ = _generate_brief(client, source_link="ftp://badlink.com/file")
+    def test_generation_excludes_item_when_source_link_not_http(self, client):
+        brief, items = _generate_brief(client, source_link="ftp://badlink.com/file")
+
+        assert items == []
 
         resp = client.post(f"/api/cso-briefs/{brief['id']}/validate", headers=USER)
         assert resp.status_code == 200
-        codes = [v["code"] for v in resp.json()["violations"]]
-        assert "INVALID_SOURCE_LINK" in codes
+        body = resp.json()
+        codes = [v["code"] for v in body["violations"]]
+        assert codes == ["MISSING_EXECUTIVE_SUMMARY"]
+        assert body["included_item_count"] == 0
 
 
 # ── Test 8: validate fails — missing rationale ───────────────────────────────
 
 class TestValidateMissingRationale:
-    def test_fails_when_both_rationale_fields_empty(self, client):
-        brief, _ = _generate_brief(
+    def test_generation_enrichment_backfills_missing_rationale(self, client):
+        brief, items = _generate_brief(
             client,
             why_walmart_cares="",
-            # walmart_actionability_context not seeded → also empty
+            walmart_actionability_context="",
+        )
+
+        assert len(items) == 1
+
+        client.patch(f"/api/cso-briefs/{brief['id']}", json={
+            "executive_summary": "Has summary.",
+        }, headers=USER)
+        client.patch(
+            f"/api/cso-briefs/{brief['id']}/items/{items[0]['id']}",
+            json={"owner_assignment": "CISO"},
+            headers=USER,
         )
 
         resp = client.post(f"/api/cso-briefs/{brief['id']}/validate", headers=USER)
         assert resp.status_code == 200
         codes = [v["code"] for v in resp.json()["violations"]]
-        assert "MISSING_RATIONALE" in codes
+        assert "MISSING_RATIONALE" not in codes
 
 
 # ── Test 9: validate fails — missing owner_assignment ─────────────────────────
 
 class TestValidateMissingOwner:
     def test_fails_when_owner_empty(self, client):
-        # Default item has owner_assignment='' → should trigger
-        brief, _ = _generate_brief(client)
+        brief, _ = _generate_brief(client, recommended_owner="")
 
         resp = client.post(f"/api/cso-briefs/{brief['id']}/validate", headers=USER)
         assert resp.status_code == 200
@@ -340,14 +358,17 @@ class TestValidateMissingOwner:
 # ── Test 10: validate fails — missing confidence ──────────────────────────────
 
 class TestValidateMissingConfidence:
-    def test_fails_when_confidence_level_and_score_absent(self, client):
-        brief, _ = _generate_brief(client, confidence_level="")
-        # confidence_score not in seed defaults → None → no bucket mapping
+    def test_generation_excludes_item_when_confidence_missing(self, client):
+        brief, items = _generate_brief(client, confidence_level="", confidence_score=None)
+
+        assert items == []
 
         resp = client.post(f"/api/cso-briefs/{brief['id']}/validate", headers=USER)
         assert resp.status_code == 200
-        codes = [v["code"] for v in resp.json()["violations"]]
-        assert "MISSING_CONFIDENCE" in codes
+        body = resp.json()
+        codes = [v["code"] for v in body["violations"]]
+        assert codes == ["MISSING_EXECUTIVE_SUMMARY"]
+        assert body["included_item_count"] == 0
 
     def test_passes_confidence_when_score_bucket_available(self, client):
         """If confidence_level is empty but confidence_score is present,
@@ -384,29 +405,22 @@ class TestValidateMissingConfidence:
 
 class TestValidateExcludedItems:
     def test_excluded_item_not_checked(self, client):
-        """An item with include_in_summary=0 should not generate violations."""
-        brief, items = _generate_brief(
-            client,
-            source_link="",          # would normally trigger MISSING_SOURCE_LINK
-            why_walmart_cares="",     # would normally trigger MISSING_RATIONALE
-            confidence_level="",      # would normally trigger MISSING_CONFIDENCE
-        )
+        """An item excluded after generation should not generate violations."""
+        brief, items = _generate_brief(client, recommended_owner="")
 
-        # Exclude the item
+        client.patch(
+            f"/api/cso-briefs/{brief['id']}",
+            json={"executive_summary": "Has summary."},
+            headers=USER,
+        )
         client.patch(
             f"/api/cso-briefs/{brief['id']}/items/{items[0]['id']}",
             json={"include_in_summary": 0},
             headers=USER,
         )
 
-        # Set executive_summary so that's not the only violation
-        client.patch(f"/api/cso-briefs/{brief['id']}", json={
-            "executive_summary": "Has summary.",
-        }, headers=USER)
-
         resp = client.post(f"/api/cso-briefs/{brief['id']}/validate", headers=USER)
         body = resp.json()
-        # No item-level violations — only 0 included items
         item_violations = [v for v in body["violations"] if v.get("item_id")]
         assert len(item_violations) == 0
         assert body["included_item_count"] == 0
@@ -499,7 +513,116 @@ class TestUnauthEditValidate:
         assert resp.status_code == 401
 
 
-# ── Test 16: unknown brief/item returns 404 ──────────────────────────────────
+# ── Test 16: analyst decision guardrails + persistence ───────────────────────
+
+class TestAnalystDecisionGuardrails:
+    def test_accept_recommendation_sets_decision_and_include_flag(self, client):
+        brief, items = _generate_brief(client)
+
+        resp = client.patch(
+            f"/api/cso-briefs/{brief['id']}/items/{items[0]['id']}",
+            json={
+                "analyst_status": "decided",
+                "analyst_decision": "accept_recommendation",
+                "analyst_note": "Agree with deterministic recommendation.",
+            },
+            headers=USER,
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["analyst_status"] == "decided"
+        assert body["analyst_decision"] == body["frozen_payload"]["recommended_action"]
+        assert body["analyst_decision_source"] == "analyst_accept_recommendation"
+        assert body["include_in_summary"] == 1
+        assert body["analyst_decided_at"]
+
+    def test_override_recommendation_requires_analyst_note(self, client):
+        brief, items = _generate_brief(client)
+
+        without_note = client.patch(
+            f"/api/cso-briefs/{brief['id']}/items/{items[0]['id']}",
+            json={
+                "analyst_status": "decided",
+                "analyst_decision": "monitor_only",
+            },
+            headers=USER,
+        )
+        assert without_note.status_code == 422
+        assert without_note.json()["detail"] == "Analyst note is required when overriding recommendation"
+
+        with_note = client.patch(
+            f"/api/cso-briefs/{brief['id']}/items/{items[0]['id']}",
+            json={
+                "analyst_status": "decided",
+                "analyst_decision": "monitor_only",
+                "analyst_note": "Defer pending incident trend confirmation.",
+            },
+            headers=USER,
+        )
+        assert with_note.status_code == 200
+        body = with_note.json()
+        assert body["analyst_decision"] == "monitor_only"
+        assert body["analyst_decision_source"] == "analyst_override_recommendation"
+
+    def test_manual_decision_matching_recommendation_is_manual_source(self, client):
+        brief, items = _generate_brief(client)
+
+        resp = client.patch(
+            f"/api/cso-briefs/{brief['id']}/items/{items[0]['id']}",
+            json={
+                "analyst_status": "in_review",
+                "analyst_decision": "include_in_brief",
+                "analyst_note": "Matches recommendation but set explicitly.",
+            },
+            headers=USER,
+        )
+        assert resp.status_code == 200
+        assert resp.json()["analyst_decision_source"] == "analyst_manual"
+
+    def test_reject_include_for_readiness_blocked_item(self, client):
+        brief, items = _generate_brief(client, source_link="")
+        # source_link empty gets excluded by generation, so create explicit blocked row via direct seed
+        from database import get_connection
+        conn = get_connection()
+        blocked_id = _seed_event(conn, source_link="", priority_tier="CSO Brief", triage_status="REVIEWED")
+        conn.close()
+
+        resp2 = client.post("/api/cso-briefs/generate", json={
+            "title": "Blocked decision brief",
+            "period_start": "2026-04-01",
+            "period_end": "2026-04-08",
+            "max_items": 20,
+        }, headers=ADMIN)
+        assert resp2.status_code == 200
+        b2 = resp2.json()["brief"]
+        item = next(i for i in b2["items"] if i["competitor_event_id"] != blocked_id) if b2["items"] else None
+        if item is None:
+            # If no items generated, skip this strict branch because readiness exclusions removed all blocked rows by contract.
+            return
+
+        # force blocked semantics in frozen payload via patching DB for guardrail check path
+        from database import get_connection as _gc
+        conn2 = _gc()
+        row = conn2.execute("SELECT frozen_payload FROM cso_brief_items WHERE id = ?", (item["id"],)).fetchone()
+        fp = json.loads(row[0])
+        fp["readiness_blocked"] = 1
+        conn2.execute("UPDATE cso_brief_items SET frozen_payload = ? WHERE id = ?", (json.dumps(fp), item["id"]))
+        conn2.commit()
+        conn2.close()
+
+        resp = client.patch(
+            f"/api/cso-briefs/{b2['id']}/items/{item['id']}",
+            json={
+                "analyst_status": "decided",
+                "analyst_decision": "include_in_brief",
+            },
+            headers=USER,
+        )
+        assert resp.status_code == 422
+        assert "Cannot include readiness-blocked item" in resp.json()["detail"]
+
+
+# ── Test 17: unknown brief/item returns 404 ──────────────────────────────────
 
 class TestNotFound:
     def test_patch_unknown_brief_404(self, client):

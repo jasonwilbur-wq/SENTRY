@@ -279,6 +279,13 @@ CREATE TABLE IF NOT EXISTS cso_briefs (
     updated_at         TEXT    NOT NULL DEFAULT (datetime('now')),
     submitted_at       TEXT    DEFAULT NULL,
     submitted_by       TEXT    DEFAULT NULL,
+    reviewed_at        TEXT    DEFAULT NULL,
+    reviewed_by        TEXT    DEFAULT NULL,
+    reviewer_notes     TEXT    DEFAULT '',
+    reviewer_attestation TEXT  DEFAULT '',
+    changes_requested_at TEXT  DEFAULT NULL,
+    changes_requested_by TEXT  DEFAULT NULL,
+    changes_requested_reason TEXT DEFAULT '',
     approved_at        TEXT    DEFAULT NULL,
     approved_by        TEXT    DEFAULT NULL,
     published_draft_at TEXT    DEFAULT NULL,
@@ -300,6 +307,11 @@ CREATE TABLE IF NOT EXISTS cso_brief_items (
     uncertainty_note    TEXT    DEFAULT '',
     owner_assignment    TEXT    DEFAULT '',
     include_in_summary  INTEGER NOT NULL DEFAULT 1,
+    analyst_status      TEXT    NOT NULL DEFAULT 'unreviewed',
+    analyst_decision    TEXT    DEFAULT '',
+    analyst_note        TEXT    DEFAULT '',
+    analyst_decided_at  TEXT    DEFAULT NULL,
+    analyst_decision_source TEXT DEFAULT '',
     frozen_payload      TEXT    NOT NULL,
     created_at          TEXT    NOT NULL DEFAULT (datetime('now')),
     updated_at          TEXT    NOT NULL DEFAULT (datetime('now'))
@@ -358,6 +370,11 @@ COMPETITOR_TRIAGE_COLUMNS: list[tuple[str, str]] = [
     ("triage_note", "TEXT DEFAULT ''"),
 ]
 
+COMPETITOR_ENRICHMENT_COLUMNS: list[tuple[str, str]] = [
+    ("walmart_actionability_context", "TEXT DEFAULT ''"),
+    ("correlation_summary", "TEXT DEFAULT ''"),
+]
+
 
 def _safe_add_column(conn: sqlite3.Connection, table: str, column: str, sql: str) -> None:
     """Add a column if it doesn't already exist. Idempotent.
@@ -398,6 +415,17 @@ def _ensure_competitor_triage_columns(conn: sqlite3.Connection) -> None:
         )
 
 
+def _ensure_competitor_enrichment_columns(conn: sqlite3.Connection) -> None:
+    """Idempotently add enrichment context columns used by brief-readiness workflows."""
+    for column_name, column_def in COMPETITOR_ENRICHMENT_COLUMNS:
+        _safe_add_column(
+            conn,
+            "competitor_events",
+            column_name,
+            f"ALTER TABLE competitor_events ADD COLUMN {column_name} {column_def}",
+        )
+
+
 # Canonical columns for cso_briefs / cso_brief_items that may be added
 # after the initial CREATE TABLE (safe for existing DBs with older schemas).
 _CSO_BRIEF_COLUMNS: list[tuple[str, str, str]] = [
@@ -406,6 +434,13 @@ _CSO_BRIEF_COLUMNS: list[tuple[str, str, str]] = [
     ("cso_briefs", "period_end",         "TEXT NOT NULL DEFAULT ''"),
     ("cso_briefs", "submitted_at",       "TEXT DEFAULT NULL"),
     ("cso_briefs", "submitted_by",       "TEXT DEFAULT NULL"),
+    ("cso_briefs", "reviewed_at",        "TEXT DEFAULT NULL"),
+    ("cso_briefs", "reviewed_by",        "TEXT DEFAULT NULL"),
+    ("cso_briefs", "reviewer_notes",     "TEXT DEFAULT ''"),
+    ("cso_briefs", "reviewer_attestation", "TEXT DEFAULT ''"),
+    ("cso_briefs", "changes_requested_at", "TEXT DEFAULT NULL"),
+    ("cso_briefs", "changes_requested_by", "TEXT DEFAULT NULL"),
+    ("cso_briefs", "changes_requested_reason", "TEXT DEFAULT ''"),
     ("cso_briefs", "approved_at",        "TEXT DEFAULT NULL"),
     ("cso_briefs", "approved_by",        "TEXT DEFAULT NULL"),
     ("cso_briefs", "published_draft_at", "TEXT DEFAULT NULL"),
@@ -419,6 +454,11 @@ _CSO_BRIEF_COLUMNS: list[tuple[str, str, str]] = [
     ("cso_brief_items", "owner_assignment",    "TEXT DEFAULT ''"),
     ("cso_brief_items", "include_in_summary",  "INTEGER NOT NULL DEFAULT 1"),
     ("cso_brief_items", "frozen_payload",      "TEXT NOT NULL DEFAULT '{}'"),
+    ("cso_brief_items", "analyst_status", "TEXT NOT NULL DEFAULT 'unreviewed'"),
+    ("cso_brief_items", "analyst_decision", "TEXT DEFAULT ''"),
+    ("cso_brief_items", "analyst_note", "TEXT DEFAULT ''"),
+    ("cso_brief_items", "analyst_decided_at", "TEXT DEFAULT NULL"),
+    ("cso_brief_items", "analyst_decision_source", "TEXT DEFAULT ''"),
 ]
 
 
@@ -481,9 +521,10 @@ def init_db() -> None:
             "ALTER TABLE competitor_events ADD COLUMN deleted_at TEXT DEFAULT NULL",
         )
 
-        # Competitor intelligence relevance-scoring fields (single canonical migration).
+        # Competitor intelligence relevance-scoring/enrichment fields.
         _ensure_competitor_scoring_columns(conn)
         _ensure_competitor_triage_columns(conn)
+        _ensure_competitor_enrichment_columns(conn)
 
         # Query performance indexes for priority workflows.
         # Guard: only create if competitor_events table exists (it's

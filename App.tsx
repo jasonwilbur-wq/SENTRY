@@ -437,7 +437,7 @@ const AppShell: React.FC<{
 
 // ── Root component ───────────────────────────────────────────────────────────
 const App: React.FC = () => {
-  const isCSOPath = /^\/cso-briefs\/[^/]+\/(edit|view)\/?$/.test(window.location.pathname);
+  const isCSOPath = /^\/cso-briefs\/(generate|[^/]+\/(edit|view))\/?$/.test(window.location.pathname);
 
   // Always start on the landing page unless we deep-link into CSO brief routes.
   const [showLanding, setShowLanding] = useState(!isCSOPath);

@@ -163,6 +163,7 @@ class TestInclusionLogic:
         assert resp.status_code == 200
         body = resp.json()
         assert body["included_count"] == 2
+        assert body["excluded_count"] == 0
         assert len(body["brief"]["items"]) == 2
 
 
@@ -236,6 +237,7 @@ class TestCompetitorFilter:
         competitors = {i["frozen_payload"]["competitor"] for i in items}
         assert competitors == {"Amazon", "Target"}
         assert resp.json()["included_count"] == 2
+        assert resp.json()["excluded_count"] == 0
 
 
 # ── Test 5: max_items default + cap ──────────────────────────────────────────

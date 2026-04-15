@@ -180,6 +180,8 @@ class ServiceRequestOut(BaseModel):
     created_by: str
     created_at: str
     updated_at: str
+    updated_by: str | None = None
+    status_note: str = ""
     contact_name: str
     contact_email: str
     notes: str
@@ -191,6 +193,29 @@ class ServiceRequestOut(BaseModel):
     preferred_slot: str | None = None
     equipment: str | None = None
     attendees: int | None = None
+
+
+class ServiceRequestSummary(BaseModel):
+    """Lightweight row for the admin queue listing."""
+    ref_id: str
+    request_type: str
+    status: str
+    created_by: str
+    created_at: str
+    updated_at: str
+    contact_name: str
+    urgency: str | None = None
+    vendor_name: str | None = None
+
+
+class ServiceRequestListResponse(BaseModel):
+    total: int
+    requests: list[ServiceRequestSummary]
+
+
+class StatusUpdateRequest(BaseModel):
+    status: str
+    note: str = ""
 
 
 # ── Projects ─────────────────────────────────────────────────────────────

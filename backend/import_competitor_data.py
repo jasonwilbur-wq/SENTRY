@@ -17,6 +17,8 @@ from pathlib import Path
 import re
 from datetime import datetime
 
+from database import init_db, get_connection
+
 # File paths
 CLEAN_202602 = r"C:\Users\j0w16ja\OneDrive - Walmart Inc\Data Entries\Datasets\Walmart_Competitor_202602 (Clean).xlsx"
 CLEAN_202601 = r"C:\Users\j0w16ja\OneDrive - Walmart Inc\Emerging Technology Security - Utilities\SpreadSheets\Competitor Trackers\Walmart_Competitor_202601.xlsx"
@@ -235,26 +237,7 @@ def import_month(file_path: str, source_month: str) -> pd.DataFrame:
 
 def create_tables(conn):
     """Create competitor tables if they don't exist."""
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS competitor_events (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            event_date TEXT,
-            competitor TEXT,
-            event_title TEXT,
-            event_type TEXT,
-            category TEXT,
-            location TEXT,
-            detailed_description TEXT,
-            security_implication TEXT,
-            operational_impact TEXT,
-            financial_impact TEXT,
-            reputational_impact TEXT,
-            source_link TEXT,
-            analyst_notes TEXT,
-            source_month TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
+    # competitor_events schema is canonicalized in database.py:init_db()
     
     conn.execute("""
         CREATE INDEX IF NOT EXISTS idx_competitor ON competitor_events(competitor)
@@ -395,7 +378,8 @@ def main():
     
     # Write to database
     print(f"\n💾 Writing to {DB_PATH}...")
-    conn = sqlite3.connect(DB_PATH)
+    init_db()
+    conn = get_connection()
     create_tables(conn)
     
     # Clear existing data

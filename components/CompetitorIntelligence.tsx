@@ -110,9 +110,26 @@ function inferAction(event: CompetitorEvent) {
 }
 
 function inferSoWhat(event: CompetitorEvent) {
+  if (event.walmart_actionability_context) return event.walmart_actionability_context;
   if (event.why_walmart_cares) return event.why_walmart_cares;
   if (event.security_implication) return event.security_implication;
   return 'Potential downstream impact on Walmart security, trust, or operating resilience requires analyst review.';
+}
+
+function correlationSummary(event: CompetitorEvent) {
+  if (event.correlation_status === 'MATCHED') {
+    const vendor = event.matched_vendor_name || 'tracked vendor';
+    const confidence = (event.match_label || 'MATCHED').replace(/_/g, ' ');
+    const projectCount = event.linked_active_projects_count || 0;
+    return `Vendor match: ${vendor} (${confidence}) · active projects: ${projectCount}`;
+  }
+  if (event.correlation_status === 'AMBIGUOUS') {
+    const cands = (event.candidate_vendor_names || []).slice(0, 3).join(', ');
+    return cands
+      ? `Ambiguous vendor correlation — review candidates: ${cands}`
+      : 'Ambiguous vendor correlation — analyst review required';
+  }
+  return 'No deterministic vendor/project linkage detected yet';
 }
 
 // Component for logo with fallback to letter avatar
@@ -430,6 +447,9 @@ export function CompetitorIntelligence() {
                     <p className="text-[11px]" style={{ color: 'var(--s-text-dim)' }}>
                       <span className="font-bold">Proposed owner:</span> {inferOwner(event)}
                     </p>
+                    <p className="text-[11px] mt-1" style={{ color: '#93c5fd' }}>
+                      {correlationSummary(event)}
+                    </p>
                   </div>
                 );
               })}
@@ -640,11 +660,15 @@ export function CompetitorIntelligence() {
                             )}
                           </div>
 
-                          {event.why_walmart_cares && (
+                          {(event.walmart_actionability_context || event.why_walmart_cares) && (
                             <p className="text-sm mt-2" style={{ color: '#93c5fd' }}>
-                              <strong>Why Walmart Cares:</strong> {event.why_walmart_cares}
+                              <strong>Why Walmart Cares:</strong> {event.walmart_actionability_context || event.why_walmart_cares}
                             </p>
                           )}
+
+                          <p className="text-xs mt-2" style={{ color: 'var(--s-text-dim)' }}>
+                            <strong>Correlation:</strong> {correlationSummary(event)}
+                          </p>
 
                           {event.detailed_description && (
                             <p className="text-sm mt-2" style={{ color: 'var(--s-text-muted)' }}>

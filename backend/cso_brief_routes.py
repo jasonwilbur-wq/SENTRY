@@ -53,11 +53,14 @@ from cso_brief_helpers import (
     fetch_brief_item,
     fetch_brief_items,
     fetch_candidate_events,
+    partition_events_by_readiness,
+    summarize_exclusions,
     log_brief_audit,
     require_brief_editable,
     run_validation,
     serialize_brief,
     utcnow_iso,
+    apply_analyst_action_guardrails,
 )
 
 ROUTER = APIRouter(prefix="/api/cso-briefs", tags=["cso-briefs"])
@@ -78,7 +81,7 @@ def generate_brief(
 
     conn = get_connection()
     try:
-        events = fetch_candidate_events(
+        candidate_events = fetch_candidate_events(
             conn,
             date_from=filters.date_from,
             date_to=filters.date_to,
@@ -91,6 +94,9 @@ def generate_brief(
             date_to=filters.date_to,
             competitors=filters.competitor,
         )
+
+        included_events, excluded_events = partition_events_by_readiness(candidate_events)
+        exclusion_summary = summarize_exclusions(excluded_events, cap=20)
 
         brief_id = str(uuid.uuid4())
         now = utcnow_iso()
@@ -105,7 +111,7 @@ def generate_brief(
             now=now,
         )
 
-        items = create_brief_items(conn, brief_id=brief_id, events=events)
+        items = create_brief_items(conn, brief_id=brief_id, events=included_events)
 
         log_brief_audit(
             conn,
@@ -116,8 +122,10 @@ def generate_brief(
                 "title": body.title,
                 "period_start": body.period_start,
                 "period_end": body.period_end,
-                "included_count": len(events),
+                "included_count": len(included_events),
                 "candidate_count": candidate_count,
+                "excluded_count": exclusion_summary["excluded_count"],
+                "exclusion_reason_counts": exclusion_summary["exclusion_reason_counts"],
                 "max_items": max_items,
             }),
         )
@@ -130,8 +138,18 @@ def generate_brief(
     assert brief_row is not None
     return GenerateResponse(
         brief=serialize_brief(brief_row, items),
-        included_count=len(events),
+        included_count=len(included_events),
         candidate_count=candidate_count,
+        excluded_count=exclusion_summary["excluded_count"],
+        exclusion_reason_counts=exclusion_summary["exclusion_reason_counts"],
+        excluded_items=exclusion_summary["excluded_items"],
+        preflight={
+            "candidate_count": candidate_count,
+            "included_count": len(included_events),
+            "excluded_count": exclusion_summary["excluded_count"],
+            "exclusion_reason_counts": exclusion_summary["exclusion_reason_counts"],
+            "excluded_items": exclusion_summary["excluded_items"],
+        },
     )
 
 
@@ -165,7 +183,7 @@ def patch_brief(
 ) -> BriefOut:
     """Edit brief metadata (executive_summary, review_notes).
 
-    Only allowed in DRAFT or IN_REVIEW states.
+    Only allowed in DRAFT or CHANGES_REQUESTED states.
     """
     conn = get_connection()
     try:
@@ -226,7 +244,7 @@ def patch_item(
 ) -> BriefItemOut:
     """Edit a brief item's analyst fields.
 
-    Only allowed in DRAFT or IN_REVIEW states.
+    Only allowed in DRAFT or CHANGES_REQUESTED states.
     frozen_payload is never mutated.
     """
     conn = get_connection()
@@ -244,11 +262,34 @@ def patch_item(
         updates: dict[str, Any] = {}
 
         for field in ("rank", "analyst_commentary", "uncertainty_note",
-                      "owner_assignment", "include_in_summary"):
+                      "owner_assignment", "include_in_summary", "analyst_status", "analyst_note"):
             val = getattr(body, field)
             if val is not None:
                 old_vals[field] = item_row.get(field)
                 updates[field] = val
+
+        if body.analyst_decision is not None:
+            decision, source, include_flag = apply_analyst_action_guardrails(
+                frozen_payload=item_row.get("frozen_payload") or {},
+                action=body.analyst_decision,
+                analyst_status=(body.analyst_status or item_row.get("analyst_status") or "unreviewed"),
+            )
+            note_for_decision = (body.analyst_note if body.analyst_note is not None else item_row.get("analyst_note") or "").strip()
+            if source == "analyst_override_recommendation" and not note_for_decision:
+                raise HTTPException(
+                    status_code=422,
+                    detail="Analyst note is required when overriding recommendation",
+                )
+
+            old_vals["analyst_decision"] = item_row.get("analyst_decision")
+            old_vals["analyst_decision_source"] = item_row.get("analyst_decision_source")
+            old_vals["analyst_decided_at"] = item_row.get("analyst_decided_at")
+            updates["analyst_decision"] = decision
+            updates["analyst_decision_source"] = source
+            updates["analyst_decided_at"] = utcnow_iso()
+            if body.include_in_summary is None:
+                old_vals["include_in_summary"] = item_row.get("include_in_summary")
+                updates["include_in_summary"] = include_flag
 
         if not updates:
             return BriefItemOut(**item_row)
@@ -289,8 +330,11 @@ def validate_brief(
 ) -> ValidateResponse:
     """Run quality-gate checks and persist the result.
 
-    Validates against frozen_payload (the trust anchor) and item-level
-    analyst fields.  Does NOT query live competitor_events rows.
+    Validates against persisted draft items only. Generation has already
+    filtered out readiness-blocking candidate events, so this endpoint checks
+    the frozen_payload trust anchor plus item-level analyst fields for the
+    items that actually made it into the draft. It does NOT query live
+    competitor_events rows.
     """
     conn = get_connection()
     try:
@@ -328,10 +372,15 @@ def transition_brief(
     """Advance or revert a brief through the state machine.
 
     Allowed transitions (role):
-      DRAFT → IN_REVIEW        (analyst/admin)
-      IN_REVIEW → DRAFT        (analyst/admin)
-      IN_REVIEW → APPROVED     (admin only — re-runs validation gate)
-      APPROVED → PUBLISHED_DRAFT (admin only)
+      DRAFT → IN_REVIEW                 (analyst/admin submit)
+      IN_REVIEW → CHANGES_REQUESTED     (admin only send-back)
+      CHANGES_REQUESTED → IN_REVIEW     (analyst/admin resubmit)
+      IN_REVIEW → APPROVED              (admin only — re-runs validation gate)
+      APPROVED → PUBLISHED_DRAFT        (admin only)
+
+    Reviewer decisions are first-class controls:
+      - send-back requires reviewer rationale
+      - approval requires reviewer notes plus explicit attestation
     """
     conn = get_connection()
     try:
@@ -360,7 +409,28 @@ def transition_brief(
 
         # ── Approval gate: re-run validation server-side ───────────────
         validation_result: ValidateResponse | None = None
-        if to_status == "APPROVED":
+        decision_action: str | None = None
+        reviewer_notes = body.reviewer_notes.strip()
+        transition_note = body.note.strip()
+
+        if to_status == "CHANGES_REQUESTED":
+            if not reviewer_notes:
+                raise HTTPException(
+                    status_code=422,
+                    detail="Reviewer rationale is required when requesting changes",
+                )
+            decision_action = "review_changes_requested"
+        elif to_status == "APPROVED":
+            if not reviewer_notes:
+                raise HTTPException(
+                    status_code=422,
+                    detail="Reviewer notes are required for approval",
+                )
+            if not body.reviewer_attest_ready:
+                raise HTTPException(
+                    status_code=422,
+                    detail="Reviewer attestation is required for approval",
+                )
             validation_result = run_validation(conn, brief_row)
             if not validation_result.passed:
                 raise HTTPException(
@@ -372,11 +442,11 @@ def transition_brief(
                         ],
                     },
                 )
-            # Persist fresh quality_gate_result
             conn.execute(
                 "UPDATE cso_briefs SET quality_gate_result = ? WHERE id = ?",
                 (validation_result.model_dump_json(), brief_id),
             )
+            decision_action = "review_approved"
 
         # ── Apply transition ───────────────────────────────────────────
         now = utcnow_iso()
@@ -386,9 +456,36 @@ def transition_brief(
         if to_status == "IN_REVIEW":
             stamp_cols += ["submitted_at = ?", "submitted_by = ?"]
             stamp_vals += [now, user.id]
+        elif to_status == "CHANGES_REQUESTED":
+            stamp_cols += [
+                "reviewed_at = ?",
+                "reviewed_by = ?",
+                "reviewer_notes = ?",
+                "reviewer_attestation = ?",
+                "changes_requested_at = ?",
+                "changes_requested_by = ?",
+                "changes_requested_reason = ?",
+            ]
+            stamp_vals += [now, user.id, reviewer_notes, "", now, user.id, reviewer_notes]
         elif to_status == "APPROVED":
-            stamp_cols += ["approved_at = ?", "approved_by = ?"]
-            stamp_vals += [now, user.id]
+            stamp_cols += [
+                "reviewed_at = ?",
+                "reviewed_by = ?",
+                "reviewer_notes = ?",
+                "reviewer_attestation = ?",
+                "approved_at = ?",
+                "approved_by = ?",
+                "changes_requested_reason = ?",
+            ]
+            stamp_vals += [
+                now,
+                user.id,
+                reviewer_notes,
+                "READY_FOR_APPROVAL",
+                now,
+                user.id,
+                "",
+            ]
         elif to_status == "PUBLISHED_DRAFT":
             stamp_cols += ["published_draft_at = ?", "published_draft_by = ?"]
             stamp_vals += [now, user.id]
@@ -399,12 +496,39 @@ def transition_brief(
             stamp_vals,
         )
 
+        audit_new_value = {
+            "status": to_status,
+            "note": transition_note,
+        }
+        if reviewer_notes:
+            audit_new_value["reviewer_notes"] = reviewer_notes
+        if body.reviewer_attest_ready:
+            audit_new_value["reviewer_attest_ready"] = True
+
         log_brief_audit(
             conn, brief_id=brief_id, action="transition",
             actor_id=user.id,
             old_value=json.dumps({"status": from_status}),
-            new_value=json.dumps({"status": to_status, "note": body.note}),
+            new_value=json.dumps(audit_new_value),
         )
+        if decision_action:
+            log_brief_audit(
+                conn,
+                brief_id=brief_id,
+                action=decision_action,
+                actor_id=user.id,
+                old_value=json.dumps({"status": from_status}),
+                new_value=json.dumps(audit_new_value),
+            )
+        elif to_status == "IN_REVIEW" and from_status == "CHANGES_REQUESTED":
+            log_brief_audit(
+                conn,
+                brief_id=brief_id,
+                action="review_resubmitted",
+                actor_id=user.id,
+                old_value=json.dumps({"status": from_status}),
+                new_value=json.dumps(audit_new_value),
+            )
         conn.commit()
 
         brief_row = fetch_brief(conn, brief_id)
@@ -419,6 +543,7 @@ def transition_brief(
         to_status=to_status,
         transitioned_by=user.id,
         validation=validation_result,
+        decision_action=decision_action,
     )
 
 

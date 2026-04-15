@@ -1,4 +1,14 @@
-export type CSOBriefStatus = 'DRAFT' | 'IN_REVIEW' | 'APPROVED' | 'PUBLISHED_DRAFT';
+export type CSOBriefStatus = 'DRAFT' | 'IN_REVIEW' | 'CHANGES_REQUESTED' | 'APPROVED' | 'PUBLISHED_DRAFT';
+
+export type AnalystStatus = 'unreviewed' | 'in_review' | 'decided' | 'blocked';
+export type AnalystDecision =
+  | 'accept_recommendation'
+  | 'include_in_brief'
+  | 'escalate_for_review'
+  | 'request_additional_evidence'
+  | 'monitor_only'
+  | 'hold'
+  | 'dismiss';
 
 export interface CSOBriefItem {
   id: string;
@@ -9,6 +19,11 @@ export interface CSOBriefItem {
   uncertainty_note: string;
   owner_assignment: string;
   include_in_summary: number;
+  analyst_status: AnalystStatus;
+  analyst_decision: string;
+  analyst_note: string;
+  analyst_decided_at: string | null;
+  analyst_decision_source: string;
   frozen_payload: Record<string, any>;
   created_at: string;
   updated_at: string;
@@ -26,6 +41,13 @@ export interface CSOBrief {
   updated_at: string;
   submitted_at: string | null;
   submitted_by: string | null;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  reviewer_notes: string;
+  reviewer_attestation: string;
+  changes_requested_at: string | null;
+  changes_requested_by: string | null;
+  changes_requested_reason: string;
   approved_at: string | null;
   approved_by: string | null;
   published_draft_at: string | null;
@@ -57,6 +79,7 @@ export interface CSOBriefTransitionResponse {
   to_status: CSOBriefStatus;
   transitioned_by: string;
   validation: ValidationResult | null;
+  decision_action: string | null;
 }
 
 export interface CSOBriefSnapshotItem {
@@ -79,6 +102,30 @@ export interface CSOBriefSnapshotItem {
   uncertainty_note: string;
   owner_assignment: string;
   include_in_summary: number;
+
+  // Actionable-intelligence decision model
+  decision_title?: string | null;
+  decision_summary?: string | null;
+  evidence_reference?: string | null;
+  rationale?: string | null;
+  confidence?: string | null;
+  severity?: string | null;
+  likelihood?: string | null;
+  impact_score?: number | null;
+  likelihood_score?: number | null;
+  priority_score?: number | null;
+  recommended_action?: string | null;
+  reason_codes?: string[];
+  explanation?: string | null;
+  actionable_now?: number;
+  readiness_blocked?: number;
+  scoring_version?: string | null;
+  decision_model_version?: string | null;
+  analyst_status?: AnalystStatus;
+  analyst_decision?: string;
+  analyst_note?: string;
+  analyst_decided_at?: string | null;
+  analyst_decision_source?: string;
 }
 
 export interface CSOBriefSnapshot {

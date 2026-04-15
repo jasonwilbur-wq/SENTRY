@@ -1,21 +1,22 @@
-"""Tests for CSO Brief transition, snapshot, and audit (Steps 5-7 MVP).
+"""Tests for CSO Brief transition, snapshot, and audit.
 
 Covers:
  1.  analyst can transition DRAFT -> IN_REVIEW
- 2.  analyst can transition IN_REVIEW -> DRAFT
+ 2.  reviewer can send back IN_REVIEW -> CHANGES_REQUESTED with rationale
  3.  analyst cannot transition IN_REVIEW -> APPROVED (403)
  4.  analyst cannot transition APPROVED -> PUBLISHED_DRAFT (403)
- 5.  admin can transition IN_REVIEW -> APPROVED when validation passes
+ 5.  admin can transition IN_REVIEW -> APPROVED when validation + attestation pass
  6.  approval blocked with 422 when validation fails
- 7.  admin can transition APPROVED -> PUBLISHED_DRAFT
+ 7.  admin can publish APPROVED -> PUBLISHED_DRAFT
  8.  invalid transition blocked (409)
  9.  missing brief returns 404 for transition
-10.  transition writes audit row with status diff and note
+10.  reviewer decision writes audit rows with payload details
 11.  approval transition refreshes/persists quality_gate_result
 12.  snapshot returns read-only draft payload
 13.  snapshot uses frozen payload values, not live competitor row mutations
 14.  audit endpoint returns paginated records newest first
 15.  unauthenticated transition/snapshot/audit rejected
+16.  analyst can revise/resubmit CHANGES_REQUESTED -> IN_REVIEW
 """
 from __future__ import annotations
 
@@ -152,23 +153,42 @@ class TestAnalystDraftToInReview:
         assert body["transitioned_by"] == "analyst_bob"
 
 
-# ── Test 2: analyst can transition IN_REVIEW -> DRAFT ─────────────────────────
+# ── Test 2: reviewer can send back IN_REVIEW -> CHANGES_REQUESTED ─────────────
 
-class TestAnalystInReviewToDraft:
-    def test_revert_succeeds(self, client):
+class TestReviewerSendBack:
+    def test_send_back_succeeds_with_rationale(self, client):
         brief, _ = _generate_brief(client)
         _set_brief_status(brief["id"], "IN_REVIEW")
 
         resp = client.post(f"/api/cso-briefs/{brief['id']}/transition", json={
-            "to_status": "DRAFT",
-            "note": "Needs more work",
-        }, headers=USER)
+            "to_status": "CHANGES_REQUESTED",
+            "note": "Need analyst revisions",
+            "reviewer_notes": "Add owner detail and tighten summary.",
+        }, headers=ADMIN)
 
         assert resp.status_code == 200
         body = resp.json()
         assert body["from_status"] == "IN_REVIEW"
-        assert body["to_status"] == "DRAFT"
-        assert body["brief"]["status"] == "DRAFT"
+        assert body["to_status"] == "CHANGES_REQUESTED"
+        assert body["decision_action"] == "review_changes_requested"
+        assert body["brief"]["status"] == "CHANGES_REQUESTED"
+        assert body["brief"]["reviewed_by"] == "admin_alice"
+        assert body["brief"]["changes_requested_by"] == "admin_alice"
+        assert body["brief"]["reviewer_notes"] == "Add owner detail and tighten summary."
+        assert body["brief"]["changes_requested_reason"] == "Add owner detail and tighten summary."
+
+    def test_send_back_requires_rationale(self, client):
+        brief, _ = _generate_brief(client)
+        _set_brief_status(brief["id"], "IN_REVIEW")
+
+        resp = client.post(f"/api/cso-briefs/{brief['id']}/transition", json={
+            "to_status": "CHANGES_REQUESTED",
+            "note": "Need analyst revisions",
+            "reviewer_notes": "   ",
+        }, headers=ADMIN)
+
+        assert resp.status_code == 422
+        assert resp.json()["detail"] == "Reviewer rationale is required when requesting changes"
 
 
 # ── Test 3: analyst cannot transition IN_REVIEW -> APPROVED ───────────────────
@@ -211,6 +231,8 @@ class TestAdminApproveValid:
         resp = client.post(f"/api/cso-briefs/{brief['id']}/transition", json={
             "to_status": "APPROVED",
             "note": "Looks good",
+            "reviewer_notes": "Reviewed all included items and summary.",
+            "reviewer_attest_ready": True,
         }, headers=ADMIN)
 
         assert resp.status_code == 200
@@ -218,6 +240,10 @@ class TestAdminApproveValid:
         assert body["brief"]["status"] == "APPROVED"
         assert body["brief"]["approved_at"] is not None
         assert body["brief"]["approved_by"] == "admin_alice"
+        assert body["brief"]["reviewed_by"] == "admin_alice"
+        assert body["brief"]["reviewer_notes"] == "Reviewed all included items and summary."
+        assert body["brief"]["reviewer_attestation"] == "READY_FOR_APPROVAL"
+        assert body["decision_action"] == "review_approved"
         # Validation result included
         assert body["validation"] is not None
         assert body["validation"]["passed"] is True
@@ -233,6 +259,8 @@ class TestAdminApproveInvalid:
 
         resp = client.post(f"/api/cso-briefs/{brief['id']}/transition", json={
             "to_status": "APPROVED",
+            "reviewer_notes": "I tried.",
+            "reviewer_attest_ready": True,
         }, headers=ADMIN)
 
         assert resp.status_code == 422
@@ -243,6 +271,25 @@ class TestAdminApproveInvalid:
         # Brief should still be IN_REVIEW
         get_resp = client.get(f"/api/cso-briefs/{brief['id']}", headers=ADMIN)
         assert get_resp.json()["status"] == "IN_REVIEW"
+
+    def test_requires_reviewer_notes_and_attestation(self, client):
+        brief, items = _generate_brief(client)
+        _make_brief_approval_ready(client, brief, items)
+        _set_brief_status(brief["id"], "IN_REVIEW")
+
+        missing_notes = client.post(f"/api/cso-briefs/{brief['id']}/transition", json={
+            "to_status": "APPROVED",
+            "reviewer_attest_ready": True,
+        }, headers=ADMIN)
+        assert missing_notes.status_code == 422
+        assert missing_notes.json()["detail"] == "Reviewer notes are required for approval"
+
+        missing_attestation = client.post(f"/api/cso-briefs/{brief['id']}/transition", json={
+            "to_status": "APPROVED",
+            "reviewer_notes": "Looks good.",
+        }, headers=ADMIN)
+        assert missing_attestation.status_code == 422
+        assert missing_attestation.json()["detail"] == "Reviewer attestation is required for approval"
 
 
 # ── Test 7: admin can publish draft ───────────────────────────────────────────
@@ -277,9 +324,9 @@ class TestInvalidTransition:
 
         assert resp.status_code == 409
 
-    def test_approved_to_draft_blocked(self, client):
+    def test_in_review_to_draft_blocked(self, client):
         brief, _ = _generate_brief(client)
-        _set_brief_status(brief["id"], "APPROVED")
+        _set_brief_status(brief["id"], "IN_REVIEW")
 
         resp = client.post(f"/api/cso-briefs/{brief['id']}/transition", json={
             "to_status": "DRAFT",
@@ -320,29 +367,37 @@ class TestTransitionNotFound:
 # ── Test 10: transition writes audit row ──────────────────────────────────────
 
 class TestTransitionAudit:
-    def test_audit_row_written(self, client):
+    def test_audit_rows_written_for_reviewer_decision(self, client):
         brief, _ = _generate_brief(client)
+        _set_brief_status(brief["id"], "IN_REVIEW")
 
         client.post(f"/api/cso-briefs/{brief['id']}/transition", json={
-            "to_status": "IN_REVIEW",
-            "note": "Submitting for review",
-        }, headers=USER)
+            "to_status": "CHANGES_REQUESTED",
+            "note": "Submitting review decision",
+            "reviewer_notes": "Please revise ownership and sharpen summary.",
+        }, headers=ADMIN)
 
         from database import get_connection
         conn = get_connection()
-        audit = conn.execute(
-            "SELECT * FROM cso_brief_audit_log WHERE brief_id = ? AND action = 'transition'",
+        transition_audit = conn.execute(
+            "SELECT * FROM cso_brief_audit_log WHERE brief_id = ? AND action = 'transition' ORDER BY id DESC LIMIT 1",
+            (brief["id"],),
+        ).fetchone()
+        decision_audit = conn.execute(
+            "SELECT * FROM cso_brief_audit_log WHERE brief_id = ? AND action = 'review_changes_requested' ORDER BY id DESC LIMIT 1",
             (brief["id"],),
         ).fetchone()
         conn.close()
 
-        assert audit is not None
-        assert audit["actor_id"] == "analyst_bob"
-        old = json.loads(audit["old_value"])
-        new = json.loads(audit["new_value"])
-        assert old["status"] == "DRAFT"
-        assert new["status"] == "IN_REVIEW"
-        assert new["note"] == "Submitting for review"
+        assert transition_audit is not None
+        assert decision_audit is not None
+        assert decision_audit["actor_id"] == "admin_alice"
+        old = json.loads(decision_audit["old_value"])
+        new = json.loads(decision_audit["new_value"])
+        assert old["status"] == "IN_REVIEW"
+        assert new["status"] == "CHANGES_REQUESTED"
+        assert new["note"] == "Submitting review decision"
+        assert new["reviewer_notes"] == "Please revise ownership and sharpen summary."
 
 
 # ── Test 11: approval refreshes/persists quality_gate_result ──────────────────
@@ -355,6 +410,8 @@ class TestApprovalPersistsValidation:
 
         client.post(f"/api/cso-briefs/{brief['id']}/transition", json={
             "to_status": "APPROVED",
+            "reviewer_notes": "Ready.",
+            "reviewer_attest_ready": True,
         }, headers=ADMIN)
 
         get_resp = client.get(f"/api/cso-briefs/{brief['id']}", headers=ADMIN)
@@ -394,9 +451,22 @@ class TestSnapshot:
         assert item["priority_tier"] == "CSO Brief"
         assert item["confidence_level"] == "high"
         assert item["why_walmart_cares"] == "Relevant to ops."
-        assert item["correlation_summary"] == "Relevant to ops."
+        assert item["correlation_summary"] == (
+            "No deterministic tracked-vendor/project correlation found yet for Amazon; "
+            "treat as broader market signal."
+        )
         assert item["owner_assignment"] == "CISO"
         assert item["rank"] == 1
+        assert item["priority_score"] is not None
+        assert item["recommended_action"] in {
+            "escalate_for_review",
+            "include_in_brief",
+            "monitor_only",
+            "request_additional_evidence",
+            "hold_due_to_readiness_issue",
+        }
+        assert isinstance(item["reason_codes"], list)
+        assert isinstance(item["explanation"], str)
 
     def test_snapshot_not_found(self, client):
         resp = client.get("/api/cso-briefs/no-such/snapshot", headers=USER)
@@ -498,7 +568,47 @@ class TestAuditEndpoint:
         assert resp.json()["limit"] == 200  # AUDIT_MAX_LIMIT
 
 
-# ── Test 15: unauthenticated transition/snapshot/audit rejected ───────────────
+# ── Test 15: analyst can revise/resubmit after changes requested ──────────────
+
+class TestAnalystResubmit:
+    def test_resubmit_flow_succeeds(self, client):
+        brief, items = _generate_brief(client)
+        _set_brief_status(brief["id"], "IN_REVIEW")
+        send_back = client.post(f"/api/cso-briefs/{brief['id']}/transition", json={
+            "to_status": "CHANGES_REQUESTED",
+            "reviewer_notes": "Please add clearer ownership.",
+        }, headers=ADMIN)
+        assert send_back.status_code == 200
+
+        patch_resp = client.patch(
+            f"/api/cso-briefs/{brief['id']}/items/{items[0]['id']}",
+            json={"owner_assignment": "CISO"},
+            headers=USER,
+        )
+        assert patch_resp.status_code == 200
+
+        resubmit = client.post(f"/api/cso-briefs/{brief['id']}/transition", json={
+            "to_status": "IN_REVIEW",
+            "note": "Updated per reviewer feedback",
+        }, headers=USER)
+        assert resubmit.status_code == 200
+        body = resubmit.json()
+        assert body["from_status"] == "CHANGES_REQUESTED"
+        assert body["to_status"] == "IN_REVIEW"
+        assert body["brief"]["status"] == "IN_REVIEW"
+
+        from database import get_connection
+        conn = get_connection()
+        audit = conn.execute(
+            "SELECT * FROM cso_brief_audit_log WHERE brief_id = ? AND action = 'review_resubmitted' ORDER BY id DESC LIMIT 1",
+            (brief["id"],),
+        ).fetchone()
+        conn.close()
+        assert audit is not None
+        assert json.loads(audit["new_value"])["status"] == "IN_REVIEW"
+
+
+# ── Test 16: unauthenticated transition/snapshot/audit rejected ───────────────
 
 class TestUnauthenticatedReject:
     def test_transition_requires_auth(self, client):

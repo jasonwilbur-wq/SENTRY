@@ -48,6 +48,15 @@ describe('CSOBriefViewPage', () => {
           uncertainty_note: 'Some uncertainty',
           owner_assignment: 'CISO',
           include_in_summary: 1,
+          priority_score: 91.2,
+          confidence: 'high',
+          severity: 'HIGH',
+          likelihood: 'LIKELY',
+          recommended_action: 'escalate_for_review',
+          reason_codes: ['HIGH_IMPACT', 'HIGH_LIKELIHOOD'],
+          explanation: 'Priority 91.2 based on impact 84 x likelihood 86.',
+          actionable_now: 1,
+          readiness_blocked: 0,
         },
       ],
     } as any);
@@ -60,8 +69,14 @@ describe('CSOBriefViewPage', () => {
 
     expect(screen.getByText(/draft only — human review required/i)).toBeInTheDocument();
     expect(screen.getByText(/draft artifact. not final leadership directive./i)).toBeInTheDocument();
+    expect(screen.getByText(/Visible:/i)).toBeInTheDocument();
     expect(screen.getByText(/amazon — event a/i)).toBeInTheDocument();
     expect(screen.getByText(/matched to project x/i)).toBeInTheDocument();
+    expect(screen.getByText(/Recommended action:/i)).toBeInTheDocument();
+    expect(screen.getByText(/HIGH_IMPACT, HIGH_LIKELIHOOD/i)).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Confidence: All')).toBeInTheDocument();
+    expect(screen.getByText(/Decision alignment:/i)).toBeInTheDocument();
+    expect(screen.getByText(/No decision/i)).toBeInTheDocument();
   });
 
   it('shows useful api errors', async () => {

@@ -19,8 +19,26 @@ MAX_ITEMS_CAP = 100
 ALLOWED_PRIORITY_TIERS = {"Leadership Watch", "CSO Brief"}
 ALLOWED_TRIAGE_STATUSES = {"REVIEWED", "ESCALATED"}
 
-# States where brief/item edits are permitted.
-EDITABLE_STATES = {"DRAFT", "IN_REVIEW"}
+# States where analyst/item edits are permitted.
+EDITABLE_STATES = {"DRAFT", "CHANGES_REQUESTED", "IN_REVIEW"}
+
+# Analyst action/state enums (compact, deterministic)
+ANALYST_ACTIONS = {
+    "accept_recommendation",
+    "include_in_brief",
+    "escalate_for_review",
+    "request_additional_evidence",
+    "monitor_only",
+    "hold",
+    "dismiss",
+}
+ANALYST_STATUSES = {"unreviewed", "in_review", "decided", "blocked"}
+ANALYST_DECISION_SOURCES = {
+    "analyst_manual",
+    "analyst_accept_recommendation",
+    "analyst_override_recommendation",
+}
+DECISION_MODEL_VERSION = "v1"
 
 # Confidence score → label mapping (used when confidence_level is absent).
 CONFIDENCE_BUCKETS: list[tuple[float, str]] = [
@@ -32,8 +50,9 @@ CONFIDENCE_BUCKETS: list[tuple[float, str]] = [
 # (from_status, to_status) → minimum required role ("user" or "admin").
 ALLOWED_TRANSITIONS: dict[tuple[str, str], str] = {
     ("DRAFT", "IN_REVIEW"): "user",
-    ("IN_REVIEW", "DRAFT"): "user",
+    ("IN_REVIEW", "CHANGES_REQUESTED"): "admin",
     ("IN_REVIEW", "APPROVED"): "admin",
+    ("CHANGES_REQUESTED", "IN_REVIEW"): "user",
     ("APPROVED", "PUBLISHED_DRAFT"): "admin",
 }
 
@@ -54,6 +73,7 @@ FROZEN_PAYLOAD_FIELDS: list[str] = [
     "escalate_to_cso",
     "why_walmart_cares",
     "walmart_actionability_context",
+    "correlation_summary",
     "matched_vendor_id",
     "matched_vendor_name",
     "match_method",
@@ -110,6 +130,11 @@ class BriefItemOut(BaseModel):
     uncertainty_note: str
     owner_assignment: str
     include_in_summary: int
+    analyst_status: str = "unreviewed"
+    analyst_decision: str = ""
+    analyst_note: str = ""
+    analyst_decided_at: str | None = None
+    analyst_decision_source: str = ""
     frozen_payload: dict[str, Any]
     created_at: str
     updated_at: str
@@ -127,6 +152,13 @@ class BriefOut(BaseModel):
     updated_at: str
     submitted_at: str | None
     submitted_by: str | None
+    reviewed_at: str | None
+    reviewed_by: str | None
+    reviewer_notes: str
+    reviewer_attestation: str
+    changes_requested_at: str | None
+    changes_requested_by: str | None
+    changes_requested_reason: str
     approved_at: str | None
     approved_by: str | None
     published_draft_at: str | None
@@ -138,10 +170,29 @@ class BriefOut(BaseModel):
     items: list[BriefItemOut]
 
 
+class ExcludedItemSummary(BaseModel):
+    competitor_event_id: int
+    competitor: str | None = None
+    event_title: str | None = None
+    readiness_issues: list[str]
+
+
+class GeneratePreflightSummary(BaseModel):
+    candidate_count: int
+    included_count: int
+    excluded_count: int
+    exclusion_reason_counts: dict[str, int]
+    excluded_items: list[ExcludedItemSummary]
+
+
 class GenerateResponse(BaseModel):
     brief: BriefOut
     included_count: int
     candidate_count: int
+    excluded_count: int
+    exclusion_reason_counts: dict[str, int]
+    excluded_items: list[ExcludedItemSummary]
+    preflight: GeneratePreflightSummary
 
 
 class PatchBriefRequest(BaseModel):
@@ -155,6 +206,10 @@ class PatchItemRequest(BaseModel):
     uncertainty_note: str | None = None
     owner_assignment: str | None = None
     include_in_summary: int | None = None
+    analyst_status: str | None = None
+    analyst_decision: str | None = None
+    analyst_note: str | None = None
+    analyst_decision_source: str | None = None
 
 
 class Violation(BaseModel):
@@ -174,6 +229,8 @@ class ValidateResponse(BaseModel):
 class TransitionRequest(BaseModel):
     to_status: str
     note: str = ""
+    reviewer_notes: str = ""
+    reviewer_attest_ready: bool = False
 
 
 class TransitionResponse(BaseModel):
@@ -182,6 +239,7 @@ class TransitionResponse(BaseModel):
     to_status: str
     transitioned_by: str
     validation: ValidateResponse | None = None
+    decision_action: str | None = None
 
 
 class SnapshotItemOut(BaseModel):
@@ -205,6 +263,30 @@ class SnapshotItemOut(BaseModel):
     uncertainty_note: str
     owner_assignment: str
     include_in_summary: int
+
+    # Actionable-intelligence model (decision-support surface)
+    decision_title: str | None = None
+    decision_summary: str | None = None
+    evidence_reference: str | None = None
+    rationale: str | None = None
+    confidence: str | None = None
+    severity: str | None = None
+    likelihood: str | None = None
+    impact_score: float | None = None
+    likelihood_score: float | None = None
+    priority_score: float | None = None
+    recommended_action: str | None = None
+    reason_codes: list[str] = Field(default_factory=list)
+    explanation: str | None = None
+    actionable_now: int = 0
+    readiness_blocked: int = 0
+    scoring_version: str | None = None
+    decision_model_version: str | None = None
+    analyst_status: str = "unreviewed"
+    analyst_decision: str = ""
+    analyst_note: str = ""
+    analyst_decided_at: str | None = None
+    analyst_decision_source: str = ""
 
 
 class SnapshotResponse(BaseModel):

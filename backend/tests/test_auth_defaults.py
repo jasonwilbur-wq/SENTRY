@@ -139,6 +139,15 @@ class TestNonAdminRejection:
         )
         assert resp.status_code == 403
 
+    def test_non_admin_cannot_review_extraction(self, client_default):
+        resp = client_default.patch(
+            "/api/admin/vars/any-var/review",
+            json={"action": "ACCEPT", "note": "nope"},
+            headers={"X-Sentry-User": "viewer_bob"},
+        )
+        assert resp.status_code == 403
+        assert "Admin privileges" in resp.json()["detail"]
+
     def test_non_admin_cannot_delete_project(self, client_default):
         """Non-admin user on require_admin route gets 403."""
         from database import get_connection
