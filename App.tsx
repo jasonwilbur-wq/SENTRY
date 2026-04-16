@@ -14,6 +14,7 @@ import { CSOIntelligence } from './components/CSOIntelligence';
 import ProjectDashboard3D from './components/ProjectDashboard3D';
 import { Sidebar } from './components/Sidebar';
 import { PageTransition } from './components/PageTransition';
+import { WalmartSpark } from './components/WalmartSpark';
 
 // ── View metadata ────────────────────────────────────────────────────────────
 
@@ -53,6 +54,10 @@ const VIEW_META: Record<ViewState, { title: string; subtitle: string }> = {
   [ViewState.ADMIN]: {
     title: 'VAR Administration',
     subtitle: 'Manage VAR reports, extract scores, and fix vendor linkage.',
+  },
+  [ViewState.WALMART_SPARK]: {
+    title: 'Walmart Spark',
+    subtitle: 'AI-powered vendor intelligence assistant — ask questions, get insights.',
   },
 };
 
@@ -131,6 +136,7 @@ const App: React.FC = () => {
                 {currentView === ViewState.REQUEST_LAB_VISIT  && <RequestLabVisit />}
                 {currentView === ViewState.ARCHITECTURE       && <ArchitectureGraph />}
                 {currentView === ViewState.ADMIN              && <AdminPanel />}
+                {currentView === ViewState.WALMART_SPARK      && <WalmartSpark />}
               </PageTransition>
             </div>
           </main>
