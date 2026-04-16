@@ -9,15 +9,34 @@
  *
  * All data comes from VendorContext (server-side filtering).
  */
-import React, { Fragment, useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useVendors } from '../context/VendorContext';
-import { Vendor, DirectoryStats, fetchStats } from '../services/api';
+import { Vendor } from '../services/api';
 import { VendorDetailModal } from './VendorDetailModal';
 import { Pagination } from './Pagination';
 import { VendorCard3D } from './VendorCard3D';
 import { VendorStatsPanel } from './VendorStatsPanel';
+import { useLazyRender } from '../hooks/useLazyRender';
 
 const PAGE_SIZE = 18; // divisible by 2 and 3 for clean grids
+
+// ── Lazy-rendered vendor card (defers 3D/SVG until near viewport) ───────────
+function LazyVendorCard({ vendor, onClick, immediate }: {
+  vendor: Vendor;
+  onClick: (v: Vendor) => void;
+  immediate: boolean;
+}) {
+  const { ref, isVisible } = useLazyRender({ rootMargin: '300px', immediate });
+  return (
+    <div ref={ref}>
+      {isVisible ? (
+        <VendorCard3D vendor={vendor} onClick={onClick} />
+      ) : (
+        <div className="h-56 rounded-2xl bg-slate-800/40 animate-pulse border border-slate-700/30" />
+      )}
+    </div>
+  );
+}
 
 // ── Risk quick-filter pills ──────────────────────────────────────────────────
 const RISK_PILLS = [
@@ -71,20 +90,11 @@ export const VendorDashboard: React.FC = () => {
     vendors, categories, loading, backendOffline,
     total, totalPages, search, category, page,
     setSearch, setCategory, setPage,
+    stats, statsLoading,
   } = useVendors();
 
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
   const [riskFilter,     setRiskFilter]     = useState('');
-  const [stats,          setStats]          = useState<DirectoryStats | null>(null);
-  const [statsLoading,   setStatsLoading]   = useState(true);
-
-  // ── Fetch stats once on mount ──────────────────────────────────────────────
-  useEffect(() => {
-    fetchStats()
-      .then(setStats)
-      .catch(() => { /* non-critical — just hide the panel */ })
-      .finally(() => setStatsLoading(false));
-  }, []);
 
   const handleOpenVendor  = useCallback((v: Vendor) => setSelectedVendor(v), []);
   const handleCloseModal  = useCallback(() => setSelectedVendor(null), []);
@@ -254,10 +264,13 @@ export const VendorDashboard: React.FC = () => {
 
       {!loading && displayed.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 grid-stagger">
-          {displayed.map(v => (
-            <Fragment key={v.id}>
-              <VendorCard3D vendor={v} onClick={handleOpenVendor} />
-            </Fragment>
+          {displayed.map((v, i) => (
+            <LazyVendorCard
+              key={v.id}
+              vendor={v}
+              onClick={handleOpenVendor}
+              immediate={i < 6}  /* first 2 rows render immediately */
+            />
           ))}
         </div>
       )}

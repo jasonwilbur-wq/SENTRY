@@ -23,6 +23,7 @@ from fastapi.responses import StreamingResponse, RedirectResponse
 
 from database import get_connection, init_db
 from admin_routes import router as admin_router
+from cache import ttl_cache
 from models import (
     CategoriesResponse,
     ChatRequest,
@@ -205,13 +206,18 @@ def list_vendors(
 # NOTE: /categories MUST be registered before /{vendor_id} to avoid shadowing
 @app.get("/api/vendors/categories", response_model=CategoriesResponse)
 def list_categories():
-    """Return distinct vendor categories."""
+    """Return distinct vendor categories (cached 5 min)."""
+    return CategoriesResponse(categories=_cached_categories())
+
+
+@ttl_cache(ttl_seconds=300, key_prefix="categories")
+def _cached_categories() -> list[str]:
     conn = get_connection()
     rows = conn.execute(
         "SELECT DISTINCT category FROM vendors ORDER BY category"
     ).fetchall()
     conn.close()
-    return CategoriesResponse(categories=[r["category"] for r in rows])
+    return [r["category"] for r in rows]
 
 
 @app.get("/api/vendors/{vendor_id}", response_model=VendorOut)
@@ -388,7 +394,13 @@ async def download_var_report(var_id: str):
 
 @app.get("/api/stats")
 def public_stats():
-    """Aggregate stats for the Vendor Directory dashboard panel."""
+    """Aggregate stats — delegates to cached computation."""
+    return _compute_public_stats()
+
+
+@ttl_cache(ttl_seconds=60, key_prefix="public_stats")
+def _compute_public_stats():
+    """Cached: aggregate stats computation (expensive — multiple GROUP BY queries)."""
     conn = get_connection()
 
     total_vendors = conn.execute("SELECT COUNT(*) FROM vendors").fetchone()[0]
@@ -574,6 +586,15 @@ def submit_lab_visit(data: dict):
     return FormResponse(success=True, ref_id=ref, message="Lab visit requested.")
 
 
+# ── Cache management ──────────────────────────────────────────────────────
+@app.post("/api/admin/cache/clear")
+def clear_cache():
+    """Clear all in-memory caches. Useful after bulk data imports."""
+    from cache import clear_all
+    clear_all()
+    return {"success": True, "message": "All caches cleared."}
+
+
 # ── Competitor Intelligence API ─────────────────────────────────────────────
 # NOTE: all /api/competitors/* routes must be registered before the generic
 #       /{vendor_id} route if that ever becomes a concern.
@@ -586,7 +607,12 @@ MONTHS_ORDERED = [
 
 @app.get("/api/competitors/stats")
 def competitor_stats():
-    """KPI totals across all competitor events."""
+    """KPI totals across all competitor events (cached 2 min)."""
+    return _cached_competitor_stats()
+
+
+@ttl_cache(ttl_seconds=120, key_prefix="competitor_stats")
+def _cached_competitor_stats():
     conn = get_connection()
     row = conn.execute("""
         SELECT
@@ -655,7 +681,12 @@ def competitor_monthly(top: int = Query(5, ge=1, le=10)):
 
 @app.get("/api/competitors/heatmap")
 def competitor_heatmap(top: int = Query(10, ge=1, le=20)):
-    """Competitor × category event-count matrix."""
+    """Competitor × category event-count matrix (cached 2 min)."""
+    return _cached_heatmap(top)
+
+
+@ttl_cache(ttl_seconds=120, key_prefix="competitor_heatmap")
+def _cached_heatmap(top: int):
     HEAT_CATS = [
         "Cyber", "ORC/Theft", "Recall", "Legal", "Strategic",
         "Operational", "Compliance", "Fraud", "Technology", "Other",

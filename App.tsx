@@ -1,19 +1,38 @@
-import React, { useState } from 'react';
+import React, { lazy, Suspense, useState } from 'react';
 import { ViewState } from './types';
 import { VendorProvider } from './context/VendorContext';
 import { ThemeProvider } from './context/ThemeContext';
-import { VendorDashboard } from './components/VendorDashboard';
-import { LandingPage } from './components/LandingPage';
-import { RequestAssessment } from './components/RequestAssessment';
-import { RequestLabVisit } from './components/RequestLabVisit';
-import { CompetitorAnalysis } from './components/CompetitorAnalysis';
-import { ArchitectureGraph } from './components/ArchitectureGraph';
-import { AdminPanel } from './components/AdminPanel';
-import { CompetitorIntel } from './components/CompetitorIntel';
-import { CSOIntelligence } from './components/CSOIntelligence';
-import ProjectDashboard3D from './components/ProjectDashboard3D';
 import { Sidebar } from './components/Sidebar';
 import { PageTransition } from './components/PageTransition';
+
+// ── Eager-loaded (always needed) ────────────────────────────────────────────
+import { LandingPage } from './components/LandingPage';
+
+// ── Lazy-loaded route components ────────────────────────────────────────────
+// Each view is code-split into its own chunk. Only loaded when the user
+// navigates to that view. Reduces initial bundle by ~200KB.
+const VendorDashboard  = lazy(() => import('./components/VendorDashboard').then(m => ({ default: m.VendorDashboard })));
+const ProjectDashboard3D = lazy(() => import('./components/ProjectDashboard3D'));
+const RequestAssessment = lazy(() => import('./components/RequestAssessment').then(m => ({ default: m.RequestAssessment })));
+const RequestLabVisit   = lazy(() => import('./components/RequestLabVisit').then(m => ({ default: m.RequestLabVisit })));
+const CompetitorAnalysis = lazy(() => import('./components/CompetitorAnalysis').then(m => ({ default: m.CompetitorAnalysis })));
+const ArchitectureGraph  = lazy(() => import('./components/ArchitectureGraph').then(m => ({ default: m.ArchitectureGraph })));
+const AdminPanel         = lazy(() => import('./components/AdminPanel').then(m => ({ default: m.AdminPanel })));
+const CompetitorIntel    = lazy(() => import('./components/CompetitorIntel').then(m => ({ default: m.CompetitorIntel })));
+const CSOIntelligence    = lazy(() => import('./components/CSOIntelligence').then(m => ({ default: m.CSOIntelligence })));
+const WalmartSpark       = lazy(() => import('./components/WalmartSpark').then(m => ({ default: m.WalmartSpark })));
+
+// ── Suspense fallback ───────────────────────────────────────────────────────
+function ViewLoader() {
+  return (
+    <div className="flex items-center justify-center h-64">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-2 border-wmt-blue border-t-transparent rounded-full animate-spin" />
+        <span className="text-xs text-slate-500 uppercase tracking-widest font-semibold">Loading</span>
+      </div>
+    </div>
+  );
+}
 
 // ── View metadata ────────────────────────────────────────────────────────────
 
@@ -53,6 +72,10 @@ const VIEW_META: Record<ViewState, { title: string; subtitle: string }> = {
   [ViewState.ADMIN]: {
     title: 'VAR Administration',
     subtitle: 'Manage VAR reports, extract scores, and fix vendor linkage.',
+  },
+  [ViewState.WALMART_SPARK]: {
+    title: 'Walmart Spark',
+    subtitle: 'AI-powered vendor intelligence assistant — ask questions, get insights.',
   },
 };
 
@@ -119,18 +142,21 @@ const App: React.FC = () => {
               </div>
             </header>
 
-            {/* Page body with animated view transitions */}
+            {/* Page body with animated view transitions + lazy loading */}
             <div className="flex-1 overflow-y-auto p-8">
               <PageTransition viewKey={currentView}>
-                {currentView === ViewState.DIRECTORY          && <VendorDashboard />}
-                {currentView === ViewState.PROJECTS           && <ProjectDashboard3D />}
-                {currentView === ViewState.REQUEST_ASSESSMENT && <RequestAssessment />}
-                {currentView === ViewState.COMPETITOR_ANALYSIS && <CompetitorAnalysis onNavigate={setCurrentView} />}
-                {currentView === ViewState.COMPETITOR_INTEL   && <CompetitorIntel />}
-                {currentView === ViewState.CSO_INTELLIGENCE   && <CSOIntelligence />}
-                {currentView === ViewState.REQUEST_LAB_VISIT  && <RequestLabVisit />}
-                {currentView === ViewState.ARCHITECTURE       && <ArchitectureGraph />}
-                {currentView === ViewState.ADMIN              && <AdminPanel />}
+                <Suspense fallback={<ViewLoader />}>
+                  {currentView === ViewState.DIRECTORY          && <VendorDashboard />}
+                  {currentView === ViewState.PROJECTS           && <ProjectDashboard3D />}
+                  {currentView === ViewState.REQUEST_ASSESSMENT && <RequestAssessment />}
+                  {currentView === ViewState.COMPETITOR_ANALYSIS && <CompetitorAnalysis onNavigate={setCurrentView} />}
+                  {currentView === ViewState.COMPETITOR_INTEL   && <CompetitorIntel />}
+                  {currentView === ViewState.CSO_INTELLIGENCE   && <CSOIntelligence />}
+                  {currentView === ViewState.REQUEST_LAB_VISIT  && <RequestLabVisit />}
+                  {currentView === ViewState.ARCHITECTURE       && <ArchitectureGraph />}
+                  {currentView === ViewState.ADMIN              && <AdminPanel />}
+                  {currentView === ViewState.WALMART_SPARK      && <WalmartSpark />}
+                </Suspense>
               </PageTransition>
             </div>
           </main>
