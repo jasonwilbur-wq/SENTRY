@@ -111,7 +111,7 @@ export interface VendorCard3DProps {
   decisionBand?: string;  // optional — set if VAR score is known
 }
 
-export const VendorCard3D: React.FC<VendorCard3DProps> = ({ vendor, onClick, decisionBand }) => {
+export const VendorCard3D: React.FC<VendorCard3DProps> = React.memo(({ vendor, onClick, decisionBand }) => {
   const risk   = RISK[vendor.risk_level] ?? RISK.Medium;
   const color  = catColor(vendor.category);
   const hasReport = vendor.report_url && !vendor.report_url.includes('google.com/search') && vendor.report_url !== '#';
@@ -288,4 +288,4 @@ export const VendorCard3D: React.FC<VendorCard3DProps> = ({ vendor, onClick, dec
       </div>
     </GlassCard3D>
   );
-};
+});
