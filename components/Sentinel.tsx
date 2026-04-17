@@ -8,13 +8,13 @@ interface Message {
   timestamp: Date;
 }
 
-export const WalmartSpark: React.FC = () => {
+export const Sentinel: React.FC = () => {
   const { vendors, stats } = useVendor();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
       role: 'assistant',
-      content: 'Hello! I\'m Walmart Spark, your AI-powered vendor intelligence assistant. I can help you analyze vendors, understand risk profiles, compare technologies, and discover insights from the SENTRY database. What would you like to know?',
+      content: 'Hello! I\'m Sentinel, your AI-powered vendor intelligence assistant. I can help you analyze vendors, understand risk profiles, compare technologies, and discover insights from the SENTRY database. What would you like to know?',
       timestamp: new Date(),
     },
   ]);
@@ -44,7 +44,7 @@ export const WalmartSpark: React.FC = () => {
 
     // Simulate AI response with context from vendors data
     setTimeout(() => {
-      const response = generateSparkResponse(inputValue, vendors, stats);
+      const response = generateSentinelResponse(inputValue, vendors, stats);
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
@@ -76,7 +76,7 @@ export const WalmartSpark: React.FC = () => {
             </div>
           </div>
           <div>
-            <h3 className="font-bold text-white">Walmart Spark</h3>
+            <h3 className="font-bold text-white">Sentinel</h3>
             <p className="text-xs text-slate-400">AI Vendor Intelligence Assistant</p>
           </div>
         </div>
@@ -136,7 +136,7 @@ export const WalmartSpark: React.FC = () => {
               </svg>
             </div>
             <div className="bg-slate-700/50 rounded-lg px-4 py-3 text-slate-400">
-              <p className="text-sm">Spark is thinking...</p>
+              <p className="text-sm">Sentinel is thinking...</p>
             </div>
           </div>
         )}
@@ -206,7 +206,7 @@ export const WalmartSpark: React.FC = () => {
   );
 };
 
-function generateSparkResponse(query: string, vendors: any[], stats: any): string {
+function generateSentinelResponse(query: string, vendors: any[], stats: any): string {
   const lowerQuery = query.toLowerCase();
 
   // Risk analysis
@@ -236,5 +236,5 @@ function generateSparkResponse(query: string, vendors: any[], stats: any): strin
   }
 
   // Default response
-  return `💡 Insight:\n\nBased on the SENTRY database with ${vendors.length} vendors and ${stats?.total_assessments || '1,000+'} assessments, I can help you:\n\n✓ Identify high-risk vendors and mitigation strategies\n✓ Compare vendor capabilities and maturity\n✓ Discover emerging technologies relevant to Walmart\n✓ Analyze market trends and competitive positioning\n✓ Recommend vendors for specific use cases\n\nTry asking about specific vendors, risk categories, or technology areas!`;
+  return `💡 Insight:\n\nBased on the SENTRY database with ${vendors.length} vendors and ${stats?.total_assessments || '1,000+'} assessments, I can help you:\n\n✓ Identify high-risk vendors and mitigation strategies\n✓ Compare vendor capabilities and maturity\n✓ Discover emerging technologies relevant to the enterprise\n✓ Analyze market trends and competitive positioning\n✓ Recommend vendors for specific use cases\n\nTry asking about specific vendors, risk categories, or technology areas!`;
 }
