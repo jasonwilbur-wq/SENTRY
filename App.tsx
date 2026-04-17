@@ -20,7 +20,8 @@ const ArchitectureGraph  = lazy(() => import('./components/ArchitectureGraph').t
 const AdminPanel         = lazy(() => import('./components/AdminPanel').then(m => ({ default: m.AdminPanel })));
 const CompetitorIntel    = lazy(() => import('./components/CompetitorIntel').then(m => ({ default: m.CompetitorIntel })));
 const CSOIntelligence    = lazy(() => import('./components/CSOIntelligence').then(m => ({ default: m.CSOIntelligence })));
-const WalmartSpark       = lazy(() => import('./components/WalmartSpark').then(m => ({ default: m.WalmartSpark })));
+const Sentinel          = lazy(() => import('./components/Sentinel').then(m => ({ default: m.Sentinel })));
+const HomeDashboard     = lazy(() => import('./components/HomeDashboard').then(m => ({ default: m.HomeDashboard })));
 
 // ── Suspense fallback ───────────────────────────────────────────────────────
 function ViewLoader() {
@@ -37,6 +38,10 @@ function ViewLoader() {
 // ── View metadata ────────────────────────────────────────────────────────────
 
 const VIEW_META: Record<ViewState, { title: string; subtitle: string }> = {
+  [ViewState.HOME]: {
+    title: 'Mission Control',
+    subtitle: 'Your real-time pulse on the SENTRY ecosystem — vendors, assessments, risks, and intelligence.',
+  },
   [ViewState.DIRECTORY]: {
     title: 'Vendor Directory',
     subtitle: 'Centralized record of all assessed Emerging Technology vendors.',
@@ -73,8 +78,8 @@ const VIEW_META: Record<ViewState, { title: string; subtitle: string }> = {
     title: 'VAR Administration',
     subtitle: 'Manage VAR reports, extract scores, and fix vendor linkage.',
   },
-  [ViewState.WALMART_SPARK]: {
-    title: 'Walmart Spark',
+  [ViewState.SENTINEL]: {
+    title: 'Sentinel',
     subtitle: 'AI-powered vendor intelligence assistant — ask questions, get insights.',
   },
 };
@@ -83,7 +88,7 @@ const VIEW_META: Record<ViewState, { title: string; subtitle: string }> = {
 
 const App: React.FC = () => {
   const [showLanding, setShowLanding] = useState(true);
-  const [currentView, setCurrentView] = useState<ViewState>(ViewState.DIRECTORY);
+  const [currentView, setCurrentView] = useState<ViewState>(ViewState.HOME);
 
   if (showLanding) {
     return <LandingPage onEnter={() => setShowLanding(false)} />;
@@ -146,6 +151,7 @@ const App: React.FC = () => {
             <div className="flex-1 overflow-y-auto p-8">
               <PageTransition viewKey={currentView}>
                 <Suspense fallback={<ViewLoader />}>
+                  {currentView === ViewState.HOME               && <HomeDashboard onNavigate={setCurrentView} />}
                   {currentView === ViewState.DIRECTORY          && <VendorDashboard />}
                   {currentView === ViewState.PROJECTS           && <ProjectDashboard3D />}
                   {currentView === ViewState.REQUEST_ASSESSMENT && <RequestAssessment />}
@@ -155,7 +161,7 @@ const App: React.FC = () => {
                   {currentView === ViewState.REQUEST_LAB_VISIT  && <RequestLabVisit />}
                   {currentView === ViewState.ARCHITECTURE       && <ArchitectureGraph />}
                   {currentView === ViewState.ADMIN              && <AdminPanel />}
-                  {currentView === ViewState.WALMART_SPARK      && <WalmartSpark />}
+                  {currentView === ViewState.SENTINEL           && <Sentinel />}
                 </Suspense>
               </PageTransition>
             </div>

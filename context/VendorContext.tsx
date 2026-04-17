@@ -139,5 +139,5 @@ export const useVendors = (): VendorContextValue => {
   return ctx;
 };
 
-/** @deprecated Use useVendors() instead — kept for backward compat with WalmartSpark */
+/** @deprecated Use useVendors() instead — kept for backward compat with Sentinel */
 export const useVendor = useVendors;
