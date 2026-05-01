@@ -18,25 +18,7 @@ import { VendorCard3D } from './VendorCard3D';
 import { VendorStatsPanel } from './VendorStatsPanel';
 import { useLazyRender } from '../hooks/useLazyRender';
 
-const PAGE_SIZE = VENDOR_PAGE_SIZE;
-
-// ── Lazy-rendered vendor card (defers 3D/SVG until near viewport) ───────────
-function LazyVendorCard({ vendor, onClick, immediate }: {
-  vendor: Vendor;
-  onClick: (v: Vendor) => void;
-  immediate: boolean;
-}) {
-  const { ref, isVisible } = useLazyRender({ rootMargin: '300px', immediate });
-  return (
-    <div ref={ref}>
-      {isVisible ? (
-        <VendorCard3D vendor={vendor} onClick={onClick} />
-      ) : (
-        <div className="h-56 rounded-2xl bg-slate-800/40 animate-pulse border border-slate-700/30" />
-      )}
-    </div>
-  );
-}
+const PAGE_SIZE = 24;
 
 // ── Lazy-rendered vendor card (defers 3D/SVG until near viewport) ───────────
 function LazyVendorCard({ vendor, onClick, immediate }: {

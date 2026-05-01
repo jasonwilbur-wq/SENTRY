@@ -1,67 +1,37 @@
-import React, { lazy, Suspense, useState } from 'react';
+import React, { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { ViewState } from './types';
 import { VendorProvider } from './context/VendorContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { AuthProvider } from './context/AuthContext';
 import { Sidebar } from './components/Sidebar';
 import { PageTransition } from './components/PageTransition';
-import { trackEvent, trackView } from './services/analytics';
 import { ViewErrorBoundary } from './components/ViewErrorBoundary';
+import { trackEvent, trackView } from './services/analytics';
 
 // ── Eager-loaded (always needed) ────────────────────────────────────────────
 import { LandingPage } from './components/LandingPage';
 
 // ── Lazy-loaded route components ────────────────────────────────────────────
-// Each view is code-split into its own chunk. Only loaded when the user
-// navigates to that view. Reduces initial bundle by ~200KB.
-const VendorDashboard  = lazy(() => import('./components/VendorDashboard').then(m => ({ default: m.VendorDashboard })));
-const ProjectDashboard3D = lazy(() => import('./components/ProjectDashboard3D'));
-const HomeDashboard = lazy(() => import('./components/HomeDashboard').then(m => ({ default: m.HomeDashboard })));
-const RequestAssessment = lazy(() => import('./components/RequestAssessment').then(m => ({ default: m.RequestAssessment })));
-const RequestLabVisit   = lazy(() => import('./components/RequestLabVisit').then(m => ({ default: m.RequestLabVisit })));
-const RequestQueue      = lazy(() => import('./components/RequestQueue').then(m => ({ default: m.RequestQueue })));
-const CompetitorAnalysis = lazy(() => import('./components/CompetitorAnalysis').then(m => ({ default: m.CompetitorAnalysis })));
-const ArchitectureGraph  = lazy(() => import('./components/ArchitectureGraph').then(m => ({ default: m.ArchitectureGraph })));
-const AdminPanel         = lazy(() => import('./components/AdminPanel').then(m => ({ default: m.AdminPanel })));
-const CompetitorIntel    = lazy(() => import('./components/CompetitorIntel').then(m => ({ default: m.CompetitorIntel })));
-const CSOIntelligence    = lazy(() => import('./components/CSOIntelligence').then(m => ({ default: m.CSOIntelligence })));
-const IncidentIntelligence = lazy(() => import('./components/IncidentIntelligence').then(m => ({ default: m.IncidentIntelligence })));
+const VendorDashboard        = lazy(() => import('./components/VendorDashboard').then(m => ({ default: m.VendorDashboard })));
+const ProjectDashboard3D     = lazy(() => import('./components/ProjectDashboard3D'));
+const HomeDashboard          = lazy(() => import('./components/HomeDashboard').then(m => ({ default: m.HomeDashboard })));
+const RequestAssessment      = lazy(() => import('./components/RequestAssessment').then(m => ({ default: m.RequestAssessment })));
+const RequestLabVisit        = lazy(() => import('./components/RequestLabVisit').then(m => ({ default: m.RequestLabVisit })));
+const RequestQueue           = lazy(() => import('./components/RequestQueue').then(m => ({ default: m.RequestQueue })));
+const CompetitorAnalysis     = lazy(() => import('./components/CompetitorAnalysis').then(m => ({ default: m.CompetitorAnalysis })));
+const ArchitectureGraph      = lazy(() => import('./components/ArchitectureGraph').then(m => ({ default: m.ArchitectureGraph })));
+const AdminPanel             = lazy(() => import('./components/AdminPanel').then(m => ({ default: m.AdminPanel })));
+const CompetitorIntel        = lazy(() => import('./components/CompetitorIntel').then(m => ({ default: m.CompetitorIntel })));
+const CSOIntelligence        = lazy(() => import('./components/CSOIntelligence').then(m => ({ default: m.CSOIntelligence })));
+const IncidentIntelligence   = lazy(() => import('./components/IncidentIntelligence').then(m => ({ default: m.IncidentIntelligence })));
 const RegulatoryIntelligence = lazy(() => import('./components/RegulatoryIntelligence').then(m => ({ default: m.RegulatoryIntelligence })));
-const VendorRiskMap3D   = lazy(() => import('./components/VendorRiskMap3D').then(m => ({ default: m.VendorRiskMap3D })));
-const WalmartSpark       = lazy(() => import('./components/WalmartSpark').then(m => ({ default: m.WalmartSpark })));
-const CommandPalette     = lazy(() => import('./components/CommandPalette').then(m => ({ default: m.CommandPalette })));
+const VendorRiskMap3D        = lazy(() => import('./components/VendorRiskMap3D'));
+const WalmartSpark           = lazy(() => import('./components/WalmartSpark').then(m => ({ default: m.WalmartSpark })));
+const Sentinel               = lazy(() => import('./components/Sentinel').then(m => ({ default: m.Sentinel })));
+const CommandPalette         = lazy(() => import('./components/CommandPalette').then(m => ({ default: m.CommandPalette })));
 
 const PLATFORM_ENTERED_KEY = 'sentry.platform.entered';
-const PLATFORM_VIEW_KEY = 'sentry.platform.view';
-
-// ── Suspense fallback ───────────────────────────────────────────────────────
-function ViewLoader() {
-  return (
-    <div className="flex items-center justify-center h-64">
-      <div className="flex flex-col items-center gap-3">
-        <div className="w-8 h-8 border-2 border-wmt-blue border-t-transparent rounded-full animate-spin" />
-        <span className="text-xs text-slate-500 uppercase tracking-widest font-semibold">Loading</span>
-      </div>
-    </div>
-  );
-}
-
-// ── Eager-loaded (always needed) ────────────────────────────────────────────
-import { LandingPage } from './components/LandingPage';
-
-// ── Lazy-loaded route components ────────────────────────────────────────────
-// Each view is code-split into its own chunk. Only loaded when the user
-// navigates to that view. Reduces initial bundle by ~200KB.
-const VendorDashboard  = lazy(() => import('./components/VendorDashboard').then(m => ({ default: m.VendorDashboard })));
-const ProjectDashboard3D = lazy(() => import('./components/ProjectDashboard3D'));
-const RequestAssessment = lazy(() => import('./components/RequestAssessment').then(m => ({ default: m.RequestAssessment })));
-const RequestLabVisit   = lazy(() => import('./components/RequestLabVisit').then(m => ({ default: m.RequestLabVisit })));
-const CompetitorAnalysis = lazy(() => import('./components/CompetitorAnalysis').then(m => ({ default: m.CompetitorAnalysis })));
-const ArchitectureGraph  = lazy(() => import('./components/ArchitectureGraph').then(m => ({ default: m.ArchitectureGraph })));
-const AdminPanel         = lazy(() => import('./components/AdminPanel').then(m => ({ default: m.AdminPanel })));
-const CompetitorIntel    = lazy(() => import('./components/CompetitorIntel').then(m => ({ default: m.CompetitorIntel })));
-const CSOIntelligence    = lazy(() => import('./components/CSOIntelligence').then(m => ({ default: m.CSOIntelligence })));
-const Sentinel          = lazy(() => import('./components/Sentinel').then(m => ({ default: m.Sentinel })));
-const HomeDashboard     = lazy(() => import('./components/HomeDashboard').then(m => ({ default: m.HomeDashboard })));
+const PLATFORM_VIEW_KEY    = 'sentry.platform.view';
 
 // ── Suspense fallback ───────────────────────────────────────────────────────
 function ViewLoader() {
@@ -76,93 +46,160 @@ function ViewLoader() {
 }
 
 // ── View metadata ────────────────────────────────────────────────────────────
-
-const VIEW_META: Record<ViewState, { title: string; subtitle: string }> = {
+const VIEW_META: Record<ViewState, { title: string; subtitle: string; eyebrow: string }> = {
   [ViewState.HOME]: {
-    title: 'Mission Control',
-    subtitle: 'Your real-time pulse on the SENTRY ecosystem — vendors, assessments, risks, and intelligence.',
+    eyebrow:  'Today',
+    title:    'Mission Control',
+    subtitle: 'Your live pulse on every vendor, project, and signal moving through SENTRY.',
   },
   [ViewState.DIRECTORY]: {
-    title: 'Vendor Directory',
-    subtitle: 'Centralized record of all assessed Emerging Technology vendors.',
+    eyebrow:  'Vendors',
+    title:    'Vendor Directory',
+    subtitle: 'Every assessed Emerging Technology vendor — searchable, sortable, exportable.',
   },
   [ViewState.PROJECTS]: {
-    title: 'Project Portfolio',
-    subtitle: '3D visualization of all EST projects — 14 active projects, $5.05M portfolio value.',
+    eyebrow:  'Projects',
+    title:    'Project Portfolio',
+    subtitle: '3D portfolio view — 14 active projects, $5.05M committed.',
   },
   [ViewState.REQUEST_ASSESSMENT]: {
-    title: 'Security Assessment',
-    subtitle: 'Initiate a GRC workflow for a new technology review.',
+    eyebrow:  'Workflows',
+    title:    'Security Assessment',
+    subtitle: 'Kick off a GRC workflow for a new technology review.',
   },
   [ViewState.COMPETITOR_ANALYSIS]: {
-    title: 'Market Analysis',
-    subtitle: 'Visualise risk metrics and compare vendor performance.',
+    eyebrow:  'Markets',
+    title:    'Market Analysis',
+    subtitle: 'Risk metrics, vendor performance, peer benchmarking.',
   },
   [ViewState.REQUEST_LAB_VISIT]: {
-    title: 'Emerging Tech Lab',
-    subtitle: 'Schedule hands-on evaluation time in the secure lab.',
+    eyebrow:  'Workflows',
+    title:    'Emerging Tech Lab',
+    subtitle: 'Schedule hands-on evaluation time inside the secure lab.',
   },
   [ViewState.COMPETITOR_INTEL]: {
-    title: 'Competitor Intelligence',
-    subtitle: 'Live threat tracking across retail competitors — 1,113 analyst-enriched events.',
+    eyebrow:  'Intelligence',
+    title:    'Competitor Intelligence',
+    subtitle: 'Live tracking across retail competitors — 1,113 analyst-enriched events.',
   },
   [ViewState.CSO_INTELLIGENCE]: {
-    title: 'CSO Intelligence',
-    subtitle: 'Executive security leadership analysis — Amazon, Target, Costco, Kroger competitive positioning.',
+    eyebrow:  'Intelligence',
+    title:    'CSO Intelligence',
+    subtitle: 'Executive security leadership — Amazon, Target, Costco, Kroger.',
   },
   [ViewState.REGULATORY_INTELLIGENCE]: {
-    title: 'Regulatory Intelligence',
-    subtitle: 'Global regulatory obligations across AI, biometrics, ALPR, UAS, privacy, and surveillance domains.',
+    eyebrow:  'Intelligence',
+    title:    'Regulatory Intelligence',
+    subtitle: 'Global obligations across AI, biometrics, ALPR, UAS, privacy.',
   },
   [ViewState.INCIDENT_INTELLIGENCE]: {
-    title: 'Incident Intelligence',
-    subtitle: 'Retail incident tracking across severity, region, type, and recent operational signals.',
+    eyebrow:  'Intelligence',
+    title:    'Incident Intelligence',
+    subtitle: 'Retail incident tracking by severity, region, type, and operational signal.',
   },
   [ViewState.REQUEST_QUEUE]: {
-    title: 'Request Queue',
-    subtitle: 'Admin triage queue for submitted assessments and emerging tech lab requests.',
+    eyebrow:  'Operations',
+    title:    'Request Queue',
+    subtitle: 'Triage queue for assessments and emerging tech lab requests.',
   },
   [ViewState.ARCHITECTURE]: {
-    title: 'SENTRY Architecture',
+    eyebrow:  'Platform',
+    title:    'SENTRY Architecture',
     subtitle: 'GCP four-phase framework hierarchy.',
   },
   [ViewState.ADMIN]: {
-    title: 'VAR Administration',
+    eyebrow:  'Operations',
+    title:    'VAR Administration',
     subtitle: 'Manage VAR reports, extract scores, and fix vendor linkage.',
   },
   [ViewState.SENTINEL]: {
-    title: 'Sentinel',
-    subtitle: 'AI-powered vendor intelligence assistant — ask questions, get insights.',
+    eyebrow:  'Sentinel',
+    title:    'Ask Sentinel',
+    subtitle: 'Your AI analyst for vendors, risks, categories, and maturity.',
+  },
+  [ViewState.RISK_MAP]: {
+    eyebrow:  'Intelligence',
+    title:    'Risk Map 3D',
+    subtitle: 'Vendors plotted in 3D space by risk and category.',
+  },
+  [ViewState.WALMART_SPARK]: {
+    eyebrow:  'Sentinel',
+    title:    'Walmart Spark',
+    subtitle: 'Conversational vendor intelligence, powered by SENTRY data.',
   },
 };
 
 const isViewState = (value: string): value is ViewState => value in VIEW_META;
 
 function readPlatformEntered(): boolean {
-  try {
-    return window.sessionStorage.getItem(PLATFORM_ENTERED_KEY) === 'true';
-  } catch {
-    return false;
-  }
+  try { return window.sessionStorage.getItem(PLATFORM_ENTERED_KEY) === 'true'; }
+  catch { return false; }
 }
 
 function readStoredView(): ViewState {
   try {
     const stored = window.sessionStorage.getItem(PLATFORM_VIEW_KEY);
     return stored && isViewState(stored) ? stored : ViewState.HOME;
-  } catch {
-    return ViewState.HOME;
-  }
+  } catch { return ViewState.HOME; }
+}
+
+// ── Greeting helper — gives the header a human moment ──────────────────────
+function useGreeting() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = window.setInterval(() => setNow(new Date()), 30_000);
+    return () => window.clearInterval(t);
+  }, []);
+  const hour = now.getHours();
+  const greeting =
+    hour < 5  ? 'Working late' :
+    hour < 12 ? 'Good morning' :
+    hour < 17 ? 'Good afternoon' :
+    hour < 21 ? 'Good evening' :
+                'Working late';
+  const dateLabel = now.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  const timeLabel = now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  return { greeting, dateLabel, timeLabel };
 }
 
 // ── Main app ─────────────────────────────────────────────────────────────────
-
 const App: React.FC = () => {
-  const [showLanding, setShowLanding] = useState(true);
-  const [currentView, setCurrentView] = useState<ViewState>(ViewState.HOME);
+  const [showLanding, setShowLanding] = useState(() => !readPlatformEntered());
+  const [currentView, setCurrentView] = useState<ViewState>(() => readStoredView());
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const { greeting, dateLabel, timeLabel } = useGreeting();
+
+  const handleEnterPlatform = useCallback(() => {
+    setShowLanding(false);
+    try { window.sessionStorage.setItem(PLATFORM_ENTERED_KEY, 'true'); } catch { /* noop */ }
+    trackEvent('platform_entered', {});
+  }, []);
+
+  const handleNavigate = useCallback((view: ViewState) => {
+    setCurrentView(view);
+    try { window.sessionStorage.setItem(PLATFORM_VIEW_KEY, view); } catch { /* noop */ }
+    trackView(view);
+  }, []);
+
+  // Cmd/Ctrl-K opens palette anywhere
+  useEffect(() => {
+    if (showLanding) return;
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setPaletteOpen(open => !open);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [showLanding]);
 
   if (showLanding) {
-    return <LandingPage onEnter={handleEnterPlatform} />;
+    return (
+      <ThemeProvider>
+        <LandingPage onEnter={handleEnterPlatform} />
+      </ThemeProvider>
+    );
   }
 
   const meta = VIEW_META[currentView];
@@ -171,15 +208,13 @@ const App: React.FC = () => {
     <ThemeProvider>
       <AuthProvider>
         <VendorProvider>
-          <div className="flex h-screen bg-sentry-dark text-slate-300 overflow-hidden">
-            {/* ── Sidebar ─────────────────────────────────────────────── */}
-            <Sidebar currentView={currentView} onNavigate={setCurrentView} />
+          <div className="flex h-screen text-slate-300 overflow-hidden" style={{ background: 'var(--s-bg)' }}>
+            <Sidebar currentView={currentView} onNavigate={handleNavigate} />
 
-            {/* ── Main content ──────────────────────────────────────── */}
-            <main className="flex-1 flex flex-col overflow-hidden">
-              {/* Glassmorphic command bar header */}
+            <main className="flex-1 flex flex-col overflow-hidden relative">
+              {/* Header */}
               <header
-                className="shrink-0 px-8 py-4 flex items-center justify-between gap-4 border-b"
+                className="shrink-0 px-8 py-4 flex items-center justify-between gap-4 border-b relative"
                 style={{
                   background: 'var(--s-header)',
                   backdropFilter: 'blur(20px) saturate(160%)',
@@ -187,101 +222,138 @@ const App: React.FC = () => {
                   borderColor: 'var(--s-border)',
                 }}
               >
-                {/* Left: accent + title */}
-                <div className="flex items-center gap-4">
+                {/* Walmart spark + title */}
+                <div className="flex items-center gap-4 min-w-0">
                   <div
-                    className="w-0.5 h-9 rounded-full shrink-0"
-                    style={{ background: 'linear-gradient(to bottom, #FFC220, #0053E2)' }}
-                    aria-hidden="true"
+                    className="w-1 h-11 rounded-full shrink-0"
+                    style={{ background: 'linear-gradient(to bottom, #FFC220 0%, #FFC220 35%, #0053E2 70%, #001E60 100%)' }}
+                    aria-hidden
                   />
-                  <div>
-                    <h2 className="text-xl font-extrabold text-white leading-tight tracking-tight">
+                  <div className="min-w-0">
+                    <p
+                      className="text-[10px] font-bold uppercase tracking-[0.32em] mb-0.5"
+                      style={{ color: '#FFC220' }}
+                    >
+                      {meta.eyebrow}
+                    </p>
+                    <h2 className="text-xl font-extrabold leading-tight tracking-tight truncate" style={{ color: 'var(--s-text)' }}>
                       {meta.title}
                     </h2>
-                    <p className="text-xs text-slate-500 mt-0.5 leading-none">{meta.subtitle}</p>
+                    <p className="text-xs mt-0.5 leading-snug truncate" style={{ color: 'var(--s-text-dim)' }}>
+                      {meta.subtitle}
+                    </p>
                   </div>
                 </div>
 
-                {/* Right: status pill + command shortcut */}
-                <div className="flex items-center gap-3">
+                {/* Right cluster */}
+                <div className="flex items-center gap-2 shrink-0">
+                  {/* Greeting block */}
+                  <div className="hidden md:flex flex-col items-end pr-3 mr-1 border-r" style={{ borderColor: 'var(--s-border)' }}>
+                    <span className="text-xs font-semibold" style={{ color: 'var(--s-text)' }}>{greeting}</span>
+                    <span className="text-[10px] font-mono uppercase tracking-widest" style={{ color: 'var(--s-text-dim)' }}>
+                      {dateLabel} · {timeLabel}
+                    </span>
+                  </div>
+
+                  {/* Command palette button */}
                   <button
                     type="button"
                     onClick={() => setPaletteOpen(true)}
-                    className="px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest"
-                    style={{ background: 'rgba(0,83,226,0.10)', border: '1px solid rgba(0,83,226,0.25)', color: '#93c5fd' }}
+                    className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all hover:-translate-y-px"
+                    style={{
+                      background: 'var(--s-input-bg)',
+                      border: '1px solid var(--s-border-mid)',
+                      color: 'var(--s-text-muted)',
+                    }}
+                    aria-label="Open command palette"
                   >
-                    Command Palette · Ctrl/Cmd+K
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 105 11a6 6 0 0012 0z" />
+                    </svg>
+                    Jump to…
+                    <kbd
+                      className="ml-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold"
+                      style={{ background: 'var(--s-hover-over)', border: '1px solid var(--s-border)' }}
+                    >
+                      ⌘K
+                    </kbd>
                   </button>
+
+                  {/* Live status pill */}
                   <div
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-full"
-                    style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)' }}
+                    className="flex items-center gap-2 px-2.5 py-1.5 rounded-full"
+                    style={{ background: 'rgba(34,197,94,0.10)', border: '1px solid rgba(34,197,94,0.25)' }}
+                    title="All SENTRY services healthy"
                   >
-                    <div className="relative flex items-center justify-center">
-                      <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                      <div
-                        className="absolute w-1.5 h-1.5 rounded-full bg-green-400 animate-ping-ring"
-                        style={{ opacity: 0.5 }}
-                      />
-                    </div>
-                    <span className="text-[10px] font-bold text-green-400 uppercase tracking-widest">System Online</span>
+                    <span className="relative flex h-1.5 w-1.5">
+                      <span className="absolute inset-0 rounded-full bg-green-400 animate-ping-ring opacity-60" />
+                      <span className="relative w-1.5 h-1.5 rounded-full bg-green-400" />
+                    </span>
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-green-400">Live</span>
                   </div>
                 </div>
+
+                {/* Hairline accent */}
+                <div
+                  className="absolute left-0 right-0 -bottom-px h-px pointer-events-none"
+                  style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(0,83,226,0.5) 30%, rgba(255,194,32,0.5) 70%, transparent 100%)' }}
+                  aria-hidden
+                />
               </header>
 
-              {/* Page body with animated view transitions + lazy loading */}
-              <div className="flex-1 overflow-y-auto p-8">
-                <PageTransition viewKey={currentView}>
-                  <Suspense fallback={<ViewLoader />}>
-                    {currentView === ViewState.HOME && <HomeDashboard onNavigate={setCurrentView} />}
-                    {currentView === ViewState.DIRECTORY && <VendorDashboard />}
-                    {currentView === ViewState.PROJECTS && <ProjectDashboard3D />}
-                    {currentView === ViewState.REQUEST_ASSESSMENT && <RequestAssessment />}
-                    {currentView === ViewState.REQUEST_QUEUE && <RequestQueue />}
-                    {currentView === ViewState.COMPETITOR_ANALYSIS && <CompetitorAnalysis onNavigate={setCurrentView} />}
-                    {currentView === ViewState.COMPETITOR_INTEL && <CompetitorIntel />}
-                    {currentView === ViewState.CSO_INTELLIGENCE && <CSOIntelligence />}
-                    {currentView === ViewState.INCIDENT_INTELLIGENCE && <IncidentIntelligence />}
-                    {currentView === ViewState.REGULATORY_INTELLIGENCE && (
-                      <ViewErrorBoundary viewName="Regulatory Intelligence">
-                        <RegulatoryIntelligence />
-                      </ViewErrorBoundary>
-                    )}
-                    {currentView === ViewState.REQUEST_LAB_VISIT && <RequestLabVisit />}
-                    {currentView === ViewState.ARCHITECTURE && <ArchitectureGraph />}
-                    {currentView === ViewState.ADMIN && <AdminPanel />}
-                    {currentView === ViewState.RISK_MAP && <VendorRiskMap3D />}
-                    {currentView === ViewState.WALMART_SPARK && <WalmartSpark />}
-                    <CommandPalette
-                      open={paletteOpen}
-                      onClose={() => setPaletteOpen(false)}
-                      onNavigate={setCurrentView}
-                    />
-                  </Suspense>
-                </PageTransition>
+              {/* Page body */}
+              <div className="flex-1 overflow-y-auto px-6 lg:px-8 py-6 lg:py-8 relative">
+                {/* Subtle grid backdrop — gives the workspace a futuristic floor */}
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 opacity-[0.05]"
+                  style={{
+                    backgroundImage:
+                      'linear-gradient(rgba(0,83,226,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(0,83,226,0.6) 1px, transparent 1px)',
+                    backgroundSize: '64px 64px',
+                    maskImage: 'radial-gradient(ellipse 80% 70% at 50% 0%, black 30%, transparent 90%)',
+                    WebkitMaskImage: 'radial-gradient(ellipse 80% 70% at 50% 0%, black 30%, transparent 90%)',
+                  }}
+                />
+                <div className="relative">
+                  <PageTransition viewKey={currentView}>
+                    <Suspense fallback={<ViewLoader />}>
+                      {currentView === ViewState.HOME                    && <HomeDashboard onNavigate={handleNavigate} />}
+                      {currentView === ViewState.DIRECTORY               && <VendorDashboard />}
+                      {currentView === ViewState.PROJECTS                && <ProjectDashboard3D />}
+                      {currentView === ViewState.REQUEST_ASSESSMENT      && <RequestAssessment />}
+                      {currentView === ViewState.REQUEST_QUEUE           && <RequestQueue />}
+                      {currentView === ViewState.COMPETITOR_ANALYSIS     && <CompetitorAnalysis onNavigate={handleNavigate} />}
+                      {currentView === ViewState.COMPETITOR_INTEL        && <CompetitorIntel />}
+                      {currentView === ViewState.CSO_INTELLIGENCE        && <CSOIntelligence />}
+                      {currentView === ViewState.INCIDENT_INTELLIGENCE   && <IncidentIntelligence />}
+                      {currentView === ViewState.REGULATORY_INTELLIGENCE && (
+                        <ViewErrorBoundary viewName="Regulatory Intelligence">
+                          <RegulatoryIntelligence />
+                        </ViewErrorBoundary>
+                      )}
+                      {currentView === ViewState.REQUEST_LAB_VISIT       && <RequestLabVisit />}
+                      {currentView === ViewState.ARCHITECTURE            && <ArchitectureGraph />}
+                      {currentView === ViewState.ADMIN                   && <AdminPanel />}
+                      {currentView === ViewState.SENTINEL                && <Sentinel />}
+                      {currentView === ViewState.RISK_MAP                && <VendorRiskMap3D />}
+                      {currentView === ViewState.WALMART_SPARK           && <WalmartSpark />}
+                    </Suspense>
+                  </PageTransition>
+                </div>
               </div>
-            </header>
 
-            {/* Page body with animated view transitions + lazy loading */}
-            <div className="flex-1 overflow-y-auto p-8">
-              <PageTransition viewKey={currentView}>
-                <Suspense fallback={<ViewLoader />}>
-                  {currentView === ViewState.HOME               && <HomeDashboard onNavigate={setCurrentView} />}
-                  {currentView === ViewState.DIRECTORY          && <VendorDashboard />}
-                  {currentView === ViewState.PROJECTS           && <ProjectDashboard3D />}
-                  {currentView === ViewState.REQUEST_ASSESSMENT && <RequestAssessment />}
-                  {currentView === ViewState.COMPETITOR_ANALYSIS && <CompetitorAnalysis onNavigate={setCurrentView} />}
-                  {currentView === ViewState.COMPETITOR_INTEL   && <CompetitorIntel />}
-                  {currentView === ViewState.CSO_INTELLIGENCE   && <CSOIntelligence />}
-                  {currentView === ViewState.REQUEST_LAB_VISIT  && <RequestLabVisit />}
-                  {currentView === ViewState.ARCHITECTURE       && <ArchitectureGraph />}
-                  {currentView === ViewState.ADMIN              && <AdminPanel />}
-                  {currentView === ViewState.SENTINEL           && <Sentinel />}
-                </Suspense>
-              </PageTransition>
-            </div>
-          </main>
-        </div>
-      </VendorProvider>
+              <Suspense fallback={null}>
+                <CommandPalette
+                  open={paletteOpen}
+                  onClose={() => setPaletteOpen(false)}
+                  onNavigate={handleNavigate}
+                />
+              </Suspense>
+            </main>
+          </div>
+        </VendorProvider>
+      </AuthProvider>
     </ThemeProvider>
   );
 };
