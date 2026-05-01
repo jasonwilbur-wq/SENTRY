@@ -169,10 +169,15 @@ const App: React.FC = () => {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const { greeting, dateLabel, timeLabel } = useGreeting();
 
-  const handleEnterPlatform = useCallback(() => {
+  const handleEnterPlatform = useCallback((initialView?: ViewState) => {
     setShowLanding(false);
+    if (initialView) {
+      setCurrentView(initialView);
+      try { window.sessionStorage.setItem(PLATFORM_VIEW_KEY, initialView); } catch { /* noop */ }
+      trackView(initialView);
+    }
     try { window.sessionStorage.setItem(PLATFORM_ENTERED_KEY, 'true'); } catch { /* noop */ }
-    trackEvent('platform_entered', {});
+    trackEvent('platform_entered', { initial_view: initialView ?? ViewState.HOME });
   }, []);
 
   const handleNavigate = useCallback((view: ViewState) => {
@@ -197,7 +202,7 @@ const App: React.FC = () => {
   if (showLanding) {
     return (
       <ThemeProvider>
-        <LandingPage onEnter={handleEnterPlatform} />
+        <LandingPage onEnter={(initialView) => handleEnterPlatform(initialView as ViewState | undefined)} />
       </ThemeProvider>
     );
   }

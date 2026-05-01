@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { LandingBackground3D } from './LandingBackground3D';
 
 interface LandingPageProps {
-  onEnter: () => void;
+  onEnter: (initialView?: "HOME" | "WALMART_SPARK") => void;
 }
 
 // SENTRY breaks down — kept honest and short, no marketing fluff.
@@ -240,7 +240,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
           }}
         >
           <button
-            onClick={onEnter}
+            onClick={() => onEnter('HOME')}
             className="group relative inline-flex items-center justify-center gap-2 px-8 py-4 font-bold text-base rounded-full overflow-hidden"
             style={{
               background: '#FFC220',
@@ -288,6 +288,22 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
             </svg>
           </a>
+          <button
+            onClick={() => onEnter('WALMART_SPARK')}
+            className="group inline-flex items-center justify-center gap-2 px-6 py-4 font-semibold text-sm rounded-full"
+            style={{
+              background: 'rgba(0,83,226,0.20)',
+              color: '#dbeafe',
+              border: '1px solid rgba(0,83,226,0.45)',
+              backdropFilter: 'blur(8px)',
+            }}
+          >
+            Open Walmart Spark
+            <svg className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 12h14" />
+            </svg>
+          </button>
+
         </div>
       </div>
 
