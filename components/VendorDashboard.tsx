@@ -10,7 +10,7 @@
  * All data comes from VendorContext (server-side filtering).
  */
 import React, { useCallback, useState } from 'react';
-import { VENDOR_PAGE_SIZE, useVendors } from '../context/VendorContext';
+import { useVendors } from '../context/VendorContext';
 import { Vendor } from '../services/api';
 import { VendorDetailModal } from './VendorDetailModal';
 import { Pagination } from './Pagination';
@@ -19,6 +19,24 @@ import { VendorStatsPanel } from './VendorStatsPanel';
 import { useLazyRender } from '../hooks/useLazyRender';
 
 const PAGE_SIZE = VENDOR_PAGE_SIZE;
+
+// ── Lazy-rendered vendor card (defers 3D/SVG until near viewport) ───────────
+function LazyVendorCard({ vendor, onClick, immediate }: {
+  vendor: Vendor;
+  onClick: (v: Vendor) => void;
+  immediate: boolean;
+}) {
+  const { ref, isVisible } = useLazyRender({ rootMargin: '300px', immediate });
+  return (
+    <div ref={ref}>
+      {isVisible ? (
+        <VendorCard3D vendor={vendor} onClick={onClick} />
+      ) : (
+        <div className="h-56 rounded-2xl bg-slate-800/40 animate-pulse border border-slate-700/30" />
+      )}
+    </div>
+  );
+}
 
 // ── Lazy-rendered vendor card (defers 3D/SVG until near viewport) ───────────
 function LazyVendorCard({ vendor, onClick, immediate }: {
@@ -82,12 +100,13 @@ function StatsSkeleton() {
 export const VendorDashboard: React.FC = () => {
   const {
     vendors, categories, loading, backendOffline,
-    total, totalPages, search, category, risk, page,
-    setSearch, setCategory, setRisk, setPage,
+    total, totalPages, search, category, page,
+    setSearch, setCategory, setPage,
     stats, statsLoading,
   } = useVendors();
 
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
+  const [riskFilter,     setRiskFilter]     = useState('');
 
   const handleOpenVendor  = useCallback((v: Vendor) => setSelectedVendor(v), []);
   const handleCloseModal  = useCallback(() => setSelectedVendor(null), []);

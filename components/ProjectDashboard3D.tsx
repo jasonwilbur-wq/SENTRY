@@ -248,7 +248,7 @@ const OrbitalScene: React.FC<OrbitalSceneProps> = ({ projects, onProjectClick })
       positions.set(project.project_id, [x, y, z]);
     });
 
-    return projects.map(p => positions.get(p.project_id) || [0, 0, 0]);
+    return projects.map(p => (positions.get(p.project_id) || [0, 0, 0]) as [number, number, number]);
   }, [projects]);
 
   return (
@@ -315,9 +315,9 @@ const OrbitalScene: React.FC<OrbitalSceneProps> = ({ projects, onProjectClick })
         const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
         const color = idx === 0 ? '#22c55e' : idx === 1 ? '#ffc220' : '#ef4444';
         return (
-          <line key={`ring-${idx}`} geometry={lineGeometry}>
+          <lineSegments key={`ring-${idx}`} geometry={lineGeometry}>
             <lineBasicMaterial attach="material" color={color} opacity={0.15} transparent />
-          </line>
+          </lineSegments>
         );
       })}
 

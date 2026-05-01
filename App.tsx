@@ -1,8 +1,7 @@
-import React, { lazy, Suspense, useEffect, useState } from 'react';
+import React, { lazy, Suspense, useState } from 'react';
 import { ViewState } from './types';
 import { VendorProvider } from './context/VendorContext';
 import { ThemeProvider } from './context/ThemeContext';
-import { AuthProvider } from './context/AuthContext';
 import { Sidebar } from './components/Sidebar';
 import { PageTransition } from './components/PageTransition';
 import { trackEvent, trackView } from './services/analytics';
@@ -46,12 +45,42 @@ function ViewLoader() {
   );
 }
 
+// ── Eager-loaded (always needed) ────────────────────────────────────────────
+import { LandingPage } from './components/LandingPage';
+
+// ── Lazy-loaded route components ────────────────────────────────────────────
+// Each view is code-split into its own chunk. Only loaded when the user
+// navigates to that view. Reduces initial bundle by ~200KB.
+const VendorDashboard  = lazy(() => import('./components/VendorDashboard').then(m => ({ default: m.VendorDashboard })));
+const ProjectDashboard3D = lazy(() => import('./components/ProjectDashboard3D'));
+const RequestAssessment = lazy(() => import('./components/RequestAssessment').then(m => ({ default: m.RequestAssessment })));
+const RequestLabVisit   = lazy(() => import('./components/RequestLabVisit').then(m => ({ default: m.RequestLabVisit })));
+const CompetitorAnalysis = lazy(() => import('./components/CompetitorAnalysis').then(m => ({ default: m.CompetitorAnalysis })));
+const ArchitectureGraph  = lazy(() => import('./components/ArchitectureGraph').then(m => ({ default: m.ArchitectureGraph })));
+const AdminPanel         = lazy(() => import('./components/AdminPanel').then(m => ({ default: m.AdminPanel })));
+const CompetitorIntel    = lazy(() => import('./components/CompetitorIntel').then(m => ({ default: m.CompetitorIntel })));
+const CSOIntelligence    = lazy(() => import('./components/CSOIntelligence').then(m => ({ default: m.CSOIntelligence })));
+const Sentinel          = lazy(() => import('./components/Sentinel').then(m => ({ default: m.Sentinel })));
+const HomeDashboard     = lazy(() => import('./components/HomeDashboard').then(m => ({ default: m.HomeDashboard })));
+
+// ── Suspense fallback ───────────────────────────────────────────────────────
+function ViewLoader() {
+  return (
+    <div className="flex items-center justify-center h-64">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-8 h-8 border-2 border-wmt-blue border-t-transparent rounded-full animate-spin" />
+        <span className="text-xs text-slate-500 uppercase tracking-widest font-semibold">Loading</span>
+      </div>
+    </div>
+  );
+}
+
 // ── View metadata ────────────────────────────────────────────────────────────
 
 const VIEW_META: Record<ViewState, { title: string; subtitle: string }> = {
   [ViewState.HOME]: {
-    title: 'Command Center',
-    subtitle: 'Operational overview of SENTRY intelligence, workflows, and platform posture.',
+    title: 'Mission Control',
+    subtitle: 'Your real-time pulse on the SENTRY ecosystem — vendors, assessments, risks, and intelligence.',
   },
   [ViewState.DIRECTORY]: {
     title: 'Vendor Directory',
@@ -101,12 +130,8 @@ const VIEW_META: Record<ViewState, { title: string; subtitle: string }> = {
     title: 'VAR Administration',
     subtitle: 'Manage VAR reports, extract scores, and fix vendor linkage.',
   },
-  [ViewState.RISK_MAP]: {
-    title: 'Vendor Risk Map',
-    subtitle: '3D vendor risk landscape across category, score, and exposure.',
-  },
-  [ViewState.WALMART_SPARK]: {
-    title: 'Walmart Spark',
+  [ViewState.SENTINEL]: {
+    title: 'Sentinel',
     subtitle: 'AI-powered vendor intelligence assistant — ask questions, get insights.',
   },
 };
@@ -133,44 +158,8 @@ function readStoredView(): ViewState {
 // ── Main app ─────────────────────────────────────────────────────────────────
 
 const App: React.FC = () => {
-  const [showLanding, setShowLanding] = useState(() => !readPlatformEntered());
-  const [currentView, setCurrentView] = useState<ViewState>(() => readStoredView());
-  const [paletteOpen, setPaletteOpen] = useState(false);
-
-  useEffect(() => {
-    if (!showLanding) {
-      trackView(currentView);
-      try {
-        window.sessionStorage.setItem(PLATFORM_ENTERED_KEY, 'true');
-        window.sessionStorage.setItem(PLATFORM_VIEW_KEY, currentView);
-      } catch {
-        // no-op
-      }
-    }
-  }, [currentView, showLanding]);
-
-  useEffect(() => {
-    const handleKeydown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
-        event.preventDefault();
-        setPaletteOpen(true);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeydown);
-    return () => window.removeEventListener('keydown', handleKeydown);
-  }, []);
-
-  const handleEnterPlatform = () => {
-    trackEvent('landing_enter_clicked', { destination: currentView });
-    try {
-      window.sessionStorage.setItem(PLATFORM_ENTERED_KEY, 'true');
-      window.sessionStorage.setItem(PLATFORM_VIEW_KEY, currentView);
-    } catch {
-      // no-op
-    }
-    setShowLanding(false);
-  };
+  const [showLanding, setShowLanding] = useState(true);
+  const [currentView, setCurrentView] = useState<ViewState>(ViewState.HOME);
 
   if (showLanding) {
     return <LandingPage onEnter={handleEnterPlatform} />;
@@ -270,10 +259,29 @@ const App: React.FC = () => {
                   </Suspense>
                 </PageTransition>
               </div>
-            </main>
-          </div>
-        </VendorProvider>
-      </AuthProvider>
+            </header>
+
+            {/* Page body with animated view transitions + lazy loading */}
+            <div className="flex-1 overflow-y-auto p-8">
+              <PageTransition viewKey={currentView}>
+                <Suspense fallback={<ViewLoader />}>
+                  {currentView === ViewState.HOME               && <HomeDashboard onNavigate={setCurrentView} />}
+                  {currentView === ViewState.DIRECTORY          && <VendorDashboard />}
+                  {currentView === ViewState.PROJECTS           && <ProjectDashboard3D />}
+                  {currentView === ViewState.REQUEST_ASSESSMENT && <RequestAssessment />}
+                  {currentView === ViewState.COMPETITOR_ANALYSIS && <CompetitorAnalysis onNavigate={setCurrentView} />}
+                  {currentView === ViewState.COMPETITOR_INTEL   && <CompetitorIntel />}
+                  {currentView === ViewState.CSO_INTELLIGENCE   && <CSOIntelligence />}
+                  {currentView === ViewState.REQUEST_LAB_VISIT  && <RequestLabVisit />}
+                  {currentView === ViewState.ARCHITECTURE       && <ArchitectureGraph />}
+                  {currentView === ViewState.ADMIN              && <AdminPanel />}
+                  {currentView === ViewState.SENTINEL           && <Sentinel />}
+                </Suspense>
+              </PageTransition>
+            </div>
+          </main>
+        </div>
+      </VendorProvider>
     </ThemeProvider>
   );
 };

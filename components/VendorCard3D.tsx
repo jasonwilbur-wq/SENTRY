@@ -130,8 +130,8 @@ export interface VendorCard3DProps {
 }
 
 export const VendorCard3D: React.FC<VendorCard3DProps> = React.memo(({ vendor, onClick, decisionBand }) => {
-  const risk = RISK[vendor.risk_level] ?? RISK.Medium;
-  const color = catColor(vendor.category);
+  const risk   = RISK[vendor.risk_level] ?? RISK.Medium;
+  const color  = catColor(vendor.category);
   const hasReport = vendor.report_url && !vendor.report_url.includes('google.com/search') && vendor.report_url !== '#';
   const resolvedDecisionBand = (decisionBand || vendor.var_decision_band || '').trim();
   const bandCls = resolvedDecisionBand ? BAND_STYLE[resolvedDecisionBand] : null;

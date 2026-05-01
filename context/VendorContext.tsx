@@ -63,19 +63,18 @@ export const VendorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // ── Vendor data via SWR-like cache ─────────────────────────────────────
   const vendorQueryKey = useMemo(
-    () => ['vendors', debouncedSearch, category, risk, page],
-    [debouncedSearch, category, risk, page],
+    () => ['vendors', debouncedSearch, category, page],
+    [debouncedSearch, category, page],
   );
 
   const vendorFetcher = useCallback(
     () => fetchVendors({
       search:    debouncedSearch || undefined,
       category:  category !== 'All' ? category : undefined,
-      risk: risk || undefined,
       page,
-      page_size: VENDOR_PAGE_SIZE,
+      page_size: PAGE_SIZE,
     }),
-    [debouncedSearch, category, risk, page],
+    [debouncedSearch, category, page],
   );
 
   const {
@@ -129,8 +128,8 @@ export const VendorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   return (
     <VendorContext.Provider value={{
       vendors, categories, loading, backendOffline,
-      total, totalPages, search, category, risk, page,
-      setSearch, setCategory, setRisk, setPage,
+      total, totalPages, search, category, page,
+      setSearch, setCategory, setPage,
       stats: statsData ?? null, statsLoading, refreshStats,
     }}>
       {children}
@@ -144,5 +143,5 @@ export const useVendors = (): VendorContextValue => {
   return ctx;
 };
 
-/** @deprecated Use useVendors() instead — kept for backward compat with WalmartSpark */
+/** @deprecated Use useVendors() instead — kept for backward compat with Sentinel */
 export const useVendor = useVendors;

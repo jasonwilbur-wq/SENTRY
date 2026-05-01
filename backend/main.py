@@ -27,14 +27,7 @@ from fastapi.responses import StreamingResponse, RedirectResponse
 
 from database import get_connection, init_db
 from admin_routes import router as admin_router
-from auth import SentryUser, get_auth_status, get_current_user
 from cache import ttl_cache
-from incident_routes import ROUTER as incident_router
-from project_routes import ROUTER as project_router
-from regulatory_routes import ROUTER as regulatory_router, get_regulatory_summary
-from analytics_routes import ROUTER as analytics_router
-from request_routes import router as request_router
-from vendor_sync_routes import router as vendor_sync_router
 from models import (
     CategoriesResponse,
     ChatRequest,
@@ -530,14 +523,7 @@ def _cached_categories() -> list[str]:
         "SELECT category, company_name FROM vendors"
     ).fetchall()
     conn.close()
-
-    canonical_keys = _canonical_vendor_keys()
-    categories = {
-        r["category"]
-        for r in rows
-        if _is_vendor_in_directory(str(r["company_name"]), canonical_keys)
-    }
-    return sorted(categories)
+    return [r["category"] for r in rows]
 
 
 @app.get("/api/vendors/{vendor_id}", response_model=VendorOut)
@@ -800,6 +786,12 @@ async def download_var_report(var_id: str):
 def public_stats():
     """Aggregate stats — delegates to cached computation."""
     return _compute_public_stats()
+
+
+@ttl_cache(ttl_seconds=60, key_prefix="public_stats")
+def _compute_public_stats():
+    """Cached: aggregate stats computation (expensive — multiple GROUP BY queries)."""
+    conn = get_connection()
 
 
 @ttl_cache(ttl_seconds=60, key_prefix="public_stats")

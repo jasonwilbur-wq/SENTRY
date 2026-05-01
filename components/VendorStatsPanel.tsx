@@ -13,7 +13,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
 } from 'recharts';
 import { DirectoryStats } from '../services/api';
-import { VendorOrb3D } from './VendorOrb3D';
+import { RadarScope3D } from './RadarScope3D';
 
 // ── Animated count-up hook ─────────────────────────────────────────────────
 function useCountUp(target: number, duration = 1200): number {
@@ -317,7 +317,7 @@ export const VendorStatsPanel: React.FC<VendorStatsPanelProps> = ({
       >
         <div className="flex items-center gap-3">
           <div style={{ width: 72, height: 72, flexShrink: 0 }}>
-            <VendorOrb3D />
+            <RadarScope3D size={72} />
           </div>
           <div>
             <h2 className="text-sm font-bold text-white">Directory Intelligence</h2>
