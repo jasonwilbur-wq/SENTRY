@@ -43,10 +43,12 @@ export class AppShell {
 export class VendorDashboard {
   readonly page: Page;
   readonly searchBox: Locator;
+  readonly detailModal: Locator;
 
   constructor(page: Page) {
     this.page      = page;
     this.searchBox = page.getByPlaceholder(/search/i);
+    this.detailModal = page.getByTestId('vendor-detail-modal');
   }
 
   /** Returns all vendor card elements currently visible */
@@ -68,6 +70,19 @@ export class VendorDashboard {
   async clearSearch() {
     await this.searchBox.clear();
     await this.page.waitForTimeout(400);
+  }
+
+  async openFirstVendorCard() {
+    await this.vendorCards().first().click();
+    await this.page.waitForTimeout(500);
+  }
+
+  modalTab(label: string): Locator {
+    return this.detailModal.getByRole('button', { name: label });
+  }
+
+  modalCloseButton(): Locator {
+    return this.detailModal.getByRole('button', { name: /close/i });
   }
 }
 

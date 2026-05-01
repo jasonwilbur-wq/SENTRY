@@ -1,6 +1,7 @@
 import React from 'react';
 import { ViewState } from '../types';
 import { useTheme } from '../context/ThemeContext';
+import { trackEvent } from '../services/analytics';
 
 interface SidebarProps {
   currentView: ViewState;
@@ -66,6 +67,24 @@ const NAV_ITEMS = [
     ),
   },
   {
+    view: ViewState.REGULATORY_INTELLIGENCE,
+    label: 'Regulatory Intel',
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+    ),
+  },
+  {
+    view: ViewState.INCIDENT_INTELLIGENCE,
+    label: 'Incident Intel',
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M12 2l9 16H3l9-16z" />
+      </svg>
+    ),
+  },
+  {
     view: ViewState.REQUEST_ASSESSMENT,
     label: 'Security Assessment',
     icon: (
@@ -80,6 +99,15 @@ const NAV_ITEMS = [
     icon: (
       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.384-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+      </svg>
+    ),
+  },
+  {
+    view: ViewState.REQUEST_QUEUE,
+    label: 'Request Queue',
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10m-11 9h12a2 2 0 002-2V7a2 2 0 00-2-2H6a2 2 0 00-2 2v11a2 2 0 002 2z" />
       </svg>
     ),
   },
@@ -136,6 +164,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => 
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === 'dark';
 
+  const handleNavigate = (view: ViewState, label: string) => {
+    trackEvent('sidebar_navigation_clicked', { from: currentView, to: view, label });
+    onNavigate(view);
+  };
+
+  const handleThemeToggle = () => {
+    const nextTheme = isDark ? 'light' : 'dark';
+    trackEvent('theme_toggled', { from: theme, to: nextTheme });
+    toggleTheme();
+  };
+
   return (
     <aside
       className="w-64 shrink-0 flex flex-col overflow-y-auto relative scan-lines"
@@ -175,7 +214,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => 
 
           {/* Theme toggle — icon button with SVG sun/moon */}
           <button
-            onClick={toggleTheme}
+            onClick={handleThemeToggle}
             aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
             className="w-8 h-8 flex items-center justify-center rounded-lg transition-all duration-200"
             style={{
@@ -214,7 +253,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => 
           return (
             <button
               key={item.view}
-              onClick={() => onNavigate(item.view)}
+              onClick={() => handleNavigate(item.view, item.label)}
               aria-current={active ? 'page' : undefined}
               className={`relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold
                           transition-all duration-200 group overflow-hidden

@@ -7,12 +7,10 @@
  */
 import React, { useRef, useCallback } from 'react';
 
-interface GlassCard3DProps {
+interface GlassCard3DProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
-  className?: string;
   glowColor?: string;   // e.g. '#0053e2'
   intensity?: number;   // tilt degrees, default 8
-  style?: React.CSSProperties;
 }
 
 export const GlassCard3D: React.FC<GlassCard3DProps> = ({
@@ -21,6 +19,7 @@ export const GlassCard3D: React.FC<GlassCard3DProps> = ({
   glowColor = '#0053e2',
   intensity = 8,
   style,
+  ...rest
 }) => {
   const ref = useRef<HTMLDivElement>(null);
 
@@ -49,6 +48,7 @@ export const GlassCard3D: React.FC<GlassCard3DProps> = ({
     <div
       ref={ref}
       className={className}
+      {...rest}
       style={{
         transition: 'transform 0.18s ease-out, box-shadow 0.18s ease-out',
         transformStyle: 'preserve-3d',

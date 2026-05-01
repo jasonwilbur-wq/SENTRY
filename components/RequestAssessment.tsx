@@ -41,9 +41,8 @@ export const RequestAssessment: React.FC = () => {
         setError('Submission failed. Please try again.');
       }
     } catch (err) {
-      // Backend offline — still show success with local ref for demo
-      setRefId(`DEMO-${Date.now()}`);
-      setSubmitted(true);
+      const message = err instanceof Error ? err.message : 'Submission failed. Please try again.';
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -57,6 +56,7 @@ export const RequestAssessment: React.FC = () => {
           <h2 className="text-2xl font-bold text-green-400 mb-2">Assessment Submitted</h2>
           <p className="text-slate-300 mb-4">Your request has been queued with the SENTRY GRC workflow.</p>
           <p className="text-xs font-mono text-sentry-accent bg-slate-900 px-3 py-1 rounded border border-slate-700">Ref: {refId}</p>
+          <p className="mt-3 text-xs text-slate-400">Status: <span className="font-semibold text-blue-300">SUBMITTED</span></p>
           <button
             onClick={() => { setSubmitted(false); setForm({ vendor_name: '', assessment_type: '', contact_name: '', contact_email: '', category: '', urgency: 'normal', notes: '' }); }}
             className="mt-6 text-sm text-slate-400 hover:text-white underline"

@@ -19,7 +19,7 @@ import {
 } from '../services/api';
 import { useQuery } from '../hooks/useQuery';
 
-const PAGE_SIZE = 20;
+export const VENDOR_PAGE_SIZE = 20;
 
 interface VendorContextValue {
   vendors:        Vendor[];
@@ -32,10 +32,12 @@ interface VendorContextValue {
   // Controlled filter state (read-only from consumers)
   search:   string;
   category: string;
+  risk:     '' | 'Low' | 'Medium' | 'High' | 'Critical';
   page:     number;
   // Setters
   setSearch:   (s: string) => void;
   setCategory: (c: string) => void;
+  setRisk:     (r: '' | 'Low' | 'Medium' | 'High' | 'Critical') => void;
   setPage:     (p: number) => void;
   // Stats (cached separately)
   stats:        DirectoryStats | null;
@@ -50,6 +52,7 @@ export const VendorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [search,          setSearchRaw]   = useState('');
   const [debouncedSearch, setDebounced]   = useState('');
   const [category,        setCategoryRaw] = useState('All');
+  const [risk,            setRiskRaw]     = useState<'' | 'Low' | 'Medium' | 'High' | 'Critical'>('');
   const [page,            setPageRaw]     = useState(1);
 
   // ── Debounce search ────────────────────────────────────────────────────
@@ -119,6 +122,7 @@ export const VendorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Changing search or category always resets to page 1
   const setSearch   = useCallback((s: string) => { setSearchRaw(s);  setPageRaw(1); }, []);
   const setCategory = useCallback((c: string) => { setCategoryRaw(c); setPageRaw(1); }, []);
+  const setRisk     = useCallback((r: '' | 'Low' | 'Medium' | 'High' | 'Critical') => { setRiskRaw(r); setPageRaw(1); }, []);
   const setPage     = useCallback((p: number) => { setPageRaw(p); }, []);
 
   return (

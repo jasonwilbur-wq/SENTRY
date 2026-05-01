@@ -9,6 +9,7 @@
  * - Pagination
  */
 import React, { useCallback, useEffect, useState } from 'react';
+import { apiFetch } from '../services/api';
 import type {
   CompetitorEvent,
   CompetitorEventsListResponse,
@@ -17,8 +18,6 @@ import type {
 } from '../services/api';
 
 // ── API Client Functions ──────────────────────────────────────────────────────
-
-const API_BASE = 'http://localhost:8082/api/admin';
 
 async function fetchCompetitorEvents(
   page: number,
@@ -30,13 +29,13 @@ async function fetchCompetitorEvents(
     page_size: pageSize.toString(),
     ...filters,
   });
-  const res = await fetch(`${API_BASE}/competitor-events?${params}`);
+  const res = await apiFetch(`/api/admin/competitor-events?${params}`);
   if (!res.ok) throw new Error(`Failed to fetch events: ${res.statusText}`);
   return res.json();
 }
 
 async function createCompetitorEvent(event: CompetitorEventCreate): Promise<CompetitorEvent> {
-  const res = await fetch(`${API_BASE}/competitor-events`, {
+  const res = await apiFetch('/api/admin/competitor-events', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(event),
@@ -49,7 +48,7 @@ async function updateCompetitorEvent(
   id: number,
   update: CompetitorEventUpdate
 ): Promise<CompetitorEvent> {
-  const res = await fetch(`${API_BASE}/competitor-events/${id}`, {
+  const res = await apiFetch(`/api/admin/competitor-events/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(update),
@@ -59,7 +58,7 @@ async function updateCompetitorEvent(
 }
 
 async function deleteCompetitorEvent(id: number): Promise<void> {
-  const res = await fetch(`${API_BASE}/competitor-events/${id}`, {
+  const res = await apiFetch(`/api/admin/competitor-events/${id}`, {
     method: 'DELETE',
   });
   if (!res.ok) throw new Error(`Failed to delete event: ${res.statusText}`);

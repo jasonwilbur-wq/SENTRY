@@ -18,7 +18,25 @@ import { VendorCard3D } from './VendorCard3D';
 import { VendorStatsPanel } from './VendorStatsPanel';
 import { useLazyRender } from '../hooks/useLazyRender';
 
-const PAGE_SIZE = 18; // divisible by 2 and 3 for clean grids
+const PAGE_SIZE = VENDOR_PAGE_SIZE;
+
+// ── Lazy-rendered vendor card (defers 3D/SVG until near viewport) ───────────
+function LazyVendorCard({ vendor, onClick, immediate }: {
+  vendor: Vendor;
+  onClick: (v: Vendor) => void;
+  immediate: boolean;
+}) {
+  const { ref, isVisible } = useLazyRender({ rootMargin: '300px', immediate });
+  return (
+    <div ref={ref}>
+      {isVisible ? (
+        <VendorCard3D vendor={vendor} onClick={onClick} />
+      ) : (
+        <div className="h-56 rounded-2xl bg-slate-800/40 animate-pulse border border-slate-700/30" />
+      )}
+    </div>
+  );
+}
 
 // ── Lazy-rendered vendor card (defers 3D/SVG until near viewport) ───────────
 function LazyVendorCard({ vendor, onClick, immediate }: {
@@ -60,12 +78,6 @@ const PINNED_CATS: Record<string, string> = {
   'Biometrics & Authentication':                              'Biometrics',
 };
 
-// ── Helper: client-side risk filter on top of server results ─────────────────
-function applyRiskFilter(vendors: Vendor[], risk: string): Vendor[] {
-  if (!risk) return vendors;
-  return vendors.filter(v => v.risk_level === risk);
-}
-
 // ── Loading skeleton ─────────────────────────────────────────────────────────
 function Skeleton() {
   return (
@@ -99,12 +111,18 @@ export const VendorDashboard: React.FC = () => {
   const handleOpenVendor  = useCallback((v: Vendor) => setSelectedVendor(v), []);
   const handleCloseModal  = useCallback(() => setSelectedVendor(null), []);
   const handleClearFilter = useCallback(() => {
-    setSearch(''); setCategory('All'); setRiskFilter('');
-  }, [setSearch, setCategory]);
+    setSearch('');
+    setCategory('All');
+    setRisk('');
+  }, [setSearch, setCategory, setRisk]);
 
-  // Apply client-side risk filter on top of server-paginated results
-  const displayed  = applyRiskFilter(vendors, riskFilter);
-  const hasFilters = !!(search || category !== 'All' || riskFilter);
+  const displayed  = vendors;
+  const hasFilters = !!(search || category !== 'All' || risk);
+  const activeFilterPills = [
+    search ? `Search: ${search}` : null,
+    category !== 'All' ? `Category: ${PINNED_CATS[category] ?? category}` : null,
+    risk ? `Risk: ${risk}` : null,
+  ].filter(Boolean) as string[];
 
   // Categories: only show the pinned ones that exist in the DB
   const pinnedCategories = ['All', ...categories.filter(c => c !== 'All' && PINNED_CATS[c])];
@@ -118,7 +136,15 @@ export const VendorDashboard: React.FC = () => {
 
       {/* ── Stats Panel ─────────────────────────────────────────── */}
       {statsLoading && <StatsSkeleton />}
-      {!statsLoading && stats && <VendorStatsPanel stats={stats} />}
+      {!statsLoading && stats && (
+        <VendorStatsPanel
+          stats={stats}
+          onRiskSelect={(selectedRisk) => setRisk(selectedRisk === risk ? '' : selectedRisk)}
+          onCategorySelect={(selectedCategory) => setCategory(selectedCategory)}
+          activeRisk={risk}
+          activeCategory={category}
+        />
+      )}
 
       {/* ── Search + Filter Header ───────────────────────────────── */}
       <div
@@ -133,9 +159,12 @@ export const VendorDashboard: React.FC = () => {
                 {loading ? '…' : `${total.toLocaleString()} vendors`}
               </span>
             </h2>
+            <p className="text-sm text-slate-500 mt-1">
+              Search by company or product, then narrow by category and risk to compare vendors quickly.
+            </p>
             {backendOffline && (
-              <p className="text-xs text-yellow-400 mt-0.5">
-                ⚠ Backend offline — run backend/start_backend.bat
+              <p className="text-xs text-yellow-400 mt-1.5">
+                ⚠ Backend offline — live directory data may be incomplete until backend/start_backend.bat is running.
               </p>
             )}
           </div>
@@ -175,7 +204,7 @@ export const VendorDashboard: React.FC = () => {
             {search && (
               <button
                 onClick={() => setSearch('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 transition-colors rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
                 style={{ color: '#475569' }}
                 aria-label="Clear search"
                 onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = 'var(--s-text)'; }}
@@ -194,8 +223,10 @@ export const VendorDashboard: React.FC = () => {
             return (
               <button
                 key={cat}
+                type="button"
+                aria-pressed={active}
                 onClick={() => setCategory(cat)}
-                className="px-3 py-1 rounded-full text-xs font-semibold transition-all duration-150"
+                className="px-3 py-1 rounded-full text-xs font-semibold transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
                 style={active ? {
                   background: 'rgba(0,83,226,0.2)',
                   color: '#0053e2',
@@ -222,11 +253,13 @@ export const VendorDashboard: React.FC = () => {
           {RISK_PILLS.map(p => (
             <button
               key={p.value}
-              onClick={() => setRiskFilter(p.value)}
-              className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
-                riskFilter === p.value ? 'text-white' : ''
+              type="button"
+              aria-pressed={risk === p.value}
+              onClick={() => setRisk((p.value as '' | 'Low' | 'Medium' | 'High' | 'Critical'))}
+              className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 ${
+                risk === p.value ? 'text-white' : ''
               }`}
-              style={riskFilter === p.value ? {
+              style={risk === p.value ? {
                 backgroundColor: p.color + '33',
                 borderColor: p.color,
                 boxShadow: `0 0 10px ${p.color}55`,
@@ -242,14 +275,29 @@ export const VendorDashboard: React.FC = () => {
           ))}
           {hasFilters && (
             <button
+              type="button"
               onClick={handleClearFilter}
               className="ml-auto px-3 py-1 text-xs text-slate-500 hover:text-white
-                         border border-slate-700 rounded-full transition"
+                         border border-slate-700 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
             >
               Clear All
             </button>
           )}
         </div>
+
+        {activeFilterPills.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 pt-1">
+            <span className="text-[10px] uppercase tracking-wider text-slate-600 font-bold">Active</span>
+            {activeFilterPills.map(pill => (
+              <span
+                key={pill}
+                className="px-2.5 py-1 rounded-full text-[11px] font-medium border border-slate-700 bg-slate-900/70 text-slate-300"
+              >
+                {pill}
+              </span>
+            ))}
+          </div>
+        )}
 
         {/* Pagination header hint */}
         {!loading && totalPages > 1 && (
@@ -279,12 +327,17 @@ export const VendorDashboard: React.FC = () => {
       {!loading && displayed.length === 0 && (
         <div className="py-20 text-center rounded-2xl border border-slate-700/50 bg-slate-900/40">
           <div className="text-5xl mb-4">🔍</div>
-          <p className="text-slate-400 mb-2 font-semibold">No vendors match your filters</p>
-          <p className="text-slate-600 text-sm mb-4">Try broadening your search or clearing the filters</p>
+          <p className="text-slate-400 mb-2 font-semibold">No vendors match the current view</p>
+          <p className="text-slate-600 text-sm mb-4">
+            {hasFilters
+              ? 'Broaden the search or clear one of the active filters to bring vendors back into view.'
+              : 'No vendor records are available in the current dataset.'}
+          </p>
           <button
+            type="button"
             onClick={handleClearFilter}
             className="px-4 py-2 rounded-lg bg-wmt-blue text-white text-sm font-semibold
-                       hover:bg-blue-600 transition"
+                       hover:bg-blue-600 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
           >
             Clear Filters
           </button>

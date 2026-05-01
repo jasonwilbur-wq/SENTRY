@@ -19,15 +19,15 @@ Usage:
 from __future__ import annotations
 
 import re
+import zipfile
 from pathlib import Path
 from typing import Optional
+from xml.etree import ElementTree as ET
 
 try:
     from docx import Document  # python-docx
-except ImportError as e:
-    raise ImportError(
-        "python-docx is required: pip install python-docx"
-    ) from e
+except Exception:
+    Document = None
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -86,29 +86,41 @@ def extract_scores(docx_path: str | Path) -> dict:
         vendor_name, report_date
     Returns empty dict on failure.
     """
-    try:
-        doc = Document(str(docx_path))
-    except Exception as exc:  # noqa: BLE001
-        return {"_error": str(exc)}
+    path = Path(docx_path)
 
     result: dict = {}
 
-    # --- Step 1: Extract header metadata ---
-    result.update(_extract_header(doc))
+    if Document is not None:
+        try:
+            doc = Document(str(path))
+        except Exception:
+            doc = None
 
-    # --- Step 2: Try scoring table first (most reliable) ---
-    table_scores = _extract_from_scoring_table(doc)
-    if table_scores:
-        result.update(table_scores)
-    else:
-        # Fall back to paragraph scanning
-        result.update(_extract_from_paragraphs(doc))
+        if doc is not None:
+            result.update(_extract_header(doc))
 
-    # --- Step 3: Compute composite score if not already found ---
+            table_scores = _extract_from_scoring_table(doc)
+            if table_scores:
+                result.update(table_scores)
+            else:
+                result.update(_extract_from_paragraphs(doc))
+
+            if "overall_score" not in result:
+                result["overall_score"] = _compute_composite(result)
+
+            if "decision_band" not in result and result.get("overall_score") is not None:
+                result["decision_band"] = _score_to_band(result["overall_score"])
+
+            return result
+
+    fallback = _extract_from_docx_xml(path)
+    if "_error" in fallback:
+        return fallback
+
+    result.update(fallback)
+
     if "overall_score" not in result:
         result["overall_score"] = _compute_composite(result)
-
-    # --- Step 4: Determine decision band if missing ---
     if "decision_band" not in result and result.get("overall_score") is not None:
         result["decision_band"] = _score_to_band(result["overall_score"])
 
@@ -294,6 +306,141 @@ def _canonicalise_band(raw: str) -> str:
     if "reject" in r:
         return "Reject"
     return raw.title()
+
+
+def _extract_from_docx_xml(path: Path) -> dict:
+    """Fallback parser for .docx when python-docx is unavailable.
+
+    Reads word/document.xml directly and extracts table-like rows + paragraph text.
+    """
+    ns = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
+    try:
+        with zipfile.ZipFile(path, "r") as zf:
+            xml_bytes = zf.read("word/document.xml")
+    except Exception as exc:  # noqa: BLE001
+        return {"_error": f"Unable to read DOCX XML: {exc}"}
+
+    try:
+        root = ET.fromstring(xml_bytes)
+    except Exception as exc:  # noqa: BLE001
+        return {"_error": f"Invalid DOCX XML: {exc}"}
+
+    result: dict = {}
+
+    paragraphs: list[str] = []
+    for p in root.findall(".//w:p", ns):
+        text = "".join(t.text or "" for t in p.findall(".//w:t", ns)).strip()
+        if text:
+            paragraphs.append(text)
+
+    for text in paragraphs[:20]:
+        vendor_match = re.match(r"Vendor[:：]\s*(.+)", text, re.I)
+        if vendor_match and "vendor_name" not in result:
+            result["vendor_name"] = vendor_match.group(1).split("–")[0].split("-")[0].strip()
+
+        date_match = re.match(r"Date[:：]\s*(.+)", text, re.I)
+        if date_match and "report_date" not in result:
+            result["report_date"] = date_match.group(1).strip()
+
+    table_rows: list[list[str]] = []
+    for tbl in root.findall(".//w:tbl", ns):
+        for tr in tbl.findall(".//w:tr", ns):
+            row: list[str] = []
+            for tc in tr.findall(".//w:tc", ns):
+                txt = "".join(t.text or "" for t in tc.findall(".//w:t", ns)).strip()
+                row.append(txt)
+            if any(cell for cell in row):
+                table_rows.append(row)
+
+    result.update(_extract_from_table_rows(table_rows))
+    result.update(_extract_from_text_lines(paragraphs + [" | ".join(r) for r in table_rows]))
+    return result
+
+
+def _extract_from_table_rows(table_rows: list[list[str]]) -> dict:
+    scores: dict = {}
+    weighted_total: Optional[float] = None
+
+    for idx, row in enumerate(table_rows):
+        header = [c.lower() for c in row]
+        if not any("dimension" in c for c in header) or not any("score" in c for c in header):
+            continue
+
+        score_col_idx = next((i for i, c in enumerate(header) if "score" in c), None)
+        dim_col_idx = next((i for i, c in enumerate(header) if "dimension" in c), 0)
+        weighted_col_idx = next((i for i, c in enumerate(header) if "weighted" in c or "contribution" in c), None)
+
+        if score_col_idx is None:
+            continue
+
+        running_weighted = 0.0
+        dim_scores: dict = {}
+
+        for data_row in table_rows[idx + 1 : idx + 20]:
+            if max(dim_col_idx, score_col_idx) >= len(data_row):
+                continue
+            dim_raw = data_row[dim_col_idx]
+            col = _normalise_dim(dim_raw)
+            if col is None:
+                if "decision" in " ".join(data_row).lower() or "composite" in " ".join(data_row).lower():
+                    break
+                continue
+
+            score = _parse_score(data_row[score_col_idx])
+            if score is None:
+                continue
+
+            dim_scores[col] = score
+
+            if weighted_col_idx is not None and weighted_col_idx < len(data_row):
+                wt = _parse_score(data_row[weighted_col_idx])
+                if wt is not None:
+                    running_weighted += wt
+
+        if len(dim_scores) >= 4:
+            scores.update(dim_scores)
+            if running_weighted > 0:
+                weighted_total = round(running_weighted, 2)
+            break
+
+    if weighted_total is not None:
+        scores["overall_score"] = weighted_total
+    return scores
+
+
+def _extract_from_text_lines(lines: list[str]) -> dict:
+    scores: dict = {}
+    blob = "\n".join(lines)
+
+    overall_match = re.search(
+        r"(?:Composite\s+Weighted\s+Score|Overall\s+Score)[:：]?\s*([0-9]+\.?[0-9]*)\s*(?:/\s*5(?:\.0)?)?",
+        blob,
+        re.I,
+    )
+    if overall_match:
+        scores["overall_score"] = round(float(overall_match.group(1)), 2)
+
+    band_match = re.search(r"Decision\s+Band[:：]?\s*([A-Za-z\-/ ]{3,40})", blob, re.I)
+    if band_match:
+        raw_band = band_match.group(1).strip()
+        norm_band = _canonicalise_band(raw_band)
+        if norm_band in {"Advance", "Research Further", "Defer", "Reject"}:
+            scores["decision_band"] = norm_band
+
+    for dim_name, col in DIMENSION_MAP.items():
+        if col in scores:
+            continue
+        dim_match = re.search(
+            rf"\b{re.escape(dim_name)}\b[^\n\r0-9]{{0,30}}([0-5](?:\.[0-9]+)?)",
+            blob,
+            re.I,
+        )
+        if dim_match:
+            val = float(dim_match.group(1))
+            if 0.0 <= val <= 5.0:
+                scores[col] = round(val, 2)
+
+    return scores
 
 
 # ---------------------------------------------------------------------------

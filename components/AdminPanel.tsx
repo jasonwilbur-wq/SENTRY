@@ -21,6 +21,8 @@ import {
   fetchAdminVars,
   linkVarToVendor,
   searchVendorsForLinking,
+  runVendorDirectorySync,
+  VendorSyncResponse,
 } from '../services/api';
 import { CompetitorIntelAdmin } from './CompetitorIntelAdmin';
 
@@ -203,6 +205,10 @@ export const AdminPanel: React.FC = () => {
   const [batchRunning, setBatchRunning] = useState(false);
   const [batchResult, setBatchResult]   = useState<BatchExtractResponse | null>(null);
   const [linkTarget, setLinkTarget]     = useState<VarAdminRow | null>(null);
+  const [syncPreview, setSyncPreview]   = useState<VendorSyncResponse | null>(null);
+  const [syncRunning, setSyncRunning]   = useState(false);
+  const [syncApplying, setSyncApplying] = useState(false);
+  const [syncError, setSyncError]       = useState('');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const PAGE_SIZE = 25;
@@ -269,6 +275,40 @@ export const AdminPanel: React.FC = () => {
         v.id === varId ? { ...v, company_name: vendorName, match_method: 'manual' } : v
       ),
     } : prev);
+  };
+
+  const handleVendorSyncPreview = async () => {
+    setSyncRunning(true);
+    setSyncError('');
+    try {
+      const res = await runVendorDirectorySync({ apply: false, sample_limit: 20 });
+      setSyncPreview(res);
+    } catch (error) {
+      setSyncError(error instanceof Error ? error.message : 'Preview failed');
+    } finally {
+      setSyncRunning(false);
+    }
+  };
+
+  const handleVendorSyncApply = async () => {
+    const confirmApply = window.confirm(
+      'Apply vendor directory sync? This will delete vendors not present in the canonical Vendor Assessments library.'
+    );
+    if (!confirmApply) return;
+
+    setSyncApplying(true);
+    setSyncError('');
+    try {
+      const res = await runVendorDirectorySync({ apply: true, backup: true, sample_limit: 20 });
+      setSyncPreview(res);
+      await loadStats();
+      await loadVars(1, search, scoredFilter);
+      setPage(1);
+    } catch (error) {
+      setSyncError(error instanceof Error ? error.message : 'Sync apply failed');
+    } finally {
+      setSyncApplying(false);
+    }
   };
 
   const coveragePct = stats?.extraction_coverage_pct ?? 0;
@@ -353,6 +393,62 @@ export const AdminPanel: React.FC = () => {
           </div>
         </>
       )}
+
+      {/* Vendor Directory Sync */}
+      <div className="bg-sentry-card border border-slate-700 rounded-lg p-4 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-white">Vendor Directory Sync (Canonical Library)</p>
+            <p className="text-xs text-slate-400">
+              Source: Vendor Assessments/00_System/vendor_assessment_vendor_profiles.csv
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleVendorSyncPreview}
+              disabled={syncRunning || syncApplying}
+              className="px-3 py-2 rounded-lg border border-slate-600 text-slate-200 hover:bg-slate-700 disabled:opacity-50 text-xs font-semibold"
+            >
+              {syncRunning ? 'Checking…' : 'Preview Sync'}
+            </button>
+            <button
+              onClick={handleVendorSyncApply}
+              disabled={syncApplying || syncRunning}
+              className="px-3 py-2 rounded-lg bg-red-700 hover:bg-red-600 text-white disabled:opacity-50 text-xs font-semibold"
+            >
+              {syncApplying ? 'Applying…' : 'Apply Sync'}
+            </button>
+          </div>
+        </div>
+
+        {syncError && <p className="text-xs text-red-400">{syncError}</p>}
+
+        {syncPreview && (
+          <div className="rounded-lg border border-slate-700 bg-slate-900/40 p-3 space-y-2">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+              <p className="text-slate-300">DB vendors: <span className="font-bold text-white">{syncPreview.db_vendors_total}</span></p>
+              <p className="text-slate-300">Canonical keys: <span className="font-bold text-white">{syncPreview.canonical_vendor_keys}</span></p>
+              <p className="text-slate-300">Out of sync: <span className="font-bold text-yellow-300">{syncPreview.vendors_out_of_sync}</span></p>
+              <p className="text-slate-300">Deleted: <span className="font-bold text-red-300">{syncPreview.deleted_vendors}</span></p>
+            </div>
+
+            {syncPreview.backup_path && (
+              <p className="text-[11px] text-slate-500 break-all">Backup: {syncPreview.backup_path}</p>
+            )}
+
+            {syncPreview.sample_removals.length > 0 && (
+              <div>
+                <p className="text-[11px] text-slate-400 mb-1">Sample removals</p>
+                <div className="max-h-24 overflow-y-auto text-[11px] text-slate-300 space-y-0.5">
+                  {syncPreview.sample_removals.map((name, idx) => (
+                    <p key={`${name}-${idx}`}>• {name}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Toolbar */}
       <div className="flex flex-wrap gap-3 items-center">

@@ -38,10 +38,9 @@ export const RequestLabVisit: React.FC = () => {
       } else {
         setError('Submission failed. Please try again.');
       }
-    } catch {
-      // Graceful demo fallback
-      setRefId(`LAB-${Date.now()}`);
-      setSubmitted(true);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Submission failed. Please try again.';
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -55,6 +54,7 @@ export const RequestLabVisit: React.FC = () => {
           <h2 className="text-2xl font-bold text-green-400 mb-2">Lab Visit Requested</h2>
           <p className="text-slate-300 mb-4">The Emerging Technology Lab team will confirm within 48h.</p>
           <p className="text-xs font-mono text-sentry-accent bg-slate-900 px-3 py-1 rounded border border-slate-700">Ref: {refId}</p>
+          <p className="mt-3 text-xs text-slate-400">Status: <span className="font-semibold text-blue-300">SUBMITTED</span></p>
           <button
             onClick={() => { setSubmitted(false); setForm({ contact_name: '', contact_email: '', preferred_date: '', preferred_slot: '', equipment: '', attendees: '1', notes: '' }); }}
             className="mt-6 text-sm text-slate-400 hover:text-white underline"

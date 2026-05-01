@@ -44,11 +44,21 @@ const BAND_COLORS: Record<string, string> = {
 };
 
 const TOOLTIP_STYLE = {
-  backgroundColor: 'var(--s-card)',
+  backgroundColor: 'var(--s-modal-card)',
   border: '1px solid var(--s-border-mid)',
-  borderRadius: 8,
+  borderRadius: 10,
   color: 'var(--s-text)',
   fontSize: 12,
+  boxShadow: '0 10px 30px rgba(0, 0, 0, 0.35)',
+};
+
+const TOOLTIP_LABEL_STYLE = {
+  color: 'var(--s-text)',
+  fontWeight: 700,
+};
+
+const TOOLTIP_ITEM_STYLE = {
+  color: 'var(--s-text-muted)',
 };
 
 // ── KPI Tile ────────────────────────────────────────────────────────────────
@@ -81,17 +91,25 @@ function KpiTile({
       >
         {prefix}{count.toLocaleString()}{suffix}
       </p>
-      {sub && <p className="text-[10px] mt-0.5" style={{ color: '#334155' }}>{sub}</p>}
+      {sub && <p className="text-[10px] mt-0.5" style={{ color: 'var(--s-text-dim)' }}>{sub}</p>}
     </div>
   );
 }
 
 // ── Risk Donut ──────────────────────────────────────────────────────────────
-function RiskDonut({ data }: { data: { name: string; value: number }[] }) {
+function RiskDonut({
+  data,
+  activeRisk,
+  onSelectRisk,
+}: {
+  data: { name: string; value: number }[];
+  activeRisk: '' | 'Low' | 'Medium' | 'High' | 'Critical';
+  onSelectRisk?: (risk: 'Low' | 'Medium' | 'High' | 'Critical') => void;
+}) {
   const total = data.reduce((s, d) => s + d.value, 0);
   return (
     <div>
-      <p className="text-xs uppercase tracking-widest text-slate-500 font-bold mb-3">
+      <p className="text-xs uppercase tracking-widest font-bold mb-3" style={{ color: 'var(--s-text-muted)' }}>
         Risk Distribution
       </p>
       <ResponsiveContainer width="100%" height={160}>
@@ -104,16 +122,24 @@ function RiskDonut({ data }: { data: { name: string; value: number }[] }) {
             dataKey="value"
             startAngle={90} endAngle={-270}
           >
-            {data.map(entry => (
-              <Cell
-                key={entry.name}
-                fill={RISK_COLORS[entry.name] ?? '#64748b'}
-                stroke="transparent"
-              />
-            ))}
+            {data.map(entry => {
+              const isActive = activeRisk === entry.name;
+              return (
+                <Cell
+                  key={entry.name}
+                  fill={RISK_COLORS[entry.name] ?? '#64748b'}
+                  stroke={isActive ? '#ffffff' : 'transparent'}
+                  strokeWidth={isActive ? 2 : 0}
+                  style={{ cursor: 'pointer', opacity: activeRisk && !isActive ? 0.5 : 1 }}
+                  onClick={() => onSelectRisk?.(entry.name as 'Low' | 'Medium' | 'High' | 'Critical')}
+                />
+              );
+            })}
           </Pie>
           <Tooltip
             contentStyle={TOOLTIP_STYLE}
+            labelStyle={TOOLTIP_LABEL_STYLE}
+            itemStyle={TOOLTIP_ITEM_STYLE}
             formatter={(v: number, n: string) => [`${v} (${Math.round(v/total*100)}%)`, n]}
           />
         </PieChart>
@@ -123,7 +149,15 @@ function RiskDonut({ data }: { data: { name: string; value: number }[] }) {
         {data.map(d => (
           <div key={d.name} className="flex items-center gap-1">
             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: RISK_COLORS[d.name] ?? '#64748b' }} />
-            <span className="text-[10px] text-slate-400">{d.name} ({d.value})</span>
+            <span
+              className="text-[10px]"
+              style={{
+                color: activeRisk === d.name ? 'var(--s-text)' : 'var(--s-text-muted)',
+                fontWeight: activeRisk === d.name ? 700 : 500,
+              }}
+            >
+              {d.name} ({d.value})
+            </span>
           </div>
         ))}
       </div>
@@ -147,30 +181,50 @@ const SHORT_NAMES: Record<string, string> = {
   'Video Analytics/AI':                               'V-Analytics',
 };
 
-function CategoryBars({ cats }: { cats: { category: string; count: number; avg_rating: number }[] }) {
+function CategoryBars({
+  cats,
+  activeCategory,
+  onSelectCategory,
+}: {
+  cats: { category: string; count: number; avg_rating: number }[];
+  activeCategory: string;
+  onSelectCategory?: (category: string) => void;
+}) {
   const data = cats.slice(0, 8).map(c => ({
+    category: c.category,
     name: SHORT_NAMES[c.category] ?? c.category.slice(0, 12),
     count: c.count,
   }));
   return (
     <div>
-      <p className="text-xs uppercase tracking-widest text-slate-500 font-bold mb-3">
+      <p className="text-xs uppercase tracking-widest font-bold mb-3" style={{ color: 'var(--s-text-muted)' }}>
         Top Categories
       </p>
       <ResponsiveContainer width="100%" height={180}>
         <BarChart data={data} layout="vertical" margin={{ top: 0, right: 50, bottom: 0, left: 0 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" horizontal={false} />
-          <XAxis type="number" tick={{ fill: '#64748b', fontSize: 10 }} axisLine={false} tickLine={false} />
-          <YAxis type="category" dataKey="name" width={80} tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} />
+          <XAxis type="number" tick={{ fill: 'var(--s-text-dim)', fontSize: 10 }} axisLine={false} tickLine={false} />
+          <YAxis type="category" dataKey="name" width={80} tick={{ fill: 'var(--s-text-muted)', fontSize: 10 }} axisLine={false} tickLine={false} />
           <Tooltip
             contentStyle={TOOLTIP_STYLE}
-            cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+            labelStyle={TOOLTIP_LABEL_STYLE}
+            itemStyle={TOOLTIP_ITEM_STYLE}
+            cursor={{ fill: 'rgba(0, 83, 226, 0.14)' }}
             formatter={(v: number) => [v, 'Vendors']}
           />
-          <Bar dataKey="count" radius={[0, 4, 4, 0]} maxBarSize={14}>
-            {data.map((_, i) => (
-              <Cell key={i} fill={`hsl(${210 + i * 18}, 80%, ${55 - i * 2}%)`} />
-            ))}
+          <Bar dataKey="count" radius={[0, 4, 4, 0]} maxBarSize={14} onClick={(d: { category: string }) => onSelectCategory?.(d.category)}>
+            {data.map((row, i) => {
+              const isActive = activeCategory !== 'All' && activeCategory === row.category;
+              return (
+                <Cell
+                  key={i}
+                  fill={`hsl(${210 + i * 18}, 80%, ${55 - i * 2}%)`}
+                  stroke={isActive ? '#ffffff' : 'transparent'}
+                  strokeWidth={isActive ? 1.5 : 0}
+                  style={{ cursor: 'pointer', opacity: activeCategory !== 'All' && !isActive ? 0.65 : 1 }}
+                />
+              );
+            })}
           </Bar>
         </BarChart>
       </ResponsiveContainer>
@@ -183,7 +237,7 @@ function DecisionBands({ bands, total }: { bands: Record<string, number>; total:
   const entries = Object.entries(bands).filter(([k]) => k).sort((a, b) => b[1] - a[1]);
   return (
     <div>
-      <p className="text-xs uppercase tracking-widest text-slate-500 font-bold mb-3">
+      <p className="text-xs uppercase tracking-widest font-bold mb-3" style={{ color: 'var(--s-text-muted)' }}>
         VAR Decision Bands
       </p>
       <div className="space-y-3">
@@ -193,7 +247,7 @@ function DecisionBands({ bands, total }: { bands: Record<string, number>; total:
           return (
             <div key={band}>
               <div className="flex justify-between mb-1">
-                <span className="text-xs text-slate-300">{band}</span>
+                <span className="text-xs" style={{ color: 'var(--s-text)' }}>{band}</span>
                 <span className="text-xs font-bold" style={{ color: col }}>{count}</span>
               </div>
               <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
@@ -206,11 +260,11 @@ function DecisionBands({ bands, total }: { bands: Record<string, number>; total:
           );
         })}
         {entries.length === 0 && (
-          <p className="text-xs text-slate-600">No scored VARs yet. Run score extraction in Admin.</p>
+          <p className="text-xs" style={{ color: 'var(--s-text-dim)' }}>No scored VARs yet. Run score extraction in Admin.</p>
         )}
       </div>
       <div className="mt-4 pt-3 border-t border-slate-800">
-        <p className="text-[10px] text-slate-600">
+        <p className="text-[10px]" style={{ color: 'var(--s-text-dim)' }}>
           {total} total VAR reports in system
         </p>
       </div>
@@ -221,9 +275,19 @@ function DecisionBands({ bands, total }: { bands: Record<string, number>; total:
 // ── Main Panel ────────────────────────────────────────────────────────────
 interface VendorStatsPanelProps {
   stats: DirectoryStats;
+  activeRisk?: '' | 'Low' | 'Medium' | 'High' | 'Critical';
+  activeCategory?: string;
+  onRiskSelect?: (risk: 'Low' | 'Medium' | 'High' | 'Critical') => void;
+  onCategorySelect?: (category: string) => void;
 }
 
-export const VendorStatsPanel: React.FC<VendorStatsPanelProps> = ({ stats }) => {
+export const VendorStatsPanel: React.FC<VendorStatsPanelProps> = ({
+  stats,
+  activeRisk = '',
+  activeCategory = 'All',
+  onRiskSelect,
+  onCategorySelect,
+}) => {
   const riskData = Object.entries(stats.risk_distribution)
     .filter(([k]) => k && k !== 'Unknown')
     .map(([name, value]) => ({ name, value }));
@@ -257,11 +321,11 @@ export const VendorStatsPanel: React.FC<VendorStatsPanelProps> = ({ stats }) => 
           </div>
           <div>
             <h2 className="text-sm font-bold text-white">Directory Intelligence</h2>
-            <p className="text-[10px]" style={{ color: '#475569' }}>Live stats from the SENTRY vendor database</p>
+            <p className="text-[10px]" style={{ color: 'var(--s-text-dim)' }}>Live stats from the SENTRY vendor database</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] uppercase tracking-widest" style={{ color: '#334155' }}>Live</span>
+          <span className="text-[10px] uppercase tracking-widest" style={{ color: 'var(--s-text-muted)' }}>Live</span>
           <div className="relative w-2 h-2">
             <div className="w-2 h-2 rounded-full bg-green-400" />
             <div className="absolute inset-0 w-2 h-2 rounded-full bg-green-400 animate-ping-ring" />
@@ -280,14 +344,18 @@ export const VendorStatsPanel: React.FC<VendorStatsPanelProps> = ({ stats }) => 
       {/* Charts row — gradient dividers + Category Percentages */}
       <div className="grid grid-cols-1 sm:grid-cols-4 p-4 pt-0">
         <div className="py-4 sm:pr-4" style={{ borderRight: '1px solid var(--s-border)' }}>
-          <RiskDonut data={riskData} />
+          <RiskDonut data={riskData} activeRisk={activeRisk} onSelectRisk={onRiskSelect} />
         </div>
         <div className="py-4 sm:px-4" style={{ borderRight: '1px solid var(--s-border)' }}>
-          <CategoryBars cats={stats.top_categories} />
+          <CategoryBars
+            cats={stats.top_categories}
+            activeCategory={activeCategory}
+            onSelectCategory={onCategorySelect}
+          />
         </div>
         <div className="py-4 sm:px-4" style={{ borderRight: '1px solid var(--s-border)' }}>
           <div>
-            <p className="text-xs uppercase tracking-widest text-slate-500 font-bold mb-3">
+            <p className="text-xs uppercase tracking-widest font-bold mb-3" style={{ color: 'var(--s-text-muted)' }}>
               Category Distribution
             </p>
             <div className="space-y-2 max-h-[180px] overflow-y-auto pr-2 custom-scrollbar">
@@ -298,7 +366,13 @@ export const VendorStatsPanel: React.FC<VendorStatsPanelProps> = ({ stats }) => 
                       className="w-2 h-2 rounded-full shrink-0"
                       style={{ backgroundColor: `hsl(${210 + idx * 18}, 80%, ${55 - idx * 2}%)` }}
                     />
-                    <span className="text-[10px] text-slate-400 truncate">
+                    <span
+                      className="text-[10px] truncate"
+                      style={{
+                        color: activeCategory === cat.category ? 'var(--s-text)' : 'var(--s-text-muted)',
+                        fontWeight: activeCategory === cat.category ? 700 : 500,
+                      }}
+                    >
                       {SHORT_NAMES[cat.category] ?? cat.category.slice(0, 12)}
                     </span>
                   </div>

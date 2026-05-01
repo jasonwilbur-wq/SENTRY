@@ -1,0 +1,138 @@
+{
+  "scenario_count": 4,
+  "passed_count": 4,
+  "failed_count": 0,
+  "skipped_count": 0,
+  "aggregate_metrics": {
+    "brief_count": 4,
+    "avg_seconds_generate_to_published_draft": 0.226,
+    "validation_failures_by_type": {
+      "MISSING_SOURCE_LINK": 18,
+      "MISSING_OWNER_ASSIGNMENT": 10,
+      "MISSING_RATIONALE": 3
+    },
+    "manual_item_edits_total": 26,
+    "correlated_vendor_project_item_count_total": 0
+  },
+  "results": [
+    {
+      "scenario": "amazon_high_signal",
+      "status": "passed",
+      "brief_id": "9a0e5f7e-ed06-4525-8b75-59540d2f67d3",
+      "brief_count": 1,
+      "selected_events": 4,
+      "candidate_count": 4,
+      "initial_included_count": 4,
+      "included_item_count_final": 0,
+      "validation_failures_by_type": {
+        "MISSING_SOURCE_LINK": 4,
+        "MISSING_OWNER_ASSIGNMENT": 2,
+        "MISSING_RATIONALE": 1
+      },
+      "manual_item_edits": 6,
+      "correlated_vendor_project_item_count": 0,
+      "seconds_generate_to_published_draft": 0.234,
+      "analyst_approve_status": 403,
+      "analyst_publish_status": 403,
+      "snapshot_banner": "Draft only \u2014 Human Review Required",
+      "snapshot_footer": "Draft artifact. Not final leadership directive.",
+      "audit_total": 13,
+      "audit_actions": [
+        "create",
+        "edit_brief",
+        "edit_item",
+        "transition",
+        "validate"
+      ]
+    },
+    {
+      "scenario": "target_focus",
+      "status": "passed",
+      "brief_id": "919cefcf-a033-41bd-849b-ac233b71f676",
+      "brief_count": 1,
+      "selected_events": 4,
+      "candidate_count": 4,
+      "initial_included_count": 4,
+      "included_item_count_final": 0,
+      "validation_failures_by_type": {
+        "MISSING_SOURCE_LINK": 4,
+        "MISSING_OWNER_ASSIGNMENT": 2,
+        "MISSING_RATIONALE": 1
+      },
+      "manual_item_edits": 6,
+      "correlated_vendor_project_item_count": 0,
+      "seconds_generate_to_published_draft": 0.209,
+      "analyst_approve_status": 403,
+      "analyst_publish_status": 403,
+      "snapshot_banner": "Draft only \u2014 Human Review Required",
+      "snapshot_footer": "Draft artifact. Not final leadership directive.",
+      "audit_total": 13,
+      "audit_actions": [
+        "create",
+        "edit_brief",
+        "edit_item",
+        "transition",
+        "validate"
+      ]
+    },
+    {
+      "scenario": "costco_focus",
+      "status": "passed",
+      "brief_id": "15efee66-bd90-4382-abcc-d2b6edfbe0dd",
+      "brief_count": 1,
+      "selected_events": 4,
+      "candidate_count": 4,
+      "initial_included_count": 4,
+      "included_item_count_final": 0,
+      "validation_failures_by_type": {
+        "MISSING_SOURCE_LINK": 4,
+        "MISSING_OWNER_ASSIGNMENT": 2,
+        "MISSING_RATIONALE": 1
+      },
+      "manual_item_edits": 6,
+      "correlated_vendor_project_item_count": 0,
+      "seconds_generate_to_published_draft": 0.227,
+      "analyst_approve_status": 403,
+      "analyst_publish_status": 403,
+      "snapshot_banner": "Draft only \u2014 Human Review Required",
+      "snapshot_footer": "Draft artifact. Not final leadership directive.",
+      "audit_total": 13,
+      "audit_actions": [
+        "create",
+        "edit_brief",
+        "edit_item",
+        "transition",
+        "validate"
+      ]
+    },
+    {
+      "scenario": "mixed_top3",
+      "status": "passed",
+      "brief_id": "d145d63e-db10-4033-a263-f35c17de4592",
+      "brief_count": 1,
+      "selected_events": 6,
+      "candidate_count": 13,
+      "initial_included_count": 6,
+      "included_item_count_final": 0,
+      "validation_failures_by_type": {
+        "MISSING_SOURCE_LINK": 6,
+        "MISSING_OWNER_ASSIGNMENT": 4
+      },
+      "manual_item_edits": 8,
+      "correlated_vendor_project_item_count": 0,
+      "seconds_generate_to_published_draft": 0.232,
+      "analyst_approve_status": 403,
+      "analyst_publish_status": 403,
+      "snapshot_banner": "Draft only \u2014 Human Review Required",
+      "snapshot_footer": "Draft artifact. Not final leadership directive.",
+      "audit_total": 15,
+      "audit_actions": [
+        "create",
+        "edit_brief",
+        "edit_item",
+        "transition",
+        "validate"
+      ]
+    }
+  ]
+}

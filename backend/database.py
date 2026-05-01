@@ -10,6 +10,8 @@ Performance enhancements:
 import sqlite3
 from pathlib import Path
 
+from audit import CREATE_AUDIT_INDEXES, CREATE_AUDIT_LOG
+
 DB_PATH = Path(__file__).parent / "data" / "sentry.db"
 
 CREATE_TABLE = """

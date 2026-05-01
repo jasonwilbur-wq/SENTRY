@@ -96,6 +96,24 @@ function ScoreRing({ rating, color }: { rating: number; color: string }) {
   );
 }
 
+const hasResolvedVarScore = (vendor: Vendor): boolean => (
+  typeof (vendor.var_weight_score ?? vendor.var_scores?.Overall) === 'number'
+);
+
+const getVarBadgeMeta = (vendor: Vendor) => {
+  if (!vendor.has_var) return null;
+  if (hasResolvedVarScore(vendor)) {
+    return {
+      label: 'VAR Scored',
+      className: 'bg-green-900/30 text-green-300 border-green-700',
+    };
+  }
+  return {
+    label: 'VAR Linked',
+    className: 'bg-amber-900/30 text-amber-300 border-amber-700',
+  };
+};
+
 // ── Decision band label ───────────────────────────────────────────────────────
 const BAND_STYLE: Record<string, string> = {
   'Advance':         'bg-green-900/40 text-green-300 border-green-700',
@@ -115,10 +133,15 @@ export const VendorCard3D: React.FC<VendorCard3DProps> = React.memo(({ vendor, o
   const risk   = RISK[vendor.risk_level] ?? RISK.Medium;
   const color  = catColor(vendor.category);
   const hasReport = vendor.report_url && !vendor.report_url.includes('google.com/search') && vendor.report_url !== '#';
-  const bandCls   = decisionBand ? BAND_STYLE[decisionBand] : null;
+  const resolvedDecisionBand = (decisionBand || vendor.var_decision_band || '').trim();
+  const bandCls = resolvedDecisionBand ? BAND_STYLE[resolvedDecisionBand] : null;
+  const displayScore = vendor.var_weight_score ?? vendor.overall_rating;
+  const scoreSourceLabel = vendor.var_weight_score != null ? 'VAR score' : `assessed ${vendor.last_assessed}`;
+  const varBadgeMeta = getVarBadgeMeta(vendor);
 
   return (
     <GlassCard3D
+      data-testid="vendor-card"
       glowColor={risk.glow}
       intensity={7}
       className="group relative flex flex-col rounded-2xl overflow-hidden cursor-pointer
@@ -131,12 +154,17 @@ export const VendorCard3D: React.FC<VendorCard3DProps> = React.memo(({ vendor, o
     >
       {/* Click overlay — whole card is clickable */}
       <div
-        className="absolute inset-0 z-10"
+        className="absolute inset-0 z-10 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
         role="button"
         tabIndex={0}
         aria-label={`Open details for ${vendor.company_name}`}
         onClick={() => onClick(vendor)}
-        onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') onClick(vendor); }}
+        onKeyDown={e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClick(vendor);
+          }
+        }}
       />
 
       {/* ── Top glow stripe (inset shadow = no layout impact) ── */}
@@ -177,7 +205,7 @@ export const VendorCard3D: React.FC<VendorCard3DProps> = React.memo(({ vendor, o
 
         {/* Score ring */}
         <div className="relative z-20" onClick={e => e.stopPropagation()}>
-          <ScoreRing rating={vendor.overall_rating} color={color} />
+          <ScoreRing rating={displayScore} color={color} />
         </div>
       </div>
 
@@ -188,16 +216,15 @@ export const VendorCard3D: React.FC<VendorCard3DProps> = React.memo(({ vendor, o
           {risk.label}
         </span>
         {/* VAR badge */}
-        {vendor.has_var && (
-          <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border
-                          bg-green-900/30 text-green-300 border-green-700">
-            ✓ VAR
+        {varBadgeMeta && (
+          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${varBadgeMeta.className}`}>
+            {varBadgeMeta.label}
           </span>
         )}
         {/* Decision band */}
-        {decisionBand && bandCls && (
+        {resolvedDecisionBand && bandCls && (
           <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${bandCls}`}>
-            {decisionBand}
+            {resolvedDecisionBand}
           </span>
         )}
         {/* Multi-product badge */}
@@ -221,7 +248,7 @@ export const VendorCard3D: React.FC<VendorCard3DProps> = React.memo(({ vendor, o
           <div
             className="h-full rounded-full transition-all duration-1000 ease-out"
             style={{
-              width: `${(vendor.overall_rating / 5) * 100}%`,
+              width: `${(displayScore / 5) * 100}%`,
               background: `linear-gradient(90deg, ${color}66, ${color})`,
               boxShadow: `0 0 6px ${color}44`,
             }}
@@ -229,7 +256,7 @@ export const VendorCard3D: React.FC<VendorCard3DProps> = React.memo(({ vendor, o
         </div>
         <div className="flex justify-between mt-1">
           <span className="text-[9px]" style={{ color: '#1e293b' }}>0</span>
-          <span className="text-[9px]" style={{ color: '#475569' }}>assessed {vendor.last_assessed}</span>
+          <span className="text-[9px]" style={{ color: '#475569' }}>{scoreSourceLabel}</span>
           <span className="text-[9px]" style={{ color: '#1e293b' }}>5.0</span>
         </div>
       </div>

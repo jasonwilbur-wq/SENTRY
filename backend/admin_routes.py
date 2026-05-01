@@ -28,10 +28,7 @@ except ImportError:
     get_token = lambda: None  # noqa: E731
     download_url_for_item = lambda x: ""  # noqa: E731
 
-try:
-    from var_score_extractor import extract_scores
-except ImportError:
-    extract_scores = None  # type: ignore
+from var_score_extractor import extract_scores
 
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -240,15 +237,9 @@ def list_admin_vars(
 
 async def _download_and_extract(var_id: str) -> ExtractResult:
     """Download a VAR from SharePoint and extract scores. Returns result."""
-    if extract_scores is None:
-        return ExtractResult(
-            var_id=var_id, filename="", success=False,
-            error="python-docx not installed"
-        )
-
     conn = get_connection()
     row = conn.execute(
-        "SELECT id, filename, item_id, sharepoint_url FROM var_reports WHERE id = ?",
+        "SELECT id, filename, item_id, sharepoint_url, download_url FROM var_reports WHERE id = ?",
         (var_id,)
     ).fetchone()
     conn.close()
@@ -257,33 +248,54 @@ async def _download_and_extract(var_id: str) -> ExtractResult:
         return ExtractResult(var_id=var_id, filename="", success=False, error="VAR not found")
 
     filename = row["filename"]
-    item_id = row["item_id"] or ""
+    item_id = (row["item_id"] or "").strip()
+    sharepoint_url = (row["sharepoint_url"] or "").strip()
+    download_url = (row["download_url"] or "").strip()
 
-    if not item_id:
+    if item_id:
+        doc_url = download_url_for_item(item_id)
+    elif download_url:
+        doc_url = download_url
+    elif sharepoint_url:
+        doc_url = sharepoint_url
+    else:
         return ExtractResult(
-            var_id=var_id, filename=filename, success=False,
-            error="No SharePoint item_id — cannot download"
+            var_id=var_id,
+            filename=filename,
+            success=False,
+            error="No download source (item_id/download_url/sharepoint_url)",
         )
 
+    headers: dict[str, str] = {}
     token = get_token()
-    if not token:
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    elif "graph.microsoft.com" in doc_url:
         return ExtractResult(
-            var_id=var_id, filename=filename, success=False,
-            error="MSAL token unavailable — check SharePoint auth"
+            var_id=var_id,
+            filename=filename,
+            success=False,
+            error="MSAL token unavailable — run SharePoint auth first",
         )
 
-    graph_url = download_url_for_item(item_id)
     try:
         async with httpx.AsyncClient(follow_redirects=True, timeout=60) as client:
-            resp = await client.get(
-                graph_url,
-                headers={"Authorization": f"Bearer {token}"},
-            )
+            resp = await client.get(doc_url, headers=headers)
         if resp.status_code != 200:
             return ExtractResult(
                 var_id=var_id, filename=filename, success=False,
                 error=f"Download failed: HTTP {resp.status_code}"
             )
+
+        content_type = (resp.headers.get("content-type") or "").lower()
+        if "wordprocessingml.document" not in content_type and not filename.lower().endswith(".docx"):
+            return ExtractResult(
+                var_id=var_id,
+                filename=filename,
+                success=False,
+                error="Downloaded content is not a DOCX file",
+            )
+
         docx_bytes = resp.content
     except Exception as exc:
         return ExtractResult(
