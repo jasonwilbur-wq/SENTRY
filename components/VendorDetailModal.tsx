@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useId, useState } from 'react';
 import { 
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, 
   BarChart, Bar, XAxis, YAxis, Tooltip, Cell 
 } from 'recharts';
-import { Vendor, VarReport, fetchVendorVarReports, getDownloadUrl } from '../services/api';
+import { Vendor, VarReport, fetchVendorById, fetchVendorVarReports, getDownloadUrl } from '../services/api';
+import { TechAssessmentTab } from './TechAssessmentTab';
 
 interface VendorDetailModalProps {
   vendor: Vendor;
@@ -26,186 +27,250 @@ const RISK_COLOR: Record<string, string> = {
   Low: '#22c55e', Medium: '#eab308', High: '#f97316', Critical: '#ef4444',
 };
 
-// ── Decision band color helper ───────────────────────────────────────────────
-const BAND_COLOR: Record<string, string> = {
-  Advance: '#22c55e', 'Research Further': '#60a5fa', Defer: '#f97316', Reject: '#ef4444',
+const normalizeScore = (value: number | null | undefined): number | null => (
+  typeof value === 'number' && Number.isFinite(value) ? value : null
+);
+
+const decisionBandFromScore = (score: number | null | undefined): string => {
+  if (score == null) return '';
+  if (score >= 4.0) return 'Advance';
+  if (score >= 3.0) return 'Research Further';
+  if (score >= 2.0) return 'Defer';
+  return 'Reject';
 };
 
-// ── DocsTab — fetches & displays ALL VAR reports for a vendor ─────────────────
-function DocsTab({ vendor }: { vendor: Vendor }) {
-  const [varReports, setVarReports] = useState<VarReport[]>([]);
-  const [loading, setLoading]       = useState(true);
-  const [error, setError]           = useState(false);
+const decisionPathFromMetrics = (
+  weightScore: number | null | undefined,
+  decisionBand: string,
+  riskScore: number | null | undefined,
+  complianceScore: number | null | undefined,
+): string => {
+  const normalizedWeight = normalizeScore(weightScore);
+  if (normalizedWeight == null) return 'No VAR weighted score has been extracted yet.';
+
+  const lowerBound = {
+    Advance: '4.0 - 5.0',
+    'Research Further': '3.0 - 3.9',
+    Defer: '2.0 - 2.9',
+    Reject: '0.0 - 1.9',
+  }[decisionBand] ?? 'band unavailable';
+
+  const notes = [`Weight score ${normalizedWeight.toFixed(1)}/5 maps to ${decisionBand} (${lowerBound}).`];
+  if ((riskScore ?? 0) < 3) notes.push('Risk score < 3.0 added mitigation gating.');
+  if ((complianceScore ?? 0) < 3.5) notes.push('Compliance score < 3.5 added remediation requirements.');
+  return notes.join(' ');
+};
+
+const pickPreferredVarReport = (reports: VarReport[]): VarReport | null => {
+  if (!reports.length) return null;
+  return reports.find((report) => normalizeScore(report.overall_score) != null) ?? reports[0] ?? null;
+};
+
+const hydrateVendorFromVarReport = (vendor: Vendor, report: VarReport | null): Vendor => {
+  if (!report) return vendor;
+
+  const varScores = {
+    Overall: normalizeScore(report.overall_score),
+    Compliance: normalizeScore(report.compliance_score),
+    Risk: normalizeScore(report.risk_score),
+    Maturity: normalizeScore(report.maturity_score),
+    Integration: normalizeScore(report.integration_score),
+    ROI: normalizeScore(report.roi_score),
+    Viability: normalizeScore(report.viability_score),
+    Differentiation: normalizeScore(report.differentiation_score),
+    'Cloud Dep': normalizeScore(report.cloud_dep_score),
+  };
+
+  const weightScore = normalizeScore(report.overall_score) ?? vendor.var_weight_score ?? null;
+  const decisionBand = (report.decision_band || vendor.var_decision_band || decisionBandFromScore(weightScore)).trim();
+  const riskScore = normalizeScore(report.risk_score) ?? vendor.var_scores?.Risk ?? null;
+  const complianceScore = normalizeScore(report.compliance_score) ?? vendor.var_scores?.Compliance ?? null;
+
+  return {
+    ...vendor,
+    latest_var_id: report.id || vendor.latest_var_id,
+    var_scores: {
+      ...(vendor.var_scores ?? {}),
+      ...varScores,
+    },
+    var_weight_score: weightScore,
+    var_decision_band: decisionBand,
+    var_decision_path: decisionPathFromMetrics(weightScore, decisionBand, riskScore, complianceScore),
+  };
+};
+
+const hasResolvedVarScore = (vendor: Vendor): boolean => {
+  const overall = vendor.var_weight_score ?? vendor.var_scores?.Overall ?? null;
+  return normalizeScore(overall) != null;
+};
+
+const getVarStatusMeta = (vendor: Vendor) => {
+  if (!vendor.has_var) return null;
+  if (hasResolvedVarScore(vendor)) {
+    return {
+      label: 'VAR Scored',
+      helper: 'Structured VAR scoring is available for review.',
+      style: { background: 'rgba(34,197,94,0.1)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' },
+    };
+  }
+  return {
+    label: 'VAR Linked',
+    helper: 'Assessment artifact is linked, but score extraction is still pending.',
+    style: { background: 'rgba(250,204,21,0.12)', color: '#facc15', border: '1px solid rgba(250,204,21,0.35)' },
+  };
+};
+
+export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor: initialVendor, onClose }) => {
+  const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [modalVendor, setModalVendor] = useState<Vendor>(initialVendor);
+  const [isHydratingVar, setIsHydratingVar] = useState(false);
+  const modalBaseId = useId();
+  const headingId = `${modalBaseId}-heading`;
 
   useEffect(() => {
-    if (!vendor.has_var) { setLoading(false); return; }
-    fetchVendorVarReports(vendor.id)
-      .then(data => setVarReports(data.reports))
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
-  }, [vendor.id, vendor.has_var]);
+    let cancelled = false;
+    setModalVendor(initialVendor);
 
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        {[1, 2].map(i => (
-          <div key={i} className="h-20 rounded-xl bg-slate-800/60 animate-pulse border border-slate-700/40" />
-        ))}
-      </div>
-    );
+    const shouldHydrateDetail = initialVendor.has_var || !initialVendor.var_scores || !initialVendor.concerns;
+    if (!shouldHydrateDetail) {
+      setIsHydratingVar(false);
+      return () => { cancelled = true; };
+    }
+
+    setIsHydratingVar(initialVendor.has_var);
+
+    void (async () => {
+      let nextVendor = initialVendor;
+
+      try {
+        nextVendor = await fetchVendorById(initialVendor.id);
+      } catch {
+        // Keep base vendor if detail fetch fails; modal remains usable.
+      }
+
+      if (initialVendor.has_var) {
+        try {
+          const { reports } = await fetchVendorVarReports(initialVendor.id);
+          nextVendor = hydrateVendorFromVarReport(nextVendor, pickPreferredVarReport(reports));
+        } catch {
+          // Vendor detail payload remains the fallback if VAR report fetch fails.
+        }
+      }
+
+      if (!cancelled) {
+        setModalVendor(nextVendor);
+        setIsHydratingVar(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [initialVendor]);
+
+  const vendor = modalVendor;
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') onClose();
+    };
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
+
+  // Prepare Radar Data from latest VAR scores
+  const radarData = modalVendor.var_scores ? [
+    { subject: 'Compliance', A: modalVendor.var_scores.Compliance || 0, fullMark: 5 },
+    { subject: 'Risk',       A: modalVendor.var_scores.Risk || 0,       fullMark: 5 },
+    { subject: 'Maturity',   A: modalVendor.var_scores.Maturity || 0,   fullMark: 5 },
+    { subject: 'Integration',A: modalVendor.var_scores.Integration || 0,fullMark: 5 },
+    { subject: 'ROI',        A: modalVendor.var_scores.ROI || 0,        fullMark: 5 },
+    { subject: 'Viability',  A: modalVendor.var_scores.Viability || 0,  fullMark: 5 },
+  ] : [];
+  const hasVarScoreData = radarData.some(({ A }) => A > 0);
+
+  const riskColor = RISK_COLOR[modalVendor.risk_level] || '#64748b';
+  const weightScore = modalVendor.var_weight_score ?? modalVendor.var_scores?.Overall ?? null;
+  const decisionBand = (modalVendor.var_decision_band || '').trim();
+  const decisionPath = (modalVendor.var_decision_path || '').trim();
+  const varStatusMeta = getVarStatusMeta(modalVendor);
+  const formatMetricValue = (value: number | null | undefined) => (
+    value == null ? 'N/A' : `${Number(value).toFixed(1)} / 5.0`
+  );
+  const riskSummaryCards = [
+    { label: 'Weighted Score', value: formatMetricValue(weightScore), accent: '#0053e2' },
+    { label: 'Decision Band', value: decisionBand || 'Pending', accent: '#ffc220' },
+    { label: 'Risk Score', value: formatMetricValue(modalVendor.var_scores?.Risk), accent: riskColor },
+    { label: 'Compliance', value: formatMetricValue(modalVendor.var_scores?.Compliance), accent: '#22c55e' },
+  ];
+
+  type ConcernSource = 'DB' | 'VAR';
+  type ConcernItem = { text: string; source: ConcernSource };
+
+  const concernItems: ConcernItem[] = [];
+  if (modalVendor.concerns) {
+    for (const item of modalVendor.concerns.split('|').map(s => s.trim()).filter(Boolean)) {
+      const source: ConcernSource = item.toUpperCase().startsWith('VAR') ? 'VAR' : 'DB';
+      concernItems.push({ text: item, source });
+    }
+  }
+  if (modalVendor.var_scores) {
+    const risk = modalVendor.var_scores.Risk ?? 0;
+    const compliance = modalVendor.var_scores.Compliance ?? 0;
+    const overall = modalVendor.var_scores.Overall ?? 0;
+
+    if (risk > 0 && risk < 3) {
+      concernItems.push({
+        text: 'VAR indicates elevated risk exposure requiring mitigation controls.',
+        source: 'VAR',
+      });
+    }
+    if (compliance > 0 && compliance < 3.5) {
+      concernItems.push({
+        text: 'Compliance score is below target; policy and control gaps should be addressed.',
+        source: 'VAR',
+      });
+    }
+    if (overall > 0 && overall < 3.5) {
+      concernItems.push({
+        text: 'Overall VAR score suggests conditional adoption with remediation milestones.',
+        source: 'VAR',
+      });
+    }
   }
 
-  return (
-    <div className="space-y-4">
-      {/* Header with count */}
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">
-          VAR Reports
-          {varReports.length > 0 && (
-            <span
-              className="ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold"
-              style={{ background: 'rgba(34,197,94,0.15)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }}
-            >
-              {varReports.length}
-            </span>
-          )}
-        </h3>
-      </div>
-
-      {/* VAR report list */}
-      {varReports.length > 0 ? (
-        varReports.map(report => {
-          const bandCol = BAND_COLOR[report.decision_band] ?? '#64748b';
-          const hasScores = report.overall_score !== null;
-          return (
-            <a
-              key={report.id}
-              href={getDownloadUrl(report.id)}
-              download
-              className="block p-4 bg-slate-900 border border-slate-700 hover:border-wmt-blue
-                         hover:shadow-[0_0_15px_rgba(0,83,226,0.2)] rounded-xl group transition-all"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-lg bg-blue-900/20 border border-blue-900/50
-                                  flex items-center justify-center text-blue-400 shrink-0">
-                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-bold text-white group-hover:text-wmt-blue transition-colors text-sm
-                                  truncate max-w-[320px]">
-                      {report.filename || 'Vendor Assessment Report'}
-                    </p>
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      <span className="text-xs text-slate-500">{report.report_date || 'Unknown date'}</span>
-                      <span className="text-slate-700">•</span>
-                      <span className="text-xs text-slate-500">{report.report_version}</span>
-                      <span className="text-slate-700">•</span>
-                      <span className="text-xs text-slate-500 italic">{report.match_method}</span>
-                      {/* Decision band pill */}
-                      {report.decision_band && (
-                        <>
-                          <span className="text-slate-700">•</span>
-                          <span
-                            className="text-[10px] font-bold px-1.5 py-0.5 rounded-full border"
-                            style={{
-                              background: `${bandCol}18`,
-                              color: bandCol,
-                              borderColor: `${bandCol}44`,
-                            }}
-                          >
-                            {report.decision_band}
-                          </span>
-                        </>
-                      )}
-                    </div>
-                    {/* Score row */}
-                    {hasScores && (
-                      <div className="flex gap-3 mt-2 flex-wrap">
-                        {[
-                          ['Overall', report.overall_score],
-                          ['Compliance', report.compliance_score],
-                          ['Risk', report.risk_score],
-                          ['Maturity', report.maturity_score],
-                          ['Integration', report.integration_score],
-                          ['ROI', report.roi_score],
-                        ].filter(([, v]) => v != null).map(([label, val]) => (
-                          <span key={label as string} className="text-[10px]">
-                            <span className="text-slate-600">{label}:</span>{' '}
-                            <span className={`font-bold ${
-                              (val as number) >= 4 ? 'text-green-400' :
-                              (val as number) >= 3 ? 'text-yellow-400' : 'text-red-400'
-                            }`}>
-                              {(val as number).toFixed(1)}
-                            </span>
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 text-slate-500 group-hover:text-wmt-blue
-                                transition-colors shrink-0 ml-4">
-                  <span className="text-xs font-semibold uppercase tracking-wider hidden sm:inline">Download</span>
-                  <svg className="w-4 h-4 group-hover:translate-y-0.5 transition-transform"
-                       fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                          d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                  </svg>
-                </div>
-              </div>
-            </a>
-          );
-        })
-      ) : (
-        <div className="p-6 bg-slate-900/50 border border-dashed border-slate-800 rounded-xl text-center">
-          <p className="text-slate-400 font-medium mb-1">No VAR Reports Found</p>
-          <p className="text-slate-600 text-xs">This vendor has not been fully assessed yet.</p>
-        </div>
-      )}
-
-      {error && (
-        <p className="text-xs text-red-400">Failed to load VAR reports. Backend may be offline.</p>
-      )}
-
-      {/* NDA placeholder */}
-      <div className="p-4 bg-slate-900/30 border border-slate-800 rounded-xl flex items-center
-                      justify-between opacity-60 hover:opacity-100 transition-opacity">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-lg bg-slate-800 flex items-center justify-center text-slate-500 shrink-0">
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-            </svg>
-          </div>
-          <div>
-            <p className="font-bold text-slate-400 text-sm">Non-Disclosure Agreement (NDA)</p>
-            <p className="text-xs text-slate-600">Status: Unknown</p>
-          </div>
-        </div>
-        <span className="text-xs text-slate-600 italic px-3 py-1 bg-slate-800 rounded-full">Not Linked</span>
-      </div>
-    </div>
+  const uniqueConcernItems = Array.from(
+    new Map(concernItems.map((item) => [item.text, item])).values(),
   );
-}
+  const productCount = modalVendor.all_products?.length ?? 0;
+  const selectedTabIndex = TABS.findIndex(({ id }) => id === activeTab);
+  const handleTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)) return;
+    event.preventDefault();
 
-export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor, onClose }) => {
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
+    let nextIndex = index;
+    if (event.key === 'ArrowRight') nextIndex = (index + 1) % TABS.length;
+    if (event.key === 'ArrowLeft') nextIndex = (index - 1 + TABS.length) % TABS.length;
+    if (event.key === 'Home') nextIndex = 0;
+    if (event.key === 'End') nextIndex = TABS.length - 1;
 
-  // Prepare Radar Data from var_scores
-  const radarData = vendor.var_scores ? [
-    { subject: 'Compliance', A: vendor.var_scores.Compliance || 0, fullMark: 5 },
-    { subject: 'Risk',       A: vendor.var_scores.Risk || 0,       fullMark: 5 },
-    { subject: 'Maturity',   A: vendor.var_scores.Maturity || 0,   fullMark: 5 },
-    { subject: 'Integration',A: vendor.var_scores.Integration || 0,fullMark: 5 },
-    { subject: 'ROI',        A: vendor.var_scores.ROI || 0,        fullMark: 5 },
-    { subject: 'Viability',  A: vendor.var_scores.Viability || 0,  fullMark: 5 },
-  ] : [];
-
-  const riskColor = RISK_COLOR[vendor.risk_level] || '#64748b';
+    setActiveTab(TABS[nextIndex].id);
+  };
+  const lastReviewedLabel = modalVendor.last_assessed || 'Assessment date not captured';
+  const companyUrl = modalVendor.company_url?.trim() || '';
+  const hasInsights = Boolean(
+    modalVendor.vendor_highlight
+      || modalVendor.use_cases
+      || modalVendor.value_to_walmart
+      || modalVendor.pros
+      || modalVendor.cons
+      || modalVendor.concerns,
+  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 animate-fadeIn">
@@ -224,6 +289,10 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor, on
       {/* Modal Card */}
       <div
         className="relative w-full max-w-5xl h-[85vh] rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={headingId}
+        data-testid="vendor-detail-modal"
         style={{
           background: 'var(--s-modal-card)',
           border: '1px solid var(--s-border-mid)',
@@ -258,38 +327,47 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor, on
                 boxShadow: `0 0 24px ${riskColor}33`,
               }}
             >
-              {vendor.company_name.substring(0, 2).toUpperCase()}
+              {modalVendor.company_name.substring(0, 2).toUpperCase()}
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-white">{vendor.company_name}</h2>
-              <div className="flex items-center gap-3 mt-1.5">
+              <h2 id={headingId} className="text-2xl font-bold text-white">{modalVendor.company_name}</h2>
+              <div className="flex items-center gap-3 mt-1.5 flex-wrap">
                 <span
                   className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
                   style={{ background: 'rgba(255,255,255,0.06)', color: '#64748b', border: '1px solid rgba(255,255,255,0.08)' }}
                 >
-                  {vendor.category}
+                  {modalVendor.category}
                 </span>
                 <span
                   className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
                   style={{ borderColor: riskColor, color: riskColor, backgroundColor: `${riskColor}14`, border: `1px solid ${riskColor}44` }}
                 >
-                  {vendor.risk_level} Risk
+                  {modalVendor.risk_level} Risk
                 </span>
-                {vendor.has_var && (
+                {varStatusMeta && (
                   <span
                     className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"
-                    style={{ background: 'rgba(34,197,94,0.1)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}
+                    style={varStatusMeta.style}
+                    title={varStatusMeta.helper}
                   >
-                    VAR Assessed
+                    {varStatusMeta.label}
                   </span>
                 )}
               </div>
+              <p className="mt-2 text-sm text-slate-400">
+                {productCount} assessed {productCount === 1 ? 'product' : 'products'} • Last review {lastReviewedLabel} • Status {modalVendor.deployment_status || 'Prospect'}
+              </p>
+              {varStatusMeta && !hasResolvedVarScore(modalVendor) && (
+                <p className="mt-2 text-xs font-medium text-amber-300">
+                  Score extraction pending — {varStatusMeta.helper}
+                </p>
+              )}
             </div>
           </div>
 
           <button
             onClick={onClose}
-            className="relative z-10 p-2 rounded-full transition-all"
+            className="relative z-10 p-2 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
             aria-label="Close"
             style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', color: '#64748b' }}
             onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.12)'; (e.currentTarget as HTMLButtonElement).style.color = '#f1f5f9'; }}
@@ -302,13 +380,22 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor, on
         {/* ── Tabs Navigation ─────────────────────────────────────────────── */}
         <div
           className="shrink-0 px-8 flex gap-8"
+          role="tablist"
+          aria-label="Vendor detail sections"
           style={{ borderBottom: '1px solid var(--s-border)', background: 'var(--s-modal-tabs)' }}
         >
-          {TABS.map(tab => (
+          {TABS.map((tab, index) => (
             <button
               key={tab.id}
+              id={`${modalBaseId}-tab-${tab.id}`}
+              role="tab"
+              type="button"
+              tabIndex={selectedTabIndex === index ? 0 : -1}
+              aria-selected={activeTab === tab.id}
+              aria-controls={`${modalBaseId}-panel-${tab.id}`}
               onClick={() => setActiveTab(tab.id)}
-              className="relative py-4 text-sm font-semibold transition-colors"
+              onKeyDown={(event) => handleTabKeyDown(event, index)}
+              className="relative py-4 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
               style={{
                 color: activeTab === tab.id ? '#ffffff' : '#475569',
                 borderBottom: activeTab === tab.id ? '2px solid #0053E2' : '2px solid transparent',
@@ -336,29 +423,35 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor, on
           
           {/* ── TAB: OVERVIEW ───────────────────────────────────────────────── */}
           {activeTab === 'overview' && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div
+              id={`${modalBaseId}-panel-overview`}
+              role="tabpanel"
+              aria-labelledby={`${modalBaseId}-tab-overview`}
+              className="grid grid-cols-1 lg:grid-cols-3 gap-8"
+            >
               {/* Main Description Column */}
               <div className="lg:col-span-2 space-y-8">
                 <section>
                   <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3">About</h3>
                   <p className="text-slate-300 leading-relaxed">
-                    {vendor.description || "No detailed description available for this vendor yet. This information is typically extracted from RFI responses or public profiles."}
+                    {vendor.description || 'No working description is attached yet. Add one from the latest RFI, briefing, or analyst notes so this record is usable without opening source documents.'}
                   </p>
                 </section>
 
                 <section>
                   <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3">Products Assessed</h3>
                   <div className="space-y-3">
-                    {(vendor.all_products || []).map((prod, idx) => (
-                      <div key={idx} className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex justify-between items-center">
+                    {(modalVendor.all_products || []).map((prod, idx) => (
+                      <div key={idx} className="p-4 rounded-xl bg-slate-900 border border-slate-800 flex justify-between items-center gap-4">
                          <div>
-                           <p className="font-semibold text-white">{prod.technology_product || "Unknown Product"}</p>
-                           <p className="text-xs text-slate-500">Last Assessed: {prod.last_assessed || "Pending"}</p>
+                           <p className="font-semibold text-white">{prod.technology_product || 'Unknown Product'}</p>
+                           <p className="text-xs text-slate-500">Last assessed: {prod.last_assessed || 'Pending'}</p>
                          </div>
-                         <div className="text-right">
-                           <span className={`text-sm font-bold ${prod.overall_rating >= 4 ? 'text-green-400' : 'text-yellow-400'}`}>
+                         <div className="text-right shrink-0">
+                           <p className={`text-sm font-bold ${prod.overall_rating >= 4 ? 'text-green-400' : 'text-yellow-400'}`}>
                              {prod.overall_rating.toFixed(1)} / 5.0
-                           </span>
+                           </p>
+                           <p className="text-[11px] text-slate-500">Overall rating</p>
                          </div>
                       </div>
                     ))}
@@ -379,14 +472,18 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor, on
                   </div>
                   <div>
                     <p className="text-xs text-slate-500 uppercase">Company URL</p>
-                    <a 
-                      href={vendor.company_url} 
-                      target="_blank" 
-                      rel="noreferrer"
-                      className="text-wmt-blue hover:underline text-sm truncate block"
-                    >
-                      {vendor.company_url || "N/A"}
-                    </a>
+                    {companyUrl ? (
+                      <a 
+                        href={companyUrl} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="text-wmt-blue hover:underline text-sm truncate block"
+                      >
+                        {companyUrl}
+                      </a>
+                    ) : (
+                      <p className="text-slate-500 text-sm">Not linked</p>
+                    )}
                   </div>
                 </div>
 
@@ -413,7 +510,12 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor, on
 
           {/* ── TAB: INSIGHTS ───────────────────────────────────── */}
           {activeTab === 'insights' && (
-            <div className="space-y-6">
+            <div
+              id={`${modalBaseId}-panel-insights`}
+              role="tabpanel"
+              aria-labelledby={`${modalBaseId}-tab-insights`}
+              className="space-y-6"
+            >
               {/* Vendor Highlight Banner */}
               {vendor.vendor_highlight && (
                 <div 
@@ -491,7 +593,7 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor, on
                         <div className="flex-1 h-2 bg-slate-800 rounded-full overflow-hidden">
                           <div 
                             className="h-full bg-gradient-to-r from-yellow-500 to-green-500 rounded-full"
-                            style={{ width: vendor.maturity_level.toLowerCase().includes('early') ? '33%' : vendor.maturity_level.toLowerCase().includes('growth') ? '66%' : '100%' }}
+                            style={{ width: modalVendor.maturity_level.toLowerCase().includes('early') ? '33%' : vendor.maturity_level.toLowerCase().includes('growth') ? '66%' : '100%' }}
                           />
                         </div>
                         <span className="text-sm font-bold text-white">{vendor.maturity_level}</span>
@@ -543,7 +645,7 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor, on
                   )}
 
                   {/* Concerns */}
-                  {vendor.concerns && (
+                  {uniqueConcernItems.length > 0 && (
                     <div className="p-5 rounded-xl bg-red-900/10 border border-red-900/30">
                       <div className="flex items-center gap-2 mb-3">
                         <svg className="w-4 h-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -553,10 +655,19 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor, on
                         <h4 className="text-sm font-bold text-red-400 uppercase tracking-widest">Security Concerns</h4>
                       </div>
                       <div className="space-y-2">
-                        {vendor.concerns.split('|').map((concern, idx) => (
-                          <div key={idx} className="flex items-start gap-2">
+                        {uniqueConcernItems.map((item, idx) => (
+                          <div key={`${item.text}-${idx}`} className="flex items-start gap-2">
                             <span className="text-red-400 text-sm mt-0.5">⚠</span>
-                            <p className="text-slate-300 text-sm leading-relaxed">{concern.trim()}</p>
+                            <p className="text-slate-300 text-sm leading-relaxed">{item.text}</p>
+                            <span
+                              className={`shrink-0 mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                                item.source === 'VAR'
+                                  ? 'border-blue-900/40 text-blue-300 bg-blue-900/20'
+                                  : 'border-slate-700 text-slate-400 bg-slate-900/40'
+                              }`}
+                            >
+                              {item.source}
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -566,12 +677,11 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor, on
               </div>
 
               {/* Empty State */}
-              {!vendor.vendor_highlight && !vendor.use_cases && !vendor.value_to_walmart && 
-               !vendor.pros && !vendor.cons && !vendor.concerns && (
+              {!hasInsights && (
                 <div className="py-16 text-center rounded-xl border border-dashed border-slate-700 bg-slate-900/30">
                   <div className="text-5xl mb-3">📊</div>
-                  <p className="text-slate-400 font-semibold mb-1">No Vendor Insights Available</p>
-                  <p className="text-slate-600 text-sm">This vendor hasn't been analyzed in the 202601/202602 tracker updates yet.</p>
+                  <p className="text-slate-400 font-semibold mb-1">No insight narrative is attached yet</p>
+                  <p className="text-slate-600 text-sm">Add highlights, strengths, challenges, or use-case notes so reviewers do not have to reconstruct the story from raw files.</p>
                 </div>
               )}
             </div>
@@ -579,17 +689,22 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor, on
 
           {/* ── TAB: RISK & SCORES ────────────────────────────────────── */}
           {activeTab === 'risk' && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
+            <div
+              id={`${modalBaseId}-panel-risk`}
+              role="tabpanel"
+              aria-labelledby={`${modalBaseId}-tab-risk`}
+              className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full"
+            >
               <div className="flex flex-col items-center justify-center bg-slate-900/50 rounded-2xl border border-slate-800 p-6 relative">
                  <h3 className="absolute top-6 left-6 text-sm font-bold text-slate-400 uppercase tracking-widest">VAR Score Profile</h3>
-                 {radarData.length > 0 ? (
+                 {hasVarScoreData ? (
                    <ResponsiveContainer width="100%" height={350}>
                      <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
                        <PolarGrid stroke="#334155" />
                        <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 12 }} />
                        <PolarRadiusAxis angle={30} domain={[0, 5]} tick={false} axisLine={false} />
                        <Radar
-                         name={vendor.company_name}
+                         name={modalVendor.company_name}
                          dataKey="A"
                          stroke="#0053E2"
                          strokeWidth={3}
@@ -604,17 +719,77 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor, on
                    </ResponsiveContainer>
                  ) : (
                    <div className="text-center text-slate-500">
-                     <p className="text-lg">No VAR Score Data Available</p>
-                     <p className="text-sm">Run an assessment to generate this profile.</p>
+                     {isHydratingVar ? (
+                       <>
+                         <p className="text-lg text-slate-300">Pulling latest VAR metrics…</p>
+                         <p className="text-sm">Syncing Risk & Scores from the linked Vendor Assessment Report.</p>
+                       </>
+                     ) : (
+                       <>
+                         <p className="text-lg">No VAR Score Data Available</p>
+                         <p className="text-sm">Run or link an assessed Vendor Assessment Report to populate this profile.</p>
+                       </>
+                     )}
                    </div>
                  )}
               </div>
 
               <div className="space-y-4">
-                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3">Detailed Metrics</h3>
-                {vendor.var_scores ? (
+                {varStatusMeta && !hasResolvedVarScore(modalVendor) && (
+                  <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 space-y-1">
+                    <h4 className="text-[11px] font-bold uppercase tracking-widest text-amber-300">Score Extraction Pending</h4>
+                    <p className="text-sm text-slate-300">{varStatusMeta.helper}</p>
+                    <p className="text-xs text-slate-400">Risk & Scores is using the linked Vendor Assessment Report status, but weighted scoring fields have not been extracted yet.</p>
+                  </div>
+                )}
+
+                {modalVendor.has_var && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {riskSummaryCards.map((card) => (
+                      <div key={card.label} className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{card.label}</p>
+                        <p className="mt-2 text-lg font-black" style={{ color: card.accent }}>{card.value}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {modalVendor.has_var && (
+                  <div className="p-4 rounded-xl border border-blue-900/40 bg-blue-950/20 space-y-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <h4 className="text-[11px] font-bold uppercase tracking-widest text-blue-300">VAR Decision Annotation</h4>
+                      <span className="text-[10px] text-slate-400">{modalVendor.last_assessed || 'Latest'}</span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="px-2 py-1 rounded text-xs font-bold border border-blue-700/40 bg-blue-900/20 text-blue-200">
+                        Weight Score: {weightScore !== null ? `${Number(weightScore).toFixed(1)} / 5.0` : 'N/A'}
+                      </span>
+                      <span
+                        className="px-2 py-1 rounded text-xs font-bold border"
+                        style={{ borderColor: 'rgba(255,194,32,0.45)', background: 'rgba(255,194,32,0.12)', color: '#ffc220' }}
+                      >
+                        Decision Band: {decisionBand || 'Pending'}
+                      </span>
+                    </div>
+                    <p className="text-xs leading-relaxed text-slate-300">
+                      {decisionPath || 'Decision path will appear after score extraction completes.'}
+                    </p>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Detailed Metrics</h3>
+                  {modalVendor.has_var && (
+                    <span className="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border border-blue-900/40 text-blue-300 bg-blue-900/20">
+                      VAR Source: {modalVendor.last_assessed || 'Latest'}
+                    </span>
+                  )}
+                </div>
+                {modalVendor.var_scores && Object.values(modalVendor.var_scores).some((val) => val != null) ? (
                   <div className="space-y-3">
-                  {Object.entries(vendor.var_scores).map(([key, val]) => (
+                  {Object.entries(modalVendor.var_scores)
+                    .filter(([, val]) => val != null)
+                    .map(([key, val]) => (
                     <div key={key} className="flex items-center gap-4">
                        <span className="w-32 text-sm text-slate-400 text-right font-medium tracking-wide">{key}</span>
                        <div className="flex-1 h-2.5 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
@@ -630,43 +805,131 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor, on
                 ) : (
                   <p className="text-slate-500 italic">No metrics found.</p>
                 )}
+
+                {modalVendor.has_var && uniqueConcernItems.length > 0 && (
+                  <div className="mt-8 p-5 rounded-xl bg-red-900/10 border border-red-900/30">
+                    <h4 className="text-sm font-bold text-red-400 uppercase tracking-widest mb-3">VAR Concern Annotations</h4>
+                    <div className="space-y-2">
+                      {uniqueConcernItems.map((item, idx) => (
+                        <div key={`${item.text}-${idx}`} className="flex items-start gap-2">
+                          <span className="text-red-400 text-sm mt-0.5">⚠</span>
+                          <p className="text-slate-300 text-sm leading-relaxed">{item.text}</p>
+                          <span
+                            className={`shrink-0 mt-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
+                              item.source=== 'VAR'
+                                ? 'border-blue-900/40 text-blue-300 bg-blue-900/20'
+                                : 'border-slate-700 text-slate-400 bg-slate-900/40'
+                            }`}
+                          >
+                            {item.source}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
 
           {/* ── TAB: TECHNOLOGY ─────────────────────────────────────────────── */}
           {activeTab === 'tech' && (
-            <div className="space-y-8">
-               <div className="grid grid-cols-2 gap-4">
-                 <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl">
-                    <h4 className="text-slate-500 text-xs uppercase mb-1">Hosting Model</h4>
-                    <p className="text-xl font-semibold text-white">{vendor.hosting_type || "Unknown"}</p>
-                 </div>
-                 <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl">
-                    <h4 className="text-slate-500 text-xs uppercase mb-1">Data Classification</h4>
-                    <p className="text-xl font-semibold text-white">{vendor.data_classification}</p>
-                 </div>
-               </div>
+            <div
+              id={`${modalBaseId}-panel-tech`}
+              role="tabpanel"
+              aria-labelledby={`${modalBaseId}-tab-tech`}
+              className="space-y-8"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl">
+                  <h4 className="text-slate-500 text-xs uppercase mb-1">Hosting Model</h4>
+                  <p className="text-xl font-semibold text-white">{vendor.hosting_type || "Unknown"}</p>
+                </div>
+                <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl">
+                  <h4 className="text-slate-500 text-xs uppercase mb-1">Data Classification</h4>
+                  <p className="text-xl font-semibold text-white">{vendor.data_classification || 'Internal'}</p>
+                </div>
+              </div>
 
-                 <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl">
-                 <h4 className="text-slate-500 text-xs uppercase mb-4">System Architecture</h4>
-                 <div
-                   className="h-48 flex flex-col items-center justify-center rounded-lg gap-2"
-                   style={{ border: '2px dashed rgba(255,255,255,0.06)', background: 'rgba(0,83,226,0.03)' }}
-                 >
-                   <svg className="w-8 h-8" style={{ color: '#1e293b' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
-                   </svg>
-                   <p className="text-xs" style={{ color: '#1e293b' }}>Architecture diagram not yet uploaded</p>
-                   <p className="text-[10px]" style={{ color: '#0f172a' }}>Upload via the Admin panel after an RFI is completed</p>
-                 </div>
-               </div>
+              <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl">
+                <div className="flex items-center justify-between gap-3 mb-4">
+                  <div>
+                    <h4 className="text-slate-500 text-xs uppercase mb-1">Assessment Pipeline</h4>
+                    <p className="text-sm text-slate-400">Live product-stage progress across grouped vendor records.</p>
+                  </div>
+                  <span className="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border border-slate-700 text-slate-300 bg-slate-800/80">
+                    Source: Highlights + VARs
+                  </span>
+                </div>
+                <TechAssessmentTab vendorId={vendor.id} />
+              </div>
             </div>
           )}
 
-          {/* ── TAB: DOCUMENTS ────────────────────────────────────────────────────── */}
+          {/* ── TAB: DOCUMENTS ──────────────────────────────────────────────── */}
           {activeTab === 'docs' && (
-            <DocsTab vendor={vendor} />
+            <div
+              id={`${modalBaseId}-panel-docs`}
+              role="tabpanel"
+              aria-labelledby={`${modalBaseId}-tab-docs`}
+              className="space-y-4"
+            >
+              {/* VAR Report Download */}
+              {vendor.has_var && vendor.latest_var_id ? (
+                <a 
+                  href={getDownloadUrl(modalVendor.latest_var_id)}
+                  download
+                  className="block p-4 bg-slate-900 border border-slate-700 hover:border-wmt-blue hover:shadow-[0_0_15px_rgba(0,83,226,0.2)] rounded-xl group transition-all"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-lg bg-blue-900/20 border border-blue-900/50 flex items-center justify-center text-blue-400 shrink-0">
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="font-bold text-white group-hover:text-wmt-blue transition-colors text-sm">
+                          Vendor Assessment Report (VAR)
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                           <span className="text-xs text-slate-500">Version 1.0</span>
+                           <span className="text-slate-700">•</span>
+                           <span className="text-xs text-slate-500">{vendor.last_assessed || 'Recent'}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 text-slate-500 group-hover:text-wmt-blue transition-colors">
+                      <span className="text-xs font-semibold uppercase tracking-wider">Download</span>
+                      <svg className="w-4 h-4 group-hover:translate-y-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                    </div>
+                  </div>
+                </a>
+              ) : (
+                <div className="p-6 bg-slate-900/50 border border-dashed border-slate-800 rounded-xl text-center">
+                    <p className="text-slate-400 font-medium mb-1">No linked VAR report yet</p>
+                    <p className="text-slate-600 text-xs">The vendor record exists, but no downloadable assessment report is attached to this grouped company entry.</p>
+                </div>
+              )}
+              
+              {/* Placeholder for NDA/Contracts */}
+              <div className="p-4 bg-slate-900/30 border border-slate-800 rounded-xl flex items-center justify-between opacity-60 hover:opacity-100 transition-opacity">
+                 <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-lg bg-slate-800 flex items-center justify-center text-slate-500 shrink-0">
+                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-400 text-sm">Non-Disclosure Agreement (NDA)</p>
+                      <p className="text-xs text-slate-600">Status: Unknown</p>
+                    </div>
+                 </div>
+                 <span className="text-xs text-slate-600 italic px-3 py-1 bg-slate-800 rounded-full">Not Linked</span>
+              </div>
+            </div>
           )}
 
         </div>

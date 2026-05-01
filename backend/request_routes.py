@@ -293,7 +293,7 @@ def list_requests(
 
 # ── PATCH /api/admin/requests/{ref_id}/status — triage status update ─────────
 
-@router.patch("/api/admin/requests/{ref_id}/status")
+@router.patch("/api/admin/requests/{ref_id}/status", response_model=StatusUpdateResponse)
 def update_request_status(
     ref_id: str,
     body: StatusUpdateRequest,
@@ -359,6 +359,7 @@ def update_request_status(
         conn.commit()
 
     return {
+        "success": True,
         "ref_id": ref_id,
         "old_status": old_status,
         "new_status": new_status,

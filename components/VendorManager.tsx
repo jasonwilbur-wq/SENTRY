@@ -3,6 +3,7 @@
  * Consumed by ProjectAdminPanel.
  */
 import React, { useState } from 'react';
+import { apiFetch } from '../services/api';
 
 export interface ProjectVendor {
   id: string;
@@ -71,7 +72,7 @@ const VendorManager: React.FC<{
     if (!newVendor.vendor_name.trim()) return;
     setSaving('new');
     try {
-      const res = await fetch(`/api/projects/${projectId}/vendors`, {
+      const res = await apiFetch(`/api/projects/${projectId}/vendors`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newVendor),
@@ -87,7 +88,7 @@ const VendorManager: React.FC<{
   const patchVendor = async (id: string, patch: Partial<ProjectVendor>) => {
     setSaving(id);
     try {
-      const res = await fetch(`/api/projects/${projectId}/vendors/${id}`, {
+      const res = await apiFetch(`/api/projects/${projectId}/vendors/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(patch),
@@ -102,7 +103,7 @@ const VendorManager: React.FC<{
     if (!window.confirm('Remove this vendor from the project?')) return;
     setSaving(id);
     try {
-      const res = await fetch(`/api/projects/${projectId}/vendors/${id}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/projects/${projectId}/vendors/${id}?confirm=true`, { method: 'DELETE' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       onVendorsChange(vendors.filter(v => v.id !== id));
     } finally { setSaving(null); }

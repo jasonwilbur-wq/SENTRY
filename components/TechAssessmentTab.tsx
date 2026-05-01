@@ -72,11 +72,15 @@ function PipelineStepper({ stage }: { stage: number }) {
 
 function SummaryCard({ label, value, color }: { label: string; value: number; color: string }) {
   return (
-    <div className="bg-gray-800 rounded-lg p-3 text-center flex-1">
+    <div className="bg-gray-800 rounded-lg p-3 text-center min-w-0">
       <div className={`text-2xl font-bold ${color}`}>{value}</div>
       <div className="text-gray-400 text-xs mt-0.5">{label}</div>
     </div>
   );
+}
+
+function formatSourceLabel(sourceFile: string) {
+  return sourceFile.replace('_updated.csv', '').replace(/[_-]/g, ' ');
 }
 
 function ProductRow({ p }: { p: TechProduct }) {
@@ -89,7 +93,10 @@ function ProductRow({ p }: { p: TechProduct }) {
     <tr className="border-b border-gray-800 hover:bg-gray-800/50 transition-colors">
       <td className="py-2 px-3 text-sm text-gray-200 max-w-xs">
         <div className="truncate" title={p.product_name}>{p.product_name}</div>
-        <div className="text-[10px] text-gray-500 mt-0.5">{p.source_file.replace('_updated.csv', '')} · {p.assessment_date}</div>
+        <div className="text-[10px] text-gray-500 mt-0.5">{formatSourceLabel(p.source_file)} · {p.assessment_date}</div>
+      </td>
+      <td className="py-2 px-3 text-sm text-gray-400">
+        {p.pre_assessment_score !== null ? p.pre_assessment_score.toFixed(1) : '—'}
       </td>
       <td className="py-2 px-3">
         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${stageColor}`}>
@@ -137,8 +144,9 @@ export function TechAssessmentTab({ vendorId }: Props) {
   }
   if (!data || !data.has_pipeline_data) {
     return (
-      <div className="text-gray-500 text-sm py-8 text-center">
-        No assessment pipeline data found for this vendor.
+      <div className="text-gray-500 text-sm py-8 text-center border border-dashed border-gray-700 rounded-xl bg-gray-900/40">
+        <p className="text-gray-300 font-medium mb-1">No pipeline activity has been imported yet</p>
+        <p className="text-xs text-gray-500">Load monthly highlight data for this company to show pre-assessment, technical review, and VAR progression here.</p>
       </div>
     );
   }
@@ -150,13 +158,25 @@ export function TechAssessmentTab({ vendorId }: Props) {
     <div className="space-y-5">
       {/* ─ Pipeline Banner ─ */}
       <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-4">
-        <div className="flex items-center justify-between mb-3">
-          <h4 className="text-sm font-semibold text-gray-200 uppercase tracking-wider">
-            Assessment Pipeline
-          </h4>
-          <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${STAGE_COLORS[maxStage] ?? ''}`}>
-            Highest Stage: {STAGE_LABELS[maxStage]}
-          </span>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3">
+          <div>
+            <h4 className="text-sm font-semibold text-gray-200 uppercase tracking-wider">
+              Assessment Pipeline
+            </h4>
+            <p className="text-xs text-gray-400 mt-1">
+              Tracking {summary.total_products} grouped {summary.total_products === 1 ? 'product' : 'products'} across pre-assessment, technical review, and VAR completion.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${STAGE_COLORS[maxStage] ?? ''}`}>
+              Highest Stage: {STAGE_LABELS[maxStage]}
+            </span>
+            {data.has_var && (
+              <span className="text-xs px-2.5 py-0.5 rounded-full font-medium bg-green-900/40 text-green-300 border border-green-800/60">
+                VAR present
+              </span>
+            )}
+          </div>
         </div>
         {/* Full-width stepper */}
         <div className="flex items-center gap-0">
@@ -185,7 +205,7 @@ export function TechAssessmentTab({ vendorId }: Props) {
       </div>
 
       {/* ─ Summary Cards ─ */}
-      <div className="flex gap-3">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
         <SummaryCard label="Products" value={summary.total_products} color="text-white" />
         <SummaryCard label="Initial Pass" value={summary.initial_pass} color="text-green-400" />
         <SummaryCard label="Initial Fail" value={summary.initial_fail} color="text-red-400" />
@@ -198,6 +218,7 @@ export function TechAssessmentTab({ vendorId }: Props) {
           <thead>
             <tr className="bg-gray-800 text-gray-400 text-xs uppercase tracking-wider">
               <th className="py-2 px-3">Product</th>
+              <th className="py-2 px-3">Pre Score</th>
               <th className="py-2 px-3">Stage</th>
               <th className="py-2 px-3">Pipeline</th>
               <th className="py-2 px-3">Initial Assess.</th>

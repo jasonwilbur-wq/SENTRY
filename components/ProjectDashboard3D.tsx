@@ -3,24 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Sphere, MeshDistortMaterial, Float, Text, Html } from '@react-three/drei';
 import * as THREE from 'three';
-import ESTLifecycleTimeline, { type NdaEntry, type ComplianceEntry, type ComplianceFields } from './ESTLifecycleTimeline';
 
 // ═══════════════════════════════════════════════════════════════════════
 // 3D Project Dashboard — SENTRY Epic Edition
 // Walmart Global Security · Emerging Technology
 // ═══════════════════════════════════════════════════════════════════════
-
-export interface ProjectVendor {
-  id: string;
-  project_id: string;
-  vendor_name: string;
-  vendor_id: string;
-  role: string;
-  status: 'active' | 'evaluating' | 'inactive' | 'removed';
-  notes: string;
-  added_at: string;
-  updated_at: string;
-}
 
 interface Project {
   project_id: string;
@@ -30,7 +17,6 @@ interface Project {
   lifecycle_state: string;
   health: string;
   current_phase: string;
-  est_phase_index: number;
   risk_score: number;
   sensitivity: string;
   tags: string;
@@ -41,14 +27,6 @@ interface Project {
   last_update_at: string;
   last_update_by: string;
   est_cost: string;
-  business_owner: string;
-  nda_numbers:  NdaEntry[];
-  apm_entries:  ComplianceEntry[];
-  erpa_entries: ComplianceEntry[];
-  ssp_entries:  ComplianceEntry[];
-  compliance_notes: string;
-  exit_reason: string;
-  vendors: ProjectVendor[];
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -270,7 +248,7 @@ const OrbitalScene: React.FC<OrbitalSceneProps> = ({ projects, onProjectClick })
       positions.set(project.project_id, [x, y, z]);
     });
 
-    return projects.map(p => (positions.get(p.project_id) ?? [0, 0, 0]) as [number, number, number]);
+    return projects.map(p => positions.get(p.project_id) || [0, 0, 0]);
   }, [projects]);
 
   return (
@@ -329,18 +307,18 @@ const OrbitalScene: React.FC<OrbitalSceneProps> = ({ projects, onProjectClick })
 
       {/* Ring Guides (Visual helpers) */}
       {[8, 12, 16].map((radius, idx) => {
-        const points: THREE.Vector3[] = [];
+        const points = [];
         for (let i = 0; i <= 64; i++) {
           const angle = (i / 64) * Math.PI * 2;
           points.push(new THREE.Vector3(Math.cos(angle) * radius, 0, Math.sin(angle) * radius));
         }
         const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
-        const lineMaterial = new THREE.LineBasicMaterial({
-          color: idx === 0 ? '#22c55e' : idx === 1 ? '#ffc220' : '#ef4444',
-          opacity: 0.15, transparent: true,
-        });
-        const lineObj = new THREE.Line(lineGeometry, lineMaterial);
-        return <primitive key={`ring-${idx}`} object={lineObj} />;
+        const color = idx === 0 ? '#22c55e' : idx === 1 ? '#ffc220' : '#ef4444';
+        return (
+          <line key={`ring-${idx}`} geometry={lineGeometry}>
+            <lineBasicMaterial attach="material" color={color} opacity={0.15} transparent />
+          </line>
+        );
       })}
 
       {/* Project Orbs */}
@@ -456,37 +434,23 @@ const ProjectCard3D: React.FC<ProjectCard3DProps> = ({ project, onClick }) => {
   const circumference = 2 * Math.PI * 45;
   const offset = circumference - (progress / 100) * circumference;
 
-  const isArchived = new Set(['rejected', 'discontinued', 'ended']).has(project.lifecycle_state?.toLowerCase());
-  const archiveBadge: Record<string, { label: string; color: string }> = {
-    rejected:     { label: '🚫 Rejected',     color: '#ea1100' },
-    discontinued: { label: '⏹ Discontinued', color: '#64748b' },
-    ended:        { label: '✓ Ended',         color: '#64748b' },
-  };
-  const badge = archiveBadge[project.lifecycle_state?.toLowerCase()] ?? null;
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -4, scale: 1.01 }}
+      whileHover={{ y: -8, scale: 1.02 }}
       transition={{ duration: 0.3 }}
       onClick={onClick}
       className="relative cursor-pointer"
-      style={{ opacity: isArchived ? 0.72 : 1 }}
     >
       {/* Glass Card */}
       <div
         className="relative overflow-hidden rounded-2xl p-6 backdrop-blur-xl border"
         style={{
-          background: isArchived
-            ? 'linear-gradient(135deg, rgba(30,30,40,0.85), rgba(12,18,36,0.95))'
-            : `linear-gradient(135deg, ${bgColor}, rgba(12, 18, 36, 0.88))`,
-          borderColor: isArchived ? 'rgba(100,116,139,0.4)' : color,
+          background: `linear-gradient(135deg, ${bgColor}, rgba(12, 18, 36, 0.88))`,
+          borderColor: color,
           borderWidth: '2px',
-          boxShadow: isArchived
-            ? '0 4px 16px rgba(0,0,0,0.3)'
-            : `0 8px 32px ${color}40, 0 0 40px ${color}20`,
-          filter: isArchived ? 'grayscale(0.4)' : 'none',
+          boxShadow: `0 8px 32px ${color}40, 0 0 40px ${color}20`,
         }}
       >
         {/* Animated Background Gradient */}
@@ -510,34 +474,21 @@ const ProjectCard3D: React.FC<ProjectCard3DProps> = ({ project, onClick }) => {
               <div className="flex items-center gap-2 mb-2">
                 <div
                   className="w-8 h-8 rounded-full flex items-center justify-center text-lg font-bold"
-                  style={{ backgroundColor: isArchived ? '#334155' : color, color: '#fff' }}
+                  style={{ backgroundColor: color, color: '#000' }}
                 >
-                  {isArchived ? '✕' : getStatusIcon(project.health)}
+                  {getStatusIcon(project.health)}
                 </div>
-                {badge ? (
-                  <span className="text-xs font-bold px-2 py-1 rounded"
-                    style={{ background: `${badge.color}22`, color: badge.color, border: `1px solid ${badge.color}44` }}>
-                    {badge.label}
-                  </span>
-                ) : (
-                  <span
-                    className="text-xs font-semibold uppercase tracking-wider px-2 py-1 rounded"
-                    style={{ backgroundColor: bgColor, color }}
-                  >
-                    {project.health}
-                  </span>
-                )}
+                <span
+                  className="text-xs font-semibold uppercase tracking-wider px-2 py-1 rounded"
+                  style={{ backgroundColor: bgColor, color }}
+                >
+                  {project.health}
+                </span>
               </div>
-              <h3 className="text-lg font-bold mb-1 line-clamp-2"
-                style={{ color: isArchived ? '#94a3b8' : '#fff' }}>
+              <h3 className="text-lg font-bold text-white mb-1 line-clamp-2">
                 {project.project_name}
               </h3>
-              <p className="text-xs text-slate-500 mb-2">{project.project_id}</p>
-              {isArchived && project.exit_reason && (
-                <p className="text-xs italic line-clamp-2" style={{ color: '#64748b' }}>
-                  {project.exit_reason}
-                </p>
-              )}
+              <p className="text-xs text-slate-400 mb-2">{project.project_id}</p>
             </div>
 
             {/* Progress Ring */}
@@ -648,72 +599,6 @@ const ProjectCard3D: React.FC<ProjectCard3DProps> = ({ project, onClick }) => {
               ))}
             </div>
           )}
-
-          {/* Vendor Roster — compact pill row on the card */}
-          {project.vendors && project.vendors.length > 0 && (
-            <div className="mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-              <p className="text-xs text-slate-400 mb-2 font-semibold uppercase tracking-wider">Vendors</p>
-              <div className="flex flex-wrap gap-1.5">
-                {project.vendors.map(v => {
-                  const cfg = {
-                    active:     { bg: 'rgba(34,197,94,0.12)',  border: 'rgba(34,197,94,0.4)',  color: '#22c55e', dot: '●' },
-                    evaluating: { bg: 'rgba(96,165,250,0.12)', border: 'rgba(96,165,250,0.4)', color: '#60a5fa', dot: '◎' },
-                    inactive:   { bg: 'rgba(100,116,139,0.12)',border: 'rgba(100,116,139,0.4)',color: '#94a3b8', dot: '○' },
-                    removed:    { bg: 'rgba(239,68,68,0.10)',  border: 'rgba(239,68,68,0.35)', color: '#f87171', dot: '✕' },
-                  }[v.status] ?? { bg: 'rgba(100,116,139,0.12)', border: 'rgba(100,116,139,0.4)', color: '#94a3b8', dot: '○' };
-                  return (
-                    <span
-                      key={v.id}
-                      title={`${v.role} · ${v.status}${v.notes ? ' — ' + v.notes : ''}`}
-                      className="text-xs px-2 py-0.5 rounded-full font-semibold flex items-center gap-1"
-                      style={{
-                        background: cfg.bg,
-                        border: `1px solid ${cfg.border}`,
-                        color: cfg.color,
-                        textDecoration: v.status === 'removed' ? 'line-through' : 'none',
-                        opacity: v.status === 'removed' ? 0.7 : 1,
-                      }}
-                    >
-                      <span style={{ fontSize: 8 }}>{cfg.dot}</span>
-                      {v.vendor_name}
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* EST Phase + Compliance ID badges */}
-          <div className="flex flex-wrap gap-1 mt-3 pt-3" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-            {/* EST Phase pill */}
-            <span className="text-xs px-2 py-1 rounded font-bold" style={{ background: `${color}25`, color, border: `1px solid ${color}50` }}>
-              Ph.{project.est_phase_index || 1}/8
-            </span>
-            {/* APM */}
-            {project.apm_entries?.length > 0 && (
-              <span className="text-xs px-2 py-1 rounded font-mono" style={{ background: 'rgba(0,83,226,0.15)', color: '#60a5fa', border: '1px solid rgba(0,83,226,0.3)' }}>
-                APM ×{project.apm_entries.length}
-              </span>
-            )}
-            {/* ERPA */}
-            {project.erpa_entries?.length > 0 && (
-              <span className="text-xs px-2 py-1 rounded font-mono" style={{ background: 'rgba(255,194,32,0.1)', color: '#ffc220', border: '1px solid rgba(255,194,32,0.3)' }}>
-                ERPA ×{project.erpa_entries.length}
-              </span>
-            )}
-            {/* SSP */}
-            {project.ssp_entries?.length > 0 && (
-              <span className="text-xs px-2 py-1 rounded font-mono" style={{ background: 'rgba(34,197,94,0.1)', color: '#22c55e', border: '1px solid rgba(34,197,94,0.3)' }}>
-                SSP ×{project.ssp_entries.length}
-              </span>
-            )}
-            {/* NDA */}
-            {project.nda_numbers?.length > 0 && (
-              <span className="text-xs px-2 py-1 rounded font-mono" style={{ background: 'rgba(168,85,247,0.1)', color: '#c084fc', border: '1px solid rgba(168,85,247,0.3)' }}>
-                NDA ×{project.nda_numbers.length}
-              </span>
-            )}
-          </div>
         </div>
 
         {/* Glow Effect */}
@@ -729,34 +614,6 @@ const ProjectCard3D: React.FC<ProjectCard3DProps> = ({ project, onClick }) => {
 };
 
 // ═══════════════════════════════════════════════════════════════════════
-// RFC 4180-compliant CSV parser
-// The naive line.split(',') breaks whenever a field contains a comma
-// inside quotes — e.g. the UAS summary "Deploy DiaB UAS at retail, home
-// office..." shifts every subsequent field right by 1, zeroing progress_pct.
-// ═══════════════════════════════════════════════════════════════════════
-function parseCSVLine(line: string): string[] {
-  const fields: string[] = [];
-  let current = '';
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (ch === '"') {
-      if (inQuotes && line[i + 1] === '"') { current += '"'; i++; } // escaped ""
-      else { inQuotes = !inQuotes; }
-    } else if (ch === ',' && !inQuotes) {
-      fields.push(current.trim());
-      current = '';
-    } else if ((ch === '\r' || ch === '\n') && !inQuotes) {
-      break; // end of line
-    } else {
-      current += ch;
-    }
-  }
-  fields.push(current.trim());
-  return fields;
-}
-
-// ═══════════════════════════════════════════════════════════════════════
 // Main Dashboard Component
 // ═══════════════════════════════════════════════════════════════════════
 
@@ -766,79 +623,56 @@ const ProjectDashboard3D: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'orbital'>('grid');
   const [filterHealth, setFilterHealth] = useState<'all' | 'green' | 'yellow' | 'red'>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [portfolioTab, setPortfolioTab] = useState<'active' | 'archive'>('active');
 
-  // States considered "archived" — hidden from active portfolio
-  const ARCHIVE_STATES = new Set(['rejected', 'discontinued', 'ended']);
-
-  // Load projects from the backend API (FastAPI on :8082 via Vite proxy)
+  // Load projects from CSV
   useEffect(() => {
     const loadProjects = async () => {
       try {
-        const res = await fetch('/api/projects');
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        setProjects(data.projects ?? []);
-      } catch (err) {
-        console.warn('API unavailable, falling back to CSV:', err);
-        // CSV fallback
-        try {
-          const response = await fetch('/data/projects.csv');
-          const text = await response.text();
-          const lines = text.split('\n');
-          const headers = parseCSVLine(lines[0]);
-          const parsed = lines.slice(1)
-            .filter(line => line.trim())
-            .map(line => {
-              const values = parseCSVLine(line);
-              const obj: any = {};
-              headers.forEach((header, idx) => { obj[header.trim()] = values[idx]?.trim() ?? ''; });
-              obj.progress_pct   = Number(obj.progress_pct)  || 0;
-              obj.risk_score     = Number(obj.risk_score)    || 0;
-              obj.blockers_count = Number(obj.blockers_count)|| 0;
-              obj.est_phase_index = Number(obj.est_phase_index) || 1;
-              obj.nda_numbers   = [];
-              obj.apm_entries   = [];
-              obj.erpa_entries  = [];
-              obj.ssp_entries   = [];
-              obj.compliance_notes = '';
-              obj.exit_reason      = '';
-              obj.business_owner   = '';
-              obj.vendors          = [];
-              return obj as Project;
-            })
-            .filter(p => p.project_id);
-          setProjects(parsed);
-        } catch {
-          setProjects(FALLBACK_PROJECTS);
-        }
+        const response = await fetch('/data/projects.csv'); // Update path as needed
+        const text = await response.text();
+        const lines = text.split('\n');
+        const headers = lines[0].split(',');
+        
+        const parsed = lines.slice(1)
+          .filter(line => line.trim())
+          .map(line => {
+            const values = line.split(',');
+            const obj: any = {};
+            headers.forEach((header, idx) => {
+              obj[header.trim()] = values[idx]?.trim() || '';
+            });
+            return obj as Project;
+          });
+
+        setProjects(parsed);
+      } catch (error) {
+        console.error('Error loading projects:', error);
+        // Fallback to hardcoded data if needed
+        setProjects(FALLBACK_PROJECTS);
       }
     };
+
     loadProjects();
   }, []);
 
   const filteredProjects = useMemo(() => {
     return projects.filter(project => {
-      const isArchived = ARCHIVE_STATES.has(project.lifecycle_state?.toLowerCase());
-      if (portfolioTab === 'active'  &&  isArchived) return false;
-      if (portfolioTab === 'archive' && !isArchived) return false;
       const matchesHealth = filterHealth === 'all' || project.health.toLowerCase() === filterHealth;
-      const matchesSearch = searchQuery === '' ||
+      const matchesSearch = searchQuery === '' || 
         project.project_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         project.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
         project.project_id.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesHealth && matchesSearch;
     });
-  }, [projects, filterHealth, searchQuery, portfolioTab]);
+  }, [projects, filterHealth, searchQuery]);
 
   const stats = useMemo(() => {
-    const active   = projects.filter(p => !ARCHIVE_STATES.has(p.lifecycle_state?.toLowerCase()));
-    const archived = projects.filter(p =>  ARCHIVE_STATES.has(p.lifecycle_state?.toLowerCase()));
-    const total  = active.length;
-    const green  = active.filter(p => p.health.toLowerCase() === 'green').length;
-    const yellow = active.filter(p => p.health.toLowerCase() === 'yellow').length;
-    const red    = active.filter(p => p.health.toLowerCase() === 'red').length;
-    return { total, green, yellow, red, archived: archived.length };
+    const total = projects.length;
+    const green = projects.filter(p => p.health.toLowerCase() === 'green').length;
+    const yellow = projects.filter(p => p.health.toLowerCase() === 'yellow').length;
+    const red = projects.filter(p => p.health.toLowerCase() === 'red').length;
+    
+    return { total, green, yellow, red };
   }, [projects]);
 
   return (
@@ -871,40 +705,6 @@ const ProjectDashboard3D: React.FC = () => {
 
             {/* View Mode Toggle */}
             <div className="flex items-center gap-3">
-              {/* Portfolio tabs */}
-              <div className="flex items-center rounded-lg overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.12)' }}>
-                <button
-                  onClick={() => { setPortfolioTab('active'); setFilterHealth('all'); }}
-                  className="px-4 py-2 text-sm font-semibold transition-all"
-                  style={{
-                    background: portfolioTab === 'active' ? '#0053E2' : 'rgba(255,255,255,0.04)',
-                    color: portfolioTab === 'active' ? '#fff' : '#94a3b8',
-                  }}
-                >
-                  Active Portfolio
-                  <span className="ml-2 text-xs px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.15)' }}>
-                    {stats.total}
-                  </span>
-                </button>
-                <button
-                  onClick={() => { setPortfolioTab('archive'); setFilterHealth('all'); }}
-                  className="px-4 py-2 text-sm font-semibold transition-all"
-                  style={{
-                    background: portfolioTab === 'archive' ? 'rgba(100,116,139,0.4)' : 'rgba(255,255,255,0.04)',
-                    color: portfolioTab === 'archive' ? '#fff' : '#94a3b8',
-                  }}
-                >
-                  🗄️ Archive
-                  {stats.archived > 0 && (
-                    <span className="ml-2 text-xs px-1.5 py-0.5 rounded-full" style={{ background: 'rgba(100,116,139,0.4)' }}>
-                      {stats.archived}
-                    </span>
-                  )}
-                </button>
-              </div>
-
-              <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.12)' }} />
-
               <button
                 onClick={() => setViewMode('grid')}
                 className={`px-4 py-2 rounded-lg font-semibold transition-all ${
@@ -997,7 +797,7 @@ const ProjectDashboard3D: React.FC = () => {
             onClick={() => setFilterHealth('red')}
             whileHover={{ scale: 1.05 }}
             style={{
-              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), var(--s-card))',
+              background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(12, 18, 36, 0.88))',
               borderColor: filterHealth === 'red' ? '#ef4444' : 'rgba(239, 68, 68, 0.3)',
               boxShadow: filterHealth === 'red' ? '0 4px 24px rgba(239, 68, 68, 0.3)' : 'none',
             }}
@@ -1176,126 +976,6 @@ const ProjectDashboard3D: React.FC = () => {
                     {new Date(selectedProject.last_update_at).toLocaleString()} by {selectedProject.last_update_by}
                   </p>
                 </div>
-
-                {/* ── Vendor Roster ── */}
-                {selectedProject.vendors && selectedProject.vendors.length > 0 && (
-                  <div>
-                    <div style={{
-                      display: 'flex', alignItems: 'center', gap: 10,
-                      marginBottom: 14, paddingTop: 8,
-                      borderTop: '1px solid rgba(255,255,255,0.07)',
-                    }}>
-                      <div style={{
-                        width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 16,
-                        background: 'linear-gradient(135deg, rgba(0,83,226,0.2), rgba(0,83,226,0.05))',
-                        border: '1px solid rgba(0,83,226,0.3)',
-                      }}>🏢</div>
-                      <div>
-                        <div style={{ fontSize: 15, fontWeight: 800, color: '#fff' }}>Vendor Roster</div>
-                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 1 }}>
-                          {selectedProject.vendors.filter(v => v.status === 'active').length} active
-                          {selectedProject.vendors.filter(v => v.status === 'evaluating').length > 0 &&
-                            ` · ${selectedProject.vendors.filter(v => v.status === 'evaluating').length} evaluating`}
-                          {selectedProject.vendors.filter(v => v.status === 'removed').length > 0 &&
-                            ` · ${selectedProject.vendors.filter(v => v.status === 'removed').length} removed`}
-                        </div>
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {selectedProject.vendors.map(v => {
-                        const statusCfg = {
-                          active:     { color: '#22c55e', bg: 'rgba(34,197,94,0.08)',   border: 'rgba(34,197,94,0.25)',  icon: '✓', label: 'Active' },
-                          evaluating: { color: '#60a5fa', bg: 'rgba(96,165,250,0.08)',  border: 'rgba(96,165,250,0.25)', icon: '◎', label: 'Evaluating' },
-                          inactive:   { color: '#94a3b8', bg: 'rgba(100,116,139,0.08)',border: 'rgba(100,116,139,0.25)',icon: '○', label: 'Inactive' },
-                          removed:    { color: '#f87171', bg: 'rgba(239,68,68,0.08)',   border: 'rgba(239,68,68,0.25)',  icon: '✕', label: 'Removed' },
-                        }[v.status] ?? { color: '#94a3b8', bg: 'rgba(100,116,139,0.08)', border: 'rgba(100,116,139,0.25)', icon: '○', label: v.status };
-                        return (
-                          <div
-                            key={v.id}
-                            style={{
-                              display: 'flex', alignItems: 'center', gap: 12,
-                              padding: '10px 14px', borderRadius: 10,
-                              background: statusCfg.bg,
-                              border: `1px solid ${statusCfg.border}`,
-                              opacity: v.status === 'removed' ? 0.75 : 1,
-                            }}
-                          >
-                            {/* Status icon */}
-                            <div style={{
-                              width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              background: `${statusCfg.color}20`,
-                              border: `1px solid ${statusCfg.color}50`,
-                              color: statusCfg.color, fontSize: 13, fontWeight: 800,
-                            }}>{statusCfg.icon}</div>
-                            {/* Info */}
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <span style={{
-                                  fontSize: 13, fontWeight: 700, color: '#fff',
-                                  textDecoration: v.status === 'removed' ? 'line-through' : 'none',
-                                }}>{v.vendor_name}</span>
-                                <span style={{
-                                  fontSize: 10, fontWeight: 700, color: statusCfg.color,
-                                  background: `${statusCfg.color}18`, border: `1px solid ${statusCfg.color}40`,
-                                  padding: '1px 7px', borderRadius: 99, letterSpacing: '0.06em',
-                                }}>{statusCfg.label}</span>
-                                {v.role && v.role !== 'Vendor' && (
-                                  <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>
-                                    {v.role}
-                                  </span>
-                                )}
-                              </div>
-                              {v.notes && (
-                                <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                  {v.notes}
-                                </p>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* ── EST Lifecycle Timeline ── */}
-                <div>
-                  <div style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    marginBottom: 20, paddingTop: 8,
-                    borderTop: '1px solid rgba(255,255,255,0.07)',
-                  }}>
-                    <div style={{
-                      width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 16,
-                      background: 'linear-gradient(135deg, rgba(255,194,32,0.2), rgba(255,194,32,0.05))',
-                      border: '1px solid rgba(255,194,32,0.3)',
-                    }}>🛤️</div>
-                    <div>
-                      <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', letterSpacing: '-0.01em' }}>
-                        EST Lifecycle Timeline
-                      </div>
-                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 1 }}>
-                        Walmart Global Security · Emerging Security Technology Process · Click any phase to explore
-                      </div>
-                    </div>
-                  </div>
-                  <ESTLifecycleTimeline
-                    estPhaseIndex={selectedProject.est_phase_index || 1}
-                    health={selectedProject.health}
-                    compliance={{
-                      nda_numbers:  selectedProject.nda_numbers  || [],
-                      apm_entries:  selectedProject.apm_entries  || [],
-                      erpa_entries: selectedProject.erpa_entries || [],
-                      ssp_entries:  selectedProject.ssp_entries  || [],
-                      compliance_notes: selectedProject.compliance_notes || '',
-                    }}
-                  />
-                </div>
               </div>
             </motion.div>
           </motion.div>
@@ -1324,7 +1004,6 @@ const FALLBACK_PROJECTS: Project[] = [
     lifecycle_state: 'active',
     health: 'green',
     current_phase: 'Lab Testing',
-    est_phase_index: 5,
     risk_score: 3,
     sensitivity: 'confidential',
     tags: 'robotics;security;autonomous',
@@ -1335,14 +1014,6 @@ const FALLBACK_PROJECTS: Project[] = [
     last_update_at: '2026-02-28T20:30:00Z',
     last_update_by: 'Cody.Smith@walmart.com',
     est_cost: '',
-    business_owner: '',
-    nda_numbers:  [],
-    apm_entries:  [],
-    erpa_entries: [],
-    ssp_entries:  [],
-    compliance_notes: '',
-    exit_reason: '',
-    vendors: [],
   },
 ];
 

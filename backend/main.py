@@ -11,19 +11,30 @@ Usage:
 WARNING: Route order matters in FastAPI! Static paths like
   /api/vendors/categories MUST be registered before /{vendor_id}.
 """
+import csv
 import math
 import os
+import re
 import uuid
 from contextlib import asynccontextmanager
+from datetime import datetime, timedelta
+from pathlib import Path
 
 import httpx
-from fastapi import Depends, FastAPI, Query
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, RedirectResponse
 
-from auth import get_current_user, SentryUser
 from database import get_connection, init_db
 from admin_routes import router as admin_router
+from auth import SentryUser, get_auth_status, get_current_user
+from cache import ttl_cache
+from incident_routes import ROUTER as incident_router
+from project_routes import ROUTER as project_router
+from regulatory_routes import ROUTER as regulatory_router, get_regulatory_summary
+from analytics_routes import ROUTER as analytics_router
+from request_routes import router as request_router
+from vendor_sync_routes import router as vendor_sync_router
 from models import (
     CategoriesResponse,
     ChatRequest,
@@ -75,48 +86,265 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization", "X-Sentry-User"],
 )
 
-# ── Admin router (Phase 3) ────────────────────────────────────
+# ── Router wiring ──────────────────────────────────────────────────────
 app.include_router(admin_router)
-from admin_routes import competitor_router
-app.include_router(competitor_router)
+app.include_router(request_router)
+app.include_router(project_router)
+app.include_router(incident_router)
+app.include_router(regulatory_router)
+app.include_router(analytics_router)
+app.include_router(vendor_sync_router)
 
-# ── CSO Briefing Pipeline (MVP) ───────────────────────────────
-from cso_brief_routes import ROUTER as cso_brief_router
-app.include_router(cso_brief_router)
-
-
-# ── Health / auth status ──────────────────────────────────────────────────────
 
 @app.get("/api/health")
-def health_check():
-    """Health check — includes auth posture so frontend can show warnings."""
-    from auth import get_auth_status
+def health() -> dict:
     auth_status = get_auth_status()
     return {
         "status": "ok",
-        "version": "2.1.0",
+        "version": app.version,
         **auth_status,
     }
 
 
 @app.get("/api/auth/me")
-def whoami(user: SentryUser = Depends(get_current_user)):
-    """Return the authenticated user's identity and role.
-
-    Used by the frontend to verify the X-Sentry-User header is accepted
-    and to display the current user's identity in the UI.
-    """
+def auth_me(user: SentryUser = Depends(get_current_user)) -> dict:
     return {
         "id": user.id,
         "role": user.role,
         "is_admin": user.is_admin,
     }
-from regulatory_routes import ROUTER as regulatory_router
-app.include_router(regulatory_router)
-from incident_routes import ROUTER as incident_router
-app.include_router(incident_router)
-from project_routes import ROUTER as project_router
-app.include_router(project_router)
+
+
+@app.get("/api/morning-brief")
+def morning_brief() -> dict:
+    now = datetime.utcnow().isoformat()
+    conn = get_connection()
+
+    critical_incidents = conn.execute(
+        "SELECT COUNT(*) FROM incidents WHERE severity = 'Critical'"
+    ).fetchone()[0]
+    total_incidents = conn.execute(
+        "SELECT COUNT(*) FROM incidents"
+    ).fetchone()[0]
+    recent_incidents = [
+        dict(r)
+        for r in conn.execute(
+            """
+            SELECT id, incident_date, incident_type, severity, location, summary, impact
+            FROM incidents
+            WHERE incident_date != ''
+            ORDER BY incident_date DESC
+            LIMIT 5
+            """
+        ).fetchall()
+    ]
+
+    competitor_total = conn.execute(
+        "SELECT COUNT(*) FROM competitor_events"
+    ).fetchone()[0]
+
+    stale_assessments: list[dict] = []
+    cutoff = datetime.utcnow() - timedelta(days=180)
+    for row in conn.execute(
+        "SELECT id, company_name, last_assessed FROM vendors WHERE last_assessed IS NOT NULL AND TRIM(last_assessed) != ''"
+    ).fetchall():
+        assessed = str(row["last_assessed"] or "").strip()
+        try:
+            assessed_dt = datetime.fromisoformat(assessed[:10])
+        except ValueError:
+            continue
+        if assessed_dt < cutoff:
+            stale_assessments.append({
+                "vendor_id": row["id"],
+                "company_name": row["company_name"],
+            })
+
+    conn.close()
+
+    try:
+        regulatory = get_regulatory_summary()
+        stats = regulatory.get("stats", {})
+        regulatory_red = int(stats.get("red", 0))
+        regulatory_amber = int(stats.get("amber", 0))
+    except Exception:
+        regulatory_red = 0
+        regulatory_amber = 0
+
+    return {
+        "generated_at": now,
+        "incidents": {
+            "critical": critical_incidents,
+            "total": total_incidents,
+            "recent": recent_incidents,
+        },
+        "regulatory": {
+            "red": regulatory_red,
+            "amber": regulatory_amber,
+        },
+        "competitors": {
+            "total_events": competitor_total,
+        },
+        "vendors": {
+            "stale_assessments": stale_assessments,
+        },
+    }
+
+
+# ── Vendor directory authority + scoring helpers ───────────────────────
+VENDOR_ASSESSMENTS_ROOT = Path(
+    os.environ.get(
+        "SENTRY_VENDOR_ASSESSMENTS_ROOT",
+        r"C:\Users\j0w16ja\OneDrive - Walmart Inc\Desktop\SENTRY\Vendor Assessments",
+    )
+)
+VENDOR_PROFILES_CSV = VENDOR_ASSESSMENTS_ROOT / "00_System" / "vendor_assessment_vendor_profiles.csv"
+
+
+def _normalize_vendor_key(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "", (value or "").lower())
+
+
+@ttl_cache(ttl_seconds=300, key_prefix="vendor_profile_keys")
+def _canonical_vendor_keys() -> set[str]:
+    if not VENDOR_PROFILES_CSV.exists():
+        return set()
+
+    keys: set[str] = set()
+    with VENDOR_PROFILES_CSV.open("r", encoding="utf-8-sig", newline="") as handle:
+        for row in csv.DictReader(handle):
+            key = str(row.get("vendor_normalized_key") or "").strip().lower()
+            if key:
+                keys.add(key)
+    return keys
+
+
+def _is_vendor_in_directory(company_name: str, canonical_keys: set[str]) -> bool:
+    if not canonical_keys:
+        # Fail-open: if source file is unavailable, avoid blanking the directory.
+        return True
+    return _normalize_vendor_key(company_name) in canonical_keys
+
+
+def _decision_band_from_score(score: float | None) -> str:
+    if score is None:
+        return ""
+    if score >= 4.0:
+        return "Advance"
+    if score >= 3.0:
+        return "Research Further"
+    if score >= 2.0:
+        return "Defer"
+    return "Reject"
+
+
+def _decision_path_from_metrics(
+    weight_score: float | None,
+    decision_band: str,
+    risk_score: float | None,
+    compliance_score: float | None,
+) -> str:
+    if weight_score is None:
+        return "No VAR weighted score has been extracted yet."
+
+    lower_bound = {
+        "Advance": "4.0 - 5.0",
+        "Research Further": "3.0 - 3.9",
+        "Defer": "2.0 - 2.9",
+        "Reject": "0.0 - 1.9",
+    }.get(decision_band, "band unavailable")
+
+    notes: list[str] = [f"Weight score {weight_score:.1f}/5 maps to {decision_band} ({lower_bound})."]
+    if (risk_score or 0) < 3:
+        notes.append("Risk score < 3.0 added mitigation gating.")
+    if (compliance_score or 0) < 3.5:
+        notes.append("Compliance score < 3.5 added remediation requirements.")
+
+    return " ".join(notes)
+
+
+def _prefer_var_meta(candidate: dict | None, current: dict | None) -> bool:
+    if not candidate:
+        return False
+    if not current:
+        return True
+
+    candidate_has_score = candidate.get("var_weight_score") is not None
+    current_has_score = current.get("var_weight_score") is not None
+    if candidate_has_score != current_has_score:
+        return candidate_has_score
+
+    candidate_date = str(candidate.get("_report_date") or "")
+    current_date = str(current.get("_report_date") or "")
+    if candidate_date != current_date:
+        return candidate_date > current_date
+
+    candidate_created = str(candidate.get("_created_at") or "")
+    current_created = str(current.get("_created_at") or "")
+    return candidate_created > current_created
+
+
+def _latest_var_meta_by_vendor(conn, vendor_ids: list[str]) -> dict[str, dict]:
+    if not vendor_ids:
+        return {}
+
+    placeholders = ",".join(["?"] * len(vendor_ids))
+    rows = conn.execute(
+        f"""
+        SELECT
+            vendor_id, id, report_date, created_at, decision_band,
+            overall_score, compliance_score, risk_score, maturity_score,
+            integration_score, roi_score, viability_score,
+            differentiation_score, cloud_dep_score
+        FROM var_reports
+        WHERE vendor_id IN ({placeholders})
+        ORDER BY
+            vendor_id,
+            CASE WHEN overall_score IS NOT NULL THEN 0 ELSE 1 END,
+            report_date DESC,
+            created_at DESC
+        """,
+        vendor_ids,
+    ).fetchall()
+
+    meta: dict[str, dict] = {}
+    for report in rows:
+        vendor_id = str(report["vendor_id"])
+        if vendor_id in meta:
+            continue
+
+        weight_score = report["overall_score"]
+        decision_band = str(report["decision_band"] or "").strip()
+        if not decision_band:
+            decision_band = _decision_band_from_score(weight_score)
+
+        risk_score = report["risk_score"]
+        compliance_score = report["compliance_score"]
+        meta[vendor_id] = {
+            "latest_var_id": str(report["id"] or ""),
+            "var_scores": {
+                "Overall": weight_score,
+                "Compliance": compliance_score,
+                "Risk": risk_score,
+                "Maturity": report["maturity_score"],
+                "Integration": report["integration_score"],
+                "ROI": report["roi_score"],
+                "Viability": report["viability_score"],
+                "Differentiation": report["differentiation_score"],
+                "Cloud Dep": report["cloud_dep_score"],
+            },
+            "var_weight_score": weight_score,
+            "var_decision_band": decision_band,
+            "var_decision_path": _decision_path_from_metrics(
+                weight_score,
+                decision_band,
+                risk_score,
+                compliance_score,
+            ),
+            "_report_date": str(report["report_date"] or ""),
+            "_created_at": str(report["created_at"] or ""),
+        }
+
+    return meta
 
 
 # ── Vendors ────────────────────────────────────────────────────────────
@@ -125,17 +353,17 @@ def _group_products(
     rows: list[dict],
     var_vendor_ids: set[str] | None = None,
     latest_var_ids: dict[str, str] | None = None,
-    linked_map: dict[str, list[dict]] | None = None,
-    var_count_map: dict[str, int] | None = None,
+    latest_var_meta: dict[str, dict] | None = None,
 ) -> list[VendorOut]:
     """Group multiple product rows for the same company into one VendorOut."""
-    var_ids     = var_vendor_ids or set()
-    var_id_map  = latest_var_ids or {}   # vendor_id -> latest var_report.id
-    prj_map     = linked_map or {}       # lowercase company_name -> [{project...}]
-    vc_map      = var_count_map or {}    # vendor_id -> count of VAR reports
+    var_ids = var_vendor_ids or set()
+    var_id_map = latest_var_ids or {}
+    var_meta_map = latest_var_meta or {}
     companies: dict[str, VendorOut] = {}
+    company_var_meta: dict[str, dict] = {}
     for row in rows:
         name = row["company_name"]
+        candidate_var_meta = var_meta_map.get(str(row["id"]))
         product = VendorProduct(
             report_url=row["report_url"],
             technology_product=row["technology_product"],
@@ -147,8 +375,17 @@ def _group_products(
             companies[name].all_products.append(product)
             if not companies[name].has_var and row["id"] in var_ids:
                 companies[name].has_var = True
+            if _prefer_var_meta(candidate_var_meta, company_var_meta.get(name)):
+                company_var_meta[name] = candidate_var_meta
+                companies[name].latest_var_id = str(candidate_var_meta.get("latest_var_id") or companies[name].latest_var_id)
+                companies[name].var_scores = candidate_var_meta.get("var_scores")
+                companies[name].var_weight_score = candidate_var_meta.get("var_weight_score")
+                companies[name].var_decision_band = str(candidate_var_meta.get("var_decision_band") or "")
+                companies[name].var_decision_path = str(candidate_var_meta.get("var_decision_path") or "")
         else:
             has_v = row["id"] in var_ids
+            if candidate_var_meta:
+                company_var_meta[name] = candidate_var_meta
             companies[name] = VendorOut(
                 id=row["id"],
                 company_name=name,
@@ -161,9 +398,12 @@ def _group_products(
                 risk_level=row["risk_level"],
                 last_assessed=row["last_assessed"],
                 has_var=has_v,
-                var_count=vc_map.get(row["id"], 0),
-                latest_var_id=var_id_map.get(row["id"], ""),
+                latest_var_id=str(candidate_var_meta.get("latest_var_id") or var_id_map.get(row["id"], "")) if candidate_var_meta else var_id_map.get(row["id"], ""),
                 all_products=[product],
+                var_scores=candidate_var_meta.get("var_scores") if candidate_var_meta else None,
+                var_weight_score=candidate_var_meta.get("var_weight_score") if candidate_var_meta else None,
+                var_decision_band=str(candidate_var_meta.get("var_decision_band") or "") if candidate_var_meta else "",
+                var_decision_path=str(candidate_var_meta.get("var_decision_path") or "") if candidate_var_meta else "",
                 # Extended fields
                 description=row.get("description", ""),
                 founded_year=row.get("founded_year", ""),
@@ -181,27 +421,43 @@ def _group_products(
                 use_cases=row.get("use_cases", ""),
                 value_to_walmart=row.get("value_to_walmart", ""),
                 maturity_level=row.get("maturity_level", ""),
-                # Project associations
-                linked_projects=prj_map.get(name.lower(), []),
             )
     return list(companies.values())
 
 
+def _company_vendor_scope(conn, vendor_id: str) -> tuple[dict, list[str]]:
+    row = conn.execute(
+        "SELECT * FROM vendors WHERE id = ?",
+        (vendor_id,),
+    ).fetchone()
+    if not row:
+        raise HTTPException(status_code=404, detail="Vendor not found")
+
+    row_dict = dict(row)
+    canonical_keys = _canonical_vendor_keys()
+    if not _is_vendor_in_directory(str(row_dict.get("company_name") or ""), canonical_keys):
+        raise HTTPException(status_code=404, detail="Vendor not found in assessment library")
+
+    company_rows = conn.execute(
+        "SELECT id FROM vendors WHERE company_name = ? ORDER BY overall_rating DESC",
+        (row_dict["company_name"],),
+    ).fetchall()
+    company_vendor_ids = [str(company_row["id"]) for company_row in company_rows]
+    return row_dict, company_vendor_ids
+
+
 @app.get("/api/vendors", response_model=VendorsResponse)
 def list_vendors(
-    category:   str | None = Query(None),
-    search:     str | None = Query(None),
-    risk_level: str | None = Query(None),
-    has_var:    str | None = Query(None),    # 'yes' or 'no'
-    sort:       str | None = Query(None),    # name, rating, risk, last_assessed
-    page:       int = Query(1,  ge=1),
-    page_size:  int = Query(20, ge=1, le=500),
+    category: str | None = Query(None),
+    search:   str | None = Query(None),
+    risk:     str | None = Query(None),
+    page:      int = Query(1,  ge=1),
+    page_size: int = Query(20, ge=1, le=100),
 ):
-    """Return vendors paginated, optionally filtered by category, search term,
-    risk level, or VAR status. Supports sort parameter.
+    """Return vendors paginated, optionally filtered by category or search term.
 
-    Search covers: company_name, technology_product, category, description,
-    risk_level, and vendor_status.
+    Grouping (multiple products per company) happens in Python after the DB
+    fetch — SQLite has ~1,931 rows so this is sub-millisecond.
     """
     conn = get_connection()
     params: list[str] = []
@@ -210,42 +466,26 @@ def list_vendors(
     if category and category != "All":
         clauses.append("category = ?")
         params.append(category)
-    if risk_level:
-        clauses.append("risk_level = ?")
-        params.append(risk_level)
     if search:
         clauses.append(
-            "(LOWER(company_name) LIKE ? OR LOWER(technology_product) LIKE ?"
-            " OR LOWER(category) LIKE ? OR LOWER(description) LIKE ?"
-            " OR LOWER(risk_level) LIKE ? OR LOWER(vendor_status) LIKE ?)"
+            "(LOWER(company_name) LIKE ? OR LOWER(technology_product) LIKE ?)"
         )
         term = f"%{search.lower()}%"
-        params.extend([term, term, term, term, term, term])
-
-    # Sort mapping — default is rating DESC
-    SORT_MAP = {
-        "name":          "company_name ASC",
-        "rating":        "overall_rating DESC",
-        "risk":          "CASE risk_level WHEN 'Critical' THEN 0 WHEN 'High' THEN 1 WHEN 'Medium' THEN 2 ELSE 3 END ASC",
-        "last_assessed":  "last_assessed DESC",
-    }
-    order_clause = SORT_MAP.get(sort or "", "overall_rating DESC")
+        params.extend([term, term])
+    if risk:
+        clauses.append("risk_level = ?")
+        params.append(risk)
 
     where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
-    query = f"SELECT * FROM vendors {where} ORDER BY {order_clause}"
+    query = f"SELECT * FROM vendors {where} ORDER BY overall_rating DESC"
 
     rows = [dict(r) for r in conn.execute(query, params).fetchall()]
+    canonical_keys = _canonical_vendor_keys()
+    rows = [r for r in rows if _is_vendor_in_directory(r.get("company_name", ""), canonical_keys)]
 
     # Fetch vendor IDs that have VAR reports
     var_ids = {
         r[0] for r in conn.execute("SELECT DISTINCT vendor_id FROM var_reports").fetchall()
-    }
-    # VAR count per vendor
-    var_count_map = {
-        r[0]: r[1]
-        for r in conn.execute(
-            "SELECT vendor_id, COUNT(*) FROM var_reports GROUP BY vendor_id"
-        ).fetchall()
     }
     # Latest VAR id per vendor (for download proxy)
     latest_var_ids = {
@@ -255,43 +495,11 @@ def list_vendors(
             "GROUP BY vendor_id HAVING report_date = MAX(report_date)"
         ).fetchall()
     }
-    # Linked projects: join project_vendors → projects on vendor_name ≈ company_name
-    # Case-insensitive match covers minor name differences
-    linked_rows = conn.execute("""
-        SELECT
-            LOWER(pv.vendor_name)  AS vname,
-            pv.project_id,
-            p.project_name,
-            p.current_phase,
-            p.est_phase_index,
-            pv.role,
-            pv.status
-        FROM project_vendors pv
-        JOIN projects p ON pv.project_id = p.project_id
-        WHERE p.lifecycle_state NOT IN ('rejected', 'discontinued')
-    """).fetchall()
-    # Build a map: lowercase vendor name → list of linked project dicts
-    linked_map: dict[str, list[dict]] = {}
-    for lr in linked_rows:
-        key = dict(lr)["vname"]
-        linked_map.setdefault(key, []).append({
-            "project_id":     dict(lr)["project_id"],
-            "project_name":   dict(lr)["project_name"],
-            "current_phase":  dict(lr)["current_phase"],
-            "est_phase_index":dict(lr)["est_phase_index"],
-            "role":           dict(lr)["role"] or "",
-            "status":         dict(lr)["status"] or "",
-        })
+    latest_var_meta = _latest_var_meta_by_vendor(conn, [str(r["id"]) for r in rows])
     conn.close()
 
     # Group multiple-product rows into logical vendors
-    all_vendors = _group_products(rows, var_ids, latest_var_ids, linked_map, var_count_map)
-
-    # Apply has_var filter after grouping (needs computed has_var field)
-    if has_var == "yes":
-        all_vendors = [v for v in all_vendors if v.has_var]
-    elif has_var == "no":
-        all_vendors = [v for v in all_vendors if not v.has_var]
+    all_vendors = _group_products(rows, var_ids, latest_var_ids, latest_var_meta)
 
     total       = len(all_vendors)
     total_pages = max(1, math.ceil(total / page_size))
@@ -309,115 +517,208 @@ def list_vendors(
 
 
 # NOTE: /categories MUST be registered before /{vendor_id} to avoid shadowing
-@app.get("/api/vendors/categories")
+@app.get("/api/vendors/categories", response_model=CategoriesResponse)
 def list_categories():
-    """Return vendor categories with counts, sorted by count descending."""
+    """Return distinct vendor categories (cached 5 min)."""
+    return CategoriesResponse(categories=_cached_categories())
+
+
+@ttl_cache(ttl_seconds=300, key_prefix="categories")
+def _cached_categories() -> list[str]:
     conn = get_connection()
     rows = conn.execute(
-        "SELECT category, COUNT(*) as cnt FROM vendors "
-        "GROUP BY category HAVING cnt > 0 ORDER BY cnt DESC"
+        "SELECT category, company_name FROM vendors"
     ).fetchall()
     conn.close()
-    return {
-        "categories": [r["category"] for r in rows],
-        "category_counts": {r["category"]: r["cnt"] for r in rows},
+
+    canonical_keys = _canonical_vendor_keys()
+    categories = {
+        r["category"]
+        for r in rows
+        if _is_vendor_in_directory(str(r["company_name"]), canonical_keys)
     }
+    return sorted(categories)
 
 
 @app.get("/api/vendors/{vendor_id}", response_model=VendorOut)
 def get_vendor(vendor_id: str):
-    """Return a single vendor by ID, enriched with latest VAR scores.
-
-    All queries run inside a single connection that is closed once — the
-    previous version closed the connection mid-function and then tried to
-    execute a second query on the dead handle, causing ProgrammingError 500s
-    for any vendor that had VAR reports.
-    """
-    from fastapi import HTTPException
-
+    """Return a vendor by ID, grouped at company level with latest VAR context."""
     conn = get_connection()
-    try:
-        row = conn.execute(
-            "SELECT * FROM vendors WHERE id = ?", (vendor_id,)
-        ).fetchone()
-        if not row:
-            raise HTTPException(status_code=404, detail="Vendor not found")
+    row = conn.execute(
+        "SELECT * FROM vendors WHERE id = ?", (vendor_id,)
+    ).fetchone()
+    if not row:
+        conn.close()
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Vendor not found")
 
-        row_dict = dict(row)
+    canonical_keys = _canonical_vendor_keys()
+    if not _is_vendor_in_directory(str(row["company_name"]), canonical_keys):
+        conn.close()
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="Vendor not found in assessment library")
 
-        var_ids = {
-            r[0] for r in conn.execute(
-                "SELECT DISTINCT vendor_id FROM var_reports WHERE vendor_id = ?",
-                (vendor_id,)
-            ).fetchall()
-        }
+    company_name = row["company_name"]
+    company_rows = [
+        dict(r)
+        for r in conn.execute(
+            "SELECT * FROM vendors WHERE company_name = ? ORDER BY overall_rating DESC",
+            (company_name,),
+        ).fetchall()
+    ]
 
-        # Latest VAR scores for the detail panel — keep connection open!
-        var_row = conn.execute("""
+    company_vendor_ids = [r["id"] for r in company_rows]
+    placeholders = ",".join(["?"] * len(company_vendor_ids))
+
+    var_ids: set[str] = set()
+    latest_var_id_map: dict[str, str] = {}
+    latest_var_row = None
+
+    if company_vendor_ids:
+        var_rows = conn.execute(
+            f"SELECT DISTINCT vendor_id FROM var_reports WHERE vendor_id IN ({placeholders})",
+            company_vendor_ids,
+        ).fetchall()
+        var_ids = {r[0] for r in var_rows}
+
+        latest_rows = conn.execute(
+            f"""
+            SELECT vr.vendor_id, vr.id
+            FROM var_reports vr
+            JOIN (
+                SELECT vendor_id, MAX(report_date) AS max_date
+                FROM var_reports
+                WHERE vendor_id IN ({placeholders})
+                GROUP BY vendor_id
+            ) latest
+              ON latest.vendor_id = vr.vendor_id
+             AND latest.max_date = vr.report_date
+            """,
+            company_vendor_ids,
+        ).fetchall()
+        latest_var_id_map = {r[0]: r[1] for r in latest_rows}
+
+        latest_var_row = conn.execute(
+            f"""
             SELECT
+                id, vendor_id, decision_band,
                 overall_score, compliance_score, risk_score, maturity_score,
                 integration_score, roi_score, viability_score,
                 differentiation_score, cloud_dep_score
             FROM var_reports
-            WHERE vendor_id = ?
-            ORDER BY report_date DESC LIMIT 1
-        """, (vendor_id,)).fetchone()
-    finally:
-        conn.close()
+            WHERE vendor_id IN ({placeholders})
+            ORDER BY
+                CASE WHEN overall_score IS NOT NULL THEN 0 ELSE 1 END,
+                report_date DESC,
+                created_at DESC
+            LIMIT 1
+            """,
+            company_vendor_ids,
+        ).fetchone()
+
+    conn.close()
+
+    base_vendor = _group_products(company_rows, var_ids, latest_var_id_map)[0]
+    primary_row = company_rows[0] if company_rows else dict(row)
 
     var_scores = None
-    if var_row:
+    var_weight_score: float | None = None
+    var_decision_band = ""
+    var_decision_path = ""
+    var_concern_notes: list[str] = []
+    if latest_var_row:
         var_scores = {
-            "Overall":         var_row[0],
-            "Compliance":      var_row[1],
-            "Risk":            var_row[2],
-            "Maturity":        var_row[3],
-            "Integration":     var_row[4],
-            "ROI":             var_row[5],
-            "Viability":       var_row[6],
-            "Differentiation": var_row[7],
-            "Cloud Dep":       var_row[8],
+            "Overall": latest_var_row[3],
+            "Compliance": latest_var_row[4],
+            "Risk": latest_var_row[5],
+            "Maturity": latest_var_row[6],
+            "Integration": latest_var_row[7],
+            "ROI": latest_var_row[8],
+            "Viability": latest_var_row[9],
+            "Differentiation": latest_var_row[10],
+            "Cloud Dep": latest_var_row[11],
         }
 
-    base_vendor = _group_products([row_dict], var_ids)[0]
-    enriched    = base_vendor.dict()
-    enriched.update({
-        "var_scores":         var_scores,
-        "description":        str(row_dict.get("description")        or ""),
-        "founded_year":       str(row_dict.get("founded_year")       or ""),
-        "hq_location":        str(row_dict.get("hq_location")        or ""),
-        "business_owner":     str(row_dict.get("business_owner")     or ""),
-        "sourcing_manager":   str(row_dict.get("sourcing_manager")   or ""),
-        "deployment_status":  str(row_dict.get("deployment_status")  or "Prospect"),
-        "hosting_type":       str(row_dict.get("hosting_type")       or ""),
-        "data_classification": str(row_dict.get("data_classification") or "Internal"),
+        var_weight_score = latest_var_row[3]
+        var_decision_band = str(latest_var_row[2] or "").strip()
+        if not var_decision_band:
+            var_decision_band = _decision_band_from_score(var_weight_score)
+
+        risk_score = latest_var_row[5]
+        compliance_score = latest_var_row[4]
+
+        var_decision_path = _decision_path_from_metrics(
+            var_weight_score,
+            var_decision_band,
+            risk_score,
+            compliance_score,
+        )
+
+        if var_decision_band:
+            var_concern_notes.append(f"VAR decision band: {var_decision_band}.")
+        if (risk_score or 0) < 3:
+            var_concern_notes.append("VAR risk score is below 3.0; enhanced controls recommended.")
+        if (compliance_score or 0) < 3.5:
+            var_concern_notes.append("VAR compliance score is below 3.5; remediation plan should be tracked.")
+
+    concerns_base = str(primary_row.get("concerns") or "").strip()
+    concern_parts = [c.strip() for c in concerns_base.split("|") if c.strip()]
+    for note in var_concern_notes:
+        if note not in concern_parts:
+            concern_parts.append(note)
+    concerns_annotated = " | ".join(concern_parts)
+
+    enriched_data = base_vendor.dict()
+    enriched_data.update({
+        "var_scores": var_scores,
+        "var_weight_score": var_weight_score,
+        "var_decision_band": var_decision_band,
+        "var_decision_path": var_decision_path,
+        "description": str(primary_row.get("description") or ""),
+        "founded_year": str(primary_row.get("founded_year") or ""),
+        "hq_location": str(primary_row.get("hq_location") or ""),
+        "business_owner": str(primary_row.get("business_owner") or ""),
+        "sourcing_manager": str(primary_row.get("sourcing_manager") or ""),
+        "deployment_status": str(primary_row.get("deployment_status") or "Prospect"),
+        "hosting_type": str(primary_row.get("hosting_type") or ""),
+        "data_classification": str(primary_row.get("data_classification") or "Internal"),
+        "concerns": concerns_annotated,
     })
-    return VendorOut(**enriched)
+
+    return VendorOut(**enriched_data)
 
 
 @app.get("/api/vendors/{vendor_id}/highlights", response_model=HighlightsResponse)
 def get_vendor_highlights(vendor_id: str):
-    """Return all monthly assessment highlights for a vendor."""
+    """Return monthly assessment highlights across all rows for the grouped vendor company."""
     conn = get_connection()
-    rows = conn.execute(
-        "SELECT * FROM vendor_highlights WHERE vendor_id = ? "
-        "ORDER BY assessment_date DESC",
-        (vendor_id,)
-    ).fetchall()
-    conn.close()
+    try:
+        _, company_vendor_ids = _company_vendor_scope(conn, vendor_id)
+        placeholders = ",".join(["?"] * len(company_vendor_ids))
+        rows = conn.execute(
+            f"SELECT * FROM vendor_highlights WHERE vendor_id IN ({placeholders}) "
+            "ORDER BY assessment_date DESC, source_file DESC",
+            company_vendor_ids,
+        ).fetchall()
+    finally:
+        conn.close()
     highlights = [HighlightOut(**dict(r)) for r in rows]
     return HighlightsResponse(total=len(highlights), highlights=highlights)
 
 
 @app.get("/api/vendors/{vendor_id}/var-reports", response_model=VarReportsResponse)
 def get_vendor_var_reports(vendor_id: str):
-    """Return all VAR reports linked to a vendor."""
+    """Return VAR reports across all rows for the grouped vendor company."""
     conn = get_connection()
-    rows = conn.execute(
-        "SELECT * FROM var_reports WHERE vendor_id = ? ORDER BY report_date DESC",
-        (vendor_id,)
-    ).fetchall()
-    conn.close()
+    try:
+        _, company_vendor_ids = _company_vendor_scope(conn, vendor_id)
+        placeholders = ",".join(["?"] * len(company_vendor_ids))
+        rows = conn.execute(
+            f"SELECT * FROM var_reports WHERE vendor_id IN ({placeholders}) ORDER BY report_date DESC, created_at DESC",
+            company_vendor_ids,
+        ).fetchall()
+    finally:
+        conn.close()
     reports = [VarReportOut(**dict(r)) for r in rows]
     return VarReportsResponse(total=len(reports), reports=reports)
 
@@ -497,40 +798,85 @@ async def download_var_report(var_id: str):
 
 @app.get("/api/stats")
 def public_stats():
-    """Aggregate stats for the Vendor Directory dashboard panel."""
+    """Aggregate stats — delegates to cached computation."""
+    return _compute_public_stats()
+
+
+@ttl_cache(ttl_seconds=60, key_prefix="public_stats")
+def _compute_public_stats():
+    """Cached: aggregate stats computation (expensive — multiple GROUP BY queries)."""
     conn = get_connection()
+    vendor_rows = [
+        dict(r)
+        for r in conn.execute(
+            "SELECT id, company_name, overall_rating, risk_level, category, last_assessed FROM vendors"
+        ).fetchall()
+    ]
 
-    total_vendors = conn.execute("SELECT COUNT(*) FROM vendors").fetchone()[0]
-    total_vars = conn.execute("SELECT COUNT(*) FROM var_reports").fetchone()[0]
-    vendors_with_var = conn.execute(
-        "SELECT COUNT(DISTINCT vendor_id) FROM var_reports"
-    ).fetchone()[0]
-    avg_rating = conn.execute("SELECT AVG(overall_rating) FROM vendors").fetchone()[0] or 0
+    canonical_keys = _canonical_vendor_keys()
+    allowed_rows = [
+        r for r in vendor_rows if _is_vendor_in_directory(str(r.get("company_name") or ""), canonical_keys)
+    ]
+    allowed_ids = {str(r["id"]) for r in allowed_rows}
 
-    risk_rows = conn.execute(
-        "SELECT risk_level, COUNT(*) as cnt FROM vendors "
-        "WHERE risk_level IS NOT NULL AND risk_level != '' "
-        "GROUP BY risk_level"
-    ).fetchall()
-
-    category_rows = conn.execute(
-        "SELECT category, COUNT(*) as cnt, ROUND(AVG(overall_rating), 2) as avg_rating "
-        "FROM vendors GROUP BY category ORDER BY cnt DESC LIMIT 12"
-    ).fetchall()
-
-    band_rows = conn.execute(
-        "SELECT decision_band, COUNT(*) as cnt FROM var_reports "
-        "WHERE decision_band IS NOT NULL AND decision_band != '' "
-        "GROUP BY decision_band ORDER BY cnt DESC"
-    ).fetchall()
-
-    # Vendors assessed in the last 90 days (rough recency proxy)
-    recent_rows = conn.execute(
-        "SELECT COUNT(DISTINCT company_name) FROM vendors "
-        "WHERE last_assessed >= date('now', '-90 days')"
-    ).fetchone()[0]
-
+    var_rows = [
+        dict(r)
+        for r in conn.execute(
+            "SELECT vendor_id, decision_band FROM var_reports"
+        ).fetchall()
+        if str(r["vendor_id"]) in allowed_ids
+    ]
     conn.close()
+
+    total_vendors = len(allowed_rows)
+    total_vars = len(var_rows)
+    vendors_with_var = len({str(r["vendor_id"]) for r in var_rows})
+
+    avg_rating_raw = [float(r["overall_rating"] or 0) for r in allowed_rows]
+    avg_rating = (sum(avg_rating_raw) / len(avg_rating_raw)) if avg_rating_raw else 0
+
+    risk_distribution: dict[str, int] = {}
+    for row in allowed_rows:
+        risk = str(row.get("risk_level") or "").strip()
+        if risk:
+            risk_distribution[risk] = risk_distribution.get(risk, 0) + 1
+
+    cat_counts: dict[str, int] = {}
+    cat_scores: dict[str, list[float]] = {}
+    for row in allowed_rows:
+        category = str(row.get("category") or "Other")
+        cat_counts[category] = cat_counts.get(category, 0) + 1
+        cat_scores.setdefault(category, []).append(float(row.get("overall_rating") or 0))
+
+    top_categories = sorted(cat_counts.items(), key=lambda x: x[1], reverse=True)[:12]
+    top_category_rows = [
+        {
+            "category": category,
+            "count": count,
+            "avg_rating": round(sum(cat_scores[category]) / len(cat_scores[category]), 2),
+        }
+        for category, count in top_categories
+    ]
+
+    band_counts: dict[str, int] = {}
+    for row in var_rows:
+        band = str(row.get("decision_band") or "").strip()
+        if band:
+            band_counts[band] = band_counts.get(band, 0) + 1
+
+    cutoff = datetime.utcnow() - timedelta(days=90)
+    recent_company_names: set[str] = set()
+    for row in allowed_rows:
+        assessed = str(row.get("last_assessed") or "").strip()
+        if not assessed:
+            continue
+        try:
+            assessed_dt = datetime.fromisoformat(assessed[:10])
+        except ValueError:
+            continue
+        if assessed_dt >= cutoff:
+            recent_company_names.add(str(row.get("company_name") or ""))
+    recent_rows = len(recent_company_names)
 
     return {
         "total_vendors": total_vendors,
@@ -538,13 +884,10 @@ def public_stats():
         "vendors_with_var": vendors_with_var,
         "var_coverage_pct": round(vendors_with_var / total_vendors * 100, 1) if total_vendors else 0,
         "avg_rating": round(avg_rating, 2),
-        "recently_assessed": recent_rows or 0,
-        "risk_distribution": {r["risk_level"]: r["cnt"] for r in risk_rows},
-        "top_categories": [
-            {"category": r["category"], "count": r["cnt"], "avg_rating": r["avg_rating"]}
-            for r in category_rows
-        ],
-        "decision_bands": {r["decision_band"]: r["cnt"] for r in band_rows},
+        "recently_assessed": recent_rows,
+        "risk_distribution": risk_distribution,
+        "top_categories": top_category_rows,
+        "decision_bands": band_counts,
     }
 
 
@@ -553,32 +896,33 @@ def public_stats():
 
 @app.get("/api/vendors/{vendor_id}/tech-pipeline")
 def vendor_tech_pipeline(vendor_id: str):
-    """Return assessment pipeline summary for a vendor.
+    """Return assessment pipeline summary across all product rows for the grouped vendor company.
 
     Returns per-product pipeline stage progress:
     pre_assessment -> initial_assessment -> technical_assessment -> var_report
     """
     conn = get_connection()
+    try:
+        _, company_vendor_ids = _company_vendor_scope(conn, vendor_id)
+        placeholders = ",".join(["?"] * len(company_vendor_ids))
 
-    # All highlight rows for this vendor
-    rows = conn.execute(
-        "SELECT product_name, assessment_date, source_file, "
-        "pre_assessment_decision, pre_assessment_score, maturity_level, "
-        "initial_assessment, technical_assessment "
-        "FROM vendor_highlights WHERE vendor_id = ? "
-        "ORDER BY source_file DESC",
-        (vendor_id,),
-    ).fetchall()
+        rows = conn.execute(
+            f"SELECT product_name, assessment_date, source_file, "
+            "pre_assessment_decision, pre_assessment_score, maturity_level, "
+            f"initial_assessment, technical_assessment FROM vendor_highlights WHERE vendor_id IN ({placeholders}) "
+            "ORDER BY source_file DESC, assessment_date DESC",
+            company_vendor_ids,
+        ).fetchall()
 
-    has_var = conn.execute(
-        "SELECT COUNT(*) FROM var_reports WHERE vendor_id = ?",
-        (vendor_id,),
-    ).fetchone()[0] > 0
-
-    conn.close()
+        has_var = conn.execute(
+            f"SELECT COUNT(*) FROM var_reports WHERE vendor_id IN ({placeholders})",
+            company_vendor_ids,
+        ).fetchone()[0] > 0
+    finally:
+        conn.close()
 
     if not rows:
-        return {"vendor_id": vendor_id, "has_pipeline_data": False, "products": []}
+        return {"vendor_id": vendor_id, "has_pipeline_data": False, "has_var": has_var, "products": []}
 
     # Aggregate per product (take latest record per product)
     products: dict[str, dict] = {}
@@ -655,243 +999,41 @@ def _pipeline_stage(
 
 
 @app.post("/api/chat", response_model=ChatResponse)
-async def chat(req: ChatRequest):
-    """Chat endpoint — powered by Element LLM Gateway with live SENTRY context."""
-    api_key  = os.environ.get("ELEMENT_API_KEY", "")
-    base_url = os.environ.get("ELEMENT_BASE_URL", "https://api.llm.walmart.com")
-
-    if not api_key:
-        return ChatResponse(
-            response=(
-                f'Thanks for your question: **"{req.message}"**\n\n'
-                "SENTRY-AI needs an Element LLM Gateway key to answer. "
-                "Ask **#element-genai-support** on Slack for a key, then set "
-                "`ELEMENT_API_KEY=<your-key>` in your environment and restart the backend."
-            )
+def chat(req: ChatRequest):
+    """Chat endpoint stub. Wire up to Element LLM Gateway for full AI."""
+    return ChatResponse(
+        response=(
+            f"Thanks for your question: *\"{req.message}\"*\n\n"
+            "SENTRY-AI is not yet configured. To enable AI chat, "
+            "get an Element LLM Gateway key from **#element-genai-support** "
+            "on Slack and set ELEMENT_API_KEY in your environment."
         )
-
-    # ── Pull live context snapshot from the SENTRY database ────────────────
-    ctx: dict = {}
-    try:
-        _conn = get_connection()
-        ctx["total_vendors"] = _conn.execute("SELECT COUNT(*) FROM vendors").fetchone()[0]
-        ctx["total_vars"]    = _conn.execute("SELECT COUNT(*) FROM var_reports").fetchone()[0]
-
-        risk_rows  = _conn.execute(
-            "SELECT risk_level, COUNT(*) AS cnt FROM vendors "
-            "WHERE risk_level IS NOT NULL AND risk_level != '' GROUP BY risk_level"
-        ).fetchall()
-        ctx["risk_summary"] = ", ".join(f"{r['risk_level']}: {r['cnt']}" for r in risk_rows)
-
-        cat_rows = _conn.execute(
-            "SELECT category, COUNT(*) AS cnt FROM vendors "
-            "GROUP BY category ORDER BY cnt DESC LIMIT 8"
-        ).fetchall()
-        ctx["top_cats"] = ", ".join(f"{r['category']} ({r['cnt']})" for r in cat_rows)
-
-        hr_rows = _conn.execute(
-            "SELECT company_name FROM vendors "
-            "WHERE risk_level IN ('High','Critical') "
-            "ORDER BY overall_rating ASC LIMIT 8"
-        ).fetchall()
-        ctx["high_risk"] = ", ".join(r["company_name"] for r in hr_rows) or "None"
-
-        try:
-            ctx["competitor_events"] = _conn.execute(
-                "SELECT COUNT(*) FROM competitor_events"
-            ).fetchone()[0]
-        except Exception:
-            ctx["competitor_events"] = "N/A"
-
-        # Incident data for richer AI context
-        try:
-            ctx["total_incidents"] = _conn.execute(
-                "SELECT COUNT(*) FROM incidents"
-            ).fetchone()[0]
-            inc_rows = _conn.execute(
-                "SELECT incident_type, COUNT(*) AS cnt FROM incidents "
-                "GROUP BY incident_type ORDER BY cnt DESC LIMIT 5"
-            ).fetchall()
-            ctx["top_incident_types"] = ", ".join(
-                f"{r['incident_type']} ({r['cnt']})" for r in inc_rows
-            ) or "N/A"
-            crit_rows = _conn.execute(
-                "SELECT incident_date, incident_type, location, summary "
-                "FROM incidents WHERE severity='Critical' "
-                "ORDER BY incident_date DESC LIMIT 3"
-            ).fetchall()
-            ctx["critical_incidents"] = "; ".join(
-                f"{r['incident_date']} — {r['incident_type']} ({r['location']})"
-                for r in crit_rows
-            ) or "None"
-        except Exception:
-            ctx["total_incidents"]     = "N/A"
-            ctx["top_incident_types"]  = "N/A"
-            ctx["critical_incidents"]  = "N/A"
-
-        _conn.close()
-    except Exception:
-        ctx = {
-            "total_vendors": "N/A", "total_vars": "N/A",
-            "risk_summary": "N/A", "top_cats": "N/A",
-            "high_risk": "N/A", "competitor_events": "N/A",
-        }
-
-    system_prompt = f"""You are SENTRY-AI, the embedded intelligence assistant for \nWalmart\'s Enterprise Security Emerging Technology (EST) team. \nYou are knowledgeable, direct, and security-minded.
-
-## Live SENTRY Data Snapshot
-- Vendors tracked: {ctx['total_vendors']}
-- VAR reports completed: {ctx['total_vars']}
-- Risk distribution: {ctx['risk_summary']}
-- Top technology categories: {ctx['top_cats']}
-- High/Critical risk vendors: {ctx['high_risk']}
-- Competitor events indexed: {ctx['competitor_events']}
-- Retail incidents tracked: {ctx.get('total_incidents', 'N/A')}
-- Top incident types: {ctx.get('top_incident_types', 'N/A')}
-- Recent critical incidents: {ctx.get('critical_incidents', 'N/A')}
-
-## Your Role
-- Answer questions about vendor security assessments, VAR reports, and risk ratings
-- Explain SENTRY\'s four-phase GCP architecture
-- Help interpret regulatory obligations (RAG: Red=19-25, Amber=13-18, Yellow=7-12, Green=1-6)
-- Discuss competitor intelligence trends (ORC/Theft, Cyber, Legal, Recall, Strategic)
-- Analyze retail incident patterns, severity, and regional distribution
-- Clarify VAR decision bands: Advance (>4.0), Research Further (3.0-4.0), Defer (2.0-2.9), Reject (<2.0)
-- Support the EST team at Walmart — owner is Jason Wilbur, CSO is Jerrad Crabtree
-- Know that incident severity levels are: Critical (cyber/violence), High (cargo theft/robbery), Medium (ORC/fraud), Low (arrests/policy)
-
-Be concise and professional. Use markdown **bold** and bullet lists where helpful."""
-
-    messages: list[dict] = [{"role": "system", "content": system_prompt}]
-    for m in req.history:
-        messages.append({
-            "role": "user" if m.role == "user" else "assistant",
-            "content": m.text,
-        })
-    messages.append({"role": "user", "content": req.message})
-
-    try:
-        async with httpx.AsyncClient(timeout=45.0) as client:
-            resp = await client.post(
-                f"{base_url}/v1/chat/completions",
-                headers={
-                    "Authorization": f"Bearer {api_key}",
-                    "Content-Type": "application/json",
-                },
-                json={
-                    "model": "gpt-4o-mini",
-                    "messages": messages,
-                    "temperature": 0.4,
-                    "max_tokens": 1000,
-                },
-            )
-            resp.raise_for_status()
-            content = resp.json()["choices"][0]["message"]["content"]
-            return ChatResponse(response=content)
-    except Exception as exc:
-        return ChatResponse(
-            response=(
-                f"⚠️ **SENTRY-AI error:** {exc}\n\n"
-                "Please verify `ELEMENT_API_KEY` is valid and the backend can "
-                "reach the Element LLM Gateway (`https://api.llm.walmart.com`). "
-                "You must be on Walmart VPN or Eagle WiFi."
-            )
-        )
+    )
 
 
-# ── Service request forms (real persistence) ───────────────────────────────
+# ── Forms (local stubs — generate ref IDs) ──────────────────────────
 
-from request_routes import router as request_router
-app.include_router(request_router)
+@app.post("/api/assessment", response_model=FormResponse)
+def submit_assessment(data: dict):
+    """Accept a security assessment request."""
+    ref = f"SENTRY-ASM-{uuid.uuid4().hex[:8].upper()}"
+    return FormResponse(success=True, ref_id=ref, message="Assessment queued.")
 
 
-# ── Morning Brief ─────────────────────────────────────────────────────────
+@app.post("/api/lab-visit", response_model=FormResponse)
+def submit_lab_visit(data: dict):
+    """Accept a lab visit request."""
+    ref = f"SENTRY-LAB-{uuid.uuid4().hex[:8].upper()}"
+    return FormResponse(success=True, ref_id=ref, message="Lab visit requested.")
 
-@app.get("/api/morning-brief")
-def morning_brief() -> dict:
-    """Aggregate live snapshot for the Home Dashboard morning brief card."""
-    conn = get_connection()
 
-    # Incident highlights
-    try:
-        recent_incidents = [
-            dict(zip(r.keys(), tuple(r)))
-            for r in conn.execute(
-                "SELECT id, incident_date, incident_type, severity, location, summary "
-                "FROM incidents WHERE incident_date != '' "
-                "ORDER BY incident_date DESC LIMIT 5"
-            )
-        ]
-        total_incidents = conn.execute("SELECT COUNT(*) FROM incidents").fetchone()[0]
-        critical_count  = conn.execute(
-            "SELECT COUNT(*) FROM incidents WHERE severity='Critical'"
-        ).fetchone()[0]
-    except Exception:
-        recent_incidents = []
-        total_incidents  = 0
-        critical_count   = 0
-
-    # Vendors without recent assessment (>180 days)
-    try:
-        stale_vendors = [
-            dict(zip(r.keys(), tuple(r)))
-            for r in conn.execute(
-                """
-                SELECT company_name, category, last_assessed, overall_rating
-                FROM   vendors
-                WHERE  last_assessed != ''
-                  AND  last_assessed < date('now', '-180 days')
-                  AND  has_var = 1
-                ORDER  BY last_assessed ASC
-                LIMIT  5
-                """
-            )
-        ]
-    except Exception:
-        stale_vendors = []
-
-    # Competitor events count last 30 days (approximate: newest 30 records)
-    try:
-        comp_recent = conn.execute(
-            "SELECT COUNT(*) FROM competitor_events"
-        ).fetchone()[0]
-    except Exception:
-        comp_recent = 0
-
-    # Regulatory — Red count
-    reg_red   = 0
-    reg_amber = 0
-    try:
-        import json
-        from pathlib import Path as _P
-        reg_path = _P(__file__).parent / "data" / "json_reports" / "regulatory-briefing.json"
-        if reg_path.exists():
-            reg_data  = json.loads(reg_path.read_text(encoding="utf-8"))
-            stats     = reg_data.get("stats", {})
-            reg_red   = stats.get("red", 0)
-            reg_amber = stats.get("amber", 0)
-    except Exception:
-        pass
-
-    conn.close()
-    return {
-        "generated_at":    __import__("datetime").datetime.utcnow().isoformat(),
-        "incidents": {
-            "total":    total_incidents,
-            "critical": critical_count,
-            "recent":   recent_incidents,
-        },
-        "regulatory": {
-            "red":   reg_red,
-            "amber": reg_amber,
-        },
-        "competitors": {
-            "total_events": comp_recent,
-        },
-        "vendors": {
-            "stale_assessments": stale_vendors,
-        },
-    }
+# ── Cache management ──────────────────────────────────────────────────────
+@app.post("/api/admin/cache/clear")
+def clear_cache():
+    """Clear all in-memory caches. Useful after bulk data imports."""
+    from cache import clear_all
+    clear_all()
+    return {"success": True, "message": "All caches cleared."}
 
 
 # ── Competitor Intelligence API ─────────────────────────────────────────────
@@ -906,7 +1048,12 @@ MONTHS_ORDERED = [
 
 @app.get("/api/competitors/stats")
 def competitor_stats():
-    """KPI totals across all competitor events."""
+    """KPI totals across all competitor events (cached 2 min)."""
+    return _cached_competitor_stats()
+
+
+@ttl_cache(ttl_seconds=120, key_prefix="competitor_stats")
+def _cached_competitor_stats():
     conn = get_connection()
     row = conn.execute("""
         SELECT
@@ -975,7 +1122,12 @@ def competitor_monthly(top: int = Query(5, ge=1, le=10)):
 
 @app.get("/api/competitors/heatmap")
 def competitor_heatmap(top: int = Query(10, ge=1, le=20)):
-    """Competitor × category event-count matrix."""
+    """Competitor × category event-count matrix (cached 2 min)."""
+    return _cached_heatmap(top)
+
+
+@ttl_cache(ttl_seconds=120, key_prefix="competitor_heatmap")
+def _cached_heatmap(top: int):
     HEAT_CATS = [
         "Cyber", "ORC/Theft", "Recall", "Legal", "Strategic",
         "Operational", "Compliance", "Fraud", "Technology", "Other",
@@ -1060,38 +1212,3 @@ def competitor_categories():
     ).fetchall()
     conn.close()
     return {"categories": [r[0] for r in rows]}
-
-
-@app.get("/api/competitors/cso-candidates")
-def competitor_cso_candidates(limit: int = Query(25, ge=1, le=100)):
-    """High-priority competitor events for executive brief workflows."""
-    conn = get_connection()
-    rows = conn.execute(
-        """
-        SELECT id, event_date, competitor, event_title, event_type,
-               category, location, security_implication, detailed_description,
-               analyst_notes, source_link, source_month,
-               walmart_relevance_score, priority_tier, signal_type,
-               recommended_owner, why_walmart_cares,
-               strategic_score, security_score, operational_score,
-               customer_trust_score, novelty_score, urgency_score,
-               confidence_score, escalate_to_cso,
-               score_reason, confidence_effect, source_effect, cso_candidate_reason,
-               scoring_version, scored_at
-        FROM competitor_events
-        WHERE (deleted_at IS NULL OR deleted_at = '')
-          AND (
-                escalate_to_cso = 1
-                OR priority_tier = 'CSO Brief'
-                OR walmart_relevance_score >= 82
-          )
-        ORDER BY walmart_relevance_score DESC, event_date DESC
-        LIMIT ?
-        """,
-        (limit,),
-    ).fetchall()
-    conn.close()
-    return {
-        "count": len(rows),
-        "events": [dict(r) for r in rows],
-    }

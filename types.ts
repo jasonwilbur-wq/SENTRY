@@ -35,29 +35,20 @@ export enum ViewState {
   HOME = 'HOME',
   DIRECTORY = 'DIRECTORY',
   PROJECTS = 'PROJECTS',
-  PROJECT_ADMIN = 'PROJECT_ADMIN',
   REQUEST_ASSESSMENT = 'REQUEST_ASSESSMENT',
   COMPETITOR_ANALYSIS = 'COMPETITOR_ANALYSIS',
   COMPETITOR_INTEL = 'COMPETITOR_INTEL',
   CSO_INTELLIGENCE = 'CSO_INTELLIGENCE',
-  REGULATORY_INTEL = 'REGULATORY_INTEL',
-  INCIDENT_INTEL = 'INCIDENT_INTEL',
+  REGULATORY_INTELLIGENCE = 'REGULATORY_INTELLIGENCE',
+  REGULATORY_INTEL = 'REGULATORY_INTELLIGENCE',
+  INCIDENT_INTELLIGENCE = 'INCIDENT_INTELLIGENCE',
+  INCIDENT_INTEL = 'INCIDENT_INTELLIGENCE',
   REQUEST_LAB_VISIT = 'REQUEST_LAB_VISIT',
+  REQUEST_QUEUE = 'REQUEST_QUEUE',
   ARCHITECTURE = 'ARCHITECTURE',
   ADMIN = 'ADMIN',
-  REQUEST_QUEUE = 'REQUEST_QUEUE',
   RISK_MAP = 'RISK_MAP',
-}
-
-// ── Regulatory Intelligence types ─────────────────────────────────────────
-
-export interface RegControl {
-  control_id: string;
-  description: string;
-  owner: string;
-  status: 'Compliant' | 'Partial' | 'None';
-  last_reviewed: string;
-  evidence_link: string;
+  WALMART_SPARK = 'WALMART_SPARK',
 }
 
 export interface RegRisk {
@@ -66,6 +57,15 @@ export interface RegRisk {
   score: number;
   rag: 'Red' | 'Amber' | 'Yellow' | 'Green';
   reason: string;
+}
+
+export interface RegControl {
+  control_id: string;
+  description: string;
+  owner: string;
+  status: string;
+  last_reviewed: string;
+  evidence_link: string;
 }
 
 export interface RegObligation {
@@ -77,13 +77,17 @@ export interface RegObligation {
   effective_date: string | null;
   deadline: string | null;
   criticality: number;
-  evidence_status: 'Compliant' | 'Partially' | 'Non-Compliant' | 'Unknown';
+  evidence_status: string;
   evidence_links: string[];
   risk: RegRisk;
   controls: RegControl[];
   full_description: string;
-  status: 'Enacted' | 'Proposed' | 'Failed';
+  status: string;
   provenance: string[];
+  geo_scope?: 'US_STATE' | 'US_FEDERAL' | 'COUNTRY' | 'GLOBAL';
+  country?: string | null;
+  state?: string | null;
+  state_code?: string | null;
 }
 
 export interface RegTopAction {
@@ -94,7 +98,7 @@ export interface RegTopAction {
   eta: string;
 }
 
-export interface RegStats {
+export interface RegSummaryStats {
   total_obligations: number;
   red: number;
   amber: number;
@@ -111,78 +115,53 @@ export interface RegSummary {
   summary: string;
   created_at: string;
   data_through: string;
-  stats: RegStats;
-  top_actions: RegTopAction[];
   jurisdictions: string[];
+  stats: RegSummaryStats;
+  top_actions: RegTopAction[];
   assumptions: string[];
-  confidence: 'Low' | 'Med' | 'High';
-  ingestion_notes: Record<string, unknown>;
+  confidence: string;
+  ingestion_notes?: Record<string, string | number>;
 }
-
-// ── Incident Intelligence types ──────────────────────────────────────
 
 export type IncidentSeverity = 'Critical' | 'High' | 'Medium' | 'Low';
 
 export interface Incident {
-  id: string;
+  id: string | number;
   incident_date: string;
   incident_type: string;
   severity: IncidentSeverity;
   location: string;
   region: string;
-  country: string;
   summary: string;
-  impact: string;
-  recommended_action: string;
-  source_url: string;
-  tags: string;
-  source_file: string;
-  created_at: string;
-}
-
-export interface IncidentTypeCount {
-  type: string;
-  count: number;
-}
-
-export interface IncidentMonthlyTrend {
-  month: string;
-  count: number;
+  impact?: string;
+  source?: string;
+  created_at?: string;
 }
 
 export interface IncidentStats {
   total: number;
   by_severity: Record<string, number>;
-  by_type: IncidentTypeCount[];
+  by_type: Array<{ type: string; count: number }>;
   by_region: Record<string, number>;
-  monthly_trend: IncidentMonthlyTrend[];
+  monthly_trend: Array<{ month: string; count: number }>;
   recent: Incident[];
 }
-
-export interface IncidentListResponse {
-  total: number;
-  page: number;
-  page_size: number;
-  total_pages: number;
-  incidents: Incident[];
-}
-
-export interface IncidentFilters {
-  severities: string[];
-  types: string[];
-  regions: string[];
-}
-
-// ── Morning Brief types ──────────────────────────────────────────────
 
 export interface MorningBrief {
   generated_at: string;
   incidents: {
-    total: number;
     critical: number;
-    recent: Partial<Incident>[];
+    total: number;
+    recent: Incident[];
   };
-  regulatory: { red: number; amber: number };
-  competitors: { total_events: number };
-  vendors: { stale_assessments: Array<{ company_name: string; category: string; last_assessed: string; overall_rating: number }> };
+  regulatory: {
+    red: number;
+    amber: number;
+  };
+  competitors: {
+    total_events: number;
+  };
+  vendors: {
+    stale_assessments: Array<{ vendor_id?: string; company_name?: string }>;
+  };
 }

@@ -8,7 +8,7 @@
  * partially pass if the backend is unreachable.
  */
 import { test, expect, type Page } from '@playwright/test';
-import { BASE_URL, API_URL, VendorDashboard, AppShell } from './helpers/pageObjects';
+import { BASE_URL, API_URL, VendorDashboard } from './helpers/pageObjects';
 
 // Navigate to the vendor dashboard view
 async function openDashboard(page: Page) {
@@ -18,6 +18,11 @@ async function openDashboard(page: Page) {
   const link = page.getByRole('link', { name: /dashboard|vendor/i }).first();
   if (await link.isVisible()) await link.click();
   await page.waitForTimeout(800);
+}
+
+async function backendHealthy(page: Page) {
+  const health = await page.request.get(`${API_URL}/api/health`).catch(() => null);
+  return !!health && health.ok();
 }
 
 test.describe('Vendor Dashboard', () => {
@@ -59,10 +64,8 @@ test.describe('Vendor Dashboard', () => {
   });
 
   test('search filters the vendor list (if backend is up)', async ({ page }) => {
-    // First check if backend is reachable
-    const health = await page.request.get(`${API_URL}/api/health`).catch(() => null);
-    if (!health || !health.ok()) {
-      test.skip(); // Backend offline — skip data-dependent tests
+    if (!await backendHealthy(page)) {
+      test.skip();
       return;
     }
 
@@ -85,31 +88,29 @@ test.describe('Vendor Dashboard', () => {
     expect(bodyAfter).not.toBe(bodyBefore);
   });
 
-  test('category filter dropdown is accessible', async ({ page }) => {
+  test('risk and category filters are accessible', async ({ page }) => {
     await openDashboard(page);
     await page.waitForTimeout(1500);
 
-    // Look for a select or combobox for category filtering
-    const select = page
-      .getByRole('combobox')
-      .or(page.locator('select'))
-      .first();
+    const riskButton = page.getByRole('button', { name: /high|critical|medium|low/i }).first();
+    const categoryButton = page.getByRole('button', { name: /video ai|vms\/nvr|robotics|all/i }).first();
 
-    const selectVisible = await select.isVisible().catch(() => false);
-    if (selectVisible) {
-      // Just verify it's focusable — not testing specific options (dynamic)
-      await select.focus();
-      const tagName = await select.evaluate((el) => el.tagName.toLowerCase());
-      expect(['select', 'combobox', 'div']).toContain(tagName);
-    } else {
-      // Filter may be a different UI pattern — that's OK
+    const filtersVisible = await riskButton.isVisible().catch(() => false) || await categoryButton.isVisible().catch(() => false);
+    if (!filtersVisible) {
       test.skip();
+      return;
+    }
+
+    if (await riskButton.isVisible().catch(() => false)) {
+      await expect(riskButton).toBeEnabled();
+    }
+    if (await categoryButton.isVisible().catch(() => false)) {
+      await expect(categoryButton).toBeEnabled();
     }
   });
 
   test('pagination controls present when there are multiple pages', async ({ page }) => {
-    const health = await page.request.get(`${API_URL}/api/health`).catch(() => null);
-    if (!health || !health.ok()) { test.skip(); return; }
+    if (!await backendHealthy(page)) { test.skip(); return; }
 
     await openDashboard(page);
     await page.waitForTimeout(2500);
@@ -128,42 +129,26 @@ test.describe('Vendor Dashboard', () => {
     // else: single page of results — pass
   });
 
-  test('vendor card click opens a detail view or modal', async ({ page }) => {
-    const health = await page.request.get(`${API_URL}/api/health`).catch(() => null);
-    if (!health || !health.ok()) { test.skip(); return; }
+  test('vendor card opens accessible detail modal with working tabs and escape close', async ({ page }) => {
+    if (!await backendHealthy(page)) { test.skip(); return; }
 
     await openDashboard(page);
     await page.waitForTimeout(2500);
 
-    // Find clickable vendor cards
-    const card = page
-      .locator('[data-testid="vendor-card"], .vendor-card, article')
-      .first();
-
-    const cardVisible = await card.isVisible().catch(() => false);
+    const dashboard = new VendorDashboard(page);
+    const firstCard = dashboard.vendorCards().first();
+    const cardVisible = await firstCard.isVisible().catch(() => false);
     if (!cardVisible) { test.skip(); return; }
 
-    await card.click();
-    await page.waitForTimeout(800);
+    await dashboard.openFirstVendorCard();
+    await expect(dashboard.detailModal).toBeVisible();
+    await expect(dashboard.modalCloseButton()).toBeVisible();
+    await expect(dashboard.modalTab('Technology')).toBeVisible();
 
-    // After clicking, either a modal or detail panel should appear
-    const modal = page
-      .getByRole('dialog')
-      .or(page.locator('[aria-modal="true"]'))
-      .or(page.locator('.modal, [class*="modal"]'))
-      .first();
+    await dashboard.modalTab('Technology').click();
+    await expect(dashboard.detailModal).toContainText(/assessment pipeline|hosting model|data classification/i);
 
-    const modalVisible = await modal.isVisible().catch(() => false);
-    if (modalVisible) {
-      await expect(modal).toBeVisible();
-      // Modal should have a close button
-      const closeBtn = modal
-        .getByRole('button', { name: /close|dismiss|✕|×/i })
-        .or(page.keyboard.press('Escape') as any);
-    } else {
-      // Detail expanded inline — check more content appeared
-      const bodyAfter = await page.locator('body').textContent() ?? '';
-      expect(bodyAfter.length).toBeGreaterThan(100);
-    }
+    await page.keyboard.press('Escape');
+    await expect(dashboard.detailModal).toBeHidden();
   });
 });

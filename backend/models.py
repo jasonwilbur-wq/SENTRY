@@ -1,4 +1,8 @@
 """SENTRY Backend — Pydantic models for request/response validation."""
+from __future__ import annotations
+
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -10,16 +14,6 @@ class VendorProduct(BaseModel):
     overall_rating: float = 0.0
     vendor_status: str = "Active"
     last_assessed: str = ""
-
-
-class LinkedProject(BaseModel):
-    """A project this vendor is associated with, for card display."""
-    project_id: str
-    project_name: str
-    current_phase: str
-    est_phase_index: int
-    role: str = ""
-    status: str = ""
 
 
 class VendorOut(BaseModel):
@@ -35,10 +29,7 @@ class VendorOut(BaseModel):
     last_assessed: str = ""
     risk_level: str = "Medium"
     has_var: bool = False
-    var_count: int = 0           # Total VAR reports linked to this vendor
-    latest_var_id: str = ""      # Phase 2 — used for download proxy
-    
-    # Extended fields
+    latest_var_id: str = ""
     description: str = ""
     founded_year: str = ""
     hq_location: str = ""
@@ -47,13 +38,11 @@ class VendorOut(BaseModel):
     deployment_status: str = "Prospect"
     hosting_type: str = ""
     data_classification: str = "Internal"
-
     all_products: list[VendorProduct] = Field(default_factory=list)
-    
-    # VAR Data (attached if available)
     var_scores: dict | None = None
-    
-    # Enhanced vendor details (Phase 2.5 — 202601/202602 import)
+    var_weight_score: float | None = None
+    var_decision_band: str = ""
+    var_decision_path: str = ""
     vendor_highlight: str = ""
     pros: str = ""
     cons: str = ""
@@ -62,15 +51,12 @@ class VendorOut(BaseModel):
     value_to_walmart: str = ""
     maturity_level: str = ""
 
-    # Project associations — enriched from project_vendors + projects join
-    linked_projects: list[LinkedProject] = Field(default_factory=list)
-
 
 class VendorsResponse(BaseModel):
-    total: int          # total matched vendors (after grouping)
-    page: int           # current page (1-based)
-    page_size: int      # vendors per page
-    total_pages: int    # ceil(total / page_size)
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
     vendors: list[VendorOut]
 
 
@@ -143,69 +129,62 @@ class ChatResponse(BaseModel):
     response: str
 
 
-# ── Forms ─────────────────────────────────────────────────────────────────────
+# ── Request workflows ───────────────────────────────────────────────────
+
+RequestType = Literal['assessment', 'lab_visit']
+RequestStatus = Literal['SUBMITTED', 'TRIAGE_PENDING', 'IN_REVIEW', 'CLOSED']
+
 
 class FormResponse(BaseModel):
     success: bool
     ref_id: str
     message: str
-    status: str = "SUBMITTED"
+    status: str = 'SUBMITTED'
 
 
 class AssessmentRequest(BaseModel):
-    vendor_name: str
-    assessment_type: str
-    contact_name: str
-    contact_email: str
-    category: str = ""
-    urgency: str = "normal"
-    notes: str = ""
+    vendor_name: str = Field(min_length=1)
+    assessment_type: str = Field(min_length=1)
+    contact_name: str = Field(min_length=1)
+    contact_email: str = Field(min_length=3)
+    category: str = ''
+    urgency: str = 'normal'
+    notes: str = ''
 
 
 class LabVisitRequest(BaseModel):
-    contact_name: str
-    contact_email: str
-    preferred_date: str
-    preferred_slot: str
-    equipment: str = ""
-    attendees: int = 1
-    notes: str = ""
+    contact_name: str = Field(min_length=1)
+    contact_email: str = Field(min_length=3)
+    preferred_date: str = Field(min_length=1)
+    preferred_slot: str = Field(min_length=1)
+    equipment: str = ''
+    attendees: int | str = 1
+    notes: str = ''
 
 
-class ServiceRequestOut(BaseModel):
-    id: str
+class ServiceRequestSummary(BaseModel):
     ref_id: str
-    request_type: str
-    status: str
+    request_type: RequestType
+    status: RequestStatus
     created_by: str
     created_at: str
-    updated_at: str
-    updated_by: str | None = None
-    status_note: str = ""
+    updated_at: str | None = None
     contact_name: str
-    contact_email: str
-    notes: str
     vendor_name: str | None = None
+    urgency: str | None = None
+
+
+class ServiceRequestOut(ServiceRequestSummary):
+    contact_email: str
     assessment_type: str | None = None
     category: str | None = None
-    urgency: str | None = None
     preferred_date: str | None = None
     preferred_slot: str | None = None
     equipment: str | None = None
     attendees: int | None = None
-
-
-class ServiceRequestSummary(BaseModel):
-    """Lightweight row for the admin queue listing."""
-    ref_id: str
-    request_type: str
-    status: str
-    created_by: str
-    created_at: str
-    updated_at: str
-    contact_name: str
-    urgency: str | None = None
-    vendor_name: str | None = None
+    notes: str | None = None
+    status_note: str | None = None
+    updated_by: str | None = None
 
 
 class ServiceRequestListResponse(BaseModel):
@@ -213,55 +192,72 @@ class ServiceRequestListResponse(BaseModel):
     requests: list[ServiceRequestSummary]
 
 
+class RequestLookupResponse(ServiceRequestOut):
+    pass
+
+
+class AdminQueueItem(ServiceRequestSummary):
+    pass
+
+
+class AdminQueueResponse(BaseModel):
+    total: int
+    requests: list[AdminQueueItem]
+
+
 class StatusUpdateRequest(BaseModel):
-    status: str
-    note: str = ""
+    status: RequestStatus
+    note: str | None = None
 
 
-# ── Projects ─────────────────────────────────────────────────────────────
+class StatusUpdateResponse(BaseModel):
+    success: bool
+    ref_id: str
+    old_status: RequestStatus
+    new_status: RequestStatus
+    updated_by: str
+    updated_at: str
+
+
+# ── Projects ────────────────────────────────────────────────────────────
 
 class NdaEntry(BaseModel):
-    """One vendor NDA under a project (a project may have many)."""
     nda_number: str
-    vendor: str
-    status: str = "executed"          # executed | pending | via_msa | expired
-    note: str = ""
+    vendor: str = ''
+    status: str = 'executed'
+    note: str = ''
 
 
 class ComplianceEntry(BaseModel):
-    """One vendor APM / ERPA / SSP entry (a project may have many per type)."""
-    vendor: str = ""
-    number: str
-    status: str = "not_started"       # not_started | in_progress | under_review | complete
-    note: str = ""
+    vendor: str = ''
+    number: str = ''
+    status: str = 'not_started'
+    note: str = ''
 
 
 class ProjectVendor(BaseModel):
-    """A vendor involved in a project (may be active, inactive, removed, etc.)."""
     id: str
-    project_id: str
+    project_id: str | None = None
+    vendor_id: str | None = None
     vendor_name: str
-    vendor_id: str = ""
-    role: str = "Vendor"
-    status: str = "active"   # active | evaluating | inactive | removed
-    notes: str = ""
-    added_at: str = ""
-    updated_at: str = ""
+    role: str = 'Vendor'
+    status: str = 'active'
+    notes: str = ''
+    added_at: str | None = None
+    updated_at: str | None = None
 
 
 class ProjectVendorCreate(BaseModel):
-    """Payload to add a vendor to a project."""
-    vendor_name: str
-    vendor_id: str = ""
-    role: str = "Vendor"
-    status: str = "active"
-    notes: str = ""
+    vendor_id: str | None = None
+    vendor_name: str = Field(min_length=1)
+    role: str = 'Vendor'
+    status: str = 'active'
+    notes: str = ''
 
 
 class ProjectVendorUpdate(BaseModel):
-    """Partial update for a project vendor entry."""
-    vendor_name: str | None = None
     vendor_id: str | None = None
+    vendor_name: str | None = None
     role: str | None = None
     status: str | None = None
     notes: str | None = None
@@ -270,32 +266,33 @@ class ProjectVendorUpdate(BaseModel):
 class ProjectOut(BaseModel):
     project_id: str
     project_name: str
-    summary: str = ""
-    managing_unit: str = ""
-    lifecycle_state: str = "active"
-    health: str = "green"
-    current_phase: str = "Intake"
+    summary: str = ''
+    managing_unit: str = ''
+    lifecycle_state: str = 'active'
+    health: str = 'green'
+    current_phase: str = 'Intake'
     est_phase_index: int = 1
     risk_score: int = 0
-    sensitivity: str = "internal"
-    tags: str = ""
+    sensitivity: str = 'internal'
+    tags: str = ''
     progress_pct: int = 0
-    next_milestone: str = ""
-    next_due_date: str = ""
+    next_milestone: str = ''
+    next_due_date: str = ''
     blockers_count: int = 0
-    last_update_at: str = ""
-    last_update_by: str = ""
-    est_cost: str = ""
-    business_owner: str = ""
-    # Compliance fields — each type now supports multiple vendor entries
-    nda_numbers:  list[NdaEntry]       = Field(default_factory=list)
-    apm_entries:  list[ComplianceEntry] = Field(default_factory=list)
+    last_update_at: str = ''
+    last_update_by: str = ''
+    est_cost: str = ''
+    business_owner: str = ''
+    nda_numbers: list[NdaEntry] = Field(default_factory=list)
+    apm_entries: list[ComplianceEntry] = Field(default_factory=list)
     erpa_entries: list[ComplianceEntry] = Field(default_factory=list)
-    ssp_entries:  list[ComplianceEntry] = Field(default_factory=list)
-    compliance_notes: str = ""
-    exit_reason: str = ""
+    ssp_entries: list[ComplianceEntry] = Field(default_factory=list)
+    compliance_notes: str = ''
+    exit_reason: str = ''
     phase_history: list[dict] = Field(default_factory=list)
-    vendors: list["ProjectVendor"] = Field(default_factory=list)
+    created_at: str = ''
+    updated_at: str = ''
+    vendors: list[ProjectVendor] = Field(default_factory=list)
 
 
 class ProjectsResponse(BaseModel):
@@ -304,8 +301,9 @@ class ProjectsResponse(BaseModel):
 
 
 class ProjectUpdate(BaseModel):
-    """Partial update — all fields optional."""
     project_name: str | None = None
+    compliance_notes: str | None = None
+    exit_reason: str | None = None
     health: str | None = None
     lifecycle_state: str | None = None
     current_phase: str | None = None
@@ -315,9 +313,12 @@ class ProjectUpdate(BaseModel):
     next_due_date: str | None = None
     blockers_count: int | None = None
     last_update_by: str | None = None
-    nda_numbers:  list[NdaEntry]        | None = None
-    apm_entries:  list[ComplianceEntry] | None = None
+    nda_numbers: list[NdaEntry] | None = None
+    apm_entries: list[ComplianceEntry] | None = None
     erpa_entries: list[ComplianceEntry] | None = None
-    ssp_entries:  list[ComplianceEntry] | None = None
-    compliance_notes: str | None = None
-    exit_reason: str | None = None
+    ssp_entries: list[ComplianceEntry] | None = None
+
+
+# Back-compat aliases for older imports
+ProjectListResponse = ProjectsResponse
+ProjectUpdateIn = ProjectUpdate

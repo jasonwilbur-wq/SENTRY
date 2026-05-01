@@ -67,10 +67,20 @@ def _parse_compliance_list(raw: str | None) -> list[ComplianceEntry]:
     """Parse a JSON column into a list of ComplianceEntry objects."""
     try:
         entries = json.loads(raw or "[]")
-        return [
-            ComplianceEntry(**e) if isinstance(e, dict) else ComplianceEntry(number=str(e))
-            for e in entries
-        ]
+        parsed: list[ComplianceEntry] = []
+        for entry in entries:
+            if isinstance(entry, dict):
+                parsed.append(
+                    ComplianceEntry(
+                        vendor=str(entry.get("vendor") or entry.get("label") or ""),
+                        number=str(entry.get("number") or entry.get("value") or ""),
+                        status=str(entry.get("status") or "not_started"),
+                        note=str(entry.get("note") or ""),
+                    )
+                )
+            else:
+                parsed.append(ComplianceEntry(number=str(entry)))
+        return parsed
     except Exception:
         return []
 
@@ -115,10 +125,19 @@ def _row_to_project(row, vendors: list[ProjectVendor] | None = None) -> ProjectO
     d = dict(row)
     try:
         nda_raw = json.loads(d.get("nda_numbers") or "[]")
-        nda_entries = [
-            NdaEntry(**n) if isinstance(n, dict) else NdaEntry(nda_number=str(n), vendor="")
-            for n in nda_raw
-        ]
+        nda_entries = []
+        for entry in nda_raw:
+            if isinstance(entry, dict):
+                nda_entries.append(
+                    NdaEntry(
+                        nda_number=str(entry.get("nda_number") or entry.get("number") or ""),
+                        vendor=str(entry.get("vendor") or entry.get("label") or ""),
+                        status=str(entry.get("status") or "executed"),
+                        note=str(entry.get("note") or ""),
+                    )
+                )
+            else:
+                nda_entries.append(NdaEntry(nda_number=str(entry), vendor=""))
     except Exception:
         nda_entries = []
 

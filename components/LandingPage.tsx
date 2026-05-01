@@ -1,15 +1,5 @@
-/**
- * LandingPage — cinematic entry screen for SENTRY.
- *
- * Forces dark mode while visible (space aesthetic).
- * All stats are live — fetched from backend APIs on mount.
- */
 import React, { useEffect, useState } from 'react';
 import { LandingBackground3D } from './LandingBackground3D';
-import { useTheme } from '../context/ThemeContext';
-import {
-  fetchStats, fetchCompetitorStats, fetchRegulatorySummary,
-} from '../services/api';
 
 interface LandingPageProps {
   onEnter: () => void;
@@ -21,77 +11,26 @@ const SENTRY_LETTERS = ['S', 'E', 'N', 'T', 'R', 'Y'];
 // Acronym words revealed one by one after title appears
 const ACRONYM = [
   { letter: 'S', rest: 'ecurity,' },
-  { letter: 'E', rest: 'merging-Tech' },
-  { letter: 'N', rest: 'ode' },
-  { letter: 'T', rest: 'racking &' },
+  { letter: 'E', rest: 'valuation &' },
   { letter: 'R', rest: 'isk' },
-  { letter: 'Y', rest: 'ielding Intelligence' },
+  { letter: 'T', rest: 'ransparency for' },
+  { letter: 'Y', rest: 'ou' },
 ];
-
-// ── Live stat strip item ─────────────────────────────────────────────────────
-interface StatItem { value: string; label: string }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
   const [mounted, setMounted]           = useState(false);
   const [acronymIndex, setAcronymIndex] = useState(-1);
-  const [liveStats, setLiveStats]       = useState<StatItem[]>([]);
-  const { theme }                       = useTheme();
 
-  // ── Force dark mode while landing page is visible ──────────────────────
   useEffect(() => {
-    const root = document.documentElement;
-    root.setAttribute('data-theme', 'dark');
-    root.classList.add('dark');
-    return () => {
-      root.setAttribute('data-theme', theme);
-      if (theme === 'dark') root.classList.add('dark');
-      else                  root.classList.remove('dark');
-    };
-  }, [theme]);
-
-  // ── Fetch live stats in parallel ───────────────────────────────────────
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const [stats, compStats, regStats] = await Promise.allSettled([
-          fetchStats(),
-          fetchCompetitorStats(),
-          fetchRegulatorySummary(),
-        ]);
-
-        const items: StatItem[] = [];
-
-        if (stats.status === 'fulfilled') {
-          const s = stats.value;
-          items.push({ value: s.total_vendors.toLocaleString(), label: 'Vendors Tracked' });
-          items.push({ value: s.total_vars.toLocaleString(), label: 'VAR Reports' });
-          items.push({ value: `${s.var_coverage_pct.toFixed(1)}%`, label: 'Assessment Coverage' });
-        }
-
-        if (compStats.status === 'fulfilled') {
-          items.push({ value: compStats.value.total.toLocaleString(), label: 'Competitor Events' });
-        }
-
-        if (regStats.status === 'fulfilled') {
-          const r = regStats.value.stats;
-          items.push({ value: r.total_obligations.toLocaleString(), label: 'Regulatory Obligations' });
-        }
-
-        setLiveStats(items);
-      } catch {
-        // Graceful degradation — stats strip just won't render
-      }
-    };
-    load();
-  }, []);
-
-  // ── Mount + acronym cascade ────────────────────────────────────────────
-  useEffect(() => {
+    // Trigger mount animation
     const t1 = setTimeout(() => setMounted(true), 60);
+
+    // Cascade the acronym words one-by-one, 160ms apart, starting after 800ms
     const timers: ReturnType<typeof setTimeout>[] = [];
     ACRONYM.forEach((_, i) => {
       timers.push(setTimeout(() => setAcronymIndex(i), 900 + i * 160));
     });
+
     return () => {
       clearTimeout(t1);
       timers.forEach(clearTimeout);
@@ -99,8 +38,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden text-white"
-         style={{ background: '#000B28' }}>
+    <div className="min-h-screen bg-sentry-dark flex flex-col items-center justify-center relative overflow-hidden text-white">
 
       {/* Three.js starfield */}
       <LandingBackground3D />
@@ -149,11 +87,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
             <span className="relative rounded-full h-2 w-2 bg-green-400" />
           </span>
           <span className="text-[10px] font-mono font-semibold tracking-[0.2em] text-slate-400 uppercase">
-            Walmart ET Security · Internal Platform · Eagle &amp; VPN Only
+            Walmart GSA&amp;I · Enterprise Security · Internal
           </span>
         </div>
 
-        {/* SENTRY title — letter-by-letter reveal */}
+        {/* SENTRY title — letter-by-letter reveal, fixed glow */}
         <h1 className="relative mb-8 leading-none select-none" style={{ perspective: '600px' }}>
           <div className="flex items-center justify-center gap-1 md:gap-2">
             {SENTRY_LETTERS.map((letter, i) => (
@@ -174,6 +112,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
               </span>
             ))}
           </div>
+          {/* Glow backdrop — actually contains content now, positioned behind */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
@@ -203,40 +142,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
           ))}
         </div>
 
-        {/* Description + live stats strip */}
-        <div
+        {/* Description */}
+        <p
+          className="text-slate-400 text-base md:text-lg max-w-2xl mx-auto mb-14 leading-relaxed"
           style={{
             borderTop: '1px solid rgba(255,255,255,0.06)',
             paddingTop: '2rem',
             transition: 'opacity 0.6s ease 1.2s',
             opacity: mounted ? 1 : 0,
           }}
-          className="mb-10"
         >
-          <p className="text-slate-400 text-base md:text-lg max-w-2xl mx-auto mb-8 leading-relaxed">
-            Walmart Enterprise Security's single source of truth for emerging-tech vendor risk.
-            Every VAR, every score, every competitor move — one platform, zero spreadsheets.
-          </p>
-
-          {/* Live stats strip */}
-          {liveStats.length > 0 && (
-            <div className="flex flex-wrap justify-center gap-3 md:gap-5">
-              {liveStats.map(({ value, label }) => (
-                <div
-                  key={label}
-                  className="flex flex-col items-center px-4 py-2 rounded-xl"
-                  style={{
-                    background: 'rgba(0,83,226,0.07)',
-                    border: '1px solid rgba(0,83,226,0.2)',
-                  }}
-                >
-                  <span className="text-xl md:text-2xl font-black" style={{ color: '#FFC220' }}>{value}</span>
-                  <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 mt-0.5">{label}</span>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+          Global Security, Aviation &amp; Investigations' definitive System of Record for
+          Emerging Technology vendor assessment — identify risks, visualize architecture,
+          and govern with AI-driven insights.
+        </p>
 
         {/* CTA button */}
         <button
@@ -259,7 +178,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
           onMouseDown={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.96)'; }}
           onMouseUp={e => { (e.currentTarget as HTMLButtonElement).style.transform = ''; }}
         >
-          {/* Shine effect */}
+          {/* Shine — CSS ::after approach via inline pseudo-equivalent div */}
           <div
             className="absolute top-0 h-full w-1/3 -skew-x-12 bg-white/30 opacity-0 group-hover:opacity-100 pointer-events-none"
             style={{ left: '-40%', transition: 'left 0.4s ease, opacity 0.2s' }}
@@ -269,6 +188,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
             }}
             ref={el => {
               if (!el) return;
+              // Trigger shine on parent hover
               const parent = el.parentElement;
               if (!parent) return;
               const enter = () => { el.style.left = '140%'; };
@@ -292,7 +212,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
       {/* Footer */}
       <div className="absolute bottom-6 inset-x-0 text-center">
         <p className="text-[10px] font-mono uppercase tracking-[0.2em]" style={{ color: '#1e293b' }}>
-          Walmart Internal Only ∷ Requires Eagle WiFi or VPN ∷ ET Security — Emerging Technology
+          Secure Connection ∷ Encrypted via Google Cloud IAP ∷ Zero Trust Enforced
         </p>
       </div>
     </div>

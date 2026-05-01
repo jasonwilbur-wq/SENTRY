@@ -5,7 +5,6 @@
  * Collapses to a simpler strip when total pages is small.
  */
 import React, { useCallback } from 'react';
-import { useTheme } from '../context/ThemeContext';
 
 interface Props {
   page:       number;   // current page (1-based)
@@ -32,14 +31,13 @@ function pageWindow(current: number, total: number): (number | '...')[] {
 export const Pagination: React.FC<Props> = ({
   page, totalPages, total, pageSize, onChange, loading = false,
 }) => {
-  const { reducedMotion } = useTheme();
   const go = useCallback((p: number) => {
     if (p >= 1 && p <= totalPages && p !== page && !loading) {
       onChange(p);
-      // Scroll back to top — respect user's motion preference
-      window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
+      // Smooth scroll back to the top of the content area
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [page, totalPages, loading, onChange, reducedMotion]);
+  }, [page, totalPages, loading, onChange]);
 
   if (totalPages <= 1) return null;
 

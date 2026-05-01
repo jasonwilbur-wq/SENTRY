@@ -16,8 +16,6 @@ import os
 import sqlite3
 from pathlib import Path
 
-from database import init_db, get_connection
-
 DB_PATH   = Path(__file__).parent / "data" / "sentry.db"
 JSON_PATH = Path("C:/Users/j0w16ja/Documents/puppy_workspace/competitor_data/cleaned/competitor_analysis.json")
 
@@ -49,8 +47,7 @@ def main() -> None:
     incidents: list[dict]   = data["incidents"]
     competitors: list[dict] = data["competitors"]
 
-    init_db()
-    conn = get_connection()
+    conn = sqlite3.connect(DB_PATH)
     cur  = conn.cursor()
 
     cur.executescript("""
@@ -67,6 +64,23 @@ def main() -> None:
             top_category    TEXT,
             categories_json TEXT,
             monthly_json    TEXT
+        );
+        CREATE TABLE IF NOT EXISTS competitor_events (
+            id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+            event_date           TEXT,
+            competitor           TEXT,
+            event_title          TEXT,
+            event_type           TEXT,
+            detailed_description TEXT,
+            category             TEXT,
+            location             TEXT,
+            security_implication TEXT,
+            operational_impact   TEXT,
+            financial_impact     TEXT,
+            reputational_impact  TEXT,
+            source_link          TEXT,
+            analyst_notes        TEXT,
+            source_month         TEXT
         );
         CREATE INDEX IF NOT EXISTS idx_ce_competitor ON competitor_events(competitor);
         CREATE INDEX IF NOT EXISTS idx_ce_date       ON competitor_events(event_date);

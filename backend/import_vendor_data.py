@@ -20,9 +20,14 @@ from pathlib import Path
 
 from database import get_connection, init_db
 
-DATA_DIR = Path(
+LEGACY_DATA_DIR = Path(
     r"C:\Users\j0w16ja\OneDrive - Walmart Inc"
     r"\Data Entries\Datasets\Vendor Highlighted Data"
+)
+
+ASSESSMENT_PROFILES_CSV = Path(
+    r"C:\Users\j0w16ja\OneDrive - Walmart Inc\Desktop\SENTRY"
+    r"\Vendor Assessments\00_System\vendor_assessment_vendor_profiles.csv"
 )
 
 
@@ -179,6 +184,42 @@ def _parse_schema_b(row: dict) -> dict | None:
     }
 
 
+def _domain_to_category(domain: str) -> str:
+    """Convert profile domain labels to user-friendly category text."""
+    clean_domain = _clean(domain)
+    if not clean_domain or clean_domain.upper() == "UNKNOWN":
+        return "Other"
+    return clean_domain.replace("_", " ")
+
+
+def _parse_assessment_profile(row: dict) -> dict | None:
+    """Parse rows from vendor_assessment_vendor_profiles.csv."""
+    company = _clean(row.get("vendor_folder", ""))
+    if not company:
+        return None
+
+    report_count = int(_safe_float(row.get("report_count")))
+    score_hint = _clamp(round(2.5 + min(report_count, 6) * 0.4, 2))
+    tags = _clean(row.get("top_semantic_tags", ""))
+    primary_tag = tags.split(";")[0] if tags else ""
+
+    latest_modified = _clean(row.get("latest_modified_utc", ""))
+    last_assessed = latest_modified.split("T")[0] if "T" in latest_modified else latest_modified
+
+    return {
+        "id": _make_id(company, primary_tag),
+        "company_name": company,
+        "company_url": "",
+        "category": _domain_to_category(_clean(row.get("dominant_domain", ""))),
+        "technology_product": primary_tag,
+        "report_url": _clean(row.get("sample_report_path", "")),
+        "overall_rating": score_hint,
+        "vendor_status": "Assessed",
+        "risk_level": _risk_from_rating(score_hint),
+        "last_assessed": last_assessed,
+    }
+
+
 # ─────────────────────────────────────────────────────────────────────
 # Main import
 # ─────────────────────────────────────────────────────────────────────
@@ -201,61 +242,90 @@ ON CONFLICT(id) DO UPDATE SET
 """
 
 
-def import_all() -> None:
-    """Import all CSVs from the Vendor Highlighted Data folder."""
-    init_db()
-    conn = get_connection()
-
-    csv_files = sorted(DATA_DIR.glob("*.csv"))
-    if not csv_files:
-        print(f"No CSV files found in {DATA_DIR}")
-        return
-
-    total = 0
-    for csv_path in csv_files:
-        count = _import_one(conn, csv_path)
-        total += count
-
-    conn.commit()
-
-    # Print summary stats
-    row = conn.execute("SELECT COUNT(*) as cnt FROM vendors").fetchone()
-    conn.close()
-    print(f"\n{'='*60}")
-    print(f"✅  Processed {total} rows from {len(csv_files)} files")
-    print(f"📊  {row['cnt']} unique vendor-products in SQLite")
-    print(f"📁  Database: backend/data/sentry.db")
-    print(f"{'='*60}")
+def _upsert_vendor(conn: sqlite3.Connection, parsed: dict) -> None:
+    conn.execute(UPSERT_SQL, (
+        parsed["id"],
+        parsed["company_name"],
+        parsed["company_url"],
+        parsed["category"],
+        parsed["technology_product"],
+        parsed["report_url"],
+        parsed["overall_rating"],
+        parsed["vendor_status"],
+        parsed["risk_level"],
+        parsed["last_assessed"],
+    ))
 
 
-def _import_one(conn: sqlite3.Connection, csv_path: Path) -> int:
-    """Import a single CSV file, auto-detecting its schema."""
+def _import_legacy_file(conn: sqlite3.Connection, csv_path: Path) -> int:
+    """Import a single legacy CSV file, auto-detecting Schema A/B."""
     with open(csv_path, newline="", encoding="utf-8-sig") as f:
         reader = csv.DictReader(f)
         if not reader.fieldnames:
             return 0
         schema_b = _is_schema_b(reader.fieldnames)
         schema_label = "B (scored)" if schema_b else "A (pipeline)"
+
         count = 0
         for row in reader:
             parsed = _parse_schema_b(row) if schema_b else _parse_schema_a(row, csv_path.name)
             if parsed is None:
                 continue
-            conn.execute(UPSERT_SQL, (
-                parsed["id"],
-                parsed["company_name"],
-                parsed["company_url"],
-                parsed["category"],
-                parsed["technology_product"],
-                parsed["report_url"],
-                parsed["overall_rating"],
-                parsed["vendor_status"],
-                parsed["risk_level"],
-                parsed["last_assessed"],
-            ))
+            _upsert_vendor(conn, parsed)
             count += 1
+
     print(f"  ✔ {csv_path.name:<30} Schema {schema_label:<15} {count:>4} rows")
     return count
+
+
+def _import_assessment_profiles(conn: sqlite3.Connection, csv_path: Path) -> int:
+    """Import vendor profiles generated from Desktop/SENTRY/Vendor Assessments."""
+    if not csv_path.exists():
+        print(f"  • Skipping profiles import; file not found: {csv_path}")
+        return 0
+
+    count = 0
+    with open(csv_path, newline="", encoding="utf-8-sig") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            parsed = _parse_assessment_profile(row)
+            if parsed is None:
+                continue
+            _upsert_vendor(conn, parsed)
+            count += 1
+
+    print(f"  ✔ {csv_path.name:<30} Schema Profiles         {count:>4} rows")
+    return count
+
+
+def import_all() -> None:
+    """Import legacy highlighted CSVs plus Desktop Vendor Assessment profiles."""
+    init_db()
+    conn = get_connection()
+
+    total_rows = 0
+    files_processed = 0
+
+    legacy_files = sorted(LEGACY_DATA_DIR.glob("*.csv"))
+    if legacy_files:
+        for csv_path in legacy_files:
+            total_rows += _import_legacy_file(conn, csv_path)
+            files_processed += 1
+    else:
+        print(f"  • No legacy CSV files found in {LEGACY_DATA_DIR}")
+
+    total_rows += _import_assessment_profiles(conn, ASSESSMENT_PROFILES_CSV)
+    files_processed += 1
+
+    conn.commit()
+    row = conn.execute("SELECT COUNT(*) as cnt FROM vendors").fetchone()
+    conn.close()
+
+    print(f"\n{'='*60}")
+    print(f"✅  Processed {total_rows} rows from {files_processed} source file groups")
+    print(f"📊  {row['cnt']} unique vendor-products in SQLite")
+    print(f"📁  Database: backend/data/sentry.db")
+    print(f"{'='*60}")
 
 
 if __name__ == "__main__":

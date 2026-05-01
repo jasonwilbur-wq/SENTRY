@@ -1,350 +1,415 @@
-import { useState } from 'react';
-import { CSORadar3D } from './CSORadar3D';
-import { CSO_PROFILES, THREAT_COUNTS, type Finding, type ExecutiveProfile } from '../data/csoProfiles';
+import React from 'react';
 
-// ── Risk colour helpers ───────────────────────────────────────────────────────
-const RISK_STYLES: Record<string, { bg: string; text: string; border: string }> = {
-  RED:    { bg: 'rgba(234,17,0,0.18)',    text: '#ff6b6b', border: 'rgba(234,17,0,0.5)'    },
-  ORANGE: { bg: 'rgba(249,115,22,0.18)', text: '#fb923c', border: 'rgba(249,115,22,0.5)'  },
-  YELLOW: { bg: 'rgba(255,194,32,0.18)', text: '#FFC220', border: 'rgba(255,194,32,0.5)'  },
-  GREEN:  { bg: 'rgba(42,135,3,0.18)',   text: '#4ade80', border: 'rgba(42,135,3,0.5)'    },
-};
-const THREAT_STYLES: Record<string, { bg: string; text: string; border: string }> = {
-  CRITICAL: { bg: 'rgba(234,17,0,0.18)',    text: '#ff6b6b', border: 'rgba(234,17,0,0.5)'    },
-  HIGH:     { bg: 'rgba(249,115,22,0.18)', text: '#fb923c', border: 'rgba(249,115,22,0.5)'  },
-  MEDIUM:   { bg: 'rgba(255,194,32,0.18)', text: '#FFC220', border: 'rgba(255,194,32,0.5)'  },
-  LOW:      { bg: 'rgba(42,135,3,0.18)',   text: '#4ade80', border: 'rgba(42,135,3,0.5)'    },
-};
-
-// ── Sub-components ────────────────────────────────────────────────────────────
-function ProfileAvatar({ src, name }: { src: string; name: string }) {
-  const [broken, setBroken] = useState(false);
-  const initials = name.split(' ').map(n => n[0]).join('');
-  if (broken) {
-    return (
-      <div className="w-20 h-20 rounded-full border-4 flex items-center justify-center text-2xl font-black shrink-0"
-        style={{ borderColor: '#0053e2', background: 'linear-gradient(135deg,#0053e2,#7c3aed)' }}>
-        {initials}
-      </div>
-    );
-  }
-  return (
-    <img src={src} alt={name} onError={() => setBroken(true)}
-      className="w-20 h-20 rounded-full border-4 object-cover object-top shrink-0"
-      style={{ borderColor: '#0053e2' }} />
-  );
+interface CSOProfile {
+  name: string;
+  title: string;
+  company: string;
+  threatLevel: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
+  focusAreas: string[];
+  initiatives: string[];
+  threatAssessment: string;
+  lastActivity: string;
+  status: 'Active' | 'Vacant' | 'Interim';
 }
 
-function ThreatBadge({ level }: { level: string }) {
-  const s = THREAT_STYLES[level] ?? THREAT_STYLES.LOW;
+const CSO_PROFILES: CSOProfile[] = [
+  {
+    name: 'Stephen Schmidt',
+    title: 'SVP & Chief Security Officer',
+    company: 'Amazon',
+    threatLevel: 'CRITICAL',
+    focusAreas: ['Passwordless Auth', 'AI Security', 'Insider Risk', 'Identity'],
+    initiatives: [
+      '"Midway" - Universal U2F auth, zero exceptions',
+      'DPRK Detection - Blocked 1,800+ infiltration attempts',
+      'ATA Agents - Autonomous threat analysis AI',
+      'MadPot - Threat intel honeypot network'
+    ],
+    threatAssessment: 'Amazon is setting industry standards for passwordless authentication, AI-driven security automation, and insider risk detection. Their "no exceptions" philosophy and public disclosure of advanced capabilities (Midway, ATA, DPRK screening) raise the competitive bar.',
+    lastActivity: 'Feb 12, 2026 (CyberScoop Safe Mode)',
+    status: 'Active'
+  },
+  {
+    name: 'Amy Herzog',
+    title: 'VP & Chief Information Security Officer',
+    company: 'Amazon Web Services (AWS)',
+    threatLevel: 'HIGH',
+    focusAreas: ['Cloud Security', 'Security at Scale', 'Customer Trust'],
+    initiatives: [
+      'AWS re:Inforce 2025 - Keynote on security simplification',
+      'Security Services - Customer-facing security portfolio',
+      'Global Cloud Sec - Leading AWS security org'
+    ],
+    threatAssessment: 'Herzog positions AWS as security-by-default. Her public keynotes emphasize "simplifying security at scale" and customer-facing security services, influencing enterprise expectations.',
+    lastActivity: 'AWS Security Blog, re:Inforce 2025',
+    status: 'Active'
+  },
+  {
+    name: 'Rich Agostino',
+    title: 'SVP, Chief Information Security Officer',
+    company: 'Target',
+    threatLevel: 'HIGH',
+    focusAreas: ['Cyber Fusion Center', 'NIST CSF', 'Threat Intel'],
+    initiatives: [
+      '24/7 Cyber Fusion Center - Centralized threat ops',
+      'NIST CSF Maturity - Disclosed in 10-K governance',
+      'Threat-Driven Strategy - RSAC speaker/advisor',
+      'Infrastructure Security - SVP dual role'
+    ],
+    threatAssessment: 'Target\'s Cyber Fusion Center and NIST CSF alignment show mature, threat-driven operations. Agostino\'s dual CISO/Infrastructure role suggests tight integration of cyber and physity.',
+    lastActivity: 'Target 10-K (Item 1C), RSAC Bio',
+    status: 'Active'
+  },
+  {
+    name: 'CISO Position',
+    title: 'VACANT (Interim Coverage)',
+    company: 'Costco',
+    threatLevel: 'MEDIUM',
+    focusAreas: [],
+    initiatives: [
+      'Former CISO departed June 2025',
+      'Deputy CISO managing responsibilities',
+      'Replacement search in progress (unconfirmed timeline)',
+      'CISO reports to CIDO → CEO (per 10-K)'
+    ],
+    threatAssessment: 'STRATEGIC OPPORTUNITY: Costco\'s extended CISO vacancy (9+ months) suggests potential gaps in cyber program leadership, strategic initiatives, and vendor relationships. Walmart can accelerate competitive advantage during this transition period.',
+    lastActivity: 'Costco SEC 10-K (Item 1C), March 2026',
+    status: 'Vacant'
+  },
+  {
+    name: 'Interim CISO',
+    title: 'Name Not Disclosed',
+    company: 'Kroger',
+    threatLevel: 'MEDIUM',
+    focusAreas: [],
+    initiatives: [
+      'Interim CISO managing cybersecurity program',
+      'Individual not named in public 10-K filing',
+      'Audit Committee oversight structure',
+      'Quarterly updates + NIST CSF scorecards to Board'
+    ],
+    threatAssessment: 'COMPETITIVE OPENING: Interim CISO status suggests Kroger may have reduced strategic security agility. Opportunity for Walmart to demonstrate leadership stability and attract top talent.',
+    lastActivity: 'Kroger SEC 10-K (Item 1C), Feb 2026',
+    status: 'Interim'
+  }
+];
+
+const ThreatBadge: React.FC<{ level: string }> = ({ level }) => {
+  const colors = {
+    CRITICAL: 'bg-red-500/10 text-red-400 border-red-500/30',
+    HIGH: 'bg-orange-500/10 text-orange-400 border-orange-500/30',
+    MEDIUM: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/30',
+    LOW: 'bg-green-500/10 text-green-400 border-green-500/30'
+  };
+  
   return (
-    <span className="px-2.5 py-1 rounded-full text-[10px] font-black tracking-wider shrink-0"
-      style={{ background: s.bg, color: s.text, border: `1px solid ${s.border}` }}>
+    <span className={`px-2 py-1 rounded-full text-xs font-bold border ${colors[level as keyof typeof colors]}`}>
       {level}
     </span>
   );
-}
+};
 
-function FindingCard({ finding, isOpen, onToggle, onOpenFeedback }: {
-  finding: Finding;
-  isOpen: boolean;
-  onToggle: () => void;
-  onOpenFeedback?: (finding: Finding) => void;
-}) {
-  const rs = RISK_STYLES[finding.riskColor] ?? RISK_STYLES.GREEN;
-  return (
-    <div onClick={() => {
-      onToggle();
-      onOpenFeedback?.(finding);
-    }}
-      className="rounded-xl border transition-all duration-200 cursor-pointer"
-      style={{ background: 'var(--s-modal-inner)', borderColor: isOpen ? '#0053e2' : 'var(--s-border-mid)' }}>
-      <div className="p-4">
-        <div className="flex flex-wrap items-center gap-2 mb-2">
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold"
-            style={{ background: rs.bg, color: rs.text, border: `1px solid ${rs.border}` }}>
-            {finding.riskColor} · {finding.impactScore}/25
-          </span>
-          <span className="px-2 py-0.5 rounded text-[10px]" style={{ background: 'rgba(0,83,226,0.18)', color: '#60a5fa' }}>
-            {finding.type.replace(/_/g, ' ')}
-          </span>
-          <span className="text-[10px] text-slate-500">{finding.date}</span>
-        </div>
-        <p className="text-sm font-semibold text-blue-300 leading-snug">{finding.headline}</p>
-      </div>
-      {isOpen && (
-        <div className="px-4 pb-4 pt-0 space-y-3" style={{ borderTop: '1px solid var(--s-border)' }}>
-          <div className="pt-3">
-            <p className="text-[10px] font-bold text-wmt-yellow uppercase tracking-widest mb-1">Summary</p>
-            <p className="text-xs leading-relaxed" style={{ color: 'var(--s-text-muted)' }}>{finding.summary}</p>
-          </div>
-          <div>
-            <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-1">Why It Matters</p>
-            <p className="text-xs leading-relaxed" style={{ color: 'var(--s-text-muted)' }}>{finding.whyItMatters}</p>
-          </div>
-          <div>
-            <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">Sources</p>
-            <div className="space-y-1">
-              {finding.sources.map((s, i) => (
-                <a key={i} href={s.url} target="_blank" rel="noopener noreferrer"
-                  onClick={e => e.stopPropagation()}
-                  className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-200 transition-colors">
-                  <span className="shrink-0">↗</span>
-                  <span className="truncate">{s.publisher}</span>
-                  <span className="shrink-0 text-slate-600">· {s.date}</span>
-                </a>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-      <div className="px-4 pb-2 text-[10px]" style={{ color: 'var(--s-text-dim)' }}>{isOpen ? '▲ collapse' : '▼ expand'}</div>
-    </div>
-  );
-}
-
-function ExecutiveCard({ exec, isSelected, onToggle, onOpenFeedback }: {
-  exec: ExecutiveProfile;
-  isSelected: boolean;
-  onToggle: () => void;
-  onOpenFeedback?: (exec: ExecutiveProfile) => void;
-}) {
-  const ts = THREAT_STYLES[exec.threatLevel] ?? THREAT_STYLES.LOW;
-  const orangeCount = exec.keyFindings.filter(f => f.riskColor === 'ORANGE' || f.riskColor === 'RED').length;
-  return (
-    <div onClick={() => {
-      onToggle();
-      onOpenFeedback?.(exec);
-    }} className="rounded-2xl border cursor-pointer transition-all duration-300 hover:scale-[1.01] shadow-xl overflow-hidden"
-      style={{
-        background: 'var(--s-card)',
-        borderColor: isSelected ? '#0053e2' : 'var(--s-border-mid)',
-        boxShadow: isSelected ? '0 0 30px rgba(0,83,226,0.2)' : undefined,
-      }}>
-      {/* Header */}
-      <div className="p-5 flex items-start gap-4">
-        <ProfileAvatar src={exec.profileImage} name={exec.name} />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between gap-2 mb-1">
-            <div>
-              <h2 className="text-lg font-black leading-tight" style={{ color: 'var(--s-text)' }}>{exec.name}</h2>
-              <p className="text-xs mt-0.5" style={{ color: 'var(--s-text-muted)' }}>{exec.title}</p>
-              <p className="text-xs font-semibold mt-0.5" style={{ color: '#60a5fa' }}>{exec.company}</p>
-            </div>
-            <ThreatBadge level={exec.threatLevel} />
-          </div>
-          <p className="text-xs text-slate-300 leading-relaxed mt-2">{exec.bio}</p>
-        </div>
-      </div>
-      {/* Stats bar */}
-      <div className="grid grid-cols-3 border-t px-5 py-3 gap-2" style={{ borderColor: 'var(--s-border)', background: 'var(--s-modal-inner)' }}>
-        <div className="text-center">
-          <div className="text-xl font-black" style={{ color: '#60a5fa' }}>{exec.keyFindings.length}</div>
-          <div className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--s-text-dim)' }}>Findings</div>
-        </div>
-        <div className="text-center">
-          <div className="text-xl font-black" style={{ color: orangeCount > 0 ? '#fb923c' : '#64748b' }}>{orangeCount}</div>
-          <div className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--s-text-dim)' }}>High-Impact</div>
-        </div>
-        <div className="text-center">
-          <div className="text-xl font-black" style={{ color: ts.text }}>{exec.recentActivity.length}</div>
-          <div className="text-[9px] uppercase tracking-wider" style={{ color: 'var(--s-text-dim)' }}>Activities</div>
-        </div>
-      </div>
-      <div className="text-center py-2 text-[10px]" style={{ borderTop: '1px solid var(--s-border)', color: 'var(--s-text-dim)' }}>
-        {isSelected ? '▲ collapse' : '▼ expand full intelligence'}
-      </div>
-    </div>
-  );
-}
-
-// ── Main component ────────────────────────────────────────────────────────────
-export function CSOIntelligence() {
-  const [selectedExec, setSelectedExec]       = useState<string | null>(null);
-  const [openFinding, setOpenFinding]         = useState<string | null>(null);
-  const [enableFlare, setEnableFlare]         = useState(true);
-
-  const active = CSO_PROFILES.find(e => e.id === selectedExec);
-
-  const openExecDetails = (exec: ExecutiveProfile) => {
-    setSelectedExec(exec.id);
-    setOpenFinding(null);
+const CSOCard: React.FC<{ profile: CSOProfile }> = ({ profile }) => {
+  const borderColors = {
+    CRITICAL: 'border-l-red-500',
+    HIGH: 'border-l-orange-500',
+    MEDIUM: 'border-l-yellow-500',
+    LOW: 'border-l-green-500'
   };
 
   return (
-    <div className="min-h-screen p-4 sm:p-8"
-      style={{ background: 'var(--s-bg)', color: 'var(--s-text)' }}>
+    <div className={`bg-gradient-to-br from-slate-800/40 to-slate-900/40 rounded-lg border border-slate-700/50 ${borderColors[profile.threatLevel]} border-l-4 p-6 hover:border-slate-600 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/10`}>
+      {/* Header */}
+      <div className="flex items-start justify-between mb-4">
+        <div>
+          <h3 className="text-xl font-bold text-white">{profile.name}</h3>
+          <p className="text-sm text-slate-400 mt-1">{profile.title}</p>
+          <p className="text-xs font-medium mt-1" style={{ color: profile.company === 'Amazon' ? '#FF9900' : profile.company.includes('AWS') ? '#FF9900' : profile.company === 'Target' ? '#CC0000' : '#0053e2' }}>
+            {profile.company}
+          </p>
+        </div>
+        <ThreatBadge level={profile.threatLevel} />
+      </div>
 
-      {/* ── 3D Hero ──────────────────────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto mb-8">
-        <div className="cso-hero-bg relative rounded-2xl overflow-hidden"
-          style={{ height: 400, border: '1px solid var(--s-border)' }}>
-          {/* Grid overlay */}
-          <div className="absolute inset-0 pointer-events-none"
-            style={{ opacity: 0.05,
-              backgroundImage: 'linear-gradient(rgba(0,83,226,.6) 1px,transparent 1px),linear-gradient(90deg,rgba(0,83,226,.6) 1px,transparent 1px)',
-              backgroundSize: '48px 48px' }} />
-          <div className="absolute inset-0 z-0"><CSORadar3D enableFlare={enableFlare} enablePing={false} /></div>
-          {/* Threat ring legend */}
-          <div className="absolute bottom-5 left-6 z-10 flex flex-col gap-1.5">
-            {(['CRITICAL','HIGH','MEDIUM','LOW'] as const).map(l => (
-              <div key={l} className="flex items-center gap-2">
-                <span className="w-2.5 h-2.5 rounded-full shrink-0"
-                  style={{ background: THREAT_STYLES[l].text, boxShadow: `0 0 6px ${THREAT_STYLES[l].text}` }} />
-                <span className="text-[10px] font-bold tracking-wider" style={{ color: THREAT_STYLES[l].text }}>{l}</span>
-              </div>
+      {/* Focus Areas */}
+      {profile.focusAreas.length > 0 && (
+        <div className="mb-4">
+          <div className="text-sm font-semibold text-slate-300 mb-2">Key Focus Areas:</div>
+          <div className="flex flex-wrap gap-1.5">
+            {profile.focusAreas.map((area, idx) => (
+              <span key={idx} className="px-2 py-1 rounded bg-blue-500/10 text-blue-400 text-xs border border-blue-500/20">
+                {area}
+              </span>
             ))}
           </div>
-          {/* Hero text */}
-          <div className="relative z-10 h-full flex flex-col items-center justify-start pt-6 text-center px-6"
-            style={{ textShadow: '0 2px 12px rgba(0,0,0,0.8)' }}>
-            <p className="text-[10px] font-bold text-wmt-yellow tracking-[0.2em] uppercase mb-2">
-              Enterprise Security &nbsp;•&nbsp; Executive Threat Intelligence
-            </p>
-            <h1 className="text-4xl lg:text-5xl font-black mb-2 leading-tight"
-              style={{ background: 'linear-gradient(135deg,#60a5fa 0%,#0053E2 50%,#FFC220 100%)',
-                WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-              CSO Intelligence
-            </h1>
-            <p className="text-sm max-w-xl mb-5" style={{ color: 'var(--s-text-muted)' }}>
-              Competitor executive tracking — security leadership threat posture, org changes &amp; strategic risk.
-            </p>
-            <div className="flex flex-wrap gap-2 justify-center mb-2">
-              <button
-                type="button"
-                onClick={() => setEnableFlare(v => !v)}
-                className="px-3 py-1.5 rounded-full text-xs font-bold border"
-                style={{
-                  background: enableFlare ? 'rgba(255,194,32,0.15)' : 'rgba(100,116,139,0.15)',
-                  color: enableFlare ? '#FFC220' : '#94a3b8',
-                  borderColor: enableFlare ? 'rgba(255,194,32,0.45)' : 'rgba(100,116,139,0.4)',
-                }}
-              >
-                {enableFlare ? '✨ Flare ON' : '✨ Flare OFF'}
-              </button>
-            </div>
-
-            <div className="flex flex-wrap gap-2 justify-center">
-              <span className="px-3 py-1.5 rounded-full text-xs font-bold border"
-                style={{ background: 'rgba(234,17,0,0.15)', color: '#ff6b6b', borderColor: 'rgba(234,17,0,0.4)' }}>
-                🔴 ORANGE Findings: {THREAT_COUNTS.critical}
-              </span>
-              <span className="px-3 py-1.5 rounded-full text-xs font-bold border"
-                style={{ background: 'rgba(255,194,32,0.15)', color: '#FFC220', borderColor: 'rgba(255,194,32,0.4)' }}>
-                🟡 YELLOW Findings: {THREAT_COUNTS.high}
-              </span>
-              <span className="px-3 py-1.5 rounded-full text-xs font-bold border"
-                style={{ background: 'rgba(0,83,226,0.15)', color: '#60a5fa', borderColor: 'rgba(0,83,226,0.4)' }}>
-                {CSO_PROFILES.length} Executives · Updated {THREAT_COUNTS.updated}
-              </span>
-            </div>
-          </div>
         </div>
-      </div>
-
-      {/* ── Executive Card Grid ───────────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-        {CSO_PROFILES.map(exec => (
-          <ExecutiveCard key={exec.id} exec={exec}
-            isSelected={selectedExec === exec.id}
-            onToggle={() => openExecDetails(exec)}
-            onOpenFeedback={openExecDetails} />
-        ))}
-      </div>
-
-      {/* ── Full Intelligence Modal ───────────────────────────────────────── */}
-      {active && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4"
-          style={{ background: 'rgba(2,6,23,0.72)' }}
-          onClick={() => {
-            setSelectedExec(null);
-            setOpenFinding(null);
-          }}
-        >
-          <div
-            className="w-full max-w-6xl max-h-[92vh] overflow-y-auto rounded-2xl shadow-2xl"
-            style={{ background: 'var(--s-card)', border: '2px solid #0053e2' }}
-            onClick={(e) => e.stopPropagation()}
-            role="dialog"
-            aria-modal="true"
-            aria-label={`Intelligence detail for ${active.name}`}
-          >
-            <div className="p-6 sm:p-8">
-              <div className="flex items-start justify-between gap-4 mb-6 pb-4" style={{ borderBottom: '1px solid var(--s-border)' }}>
-                <h2 className="text-2xl font-black" style={{ color: 'var(--s-text)' }}>
-                  🔍 Intelligence Detail — {active.name}
-                </h2>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedExec(null);
-                    setOpenFinding(null);
-                  }}
-                  className="px-3 py-1.5 rounded text-xs font-bold border shrink-0"
-                  style={{ borderColor: 'var(--s-border)', color: 'var(--s-text-muted)' }}
-                >
-                  Close
-                </button>
-              </div>
-
-            {/* Strategic Threats */}
-            <section className="mb-8">
-              <h3 className="text-lg font-bold mb-3 flex items-center gap-2">⚠️ Strategic Threats to Walmart</h3>
-              <div className="space-y-2">
-                {active.strategicThreats.map((t, i) => (
-                  <div key={i} className="p-3 rounded-lg text-sm"
-                    style={{ background: 'rgba(234,17,0,0.06)', borderLeft: '3px solid rgba(234,17,0,0.4)', color: 'var(--s-text-muted)' }}>{t}</div>
-                ))}
-              </div>
-            </section>
-
-            {/* Key Findings */}
-            <section className="mb-8">
-              <h3 className="text-lg font-bold mb-3 flex items-center gap-2">📊 Key Intelligence Findings</h3>
-              <div className="space-y-3">
-                {active.keyFindings.map(f => (
-                  <FindingCard key={f.id} finding={f}
-                    isOpen={openFinding === f.id}
-                    onToggle={() => setOpenFinding(prev => prev === f.id ? null : f.id)} />
-                ))}
-              </div>
-            </section>
-
-            {/* Activity Timeline */}
-            <section className="mb-8">
-              <h3 className="text-lg font-bold mb-3 flex items-center gap-2">📅 Recent Activity Timeline</h3>
-              <div className="space-y-3">
-                {active.recentActivity.map((a, i) => (
-                  <div key={i} className="flex gap-4">
-                    <div className="shrink-0 w-24 text-right">
-                      <span className="text-xs text-slate-500">{a.date}</span>
-                    </div>
-                    <div className="shrink-0 w-px bg-blue-600 rounded-full" />
-                    <div className="flex-1 rounded-lg p-3" style={{ background: 'var(--s-modal-inner)', border: '1px solid var(--s-border)' }}>
-                      <p className="text-sm font-bold mb-1" style={{ color: 'var(--s-text)' }}>{a.title}</p>
-                      <span className="text-[10px] px-2 py-0.5 rounded" style={{ background: 'rgba(0,83,226,0.2)', color: '#60a5fa' }}>{a.type}</span>
-                      <p className="text-xs mt-1.5" style={{ color: 'var(--s-text-muted)' }}>{a.impact}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* Recommendations */}
-            <section>
-              <h3 className="text-lg font-bold mb-3 flex items-center gap-2">🎯 Recommended Actions for Jerrad</h3>
-              <div className="space-y-2">
-                {active.recommendations.map((r, i) => (
-                  <div key={i} className="p-3 rounded-lg text-sm"
-                    style={{ background: 'linear-gradient(90deg,rgba(0,83,226,0.08),rgba(124,58,237,0.06))', borderLeft: '3px solid #FFC220', color: 'var(--s-text-muted)' }}>{r}</div>
-                ))}
-              </div>
-            </section>
-          </div>
-        </div>
-      </div>
       )}
+
+      {/* Initiatives */}
+      <div className="mb-4 bg-slate-950/30 p-3 rounded border border-slate-700/30">
+        <div className="text-xs font-semibold text-slate-300 mb-2">
+          {profile.status === 'Vacant' ? '⚠️ LEADERSHIP TRANSITION:' : profile.status === 'Interim' ? '⚠️ INTERIM LEADERSHIP:' : 'RECENT INITIATIVES:'}
+        </div>
+        <ul className="text-xs space-y-1.5 text-slate-400">
+          {profile.initiatives.map((init, idx) => (
+            <li key={idx} className="flex items-start">
+              <span className="mr-2">{profile.status === 'Active' ? '✅' : '•'}</span>
+              <span dangerouslySetInnerHTML={{ __html: init.replace(/"(.*?)"/g, '<strong>"$1"</strong>') }} />
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Threat Assessment */}
+      <div className="mb-3">
+        <div className="text-xs font-semibold text-slate-300 mb-1.5">
+          {profile.status === 'Active' ? 'THREAT ASSESSMENT:' : 'OPPORTUNITY ASSESSMENT:'}
+        </div>
+        <div className="text-xs text-slate-400 leading-relaxed">
+          {profile.threatAssessment}
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="pt-3 border-t border-slate-700/50">
+        <div className="text-xs text-slate-500">Last Activity: {profile.lastActivity}</div>
+      </div>
     </div>
   );
-}
+};
+
+export const CSOIntelligence: React.FC = () => {
+  return (
+    <div className="space-y-6">
+      
+      {/* Executive Summary */}
+      <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 rounded-lg border border-slate-700/50 p-6">
+        <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+          <svg className="w-6 h-6 mr-2 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z"/>
+            <path fillRule="evenodd" d="M4 5a2 2 0 012-2 3 3 0 003 3h2a3 3 0 003-3 2 2 0 012 2v11a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3zm-3 4a1 1 0 100 2h.01a1 1 0 100-2H7zm3 0a1 1 0 100 2h3a1 1 0 100-2h-3z" clipRule="evenodd"/>
+          </svg>
+          Executive Summary
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-blue-500/5 p-4 rounded-lg border border-blue-500/20">
+            <div className="text-sm font-medium text-blue-300">Amazon (Stephen Schmidt)</div>
+            <div className="text-2xl font-bold text-blue-400 mt-1">Most Aggressive</div>
+            <div className="text-sm text-slate-400 mt-2">Leading in passwordless auth, AI-driven security, and insider risk detection</div>
+          </div>
+          <div className="bg-yellow-500/5 p-4 rounded-lg border border-yellow-500/20">
+            <div className="text-sm font-medium text-yellow-300">Target (Rich Agostino)</div>
+            <div className="text-2xl font-bold text-yellow-400 mt-1">Strong Position</div>
+            <div className="text-sm text-slate-400 mt-2">24/7 Cyber Fusion Center, NIST CSF maturity, threat-driven ops</div>
+          </div>
+          <div className="bg-red-500/5 p-4 rounded-lg border border-red-500/20">
+            <div className="text-sm font-medium text-red-300">Costco & Kroger</div>
+            <div className="text-2xl font-bold text-red-400 mt-1">Leadership Gaps</div>
+            <div className="text-sm text-slate-400 mt-2">CISO vacancies present strategic opportunity for Walmart</div>
+          </div>
+        </div>
+      </div>
+
+      {/* CSO Profiles */}
+      <div>
+        <h2 className="text-2xl font-bold text-white mb-4">Competitor CSO/CISO Profiles</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {CSO_PROFILES.map((profile, idx) => (
+            <CSOCard key={idx} profile={profile} />
+          ))}
+          
+          {/* Walmart Card */}
+          <div className="bg-gradient-to-br from-blue-900/30 to-blue-800/20 rounded-lg border-l-4 border-l-blue-500 border border-blue-700/50 p-6 hover:border-blue-600 transition-all duration-300 hover:shadow-xl hover:shadow-blue-500/20">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="text-xl font-bold text-white">Jerrad Crabtree</h3>
+                <p className="text-sm text-blue-300 font-semibold mt-1">SVP, Global Security & Chief Security Officer</p>
+                <p className="text-xs text-blue-400 font-bold mt-1">Walmart (YOU)</p>
+              </div>
+              <span className="px-2 py-1 rounded-full text-xs font-bold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                INCUMBENT
+              </span>
+            </div>
+
+            <div className="mb-4">
+              <div className="text-sm font-semibold text-slate-300 mb-2">Your Scope:</div>
+              <div className="flex flex-wrap gap-1.5">
+                {['Enterprise Protection', 'Threat Mgmt', 'Risk Intel', 'GSOC 24/7', 'Crisis Response'].map((area, idx) => (
+                  <span key={idx} className="px-2 py-1 rounded bg-blue-500/20 text-blue-300 text-xs border border-blue-500/30">
+                    {area}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-4 bg-slate-950/30 p-3 rounded border border-blue-700/30">
+              <div className="text-xs font-semibold text-blue-300 mb-2">YOUR COMPETITIVE POSITION:</div>
+              <ul className="text-xs space-y-1.5 text-slate-400">
+                <li className="flex items-start"><span className="mr-2">✅</span><strong>Scale Advantage</strong> - Largest retail security org globally</li>
+                <li className="flex items-start"><span className="mr-2">✅</span><strong>GSOC Operations</strong> - 24/7 enterprise-wide monitoring</li>
+                <li className="flex items-start"><span className="mr-2">✅</span><strong>Convergence Model</strong> - Physical + cyber + resilience</li>
+                <li className="flex items-start"><span className="mr-2">✅</span><strong>Global Reach</strong> - International security operations</li>
+              </ul>
+            </div>
+
+            <div className="mb-3 bg-green-500/5 p-3 rounded border border-green-500/20">
+              <div className="text-xs font-semibold text-green-300 mb-1.5">📊 COMPETITIVE GAPS TO CLOSE:</div>
+              <div className="text-xs text-slate-400 space-y-1">
+                <div><strong>1. Public Thought Leadership</strong> - Amazon CSO dominates industry narrative</div>
+                <div><strong>2. Passwordless Auth</strong> - Midway-style "no exceptions" identity program</div>
+                <div><strong>3. AI-Driven Security</strong> - Autonomous threat analysis capabilities</div>
+                <div><strong>4. Insider Risk Detection</strong> - DPRK-level hiring fraud defenses</div>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-blue-700/50">
+              <div className="text-xs text-blue-400 font-medium">Opportunity: Lead during competitor transitions</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Strategic Intelligence */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Threats */}
+        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 rounded-lg border border-slate-700/50 p-6">
+          <h3 className="text-xl font-bold text-red-400 mb-4 flex items-center">
+            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd"/>
+            </svg>
+            Key Threats
+          </h3>
+          <div className="space-y-3">
+            <div className="border-l-4 border-red-500 pl-3 py-2 bg-red-500/5 rounded">
+              <div className="text-sm font-bold text-red-300">Amazon Setting Industry Standards</div>
+              <div className="text-xs text-slate-400 mt-1">
+                Stephen Schmidt's public disclosure of Midway (passwordless), ATA (AI agents), and DPRK screening raises the bar for enterprise security.
+              </div>
+            </div>
+            <div className="border-l-4 border-orange-500 pl-3 py-2 bg-orange-500/5 rounded">
+              <div className="text-sm font-bold text-orange-300">Target's Cyber Fusion Center Maturity</div>
+              <div className="text-xs text-slate-400 mt-1">
+                Rich Agostino's 24/7 Cyber Fusion Center demonstrates threat-driven ops at retail scale.
+              </div>
+            </div>
+            <div className="border-l-4 border-yellow-500 pl-3 py-2 bg-yellow-500/5 rounded">
+              <div className="text-sm font-bold text-yellow-300">Thought Leadership Gap</div>
+              <div className="text-xs text-slate-400 mt-1">
+                Amazon CSO dominates public narrative. Walmart has limited external visibility.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Opportunities */}
+        <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 rounded-lg border border-slate-700/50 p-6">
+          <h3 className="text-xl font-bold text-green-400 mb-4 flex items-center">
+            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+            </svg>
+            Opportunities
+          </h3>
+          <div className="space-y-3">
+            <div className="border-l-4 border-green-500 pl-3 py-2 bg-green-500/5 rounded">
+              <div className="text-sm font-bold text-green-300">Costco & Kroger Leadership Gaps</div>
+              <div className="text-xs text-slate-400 mt-1">
+                <strong className="text-green-400">CRITICAL WINDOW:</strong> Extended vacancies enable Walmart to accelerate partnerships and talent acquisition.
+              </div>
+            </div>
+            <div className="border-l-4 border-blue-500 pl-3 py-2 bg-blue-500/5 rounded">
+              <div className="text-sm font-bold text-blue-300">Public Thought Leadership</div>
+              <div className="text-xs text-slate-400 mt-1">
+                <strong className="text-blue-400">RECOMMENDATION:</strong> Launch CSO campaign via LinkedIn, podcasts, conferences on physical-cyber convergence.
+              </div>
+            </div>
+            <div className="border-l-4 border-purple-500 pl-3 py-2 bg-purple-500/5 rounded">
+              <div className="text-sm font-bold text-purple-300">AI & Automation Investment</div>
+              <div className="text-xs text-slate-400 mt-1">
+                <strong className="text-purple-400">STRATEGIC PLAY:</strong> Develop Walmart-equivalent of ATA and Midway. Public disclosure positions us as innovators.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Recommended Actions */}
+      <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 rounded-lg border border-slate-700/50 p-6">
+        <h3 className="text-2xl font-bold text-white mb-4 flex items-center">
+          <svg className="w-6 h-6 mr-2 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
+            <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd"/>
+          </svg>
+          Recommended Actions for Jerrad Crabtree
+        </h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Immediate */}
+          <div className="bg-red-500/5 p-4 rounded-lg border-l-4 border-red-500">
+            <div className="font-bold text-red-300 mb-2 text-sm">🔥 IMMEDIATE (30 days)</div>
+            <ol className="text-xs space-y-2 text-slate-400 list-decimal list-inside">
+              <li><strong>Launch Thought Leadership:</strong> Publish LinkedIn article</li>
+              <li><strong>Accelerate Vendor Deals:</strong> Leverage competitor gaps</li>
+              <li><strong>Benchmark Midway:</strong> Assess passwordless auth posture</li>
+              <li><strong>DPRK Screening:</strong> Review hiring fraud detection</li>
+            </ol>
+          </div>
+
+          {/* Near-term */}
+          <div className="bg-yellow-500/5 p-4 rounded-lg border-l-4 border-yellow-500">
+            <div className="font-bold text-yellow-300 mb-2 text-sm">⚡ NEAR-TERM (90 days)</div>
+            <ol className="text-xs space-y-2 text-slate-400 list-decimal list-inside">
+              <li><strong>Conference Circuit:</strong> RSA, Black Hat speaking slots</li>
+              <li><strong>AI Security POC:</strong> Agentic threat analysis pilot</li>
+              <li><strong>Fusion Center Upgrade:</strong> Assess vs Target capabilities</li>
+              <li><strong>Industry Partnerships:</strong> Join CISA NSTAC</li>
+            </ol>
+          </div>
+
+          {/* Strategic */}
+          <div className="bg-green-500/5 p-4 rounded-lg border-l-4 border-green-500">
+            <div className="font-bold text-green-300 mb-2 text-sm">🎯 STRATEGIC (6-12 months)</div>
+            <ol className="text-xs space-y-2 text-slate-400 list-decimal list-inside">
+              <li><strong>Security Brand:</strong> Position Walmart as thought leader</li>
+              <li><strong>Zero Trust Rollout:</strong> "No exceptions" identity program</li>
+              <li><strong>Talent Magnet:</strong> Attract from Amazon/Target</li>
+              <li><strong>Regulatory Influence:</strong> Shape regulations via testimony</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      {/* Intelligence Sources */}
+      <div className="bg-gradient-to-br from-slate-800/60 to-slate-900/60 rounded-lg border border-slate-700/50 p-6">
+        <h3 className="text-lg font-bold text-white mb-4">Intelligence Sources & Verification</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          <div>
+            <div className="font-semibold text-slate-300 mb-2">Primary Sources:</div>
+            <ul className="space-y-1 text-slate-400">
+              <li>✅ Stephen Schmidt LinkedIn (Jan 23, 2026)</li>
+              <li>✅ CyberScoop Safe Mode (Feb 12, 2026)</li>
+              <li>✅ Amazon Science Blog (Nov 24, 2025)</li>
+              <li>✅ WIRED (Nov 24, 2025)</li>
+              <li>✅ AWS Executive Insights (Feb 2025)</li>
+            </ul>
+          </div>
+          <div>
+            <div className="font-semibold text-slate-300 mb-2">Regulatory Filings:</div>
+            <ul className="space-y-1 text-slate-400">
+              <li>✅ Target SEC 10-K (Item 1C)</li>
+              <li>✅ Costco SEC 10-K (Item 1C)</li>
+              <li>✅ Kroger SEC 10-K (Item 1C)</li>
+              <li>✅ CISA NSTAC Fact Sheet</li>
+            </ul>
+          </div>
+        </div>
+        <div className="mt-4 pt-4 border-t border-slate-700">
+          <div className="text-xs text-slate-500">
+            <strong>Prepared by:</strong> Enterprise Security - Emerging Technology | Jason Wilbur (j0w16ja)<br/>
+            <strong>Classification:</strong> Internal Use Only | <strong>Distribution:</strong> Jerrad Crabtree, CSO<br/>
+            <strong>Next Update:</strong> April 1, 2026 (Monthly intelligence cycle)
+          </div>
+        </div>
+      </div>
+
+    </div>
+  );
+};

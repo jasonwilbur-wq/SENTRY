@@ -24,6 +24,14 @@ const RAG_ORDER: Record<string, number> = { Red: 0, Amber: 1, Yellow: 2, Green: 
 interface Props {
   selectedJurisdiction?: string | null;
   onJurisdictionClick?: (jurisdiction: string | null) => void;
+  geoScope?: 'all' | 'us' | 'global';
+  onVisibleCountChange?: (count: number) => void;
+  activeRags?: Array<'Red' | 'Amber' | 'Yellow' | 'Green'>;
+  minObligations?: number;
+  searchText?: string;
+  maxVisible?: number;
+  showConnectors?: boolean;
+  onVisibleJurisdictionsChange?: (jurisdictions: RegulatoryGeoJurisdiction[]) => void;
 }
 
 interface MapNode {
@@ -32,6 +40,29 @@ interface MapNode {
   lat: number;
   lon: number;
   geo: RegulatoryGeoJurisdiction;
+}
+
+function inferIsUSJurisdiction(jurisdictionLabel: string): boolean {
+  const label = jurisdictionLabel.toLowerCase();
+  return label.includes('usa') || label.includes('united states');
+}
+
+function matchesGeoScope(
+  jurisdiction: RegulatoryGeoJurisdiction,
+  scope: 'all' | 'us' | 'global',
+): boolean {
+  if (scope === 'all') return true;
+
+  const geo = jurisdiction.geo_scope;
+  const looksUS = inferIsUSJurisdiction(jurisdiction.jurisdiction);
+
+  if (scope === 'us') {
+    if (geo) return geo === 'US_STATE' || geo === 'US_FEDERAL';
+    return looksUS;
+  }
+
+  if (geo) return geo === 'COUNTRY' || geo === 'GLOBAL';
+  return !looksUS;
 }
 
 /** Node position after force simulation. */
@@ -66,11 +97,19 @@ function deCluster(
 export const RegulatoryMap2D: React.FC<Props> = ({
   selectedJurisdiction = null,
   onJurisdictionClick,
+  geoScope = 'all',
+  onVisibleCountChange,
+  activeRags = ['Red', 'Amber', 'Yellow', 'Green'],
+  minObligations = 1,
+  searchText = '',
+  maxVisible = 300,
+  showConnectors = true,
+  onVisibleJurisdictionsChange,
 }) => {
   const wrapRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const tipRef = useRef<HTMLDivElement>(null);
-  const [nodes, setNodes] = useState<MapNode[]>([]);
+  const [allNodes, setAllNodes] = useState<MapNode[]>([]);
   const [worldGeo, setWorldGeo] = useState<GeoJSON.FeatureCollection | null>(null);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [transform, setTransform] = useState({ k: 1, x: 0, y: 0 });
@@ -82,8 +121,11 @@ export const RegulatoryMap2D: React.FC<Props> = ({
       const topo = (mod.default ?? mod) as unknown as Topology<{ countries: GeometryCollection }>;
       setWorldGeo(topojson.feature(topo, topo.objects.countries) as unknown as GeoJSON.FeatureCollection);
     });
-    const loadRegs = fetchRegulatoryGeo().then(({ jurisdictions }) => {
-      setNodes(jurisdictions
+    const loadRegs = fetchRegulatoryGeo('all').then(({ jurisdictions }) => {
+      const scoped = jurisdictions.filter((j) => matchesGeoScope(j, geoScope));
+      const effective = scoped.length > 0 ? scoped : jurisdictions;
+
+      setAllNodes(effective
         .map(g => {
           const c = JURISDICTION_COORDS[g.jurisdiction];
           return c ? { jurisdiction: g.jurisdiction, label: c.label, lat: c.lat, lon: c.lon, geo: g } : null;
@@ -91,7 +133,33 @@ export const RegulatoryMap2D: React.FC<Props> = ({
         .filter((n): n is MapNode => n !== null));
     });
     Promise.all([loadWorld, loadRegs]).catch(err => console.warn('Map load failed', err));
-  }, []);
+  }, [geoScope]);
+
+  const filteredNodes = useMemo(() => {
+    const query = searchText.trim().toLowerCase();
+    const ragSet = new Set(activeRags);
+
+    let result = allNodes.filter((node) => {
+      if (!ragSet.has(node.geo.worst_rag)) return false;
+      if (node.geo.total < minObligations) return false;
+      if (!query) return true;
+
+      const haystack = `${node.jurisdiction} ${node.label} ${node.geo.techs.join(' ')}`.toLowerCase();
+      return haystack.includes(query);
+    });
+
+    result = result.sort((a, b) => b.geo.total - a.geo.total);
+    if (maxVisible > 0 && result.length > maxVisible) {
+      result = result.slice(0, maxVisible);
+    }
+
+    return result;
+  }, [activeRags, allNodes, maxVisible, minObligations, searchText]);
+
+  useEffect(() => {
+    onVisibleCountChange?.(filteredNodes.length);
+    onVisibleJurisdictionsChange?.(filteredNodes.map((node) => node.geo));
+  }, [filteredNodes, onVisibleCountChange, onVisibleJurisdictionsChange]);
 
   // ── Projection + force layout ──────────────────────────────────────
   const W = 960, H = 500;
@@ -101,13 +169,13 @@ export const RegulatoryMap2D: React.FC<Props> = ({
     return d3.geoNaturalEarth1().fitSize([W - 60, H - 40], worldGeo).translate([W / 2, H / 2]);
   }, [worldGeo]);
 
-  const maxCount = useMemo(() => Math.max(...nodes.map(n => n.geo.total), 1), [nodes]);
+  const maxCount = useMemo(() => Math.max(...filteredNodes.map(n => n.geo.total), 1), [filteredNodes]);
   const rScale = useCallback((count: number) => 3 + (count / maxCount) * 10, [maxCount]);
 
   const placedNodes = useMemo(() => {
-    if (!projection || nodes.length === 0) return [];
-    return deCluster(nodes, projection, rScale);
-  }, [nodes, projection, rScale]);
+    if (!projection || filteredNodes.length === 0) return [];
+    return deCluster(filteredNodes, projection, rScale);
+  }, [filteredNodes, projection, rScale]);
 
   const pathGen = useMemo(() => projection ? d3.geoPath(projection) : null, [projection]);
   const graticule = useMemo(() => d3.geoGraticule10(), []);
@@ -245,7 +313,7 @@ export const RegulatoryMap2D: React.FC<Props> = ({
 
   return (
     <div ref={wrapRef} className="w-full h-full relative select-none" style={{ background: '#000B28' }}>
-      <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`}
+      <svg ref={svgRef} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid slice"
         className="w-full h-full" style={{ display: 'block', cursor: 'grab' }}
         aria-label="Interactive regulatory map — scroll to zoom, drag to pan, click markers for details">
         <defs>
@@ -270,27 +338,28 @@ export const RegulatoryMap2D: React.FC<Props> = ({
           ))}
           <path d={pathGen({ type: 'Sphere' }) ?? ''} fill="none" stroke="#1e4a8a" strokeWidth={1.2} />
 
-          {/* Connector lines */}
-          {placedNodes.map(node => {
+          {/* Connector lines + origin dots */}
+          {showConnectors && placedNodes.map(node => {
             if (Math.hypot(node.x - node.ox, node.y - node.oy) < CONNECTOR_THRESHOLD) return null;
             return (
-              <line key={`c-${node.jurisdiction}`}
-                x1={node.ox} y1={node.oy} x2={node.x} y2={node.y}
-                stroke={RAG_GLOW[node.geo.worst_rag] ?? '#4ade80'} strokeWidth={0.6} opacity={0.35}
-                strokeDasharray="2 2" style={{ pointerEvents: 'none' }}
-              />
-            );
-          })}
-
-          {/* Origin dots */}
-          {placedNodes.map(node => {
-            if (Math.hypot(node.x - node.ox, node.y - node.oy) < CONNECTOR_THRESHOLD) return null;
-            return (
-              <circle key={`o-${node.jurisdiction}`}
-                cx={node.ox} cy={node.oy} r={2}
-                fill={RAG_FILL[node.geo.worst_rag] ?? '#22c55e'} opacity={0.5}
-                style={{ pointerEvents: 'none' }}
-              />
+              <g key={`origin-${node.jurisdiction}`}>
+                <line
+                  x1={node.ox} y1={node.oy} x2={node.x} y2={node.y}
+                  stroke={RAG_GLOW[node.geo.worst_rag] ?? '#4ade80'}
+                  strokeWidth={0.6}
+                  opacity={0.35}
+                  strokeDasharray="2 2"
+                  style={{ pointerEvents: 'none' }}
+                />
+                <circle
+                  cx={node.ox}
+                  cy={node.oy}
+                  r={2}
+                  fill={RAG_FILL[node.geo.worst_rag] ?? '#22c55e'}
+                  opacity={0.5}
+                  style={{ pointerEvents: 'none' }}
+                />
+              </g>
             );
           })}
 
@@ -363,6 +432,15 @@ export const RegulatoryMap2D: React.FC<Props> = ({
           })}
         </g>
       </svg>
+
+      {placedNodes.length === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="px-4 py-3 rounded-lg text-xs font-semibold"
+            style={{ background: 'rgba(0,8,30,0.82)', border: '1px solid rgba(0,83,226,0.45)', color: '#cbd5e1' }}>
+            No jurisdictions match the current map filters.
+          </div>
+        </div>
+      )}
 
       {/* Tooltip (hover) */}
       <div ref={tipRef} style={{

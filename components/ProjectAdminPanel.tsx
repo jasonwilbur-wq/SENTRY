@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../context/ThemeContext';
+import { apiFetch } from '../services/api';
 import VendorManager, { type ProjectVendor } from './VendorManager';
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -311,8 +312,9 @@ const EditForm: React.FC<{
         compliance_notes: form.compliance_notes,
         exit_reason: form.exit_reason,
       };
-      const res = await fetch(`/api/projects/${form.project_id}`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      const res = await apiFetch(`/api/projects/${form.project_id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -640,7 +642,8 @@ export const ProjectAdminPanel: React.FC = () => {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const res  = await fetch('/api/projects');
+      const res  = await apiFetch('/api/projects');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       const list: Project[] = data.projects ?? [];
       setProjects(list);
@@ -658,7 +661,7 @@ export const ProjectAdminPanel: React.FC = () => {
   const handleDelete = async (projectId: string) => {
     setDeleting(true);
     try {
-      const res = await fetch(`/api/projects/${projectId}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/projects/${projectId}?confirm=true`, { method: 'DELETE' });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       setProjects(ps => ps.filter(p => p.project_id !== projectId));
       if (selected?.project_id === projectId) setSelected(null);
