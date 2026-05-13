@@ -70,7 +70,7 @@ def workspace_snapshot() -> dict[str, str]:
         "vendor_reports_root": str(VENDOR_REPORTS_ROOT),
         "vendor_trackers_root": str(VENDOR_TRACKERS_ROOT),
         "regulatory_root": str(REGULATORY_ROOT),
- "incidents_root": str(INCIDENTS_ROOT),
+        "incidents_root": str(INCIDENTS_ROOT),
         "projects_root": str(PROJECTS_ROOT),
         "shared_data_root": str(SHARED_DATA_ROOT),
     }

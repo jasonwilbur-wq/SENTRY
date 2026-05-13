@@ -135,6 +135,16 @@
 - Rationale: The local backend must be able to start on a normal Windows machine even if `uv` is not installed.
 - Status: Implemented, backend relaunch required.
 
+## 2026-05-13 — Backend path resolution should anchor to the Desktop SENTRY workspace
+- Context: The user explicitly designated `C:\Users\j0w16ja\OneDrive - Walmart Inc\Desktop\SENTRY` as the local source-of-truth for vendor, regulatory, incident, project, and shared data.
+- Decision: Centralize backend path resolution around the Desktop SENTRY workspace and derive domain-specific roots from that base.
+- Implementation choice:
+  - Add `backend/path_config.py` with a single `SENTRY_DATA_ROOT` and derived roots for Vendor Assessments, Regulatory, Incidents, Projects, and Data.
+  - Update `backend/main.py`, `backend/vendor_assessment_routes.py`, `backend/build_regulatory_report.py`, `backend/import_incidents.py`, and `backend/import_vendor_data.py` to use shared path resolution.
+  - Extend `/api/health` so it reports the active workspace roots and availability.
+- Rationale: This removes path drift, narrows debugging scope, and aligns the app with the user-declared Desktop SENTRY workspace.
+- Status: Implemented, backend restart required.
+
 ## 2026-05-13 — Route failures should be isolated instead of crashing the app shell
 - Context: After the landing page was stabilized, navigation beyond the dashboard still caused failures when route modules contained syntax or runtime errors.
 - Decision: Wrap every primary routed view in `ViewErrorBoundary`.

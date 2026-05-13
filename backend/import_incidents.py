@@ -20,20 +20,13 @@ import openpyxl
 
 sys.path.insert(0, str(Path(__file__).parent))
 from database import get_connection, init_db  # noqa: E402
+from path_config import INCIDENTS_ROOT, INCIDENT_WORKBOOK_GLOB, SENTRY_DATA_ROOT  # noqa: E402
 
 # ── Config ────────────────────────────────────────────────────────────────
 
-DEFAULT_ONEDRIVE_ROOT = Path(os.environ.get("ONEDRIVE", r"C:\Users\j0w16ja\OneDrive - Walmart Inc"))
-DEFAULT_SENTRY_ROOT = Path(
-    os.environ.get("SENTRY_DATA_ROOT", str(DEFAULT_ONEDRIVE_ROOT / "Desktop" / "SENTRY"))
-)
-INCIDENT_DIR = Path(
-    os.environ.get("SENTRY_INCIDENT_DIR", str(DEFAULT_SENTRY_ROOT / "Incidents"))
-)
-INCIDENT_WORKBOOK_GLOB = os.environ.get(
-    "SENTRY_INCIDENT_WORKBOOK_GLOB",
-    str(DEFAULT_SENTRY_ROOT / "Incident Tracker*.xlsx"),
-)
+DEFAULT_ONEDRIVE_ROOT = Path(os.environ.get("ONEDRIVE", r"C:\\Users\\j0w16ja\\OneDrive - Walmart Inc"))
+DEFAULT_SENTRY_ROOT = SENTRY_DATA_ROOT
+INCIDENT_DIR = INCIDENTS_ROOT
 LEGACY_INCIDENT_DIR = DEFAULT_ONEDRIVE_ROOT / "ET" / "SENTRY_Data" / "Incidents"
 
 # ── Severity inference ────────────────────────────────────────────────────

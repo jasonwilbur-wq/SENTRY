@@ -35,11 +35,16 @@
   "output_files_generated": [
     "WORKING_STATE.json"
   ],
-  "validation_status": "desktop_sentry_workspace_confirmed_as_user_designated_data_root_backend_relaunch_required",
+  "validation_status": "desktop_sentry_workspace_centralized_in_backend_path_config_backend_restart_required",
   "last_completed_phase": "validation",
   "current_phase": "validation",
   "artifacts_touched": [
     "backend\\main.py",
+    "backend\\path_config.py",
+    "backend\\vendor_assessment_routes.py",
+    "backend\\build_regulatory_report.py",
+    "backend\\import_incidents.py",
+    "backend\\import_vendor_data.py",
     "backend\\start_backend.bat",
     "start_sentry_localhost.bat",
     "vite.config.ts",

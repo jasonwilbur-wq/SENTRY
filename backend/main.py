@@ -50,6 +50,15 @@ from models import (
     VendorProduct,
     VendorsResponse,
 )
+from path_config import (
+    SENTRY_DATA_ROOT,
+    VENDOR_ASSESSMENTS_ROOT,
+    VENDOR_PROFILES_CSV,
+    PROJECTS_ROOT,
+    REGULATORY_ROOT,
+    INCIDENTS_ROOT,
+    workspace_snapshot,
+)
 
 try:
     from sharepoint_auth import get_token, download_url_for_item
@@ -64,13 +73,7 @@ except ImportError:
 
 
 def _startup_vendor_profiles_csv() -> Path:
-    assessments_root = Path(
-        os.environ.get(
-            "SENTRY_VENDOR_ASSESSMENTS_ROOT",
-            r"C:\Users\j0w16ja\OneDrive - Walmart Inc\Desktop\SENTRY\Vendor Assessments",
-        )
-    )
-    return assessments_root / "00_System" / "vendor_assessment_vendor_profiles.csv"
+    return VENDOR_PROFILES_CSV
 
 
 def _startup_canonical_vendor_keys(profile_csv: Path) -> set[str]:
@@ -165,6 +168,15 @@ def api_health() -> dict[str, object]:
         "status": "ok",
         "version": app.version,
         "allowed_origins": ALLOWED_ORIGINS,
+        "workspace": workspace_snapshot(),
+        "workspace_available": {
+            "sentry_data_root": SENTRY_DATA_ROOT.exists(),
+            "vendor_assessments_root": VENDOR_ASSESSMENTS_ROOT.exists(),
+            "regulatory_root": REGULATORY_ROOT.exists(),
+            "incidents_root": INCIDENTS_ROOT.exists(),
+            "projects_root": PROJECTS_ROOT.exists(),
+            "vendor_profiles_csv": VENDOR_PROFILES_CSV.exists(),
+        },
     }
 app.include_router(project_router)
 app.include_router(incident_router)
@@ -268,14 +280,6 @@ def morning_brief() -> dict:
 
 
 # ── Vendor directory authority + scoring helpers ───────────────────────
-VENDOR_ASSESSMENTS_ROOT = Path(
-    os.environ.get(
-        "SENTRY_VENDOR_ASSESSMENTS_ROOT",
-        r"C:\Users\j0w16ja\OneDrive - Walmart Inc\Desktop\SENTRY\Vendor Assessments",
-    )
-)
-VENDOR_PROFILES_CSV = VENDOR_ASSESSMENTS_ROOT / "00_System" / "vendor_assessment_vendor_profiles.csv"
-
 
 def _normalize_vendor_key(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", "", (value or "").lower())

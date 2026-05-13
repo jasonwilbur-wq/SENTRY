@@ -18,6 +18,8 @@ import sys
 from datetime import datetime, date
 from pathlib import Path
 
+from path_config import REGULATORY_ROOT
+
 try:
     import openpyxl
 except ImportError:
@@ -27,7 +29,7 @@ except ImportError:
         '--allow-insecure-host', 'pypi.ci.artifacts.walmart.com', '-q'])
     import openpyxl
 
-REGULATORY_SOURCE_DIR = Path(r'C:\Users\j0w16ja\OneDrive - Walmart Inc\Desktop\SENTRY\Regulatory')
+REGULATORY_SOURCE_DIR = REGULATORY_ROOT
 WORKBOOK_2026 = REGULATORY_SOURCE_DIR / 'Regulatory Data - 2026.xlsx'
 WORKBOOK_COPY = REGULATORY_SOURCE_DIR / 'Regulatory Data - Copy.xlsx'
 LOCAL_WORKBOOK_2026 = Path('data/source/Regulatory Data - 2026.xlsx')

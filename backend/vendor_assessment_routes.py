@@ -3,28 +3,24 @@
 from __future__ import annotations
 
 import csv
-import os
 from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Query
 
 from cache import ttl_cache
+from path_config import (
+    SENTRY_DATA_ROOT,
+    VENDOR_ASSESSMENTS_ROOT,
+    VENDOR_SYSTEM_ROOT as SYSTEM_ROOT,
+    VENDOR_EXECUTIVE_VIEWS_ROOT as EXECUTIVE_VIEWS_ROOT,
+    VENDOR_INCOMING_ROOT as INCOMING_ROOT,
+    VENDOR_PROFILES_CSV,
+)
 
 
 router = APIRouter(prefix="/api/vendor-assessment", tags=["vendor-assessment"])
 
-VENDOR_ASSESSMENTS_ROOT = Path(
-    os.environ.get(
-        "SENTRY_VENDOR_ASSESSMENTS_ROOT",
-        r"C:\Users\j0w16ja\OneDrive - Walmart Inc\Desktop\SENTRY\Vendor Assessments",
-    )
-)
-SYSTEM_ROOT = VENDOR_ASSESSMENTS_ROOT / "00_System"
-EXECUTIVE_VIEWS_ROOT = SYSTEM_ROOT / "executive_views"
-INCOMING_ROOT = VENDOR_ASSESSMENTS_ROOT / "01_Incoming_To_Organize"
-
-VENDOR_PROFILES_CSV = SYSTEM_ROOT / "vendor_assessment_vendor_profiles.csv"
 INTAKE_QUEUE_CSV = SYSTEM_ROOT / "vendor_assessment_intake_queue.csv"
 INTAKE_RECOMMENDATIONS_CSV = SYSTEM_ROOT / "vendor_assessment_intake_recommendations.csv"
 INTAKE_ACTION_PLAN_CSV = SYSTEM_ROOT / "vendor_assessment_intake_action_plan.csv"
@@ -90,6 +86,7 @@ def _load_overview() -> dict[str, Any]:
     return {
         "source": {
             "operational_mode": "read_only_csv_and_sqlite",
+            "sentry_data_root": str(SENTRY_DATA_ROOT),
             "operational_source": str(SYSTEM_ROOT),
             "vendor_assessments_root": str(VENDOR_ASSESSMENTS_ROOT),
             "intake_root": str(INCOMING_ROOT),

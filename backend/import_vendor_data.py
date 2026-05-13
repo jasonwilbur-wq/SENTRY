@@ -19,16 +19,14 @@ import sqlite3
 from pathlib import Path
 
 from database import get_connection, init_db
+from path_config import VENDOR_PROFILES_CSV
 
 LEGACY_DATA_DIR = Path(
     r"C:\Users\j0w16ja\OneDrive - Walmart Inc"
     r"\Data Entries\Datasets\Vendor Highlighted Data"
 )
 
-ASSESSMENT_PROFILES_CSV = Path(
-    r"C:\Users\j0w16ja\OneDrive - Walmart Inc\Desktop\SENTRY"
-    r"\Vendor Assessments\00_System\vendor_assessment_vendor_profiles.csv"
-)
+ASSESSMENT_PROFILES_CSV = VENDOR_PROFILES_CSV
 
 
 # ─────────────────────────────────────────────────────────────────────
