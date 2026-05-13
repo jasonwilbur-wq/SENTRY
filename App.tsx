@@ -26,7 +26,6 @@ const CSOIntelligence        = lazy(() => import('./components/CSOIntelligence')
 const IncidentIntelligence   = lazy(() => import('./components/IncidentIntelligence').then(m => ({ default: m.IncidentIntelligence })));
 const RegulatoryIntelligence = lazy(() => import('./components/RegulatoryIntelligence').then(m => ({ default: m.RegulatoryIntelligence })));
 const VendorRiskMap3D        = lazy(() => import('./components/VendorRiskMap3D'));
-const WalmartSpark           = lazy(() => import('./components/WalmartSpark').then(m => ({ default: m.WalmartSpark })));
 const Sentinel               = lazy(() => import('./components/Sentinel').then(m => ({ default: m.Sentinel })));
 const CommandPalette         = lazy(() => import('./components/CommandPalette').then(m => ({ default: m.CommandPalette })));
 
@@ -122,11 +121,6 @@ const VIEW_META: Record<ViewState, { title: string; subtitle: string; eyebrow: s
     title:    'Risk Map 3D',
     subtitle: 'Vendors plotted in 3D space by risk and category.',
   },
-  [ViewState.WALMART_SPARK]: {
-    eyebrow:  'Sentinel',
-    title:    'Walmart Spark',
-    subtitle: 'Conversational vendor intelligence, powered by SENTRY data.',
-  },
 };
 
 const isViewState = (value: string): value is ViewState => value in VIEW_META;
@@ -202,7 +196,9 @@ const App: React.FC = () => {
   if (showLanding) {
     return (
       <ThemeProvider>
-        <LandingPage onEnter={(initialView) => handleEnterPlatform(initialView as ViewState | undefined)} />
+        <ViewErrorBoundary viewName="Landing Page">
+          <LandingPage onEnter={(initialView) => handleEnterPlatform(initialView as ViewState | undefined)} />
+        </ViewErrorBoundary>
       </ThemeProvider>
     );
   }
@@ -227,7 +223,7 @@ const App: React.FC = () => {
                   borderColor: 'var(--s-border)',
                 }}
               >
-                {/* Walmart spark + title */}
+                {/* Platform brand bar + title */}
                 <div className="flex items-center gap-4 min-w-0">
                   <div
                     className="w-1 h-11 rounded-full shrink-0"
@@ -323,26 +319,81 @@ const App: React.FC = () => {
                 <div className="relative">
                   <PageTransition viewKey={currentView}>
                     <Suspense fallback={<ViewLoader />}>
-                      {currentView === ViewState.HOME                    && <HomeDashboard onNavigate={handleNavigate} />}
-                      {currentView === ViewState.DIRECTORY               && <VendorDashboard />}
-                      {currentView === ViewState.PROJECTS                && <ProjectDashboard3D />}
-                      {currentView === ViewState.REQUEST_ASSESSMENT      && <RequestAssessment />}
-                      {currentView === ViewState.REQUEST_QUEUE           && <RequestQueue />}
-                      {currentView === ViewState.COMPETITOR_ANALYSIS     && <CompetitorAnalysis onNavigate={handleNavigate} />}
-                      {currentView === ViewState.COMPETITOR_INTEL        && <CompetitorIntel />}
-                      {currentView === ViewState.CSO_INTELLIGENCE        && <CSOIntelligence />}
-                      {currentView === ViewState.INCIDENT_INTELLIGENCE   && <IncidentIntelligence />}
+                      {currentView === ViewState.HOME && (
+                        <ViewErrorBoundary viewName="Mission Control">
+                          <HomeDashboard onNavigate={handleNavigate} />
+                        </ViewErrorBoundary>
+                      )}
+                      {currentView === ViewState.DIRECTORY && (
+                        <ViewErrorBoundary viewName="Vendor Directory">
+                          <VendorDashboard />
+                        </ViewErrorBoundary>
+                      )}
+                      {currentView === ViewState.PROJECTS && (
+                        <ViewErrorBoundary viewName="Project Portfolio">
+                          <ProjectDashboard3D />
+                        </ViewErrorBoundary>
+                      )}
+                      {currentView === ViewState.REQUEST_ASSESSMENT && (
+                        <ViewErrorBoundary viewName="Security Assessment">
+                          <RequestAssessment />
+                        </ViewErrorBoundary>
+                      )}
+                      {currentView === ViewState.REQUEST_QUEUE && (
+                        <ViewErrorBoundary viewName="Request Queue">
+                          <RequestQueue />
+                        </ViewErrorBoundary>
+                      )}
+                      {currentView === ViewState.COMPETITOR_ANALYSIS && (
+                        <ViewErrorBoundary viewName="Market Analysis">
+                          <CompetitorAnalysis onNavigate={handleNavigate} />
+                        </ViewErrorBoundary>
+                      )}
+                      {currentView === ViewState.COMPETITOR_INTEL && (
+                        <ViewErrorBoundary viewName="Competitor Intelligence">
+                          <CompetitorIntel />
+                        </ViewErrorBoundary>
+                      )}
+                      {currentView === ViewState.CSO_INTELLIGENCE && (
+                        <ViewErrorBoundary viewName="CSO Intelligence">
+                          <CSOIntelligence />
+                        </ViewErrorBoundary>
+                      )}
+                      {currentView === ViewState.INCIDENT_INTELLIGENCE && (
+                        <ViewErrorBoundary viewName="Incident Intelligence">
+                          <IncidentIntelligence />
+                        </ViewErrorBoundary>
+                      )}
                       {currentView === ViewState.REGULATORY_INTELLIGENCE && (
                         <ViewErrorBoundary viewName="Regulatory Intelligence">
                           <RegulatoryIntelligence />
                         </ViewErrorBoundary>
                       )}
-                      {currentView === ViewState.REQUEST_LAB_VISIT       && <RequestLabVisit />}
-                      {currentView === ViewState.ARCHITECTURE            && <ArchitectureGraph />}
-                      {currentView === ViewState.ADMIN                   && <AdminPanel />}
-                      {currentView === ViewState.SENTINEL                && <Sentinel />}
-                      {currentView === ViewState.RISK_MAP                && <VendorRiskMap3D />}
-                      {currentView === ViewState.WALMART_SPARK           && <WalmartSpark />}
+                      {currentView === ViewState.REQUEST_LAB_VISIT && (
+                        <ViewErrorBoundary viewName="Emerging Tech Lab">
+                          <RequestLabVisit />
+                        </ViewErrorBoundary>
+                      )}
+                      {currentView === ViewState.ARCHITECTURE && (
+                        <ViewErrorBoundary viewName="SENTRY Architecture">
+                          <ArchitectureGraph />
+                        </ViewErrorBoundary>
+                      )}
+                      {currentView === ViewState.ADMIN && (
+                        <ViewErrorBoundary viewName="VAR Administration">
+                          <AdminPanel />
+                        </ViewErrorBoundary>
+                      )}
+                      {currentView === ViewState.SENTINEL && (
+                        <ViewErrorBoundary viewName="Ask Sentinel">
+                          <Sentinel />
+                        </ViewErrorBoundary>
+                      )}
+                      {currentView === ViewState.RISK_MAP && (
+                        <ViewErrorBoundary viewName="Risk Map 3D">
+                          <VendorRiskMap3D />
+                        </ViewErrorBoundary>
+                      )}
                     </Suspense>
                   </PageTransition>
                 </div>

@@ -400,7 +400,7 @@ export const AdminPanel: React.FC = () => {
           <div>
             <p className="text-sm font-semibold text-white">Vendor Directory Sync (Canonical Library)</p>
             <p className="text-xs text-slate-400">
-              Source: Vendor Assessments/00_System/vendor_assessment_vendor_profiles.csv
+              Operational source: Vendor Assessments/00_System/vendor_assessment_vendor_profiles.csv
             </p>
           </div>
           <div className="flex gap-2">

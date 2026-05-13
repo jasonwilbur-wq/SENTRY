@@ -146,6 +146,15 @@ export function useQuery<T>(
       setData(entry.data);
       setError(entry.error);
 
+      // Retry immediately after cached failures with no usable data.
+      // This prevents the UI from getting stuck in an offline/empty state
+      // when the backend comes back after the first request failed.
+      const hasUsableData = entry.data !== undefined && entry.data !== null;
+      if (entry.error && !hasUsableData) {
+        revalidate();
+        return () => { mountedRef.current = false; };
+      }
+
       // Revalidate in background if stale
       const age = Date.now() - entry.fetchedAt;
       if (age > staleTime) {

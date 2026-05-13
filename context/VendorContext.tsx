@@ -11,7 +11,7 @@
  *   - Stats are exposed via a dedicated hook with independent caching.
  */
 import React, {
-  createContext, useContext, useEffect, useState, useCallback, useMemo,
+  createContext, useContext, useEffect, useState, useCallback, useMemo, useRef,
 } from 'react';
 import {
   fetchVendors, fetchCategories, fetchStats,
@@ -63,18 +63,19 @@ export const VendorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // ── Vendor data via SWR-like cache ─────────────────────────────────────
   const vendorQueryKey = useMemo(
-    () => ['vendors', debouncedSearch, category, page],
-    [debouncedSearch, category, page],
+    () => ['vendors', debouncedSearch, category, risk, page],
+    [debouncedSearch, category, risk, page],
   );
 
   const vendorFetcher = useCallback(
     () => fetchVendors({
       search:    debouncedSearch || undefined,
       category:  category !== 'All' ? category : undefined,
+      risk:      risk || undefined,
       page,
-      page_size: PAGE_SIZE,
+      page_size: VENDOR_PAGE_SIZE,
     }),
-    [debouncedSearch, category, page],
+    [debouncedSearch, category, risk, page],
   );
 
   const {
@@ -82,6 +83,7 @@ export const VendorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     error: vendorError,
     isLoading: vendorsLoading,
     isValidating: vendorsValidating,
+    mutate: refreshVendors,
   } = useQuery<VendorsResponse>(vendorQueryKey, vendorFetcher, {
     staleTime: 30_000,   // 30s before background revalidation
     cacheTime: 300_000,  // 5min before cache eviction
@@ -89,7 +91,10 @@ export const VendorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // ── Categories (cached for 5 min, fetched once) ────────────────────────
   const categoriesFetcher = useCallback(() => fetchCategories(), []);
-  const { data: categoriesData } = useQuery<{ categories: string[] }>(
+  const {
+    data: categoriesData,
+    mutate: refreshCategories,
+  } = useQuery<{ categories: string[] }>(
     ['categories'],
     categoriesFetcher,
     { staleTime: 300_000, cacheTime: 600_000 },
@@ -111,12 +116,50 @@ export const VendorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const vendors    = vendorData?.vendors ?? [];
   const total      = vendorData?.total ?? 0;
   const totalPages = vendorData?.total_pages ?? 1;
+  const emptyRecoveryAttemptedRef = useRef(false);
+  const categoriesRecoveryAttemptedRef = useRef(false);
   const categories = useMemo(
     () => ['All', ...(categoriesData?.categories ?? [])],
     [categoriesData],
   );
   const loading        = vendorsLoading || vendorsValidating;
   const backendOffline = !!vendorError;
+
+  // ── Recovery for cached empty states after backend startup races ──────
+  useEffect(() => {
+    const shouldRetryEmptyDirectory = !vendorsLoading
+      && !vendorsValidating
+      && !vendorError
+      && !!vendorData
+      && vendorData.total === 0
+      && !debouncedSearch
+      && category === 'All'
+      && !risk
+      && page === 1
+      && !emptyRecoveryAttemptedRef.current;
+
+    if (shouldRetryEmptyDirectory) {
+      emptyRecoveryAttemptedRef.current = true;
+      void refreshVendors();
+    }
+
+    if (vendorData && vendorData.total > 0) {
+      emptyRecoveryAttemptedRef.current = false;
+    }
+  }, [vendorsLoading, vendorsValidating, vendorError, vendorData, debouncedSearch, category, risk, page, refreshVendors]);
+
+  useEffect(() => {
+    const hasNoCategories = !!categoriesData && (categoriesData.categories?.length ?? 0) === 0;
+    if (hasNoCategories && !categoriesRecoveryAttemptedRef.current) {
+      categoriesRecoveryAttemptedRef.current = true;
+      void refreshCategories();
+      return;
+    }
+
+    if ((categoriesData?.categories?.length ?? 0) > 0) {
+      categoriesRecoveryAttemptedRef.current = false;
+    }
+  }, [categoriesData, refreshCategories]);
 
   // ── Public setters ────────────────────────────────────────────────────
   // Changing search or category always resets to page 1
@@ -128,8 +171,8 @@ export const VendorProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   return (
     <VendorContext.Provider value={{
       vendors, categories, loading, backendOffline,
-      total, totalPages, search, category, page,
-      setSearch, setCategory, setPage,
+      total, totalPages, search, category, risk, page,
+      setSearch, setCategory, setRisk, setPage,
       stats: statsData ?? null, statsLoading, refreshStats,
     }}>
       {children}

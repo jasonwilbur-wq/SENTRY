@@ -49,5 +49,4 @@ export enum ViewState {
   ADMIN = 'ADMIN',
   SENTINEL = 'SENTINEL',
   RISK_MAP = 'RISK_MAP',
-  WALMART_SPARK = 'WALMART_SPARK',
 }

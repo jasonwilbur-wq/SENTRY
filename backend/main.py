@@ -12,6 +12,7 @@ WARNING: Route order matters in FastAPI! Static paths like
   /api/vendors/categories MUST be registered before /{vendor_id}.
 """
 import csv
+import hashlib
 import math
 import os
 import re
@@ -27,7 +28,15 @@ from fastapi.responses import StreamingResponse, RedirectResponse
 
 from database import get_connection, init_db
 from admin_routes import router as admin_router
-from cache import ttl_cache
+from vendor_assessment_routes import router as vendor_assessment_router
+from request_routes import router as request_router
+from project_routes import router as project_router
+from incident_routes import ROUTER as incident_router
+from regulatory_routes import ROUTER as regulatory_router, get_regulatory_summary
+from analytics_routes import ROUTER as analytics_router
+from vendor_sync_routes import router as vendor_sync_router
+from auth import SentryUser, get_current_user, get_auth_status
+from cache import ttl_cache, clear_all
 from models import (
     CategoriesResponse,
     ChatRequest,
@@ -48,11 +57,76 @@ except ImportError:
     get_token = lambda: None
     download_url_for_item = lambda x: ""
 
+try:
+    from import_vendor_data import import_all as import_vendor_directory_data
+except ImportError:
+    import_vendor_directory_data = None
+
+
+def _startup_vendor_profiles_csv() -> Path:
+    assessments_root = Path(
+        os.environ.get(
+            "SENTRY_VENDOR_ASSESSMENTS_ROOT",
+            r"C:\Users\j0w16ja\OneDrive - Walmart Inc\Desktop\SENTRY\Vendor Assessments",
+        )
+    )
+    return assessments_root / "00_System" / "vendor_assessment_vendor_profiles.csv"
+
+
+def _startup_canonical_vendor_keys(profile_csv: Path) -> set[str]:
+    if not profile_csv.exists():
+        return set()
+
+    keys: set[str] = set()
+    with profile_csv.open("r", encoding="utf-8-sig", newline="") as handle:
+        for row in csv.DictReader(handle):
+            key = str(row.get("vendor_normalized_key") or "").strip().lower()
+            if key:
+                keys.add(key)
+    return keys
+
+
+def _startup_visible_vendor_count(conn) -> int:
+    profile_csv = _startup_vendor_profiles_csv()
+    canonical_keys = _startup_canonical_vendor_keys(profile_csv)
+    if not canonical_keys:
+        return int(conn.execute("SELECT COUNT(*) FROM vendors").fetchone()[0])
+
+    rows = conn.execute("SELECT company_name FROM vendors").fetchall()
+    return sum(
+        1
+        for row in rows
+        if re.sub(r"[^a-z0-9]+", "", str(row["company_name"] or "").lower()) in canonical_keys
+    )
+
+
+def _ensure_vendor_directory_seeded() -> None:
+    if import_vendor_directory_data is None:
+        return
+
+    conn = get_connection()
+    try:
+        total_vendors = int(conn.execute("SELECT COUNT(*) FROM vendors").fetchone()[0])
+        visible_vendors = _startup_visible_vendor_count(conn)
+    finally:
+        conn.close()
+
+    if total_vendors > 0 and visible_vendors > 0:
+        return
+
+    print(
+        f"[startup] Vendor directory bootstrap triggered "
+        f"(db_total={total_vendors}, visible_in_directory={visible_vendors})."
+    )
+    import_vendor_directory_data()
+    clear_all()
+
 
 @asynccontextmanager
 async def lifespan(application: FastAPI):  # noqa: ARG001
-    """Ensure DB tables exist on startup."""
+    """Ensure DB tables exist on startup and bootstrap vendor data if needed."""
     init_db()
+    _ensure_vendor_directory_seeded()
     yield
 
 
@@ -68,7 +142,7 @@ app = FastAPI(
 # Production: set on Cloud Run to your Firebase Hosting URL.
 _raw_origins = os.environ.get(
     "ALLOWED_ORIGINS",
-    "http://localhost:3000,http://localhost:5173",
+    "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173",
 )
 ALLOWED_ORIGINS: list[str] = [o.strip() for o in _raw_origins.split(",") if o.strip()]
 
@@ -81,7 +155,17 @@ app.add_middleware(
 
 # ── Router wiring ──────────────────────────────────────────────────────
 app.include_router(admin_router)
+app.include_router(vendor_assessment_router)
 app.include_router(request_router)
+
+
+@app.get("/api/health")
+def api_health() -> dict[str, object]:
+    return {
+        "status": "ok",
+        "version": app.version,
+        "allowed_origins": ALLOWED_ORIGINS,
+    }
 app.include_router(project_router)
 app.include_router(incident_router)
 app.include_router(regulatory_router)
@@ -197,6 +281,28 @@ def _normalize_vendor_key(value: str) -> str:
     return re.sub(r"[^a-z0-9]+", "", (value or "").lower())
 
 
+def _fallback_vendor_id(company_name: str, technology_product: str) -> str:
+    slug = f"{company_name}::{technology_product}".lower().strip()
+    return hashlib.sha256(slug.encode()).hexdigest()[:12]
+
+
+def _fallback_category_from_domain(domain: str) -> str:
+    clean_domain = str(domain or "").strip()
+    if not clean_domain or clean_domain.upper() == "UNKNOWN":
+        return "Other"
+    return clean_domain.replace("_", " ")
+
+
+def _fallback_risk_from_rating(rating: float) -> str:
+    if rating >= 4.0:
+        return "Low"
+    if rating >= 3.0:
+        return "Medium"
+    if rating >= 2.0:
+        return "High"
+    return "Critical"
+
+
 @ttl_cache(ttl_seconds=300, key_prefix="vendor_profile_keys")
 def _canonical_vendor_keys() -> set[str]:
     if not VENDOR_PROFILES_CSV.exists():
@@ -216,6 +322,80 @@ def _is_vendor_in_directory(company_name: str, canonical_keys: set[str]) -> bool
         # Fail-open: if source file is unavailable, avoid blanking the directory.
         return True
     return _normalize_vendor_key(company_name) in canonical_keys
+
+
+@ttl_cache(ttl_seconds=300, key_prefix="vendor_profile_rows")
+def _fallback_vendor_rows_from_profiles() -> list[dict]:
+    if not VENDOR_PROFILES_CSV.exists():
+        return []
+
+    rows: list[dict] = []
+    with VENDOR_PROFILES_CSV.open("r", encoding="utf-8-sig", newline="") as handle:
+        for row in csv.DictReader(handle):
+            company_name = str(row.get("vendor_folder") or "").strip()
+            if not company_name:
+                continue
+
+            top_tags = str(row.get("top_semantic_tags") or "").strip()
+            technology_product = top_tags.split(";")[0].strip() if top_tags else ""
+            try:
+                report_count = int(float(str(row.get("report_count") or "0").strip() or "0"))
+            except ValueError:
+                report_count = 0
+
+            overall_rating = round(2.5 + min(report_count, 6) * 0.4, 2)
+            latest_modified = str(row.get("latest_modified_utc") or "").strip()
+            last_assessed = latest_modified.split("T")[0] if "T" in latest_modified else latest_modified
+
+            rows.append({
+                "id": _fallback_vendor_id(company_name, technology_product),
+                "company_name": company_name,
+                "company_url": "",
+                "category": _fallback_category_from_domain(str(row.get("dominant_domain") or "")),
+                "technology_product": technology_product,
+                "report_url": str(row.get("sample_report_path") or "").strip(),
+                "overall_rating": overall_rating,
+                "vendor_status": "Assessed",
+                "risk_level": _fallback_risk_from_rating(overall_rating),
+                "last_assessed": last_assessed,
+                "description": "",
+                "founded_year": "",
+                "hq_location": "",
+                "business_owner": "",
+                "sourcing_manager": "",
+                "deployment_status": "Prospect",
+                "hosting_type": "",
+                "data_classification": "Internal",
+                "vendor_highlight": "",
+                "pros": "",
+                "cons": "",
+                "concerns": "",
+                "use_cases": "",
+                "value_to_walmart": "",
+                "maturity_level": "",
+            })
+    return rows
+
+
+def _fallback_vendor_directory(
+    category: str | None = None,
+    search: str | None = None,
+    risk: str | None = None,
+) -> list[VendorOut]:
+    rows = _fallback_vendor_rows_from_profiles()
+    if category and category != "All":
+        rows = [row for row in rows if str(row.get("category") or "") == category]
+    if search:
+        term = search.lower()
+        rows = [
+            row for row in rows
+            if term in str(row.get("company_name") or "").lower()
+            or term in str(row.get("technology_product") or "").lower()
+        ]
+    if risk:
+        rows = [row for row in rows if str(row.get("risk_level") or "") == risk]
+    rows.sort(key=lambda row: float(row.get("overall_rating") or 0), reverse=True)
+    return _group_products(rows)
 
 
 def _decision_band_from_score(score: float | None) -> str:
@@ -492,7 +672,9 @@ def list_vendors(
     conn.close()
 
     # Group multiple-product rows into logical vendors
-    all_vendors = _group_products(rows, var_ids, latest_var_ids, latest_var_meta)
+    db_vendors = _group_products(rows, var_ids, latest_var_ids, latest_var_meta)
+    source_vendors = _fallback_vendor_directory(category=category, search=search, risk=risk)
+    all_vendors = source_vendors or db_vendors
 
     total       = len(all_vendors)
     total_pages = max(1, math.ceil(total / page_size))
@@ -523,7 +705,10 @@ def _cached_categories() -> list[str]:
         "SELECT category, company_name FROM vendors"
     ).fetchall()
     conn.close()
-    return [r["category"] for r in rows]
+    categories = [str(r["category"] or "").strip() for r in rows if str(r["category"] or "").strip()]
+    source_categories = [vendor.category for vendor in _fallback_vendor_directory() if vendor.category]
+    preferred = source_categories or categories
+    return list(dict.fromkeys(preferred))
 
 
 @app.get("/api/vendors/{vendor_id}", response_model=VendorOut)
@@ -535,6 +720,9 @@ def get_vendor(vendor_id: str):
     ).fetchone()
     if not row:
         conn.close()
+        fallback_vendor = next((vendor for vendor in _fallback_vendor_directory() if vendor.id == vendor_id), None)
+        if fallback_vendor:
+            return fallback_vendor
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Vendor not found")
 
@@ -819,6 +1007,22 @@ def _compute_public_stats():
         if str(r["vendor_id"]) in allowed_ids
     ]
     conn.close()
+
+    source_vendors = _fallback_vendor_directory()
+    if source_vendors:
+        allowed_rows = [
+            {
+                "id": vendor.id,
+                "company_name": vendor.company_name,
+                "overall_rating": vendor.overall_rating,
+                "risk_level": vendor.risk_level,
+                "category": vendor.category,
+                "last_assessed": vendor.last_assessed,
+            }
+            for vendor in source_vendors
+        ]
+        allowed_ids = {str(vendor.id) for vendor in source_vendors}
+        var_rows = [row for row in var_rows if str(row.get("vendor_id") or "") in allowed_ids]
 
     total_vendors = len(allowed_rows)
     total_vars = len(var_rows)

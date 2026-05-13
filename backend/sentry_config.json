@@ -1,10 +1,11 @@
 {
   "document_paths": {
-    "vars_base": "C:\\Users\\j0w16ja\\OneDrive - Walmart Inc\\ET\\VARs",
-    "trackers": "C:\\Users\\j0w16ja\\OneDrive - Walmart Inc\\ET\\SENTRY_Data\\Trackers",
+    "vars_base": "C:\\Users\\j0w16ja\\OneDrive - Walmart Inc\\Desktop\\SENTRY\\Vendor Assessments\\Vendor Assessment Reports",
+    "vendor_assessment_system": "C:\\Users\\j0w16ja\\OneDrive - Walmart Inc\\Desktop\\SENTRY\\Vendor Assessments\\00_System",
+    "trackers": "C:\\Users\\j0w16ja\\OneDrive - Walmart Inc\\Desktop\\SENTRY\\Vendor Assessments\\Emerging Tech Trackers",
     "competitor_analysis": "C:\\Users\\j0w16ja\\OneDrive - Walmart Inc\\ET\\SENTRY_Data\\Competitor_Analysis",
-    "regulatory": "C:\\Users\\j0w16ja\\OneDrive - Walmart Inc\\ET\\SENTRY_Data\\Regulatory",
-    "incidents": "C:\\Users\\j0w16ja\\OneDrive - Walmart Inc\\ET\\SENTRY_Data\\Incidents",
+    "regulatory": "C:\\Users\\j0w16ja\\OneDrive - Walmart Inc\\Desktop\\SENTRY\\Regulatory",
+    "incidents": "C:\\Users\\j0w16ja\\OneDrive - Walmart Inc\\Desktop\\SENTRY\\Incidents",
     "uas_drones": "C:\\Users\\j0w16ja\\OneDrive - Walmart Inc\\ET\\SENTRY_Data\\UAS_Drones"
   },
   "var_months": [

@@ -82,13 +82,12 @@ function StatsSkeleton() {
 export const VendorDashboard: React.FC = () => {
   const {
     vendors, categories, loading, backendOffline,
-    total, totalPages, search, category, page,
-    setSearch, setCategory, setPage,
+    total, totalPages, search, category, risk, page,
+    setSearch, setCategory, setRisk, setPage,
     stats, statsLoading,
   } = useVendors();
 
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
-  const [riskFilter,     setRiskFilter]     = useState('');
 
   const handleOpenVendor  = useCallback((v: Vendor) => setSelectedVendor(v), []);
   const handleCloseModal  = useCallback(() => setSelectedVendor(null), []);

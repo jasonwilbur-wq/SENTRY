@@ -16,15 +16,25 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+import openpyxl
+
 sys.path.insert(0, str(Path(__file__).parent))
 from database import get_connection, init_db  # noqa: E402
 
 # ── Config ────────────────────────────────────────────────────────────────
 
-INCIDENT_DIR = (
-    Path(os.environ.get("ONEDRIVE", r"C:\Users\j0w16ja\OneDrive - Walmart Inc"))
-    / "ET" / "SENTRY_Data" / "Incidents"
+DEFAULT_ONEDRIVE_ROOT = Path(os.environ.get("ONEDRIVE", r"C:\Users\j0w16ja\OneDrive - Walmart Inc"))
+DEFAULT_SENTRY_ROOT = Path(
+    os.environ.get("SENTRY_DATA_ROOT", str(DEFAULT_ONEDRIVE_ROOT / "Desktop" / "SENTRY"))
 )
+INCIDENT_DIR = Path(
+    os.environ.get("SENTRY_INCIDENT_DIR", str(DEFAULT_SENTRY_ROOT / "Incidents"))
+)
+INCIDENT_WORKBOOK_GLOB = os.environ.get(
+    "SENTRY_INCIDENT_WORKBOOK_GLOB",
+    str(DEFAULT_SENTRY_ROOT / "Incident Tracker*.xlsx"),
+)
+LEGACY_INCIDENT_DIR = DEFAULT_ONEDRIVE_ROOT / "ET" / "SENTRY_Data" / "Incidents"
 
 # ── Severity inference ────────────────────────────────────────────────────
 
@@ -170,29 +180,69 @@ def _row_id(source_file: str, incident_type: str, date: str, summary: str) -> st
     return hashlib.sha1(key.encode()).hexdigest()[:16]
 
 
+# ── Source discovery ─────────────────────────────────────────────────────
+
+def _load_sources() -> list[tuple[str, list[dict]]]:
+    csv_files = sorted(glob.glob(str(INCIDENT_DIR / "*.csv")))
+    if csv_files:
+        sources: list[tuple[str, list[dict]]] = []
+        for path in csv_files:
+            fname = os.path.basename(path)
+            with open(path, encoding="utf-8", errors="replace") as fh:
+                sources.append((fname, list(csv.DictReader(fh))))
+        print(f"[INFO] Using incident CSVs from {INCIDENT_DIR}")
+        return sources
+
+    legacy_csv_files = sorted(glob.glob(str(LEGACY_INCIDENT_DIR / "*.csv")))
+    if legacy_csv_files:
+        sources = []
+        for path in legacy_csv_files:
+            fname = os.path.basename(path)
+            with open(path, encoding="utf-8", errors="replace") as fh:
+                sources.append((fname, list(csv.DictReader(fh))))
+        print(f"[INFO] Using legacy incident CSVs from {LEGACY_INCIDENT_DIR}")
+        return sources
+
+    workbook_paths = sorted(glob.glob(INCIDENT_WORKBOOK_GLOB))
+    if workbook_paths:
+        workbook_path = workbook_paths[0]
+        wb = openpyxl.load_workbook(workbook_path, data_only=True)
+        ws = wb.worksheets[0]
+        raw_rows = list(ws.iter_rows(values_only=True))
+        if not raw_rows:
+            print(f"[WARN] Incident workbook is empty: {workbook_path}")
+            return []
+
+        headers = [str(c or f"col_{i}").strip() for i, c in enumerate(raw_rows[0])]
+        rows = [
+            {
+                headers[i]: "" if cell is None else str(cell).strip()
+                for i, cell in enumerate(row)
+            }
+            for row in raw_rows[1:]
+            if not all(cell is None for cell in row)
+        ]
+        print(f"[INFO] Using incident workbook fallback: {workbook_path}")
+        return [(os.path.basename(workbook_path), rows)]
+
+    print(f"[WARN] No incident CSVs found in {INCIDENT_DIR}")
+    print(f"[WARN] No incident workbook matched {INCIDENT_WORKBOOK_GLOB}")
+    return []
+
+
 # ── Main import ───────────────────────────────────────────────────────────
 
 def import_all() -> None:
     init_db()
-    files = sorted(glob.glob(str(INCIDENT_DIR / "*.csv")))
-    if not files:
-        print(f"[WARN] No CSVs found in {INCIDENT_DIR}")
+    sources = _load_sources()
+    if not sources:
         return
 
     conn = get_connection()
     inserted = 0
     skipped  = 0
 
-    for path in files:
-        fname = os.path.basename(path)
-        try:
-            with open(path, encoding="utf-8", errors="replace") as fh:
-                reader = csv.DictReader(fh)
-                rows   = list(reader)
-        except Exception as exc:
-            print(f"[ERROR] {fname}: {exc}")
-            continue
-
+    for fname, rows in sources:
         for row in rows:
             raw_date = _pick(row, _COL_DATE)
             inc_type = _pick(row, _COL_TYPE) or "Other"
@@ -234,7 +284,7 @@ def import_all() -> None:
     conn.commit()
     conn.close()
     print(f"\n✅  Import complete: {inserted} rows inserted, {skipped} skipped")
-    print(f"    Source files: {len(files)}")
+    print(f"    Source files: {len(sources)}")
 
 
 if __name__ == "__main__":

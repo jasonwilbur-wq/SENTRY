@@ -13,6 +13,7 @@ import React, { useMemo } from 'react';
 import { ViewState } from '../types';
 import { useVendors } from '../context/VendorContext';
 import { RadarScope3D } from './RadarScope3D';
+import { VendorAssessmentOperationsPanel } from './VendorAssessmentOperationsPanel';
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -336,6 +337,8 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({ onNavigate }) => {
           />
         </div>
       </section>
+
+      <VendorAssessmentOperationsPanel onNavigate={onNavigate} />
 
       {/* ── Insight panels ───────────────────────────────────── */}
       <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">

@@ -1,63 +1,53 @@
 {
-  "request_type": ["product strategy", "launch readiness", "mixed task"],
-  "required_slots": ["repository_path", "fix_scope", "data_source", "approval_status"],
+  "request_type": ["launch readiness", "vendor assessment", "website/UX review", "mixed task"],
+  "required_slots": ["repository_path", "operational_source", "delivery_mode", "reported_issue"],
   "filled_slots": {
     "repository_path": "C:\\Users\\j0w16ja\\SENTRY_v2-main",
-    "fix_scope": "Vendor Directory should correctly link VARs to vendors and reliably surface extracted risk scoring so users can see it",
-    "data_source": "Vendor Assessment Report data already exposed through backend var_reports and vendor detail endpoints",
-    "approval_status": "Approved by user"
+    "operational_source": "C:\\Users\\j0w16ja\\OneDrive - Walmart Inc\\Desktop\\SENTRY",
+    "delivery_mode": "localhost",
+    "reported_issue": "Vendor information is not visible in SENTRY"
   },
   "missing_slots": [],
   "assumptions": [
-    "User wants direct remediation work on Vendor Directory Risk & Scores rather than continued UX-only review.",
-    "Missing MEMORY/PROJECT_BRIEF/CONSTRAINTS/TOOL_CATALOG/DECISIONS/EVAL_HISTORY files do not block best-effort execution.",
-    "The strongest safe fix is to make the modal pull and derive Risk & Scores from latest available VAR report data when vendor detail payload is incomplete."
+    "The Vendor Directory is loading but receiving zero visible vendors rather than failing completely.",
+    "The canonical profile CSV in 00_System is present and should be used to bootstrap directory visibility when needed.",
+    "A backend restart is acceptable to activate startup bootstrap logic.",
+    "A cached frontend query failure may be preventing vendor data from repopulating after the backend recovered.",
+    "A cached successful-empty response may also be preventing the default Vendor Directory view from self-healing.",
+    "The backend should prefer source-backed vendor profiles from Desktop Vendor Assessments over DB-derived visibility when the source is available.",
+    "The broader Desktop SENTRY workspace is now the explicit user-designated local data root for incident, project, regulatory, and vendor source material."
   ],
   "risk_tier": "medium",
-  "orchestration_pattern": "data_fallback_and_ui_hardening",
-  "approval_points": [
-    "Pause before presenting any final roadmap or launch-scope recommendation to others"
-  ],
+  "orchestration_pattern": "startup_vendor_bootstrap_for_localhost_validation",
+  "approval_points": [],
   "open_questions": [
-    "Whether the vendor detail endpoint is always returning populated var_scores for vendors with linked VARs.",
-    "Which linked VARs are still attached to the wrong vendor or missing score extraction.",
-    "Whether the Risk & Scores tab should fall back to vendor var-report data when the hydrated vendor payload is incomplete.",
-    "Whether the current modal experience needs a loading state for Risk & Scores while VAR data is being resolved.",
-    "Whether local dev/HMR behavior is interrupting modal-state runtime validation of the Risk & Scores fix.",
-    "Why Backstreet Surveillance currently resolves to pending/no extracted weighted VAR score despite being marked VAR Linked.",
-    "Whether the new Score Extraction Pending callout is visible only within the Risk & Scores tab body and still needs viewport confirmation.",
-    "Which 15 scored VARs are correctly linked today and which high-value vendors remain linked but unscored."
+    "Whether the current DB is actually empty versus populated with only noncanonical vendor rows.",
+    "Whether any separate frontend cache or browser state is also obscuring the refreshed directory after backend restart.",
+    "Whether the user has refreshed the browser tab since the cached-error retry guard was added.",
+    "Whether the browser is currently pointed at the active Vite instance if multiple localhost ports were used during recovery.",
+    "Whether the backend process has been restarted since source-backed directory preference was added.",
+    "Whether uvicorn reload mode is leaving the backend unavailable after filesystem-triggered restarts inside backend\\.venv.",
+    "Whether the user has restarted the backend using the new stable launcher behavior.",
+    "Whether the frontend has reloaded the new localhost same-origin API routing logic.",
+    "Whether stale Vite processes on port 3000 were causing the user to browse an outdated frontend instance.",
+    "Whether the backend launcher was failing before bind because uv was unavailable on the local machine."
   ],
-  "output_files_generated": ["WORKING_STATE.json"],
-  "validation_status": "batch_score_extraction_runtime_monitoring_in_progress",
+  "output_files_generated": [
+    "WORKING_STATE.json"
+  ],
+  "validation_status": "desktop_sentry_workspace_confirmed_as_user_designated_data_root_backend_relaunch_required",
   "last_completed_phase": "validation",
   "current_phase": "validation",
   "artifacts_touched": [
-    "App.tsx",
-    "backend/database.py",
-    "backend/models.py",
-    "backend/project_routes.py",
-    "backend/request_routes.py",
-    "backend/main.py",
-    "services/api.ts",
-    "services/analytics.ts",
-    "components/ProjectAdminPanel.tsx",
-    "components/VendorManager.tsx",
-    "components/CompetitorIntelAdmin.tsx",
-    "components/RegulatoryIntelligence.tsx",
-    "components/GlassCard3D.tsx",
-    "components/VendorCard3D.tsx",
-    "components/VendorDetailModal.tsx",
-    "components/VendorCard3D.tsx",
-    "backend/main.py",
-    "backend/tests/test_vendor_company_grouping.py",
+    "backend\\main.py",
+    "backend\\start_backend.bat",
+    "start_sentry_localhost.bat",
+    "vite.config.ts",
+    "package.json",
+    "services\\api.ts",
+    "hooks\\useQuery.ts",
+    "context\\VendorContext.tsx",
     "DECISIONS.md",
-    "backend/tests/test_vendor_company_grouping.py",
-    "e2e/helpers/pageObjects.ts",
-    "e2e/vendor-dashboard.spec.ts",
-    "components/TechAssessmentTab.tsx",
-    "components/VendorDashboard.tsx",
-    "WORKING_STATE.json",
-    "App.tsx"
+    "WORKING_STATE.json"
   ]
 }

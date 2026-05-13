@@ -6,6 +6,7 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
   server: {
     port: 3000,
+    strictPort: true,
     host: '0.0.0.0',
     // Dev proxy: /api/* → FastAPI backend on :8082
     proxy: {

@@ -19,7 +19,9 @@ const VITE_ENV = (import.meta as any).env ?? {};
  * 2) Otherwise fall back to relative paths so Vite/Firebase proxy can handle /api.
  */
 const RAW_API_BASE = String(VITE_ENV.VITE_API_URL ?? '').trim();
-const API_BASE: string = RAW_API_BASE || '';
+const IS_LOCAL_DEV_ORIGIN = typeof window !== 'undefined'
+  && ['localhost', '127.0.0.1'].includes(window.location.hostname);
+const API_BASE: string = IS_LOCAL_DEV_ORIGIN ? '' : (RAW_API_BASE || '');
 
 let sentryUserHeader: string | null = null;
 
@@ -220,6 +222,67 @@ export async function fetchCategories(): Promise<{ categories: string[] }> {
 
 export async function fetchVendorById(vendorId: string): Promise<Vendor> {
   return request(`/api/vendors/${vendorId}`);
+}
+
+export interface VendorAssessmentOpsItem {
+  vendor_folder: string;
+  dominant_domain: string;
+  latest_modified_utc?: string;
+  report_count: number;
+  top_semantic_tags?: string;
+  secondary_domains?: string;
+  top_stakeholder_tags?: string;
+  sample_report_path?: string;
+}
+
+export interface VendorAssessmentOverview {
+  source: {
+    operational_mode: string;
+    operational_source: string;
+    vendor_assessments_root: string;
+    intake_root: string;
+    sqlite_memory: string;
+    vendor_profiles_csv: string;
+    executive_views_root: string;
+    available: Record<string, boolean>;
+  };
+  stats: {
+    vendor_profiles_total: number;
+    domain_counts: Record<string, number>;
+    unknown_domain_profiles: number;
+    active_intake_items: number;
+    ready_for_approval: number;
+    review_then_approval: number;
+    hold_in_intake: number;
+    recent_additions_count: number;
+    multi_domain_watchlist_count: number;
+  };
+  process: {
+    intake_rule: string;
+    routing_rule: string;
+    persistence_rule: string;
+    safety_rule: string;
+  };
+  recent_additions: VendorAssessmentOpsItem[];
+  multi_domain_watchlist: VendorAssessmentOpsItem[];
+  domain_leaders: Record<string, VendorAssessmentOpsItem[]>;
+  raw_counts: {
+    intake_recommendations: number;
+    intake_action_plan_rows: number;
+  };
+}
+
+export async function fetchVendorAssessmentOverview(params?: {
+  recent_limit?: number;
+  watchlist_limit?: number;
+  leaders_limit?: number;
+}): Promise<VendorAssessmentOverview> {
+  const qs = new URLSearchParams();
+  if (params?.recent_limit) qs.set('recent_limit', String(params.recent_limit));
+  if (params?.watchlist_limit) qs.set('watchlist_limit', String(params.watchlist_limit));
+  if (params?.leaders_limit) qs.set('leaders_limit', String(params.leaders_limit));
+  const query = qs.toString() ? `?${qs}` : '';
+  return request(`/api/vendor-assessment/overview${query}`);
 }
 
 // ── VAR Reports ────────────────────────────────────────────────────────────────

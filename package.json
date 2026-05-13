@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "deploy": "npm run build && firebase deploy --only hosting",
     "deploy:preview": "npm run build && firebase hosting:channel:deploy preview",
-    "backend:start": "cd backend && uvicorn main:app --port 8082 --reload",
+    "backend:start": "cd backend && .venv\\Scripts\\python.exe -m uvicorn main:app --host 0.0.0.0 --port 8082",
     "backend:docker": "docker build -t sentry-api ./backend && docker run -p 8082:8082 sentry-api",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
