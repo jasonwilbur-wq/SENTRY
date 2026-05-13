@@ -35,7 +35,7 @@
   "output_files_generated": [
     "WORKING_STATE.json"
   ],
-  "validation_status": "desktop_sentry_workspace_centralized_in_backend_path_config_backend_restart_required",
+  "validation_status": "frontend_missing_regulatory_map_dependencies_identified_package_manifest_updated_npm_install_required",
   "last_completed_phase": "validation",
   "current_phase": "validation",
   "artifacts_touched": [

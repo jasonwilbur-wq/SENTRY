@@ -25,9 +25,11 @@
     "d3": "^7.9.0",
     "framer-motion": "^12.34.3",
     "react": "^19.2.3",
+    "topojson-client": "^3.1.0",
     "react-dom": "^19.2.3",
     "recharts": "^3.6.0",
-    "three": "^0.183.1"
+    "three": "^0.183.1",
+    "world-atlas": "^2.0.2"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
