@@ -1,437 +1,346 @@
 #!/usr/bin/env python3
+"""Import SENTRY competitor intelligence workbooks.
+
+Discovers monthly Walmart_Competitor_YYYYMM.xlsx files from the OneDrive
+SENTRY data-entry workspace, normalizes their Incident_log rows, scores each
+signal, and refreshes the competitor_events / competitor_entities tables.
+
+Safe to re-run: the import refreshes the competitor tables from discovered
+source workbooks so stale partial data does not linger.
 """
-Competitor Data Import & Cleanup Script
+from __future__ import annotations
 
-Imports Walmart Competitor monthly Excel files (202601, 202602) into SENTRY,
-filters out:
- - Walmart entries
- - Non-competitor entities (Industry, CISA, Regulatory without specific competitor)
- - Normalizes messy category fields
-
-Outputs clean competitor intelligence data for the dashboard.
-"""
-
-import sqlite3
-import pandas as pd
-from pathlib import Path
+import json
 import re
-from datetime import datetime
+import sys
+from collections import Counter, defaultdict
+from datetime import date, datetime
+from pathlib import Path
+from typing import Any
 
-from database import init_db, get_connection
+import openpyxl
 
-# File paths
-CLEAN_202602 = r"C:\Users\j0w16ja\OneDrive - Walmart Inc\Data Entries\Datasets\Walmart_Competitor_202602 (Clean).xlsx"
-CLEAN_202601 = r"C:\Users\j0w16ja\OneDrive - Walmart Inc\Emerging Technology Security - Utilities\SpreadSheets\Competitor Trackers\Walmart_Competitor_202601.xlsx"
-DB_PATH = "data/sentry.db"
+sys.path.insert(0, str(Path(__file__).parent))
+from competitor_scoring import score_event  # noqa: E402
+from database import get_connection, init_db  # noqa: E402
 
-# Non-competitor entities to filter out
-EXCLUDE_ENTITIES = [
-    "Walmart",
-    "Walmart (Vicinity)",
-    "Sam's Club",  # Walmart subsidiary
-    "Industry",
-    "Retail Industry",
-    "CISA",
-    "Cyber Threat",
-    "Organized Retail Crime (Multiple)",
-    "Competitor",  # Generic placeholder
-    "Axon",  # Technology vendor, not retail competitor
-    "California",  # State/location, not a company
-    "Federal Govt",  # Government, not competitor
-    "NIST",  # Government agency
-    "Global (General)",  # Generic category
-    "Logistics (General)",  # Generic category
-    "Logistics Sector",  # Generic category
-    "Retail (General)",  # Generic category
-    "Retailers (General)",  # Generic category
-    "Tech Sector",  # Generic category
-    "General Retail",  # Generic category
+ONEDRIVE_ROOT = Path(r"C:\Users\j0w16ja\OneDrive - Walmart Inc")
+SOURCE_DIRS = [
+    ONEDRIVE_ROOT / "Data Entries" / "SENTRY" / "Competitor Data",
+    ONEDRIVE_ROOT / "Desktop" / "SENTRY",
+    Path(__file__).parent / "data" / "source" / "competitor",
 ]
 
-# Legitimate competitors (whitelist for clarity)
-LEGIT_COMPETITORS = [
-    "Amazon", "Amazon (AWS)", "Amazon (Corp)", "Amazon (Retail)", "Amazon (Ring)", "Amazon Fresh", "AWS",
-    "Target",
-    "Costco",
-    "Kroger",
-    "Home Depot",
-    "Lowe's",
-    "ALDI", "Aldi",
-    "Whole Foods",
-    "Albertsons",
-    "Walgreens",
-    "CVS/Walgreens",
-    "7-Eleven",
-    "Dollar General",
-    "Schwarz Group",
-    "Lidl", "Lidl (GB)",
-    "Tesco",
-    "Ahold Delhaize / Carrefour",
-    "Save Mart Companies",
-    "Coupang",
-    "Alibaba",
-    "Temu",
-    "Shein",
-    "TikTok",
-    "Hot Topic",
+MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+EXCLUDE_ENTITIES = {
+    "", "walmart", "walmart (vicinity)", "sam's club", "sams club",
+    "industry", "retail industry", "retailers (general)", "retail (general)",
+    "competitor", "global (general)", "logistics (general)", "logistics sector",
+    "tech sector", "general retail", "federal govt", "nist", "cisa",
+}
+
+CATEGORY_PATTERNS: list[tuple[str, str]] = [
+    (r"cyber|breach|hack|malware|ransomware|phishing|credential|ddos|vulnerability", "Cyber"),
+    (r"orc|organized retail crime|theft|robbery|shoplift|cargo|shrink", "ORC/Theft"),
+    (r"recall|contamination|food.?safety|product safety", "Recall"),
+    (r"legal|lawsuit|settlement|litigation|court", "Legal"),
+    (r"regulatory|compliance|fine|violation|privacy law|gdpr|ccpa", "Compliance"),
+    (r"strategic|acquisition|partnership|expansion|market|launch", "Strategic"),
+    (r"operational|store.?operations|supply.?chain|outage|disruption|labor|strike", "Operational"),
+    (r"technology|tech|ai|automation|robot|drone|computer vision|rfid", "Technology"),
+    (r"fraud|scam|identity.?theft|payment", "Fraud"),
 ]
 
-# Technology vendors (include if they're competing in retail tech space)
-TECH_VENDORS = [
-    "Axon",
-    "Zebra Technologies", "Zebra/Balea", "Evri (Zebra)", "Evri/Zebra",
-    "Simbe",
-    "Gather AI",
-    "Gatekeeper",
-    "Alpha Modus",
+COLUMN_MAP = {
+    "date": "event_date",
+    "competitor/entity": "competitor",
+    "competitor": "competitor",
+    "entity": "competitor",
+    "event title": "event_title",
+    "title": "event_title",
+    "event type": "event_type",
+    "type": "event_type",
+    "detailed description": "detailed_description",
+    "description": "detailed_description",
+    "category": "category",
+    "location/geographic scope": "location",
+    "location": "location",
+    "security implication": "security_implication",
+    "operational impact": "operational_impact",
+    "financial impact": "financial_impact",
+    "reputational impact": "reputational_impact",
+    "source/link": "source_link",
+    "source link": "source_link",
+    "source": "source_link",
+    "analyst notes": "analyst_notes",
+    "confidence": "confidence_level",
+    "confidence level": "confidence_level",
+}
+
+BASE_COLUMNS = [
+    "event_date", "competitor", "event_title", "event_type", "detailed_description",
+    "category", "location", "security_implication", "operational_impact",
+    "financial_impact", "reputational_impact", "source_link", "analyst_notes", "source_month",
 ]
 
-# Category normalization mapping (common patterns in messy data)
-CATEGORY_PATTERNS = [
-    (r"cyber|breach|hack|malware|ransomware", "Cyber"),
-    (r"orc|theft|robbery|shoplifting|cargo", "ORC/Theft"),
-    (r"recall|contamination|food.?safety", "Recall"),
-    (r"legal|lawsuit|settlement|litigation", "Legal"),
-    (r"regulatory|compliance|fine|violation|gdpr|privacy.?law", "Regulatory"),
-    (r"strategic|acquisition|partnership|expansion", "Strategic"),
-    (r"operational|store.?operations|supply.?chain", "Operational"),
-    (r"technology|tech|ai|automation|robot|drone", "Technology"),
-    (r"fraud|scam|identity.?theft", "Fraud"),
-    (r"data.?breach|privacy.?incident", "Cyber"),
+SCORE_COLUMNS = [
+    "walmart_relevance_score", "priority_tier", "signal_type", "recommended_owner",
+    "why_walmart_cares", "strategic_score", "security_score", "operational_score",
+    "customer_trust_score", "novelty_score", "urgency_score", "confidence_score",
+    "escalate_to_cso", "scoring_version", "confidence_level", "score_reason",
+    "confidence_effect", "source_effect", "cso_candidate_reason",
 ]
+
+
+def cell_str(value: Any) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, (datetime, date)):
+        return value.strftime("%Y-%m-%d")
+    return str(value).strip()
+
+
+def normalize_header(value: Any) -> str:
+    return re.sub(r"\s+", " ", cell_str(value).lower())
+
+
+def month_label_from_path(path: Path) -> str:
+    match = re.search(r"(20\d{2})(\d{2})", path.stem)
+    if not match:
+        return path.stem
+    year = int(match.group(1))
+    month = int(match.group(2))
+    if 1 <= month <= 12:
+        return f"{MONTH_NAMES[month - 1]} {year}"
+    return path.stem
+
+
+def normalize_date(value: Any) -> str:
+    if isinstance(value, datetime):
+        return value.strftime("%Y-%m-%d")
+    if isinstance(value, date):
+        return value.strftime("%Y-%m-%d")
+    raw = cell_str(value)
+    if not raw:
+        return ""
+    for fmt in ("%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%m/%d/%Y", "%m-%d-%Y", "%B %d, %Y", "%b %d, %Y"):
+        try:
+            return datetime.strptime(raw, fmt).strftime("%Y-%m-%d")
+        except ValueError:
+            pass
+    match = re.search(r"(20\d{2})[-/](\d{1,2})[-/](\d{1,2})", raw)
+    if match:
+        return f"{match.group(1)}-{int(match.group(2)):02d}-{int(match.group(3)):02d}"
+    return raw[:10]
+
 
 def normalize_competitor(name: str) -> str:
-    """Normalize competitor names (Amazon variants → Amazon, etc.)"""
-    if pd.isna(name):
-        return None
-    name = name.strip()
-    # Consolidate Amazon variants
-    if name.startswith("Amazon"):
+    cleaned = re.sub(r"\s+", " ", name).strip()
+    lowered = cleaned.lower()
+    if lowered in {"aws", "amazon (aws)", "amazon (corp)", "amazon (retail)", "amazon fresh", "amazon (ring)"} or lowered.startswith("amazon"):
         return "Amazon"
-    if name in ["AWS"]:
-        return "Amazon"
-    # Consolidate ALDI variants
-    if name.lower() == "aldi":
+    if lowered in {"aldi", "aldi us", "aldi (us)"}:
         return "ALDI"
-    # Consolidate Zebra variants
-    if "Zebra" in name or "Evri" in name:
-        return "Zebra Technologies"
-    # Consolidate Lidl variants
-    if name.startswith("Lidl"):
+    if lowered.startswith("lidl"):
         return "Lidl"
-    return name
+    if "zebra" in cleaned or lowered.startswith("evri"):
+        return "Zebra Technologies"
+    return cleaned
 
-def normalize_category(cat: str, title: str, desc: str) -> str:
-    """Normalize category field by checking patterns in cat, title, and description."""
-    if pd.isna(cat):
-        cat = ""
-    if pd.isna(title):
-        title = ""
-    if pd.isna(desc):
-        desc = ""
-    
-    combined = f"{cat} {title} {desc}".lower()
-    
-    # Check patterns
-    for pattern, category in CATEGORY_PATTERNS:
-        if re.search(pattern, combined, re.IGNORECASE):
-            return category
-    
-    # If original category is short and clean, keep it
-    if cat and len(cat) < 30 and cat in ["Legal", "Strategy", "Regulatory", "Cyber", "Recall", "ORC/Theft"]:
-        return cat
-    
-    # Default
-    return "Other"
 
 def is_valid_competitor(name: str) -> bool:
-    """Check if entity is a legitimate competitor (not Walmart, not generic 'Industry', etc.)"""
-    if pd.isna(name):
+    lowered = name.strip().lower()
+    if lowered in EXCLUDE_ENTITIES:
         return False
-    name = name.strip()
-    
-    # Exclude list
-    if name in EXCLUDE_ENTITIES:
+    if "walmart" in lowered or "sam's club" in lowered or "sams club" in lowered:
         return False
-    if "Walmart" in name:
+    if any(generic in lowered for generic in ("general)", "industry", "sector", "multiple)")):
         return False
-    
-    # Whitelist check
-    if name in LEGIT_COMPETITORS or name in TECH_VENDORS:
-        return True
-    
-    # Heuristic: if it's a specific company name (not generic), include it
-    generic_terms = ["industry", "cisa", "threat", "organized retail crime", "competitor"]
-    if any(term in name.lower() for term in generic_terms):
-        return False
-    
     return True
 
-def import_month(file_path: str, source_month: str) -> pd.DataFrame:
-    """Import one month of competitor data and clean it."""
-    print(f"\nImporting {source_month} from {file_path}...")
-    
+
+def normalize_category(category: str, event_title: str, description: str, event_type: str) -> str:
+    clean = cell_str(category)
+    allowed = {"Cyber", "ORC/Theft", "Recall", "Legal", "Strategic", "Operational", "Compliance", "Fraud", "Technology", "Other"}
+    if clean in allowed:
+        return clean
+    if clean == "Regulatory":
+        return "Compliance"
+
+    combined = f"{clean} {event_title} {description} {event_type}".lower()
+    for pattern, label in CATEGORY_PATTERNS:
+        if re.search(pattern, combined, re.IGNORECASE):
+            return label
+    return "Other"
+
+
+def discover_workbooks() -> list[Path]:
+    candidates: dict[str, Path] = {}
+    for source_dir in SOURCE_DIRS:
+        if not source_dir.exists():
+            continue
+        for path in source_dir.glob("Walmart_Competitor_*.xlsx"):
+            if path.name.startswith("~$"):
+                continue
+            candidates[path.stem] = path
+    return [candidates[key] for key in sorted(candidates)]
+
+
+def read_workbook(path: Path) -> list[dict[str, Any]]:
+    wb = openpyxl.load_workbook(path, data_only=True, read_only=True)
+    ws = wb["Incident_log"] if "Incident_log" in wb.sheetnames else wb.worksheets[0]
+    rows_iter = ws.iter_rows(values_only=True)
     try:
-        df = pd.read_excel(file_path)
-    except Exception as e:
-        print(f"  ❌ Error reading {file_path}: {e}")
-        return pd.DataFrame()
-    
-    print(f"  Read {len(df)} rows")
-    
-    # Rename columns to standardized names
-    col_mapping = {
-        "Competitor/Entity": "competitor",
-        "Date": "event_date",
-        "Event Title": "event_title",
-        "Event Type": "event_type",
-        "Detailed Description": "detailed_description",
-        "Category": "category",
-        "Location/Geographic Scope": "location",
-        "Security Implication": "security_implication",
-        "Operational Impact": "operational_impact",
-        "Financial Impact": "financial_impact",
-        "Reputational Impact": "reputational_impact",
-        "Source/Link": "source_link",
-        "Analyst Notes": "analyst_notes",
-    }
-    df = df.rename(columns=col_mapping)
-    
-    # Filter valid competitors
-    df = df[df["competitor"].apply(is_valid_competitor)]
-    print(f"  ✓ {len(df)} rows after filtering non-competitors")
-    
-    # Normalize competitor names
-    df["competitor"] = df["competitor"].apply(normalize_competitor)
-    
-    # Normalize categories
-    df["category"] = df.apply(
-        lambda row: normalize_category(
-            row.get("category"),
-            row.get("event_title"),
-            row.get("detailed_description")
-        ),
-        axis=1
-    )
-    
-    # Add source month
-    df["source_month"] = source_month
-    
-    # Convert date
-    df["event_date"] = pd.to_datetime(df["event_date"], errors="coerce")
-    
-    # Select final columns
-    final_cols = [
-        "event_date", "competitor", "event_title", "event_type", "category",
-        "location", "detailed_description", "security_implication",
-        "operational_impact", "financial_impact", "reputational_impact",
-        "source_link", "analyst_notes", "source_month"
-    ]
-    df = df[final_cols]
-    
-    print(f"  ✅ Final: {len(df)} clean events")
-    print(f"     Competitors: {df['competitor'].nunique()}")
-    print(f"     Categories: {df['category'].value_counts().to_dict()}")
-    
-    return df
+        headers = [normalize_header(h) for h in next(rows_iter)]
+    except StopIteration:
+        return []
 
-def create_tables(conn):
-    """Create competitor tables if they don't exist."""
-    # competitor_events schema is canonicalized in database.py:init_db()
-    
-    conn.execute("""
-        CREATE INDEX IF NOT EXISTS idx_competitor ON competitor_events(competitor)
-    """)
-    conn.execute("""
-        CREATE INDEX IF NOT EXISTS idx_category ON competitor_events(category)
-    """)
-    conn.execute("""
-        CREATE INDEX IF NOT EXISTS idx_source_month ON competitor_events(source_month)
-    """)
-    
-    # Create competitor_entities aggregated view table
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS competitor_entities (
-            name TEXT PRIMARY KEY,
-            event_count INTEGER,
-            cyber_count INTEGER,
-            orc_count INTEGER,
-            recall_count INTEGER,
-            legal_count INTEGER,
-            strategic_count INTEGER,
-            tech_count INTEGER,
-            threat_level TEXT,
-            top_category TEXT,
-            categories_json TEXT,
-            monthly_json TEXT,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    mapped_headers = [COLUMN_MAP.get(h, "") for h in headers]
+    source_month = month_label_from_path(path)
+    records: list[dict[str, Any]] = []
+
+    for raw_row in rows_iter:
+        if not raw_row or all(cell is None or cell_str(cell) == "" for cell in raw_row):
+            continue
+        record = {col: "" for col in BASE_COLUMNS}
+        extras: dict[str, str] = {}
+        for idx, cell in enumerate(raw_row[: len(mapped_headers)]):
+            mapped = mapped_headers[idx]
+            value = cell_str(cell)
+            if mapped:
+                record[mapped] = value
+            elif headers[idx]:
+                extras[headers[idx]] = value
+
+        competitor = normalize_competitor(record.get("competitor", ""))
+        if not is_valid_competitor(competitor):
+            continue
+
+        record["event_date"] = normalize_date(record.get("event_date"))
+        record["competitor"] = competitor
+        record["category"] = normalize_category(
+            record.get("category", ""),
+            record.get("event_title", ""),
+            record.get("detailed_description", ""),
+            record.get("event_type", ""),
         )
-    """)
-    
+        record["source_month"] = source_month
+        if not record.get("event_title") and record.get("detailed_description"):
+            record["event_title"] = record["detailed_description"][:90]
+        if not record.get("event_title"):
+            continue
+
+        confidence = record.pop("confidence_level", "") or extras.get("confidence", "") or extras.get("confidence level", "")
+        scored = score_event({**record, "confidence_level": confidence})
+        for col in SCORE_COLUMNS:
+            record[col] = scored.get(col, confidence if col == "confidence_level" else "")
+        records.append(record)
+
+    print(f"  {path.name}: {len(records)} clean events ({source_month})")
+    return records
+
+
+def create_tables(conn) -> None:
+    # init_db creates canonical tables; these indexes are kept for older DBs.
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_ce_competitor ON competitor_events(competitor)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_ce_date ON competitor_events(event_date)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_ce_category ON competitor_events(category)")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_ce_source_month ON competitor_events(source_month)")
     conn.commit()
 
-def refresh_competitor_entities(conn):
-    """Refresh the competitor_entities aggregated table."""
-    import json
-    from collections import Counter
-    
-    print("\n🔄 Refreshing competitor_entities aggregated table...")
-    
-    # Clear existing data
+
+def threat_level(event_count: int, cyber_count: int) -> str:
+    ratio = cyber_count / max(event_count, 1)
+    if event_count >= 30 or ratio >= 0.20:
+        return "High"
+    if event_count >= 10 or ratio >= 0.10:
+        return "Medium"
+    return "Low"
+
+
+def refresh_competitor_entities(conn) -> None:
+    rows = conn.execute("SELECT competitor, category, source_month FROM competitor_events WHERE deleted_at IS NULL").fetchall()
+    grouped: dict[str, list[tuple[str, str]]] = defaultdict(list)
+    for competitor, category, source_month in rows:
+        grouped[competitor].append((category or "Other", source_month or ""))
+
     conn.execute("DELETE FROM competitor_entities")
-    
-    # Get all competitors
-    competitors = conn.execute("""
-        SELECT DISTINCT competitor
-        FROM competitor_events
-        ORDER BY competitor
-    """).fetchall()
-    
-    MONTHS = ["Sep 2025", "Oct 2025", "Nov 2025", "Dec 2025", "Jan 2026", "Feb 2026"]
-    
-    for (comp_name,) in competitors:
-        # Event counts by category
-        stats = conn.execute("""
-            SELECT
-                COUNT(*) as total,
-                SUM(CASE WHEN category = 'Cyber' THEN 1 ELSE 0 END) as cyber,
-                SUM(CASE WHEN category = 'ORC/Theft' THEN 1 ELSE 0 END) as orc,
-                SUM(CASE WHEN category = 'Recall' THEN 1 ELSE 0 END) as recall,
-                SUM(CASE WHEN category = 'Legal' THEN 1 ELSE 0 END) as legal,
-                SUM(CASE WHEN category = 'Strategic' THEN 1 ELSE 0 END) as strategic,
-                SUM(CASE WHEN category = 'Technology' THEN 1 ELSE 0 END) as tech
-            FROM competitor_events
-            WHERE competitor = ?
-        """, (comp_name,)).fetchone()
-        
-        total, cyber, orc, recall, legal, strategic, tech = stats
-        
-        # Threat level
-        if total >= 30:
-            threat_level = "High"
-        elif total >= 10:
-            threat_level = "Medium"
-        else:
-            threat_level = "Low"
-        
-        # Top category
-        cat_counts = conn.execute("""
-            SELECT category, COUNT(*) as cnt
-            FROM competitor_events
-            WHERE competitor = ?
-            GROUP BY category
-            ORDER BY cnt DESC
-            LIMIT 1
-        """, (comp_name,)).fetchone()
-        
-        top_category = cat_counts[0] if cat_counts else "Other"
-        
-        # Categories JSON
-        all_cats = conn.execute("""
-            SELECT category, COUNT(*) as cnt
-            FROM competitor_events
-            WHERE competitor = ?
-            GROUP BY category
-            ORDER BY cnt DESC
-        """, (comp_name,)).fetchall()
-        
-        categories_json = json.dumps({cat: cnt for cat, cnt in all_cats})
-        
-        # Monthly JSON
-        monthly_data = {}
-        for month in MONTHS:
-            count = conn.execute("""
-                SELECT COUNT(*)
-                FROM competitor_events
-                WHERE competitor = ? AND source_month = ?
-            """, (comp_name, month)).fetchone()[0]
-            monthly_data[month] = count
-        
-        monthly_json = json.dumps(monthly_data)
-        
-        # Insert into competitor_entities
-        conn.execute("""
+    for name, items in grouped.items():
+        categories = Counter(category for category, _ in items)
+        monthly = Counter(month for _, month in items if month)
+        total = len(items)
+        top_category = categories.most_common(1)[0][0] if categories else "Other"
+        conn.execute(
+            """
             INSERT INTO competitor_entities
-            (name, event_count, cyber_count, orc_count, recall_count, legal_count,
-             strategic_count, tech_count, threat_level, top_category, categories_json, monthly_json)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (comp_name, total, cyber, orc, recall, legal, strategic, tech,
-               threat_level, top_category, categories_json, monthly_json))
-    
+              (name, event_count, cyber_count, orc_count, recall_count, legal_count,
+               strategic_count, threat_level, top_category, categories_json, monthly_json)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                name,
+                total,
+                categories.get("Cyber", 0),
+                categories.get("ORC/Theft", 0),
+                categories.get("Recall", 0),
+                categories.get("Legal", 0),
+                categories.get("Strategic", 0),
+                threat_level(total, categories.get("Cyber", 0)),
+                top_category,
+                json.dumps(dict(categories), sort_keys=True),
+                json.dumps(dict(sorted(monthly.items())), sort_keys=True),
+            ),
+        )
     conn.commit()
-    
-    entities_count = conn.execute("SELECT COUNT(*) FROM competitor_entities").fetchone()[0]
-    print(f"  ✅ Refreshed {entities_count} competitor entities")
+    print(f"  Refreshed {len(grouped)} competitor entities")
 
-def main():
-    print("\n" + "="*70)
-    print("SENTRY Competitor Data Import & Cleanup")
-    print("="*70)
-    
-    # Import both months
-    df_202602 = import_month(CLEAN_202602, "Feb 2026")
-    df_202601 = import_month(CLEAN_202601, "Jan 2026") if Path(CLEAN_202601).exists() else pd.DataFrame()
-    
-    # Combine
-    df_all = pd.concat([df_202601, df_202602], ignore_index=True)
-    print(f"\n📊 Combined: {len(df_all)} total events")
-    
-    # Write to database
-    print(f"\n💾 Writing to {DB_PATH}...")
+
+def main() -> None:
+    print("\n" + "=" * 70)
+    print("SENTRY Competitor Data Import")
+    print("=" * 70)
+
+    workbooks = discover_workbooks()
+    if not workbooks:
+        raise FileNotFoundError(f"No Walmart_Competitor_*.xlsx files found in: {SOURCE_DIRS}")
+
+    print("Discovered workbooks:")
+    for path in workbooks:
+        print(f"  - {path}")
+
+    events: list[dict[str, Any]] = []
+    for workbook in workbooks:
+        events.extend(read_workbook(workbook))
+
     init_db()
     conn = get_connection()
     create_tables(conn)
-    
-    # Clear existing data
     conn.execute("DELETE FROM competitor_events")
+
+    columns = BASE_COLUMNS + SCORE_COLUMNS
+    placeholders = ",".join(["?"] * len(columns))
+    conn.executemany(
+        f"INSERT INTO competitor_events ({','.join(columns)}) VALUES ({placeholders})",
+        [[event.get(col, "") for col in columns] for event in events],
+    )
     conn.commit()
-    print("  ✓ Cleared existing data")
-    
-    # Insert new data
-    df_all.to_sql("competitor_events", conn, if_exists="append", index=False)
-    conn.commit()
-    print(f"  ✅ Inserted {len(df_all)} events")
-    
-    # Summary stats
-    print("\n" + "="*70)
-    print("📈 Summary Statistics")
-    print("="*70)
-    
-    stats = conn.execute("""
-        SELECT
-            COUNT(*) as total,
-            COUNT(DISTINCT competitor) as competitors,
-            COUNT(CASE WHEN category = 'Cyber' THEN 1 END) as cyber,
-            COUNT(CASE WHEN category = 'ORC/Theft' THEN 1 END) as orc,
-            COUNT(CASE WHEN category = 'Recall' THEN 1 END) as recall,
-            COUNT(CASE WHEN category = 'Legal' THEN 1 END) as legal,
-            COUNT(CASE WHEN category = 'Regulatory' THEN 1 END) as regulatory
-        FROM competitor_events
-    """).fetchone()
-    
-    print(f"  Total Events: {stats[0]}")
-    print(f"  Unique Competitors: {stats[1]}")
-    print(f"  Cyber Events: {stats[2]}")
-    print(f"  ORC/Theft Events: {stats[3]}")
-    print(f"  Recall Events: {stats[4]}")
-    print(f"  Legal Events: {stats[5]}")
-    print(f"  Regulatory Events: {stats[6]}")
-    
-    print("\n  Top 10 Competitors by Event Count:")
-    for row in conn.execute("""
-        SELECT competitor, COUNT(*) as cnt
-        FROM competitor_events
-        GROUP BY competitor
-        ORDER BY cnt DESC
-        LIMIT 10
-    """).fetchall():
-        print(f"    {row[0]}: {row[1]} events")
-    
-    # Refresh competitor_entities aggregated table
+    print(f"\nInserted {len(events)} competitor events")
+
     refresh_competitor_entities(conn)
-    
+
+    stats = conn.execute(
+        "SELECT COUNT(*), COUNT(DISTINCT competitor), MIN(event_date), MAX(event_date) FROM competitor_events"
+    ).fetchone()
+    print(f"Events: {stats[0]} | Competitors: {stats[1]} | Date range: {stats[2]} → {stats[3]}")
+    print("Top competitors:")
+    for name, count in conn.execute(
+        "SELECT competitor, COUNT(*) FROM competitor_events GROUP BY competitor ORDER BY COUNT(*) DESC LIMIT 10"
+    ):
+        print(f"  {name}: {count}")
     conn.close()
-    print("\n✅ Import complete!\n")
+    print("\n✅ Competitor import complete\n")
+
 
 if __name__ == "__main__":
     main()

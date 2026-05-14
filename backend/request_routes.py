@@ -28,6 +28,7 @@ from models import (
     ServiceRequestOut,
     ServiceRequestSummary,
     StatusUpdateRequest,
+    StatusUpdateResponse,
 )
 
 router = APIRouter()

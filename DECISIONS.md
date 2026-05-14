@@ -145,13 +145,14 @@
 - Rationale: This removes path drift, narrows debugging scope, and aligns the app with the user-declared Desktop SENTRY workspace.
 - Status: Implemented, backend restart required.
 
-## 2026-05-13 — Frontend dependency graph should explicitly include regulatory map packages
-- Context: Vite failed to boot because `components/RegulatoryMap2D.tsx` imports `topojson-client` and `world-atlas/countries-110m.json`, but those packages were missing from `package.json`.
-- Decision: Add the missing packages to frontend dependencies instead of weakening or bypassing the regulatory map implementation.
+## 2026-05-13 — Regulatory 2D map should not depend on new npm packages in a restricted network environment
+- Context: `npm install` failed with `ENOTFOUND registry.npmjs.org`, so adding new frontend packages was not viable on the user's machine.
+- Decision: Remove the new package requirement and keep the regulatory map functional with the dependencies already present in the repo.
 - Implementation choice:
-  - Update `package.json` to include `topojson-client` and `world-atlas`.
-- Rationale: This resolves the immediate bundler failure and keeps the current 2D regulatory map architecture intact.
-- Status: Implemented in manifest, `npm install` required.
+  - Refactor `components/RegulatoryMap2D.tsx` to render a projection/graticule-based globe backdrop without `topojson-client` or `world-atlas`.
+  - Remove `topojson-client` and `world-atlas` from `package.json` so the frontend can boot without network package installation.
+- Rationale: Local startup reliability is more important than detailed country polygons when npm registry access is blocked.
+- Status: Implemented, frontend restart required.
 
 ## 2026-05-13 — Route failures should be isolated instead of crashing the app shell
 - Context: After the landing page was stabilized, navigation beyond the dashboard still caused failures when route modules contained syntax or runtime errors.

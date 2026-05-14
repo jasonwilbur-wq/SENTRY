@@ -69,6 +69,89 @@ CREATE TABLE IF NOT EXISTS vendor_highlights (
 );
 """
 
+CREATE_INCIDENTS = """
+CREATE TABLE IF NOT EXISTS incidents (
+    id                 TEXT PRIMARY KEY,
+    incident_date      TEXT DEFAULT '',
+    incident_type      TEXT DEFAULT 'Other',
+    severity           TEXT DEFAULT 'Medium',
+    location           TEXT DEFAULT '',
+    region             TEXT DEFAULT 'Other',
+    country            TEXT DEFAULT 'USA',
+    summary            TEXT DEFAULT '',
+    impact             TEXT DEFAULT '',
+    recommended_action TEXT DEFAULT '',
+    source_url         TEXT DEFAULT '',
+    tags               TEXT DEFAULT '',
+    source_file        TEXT DEFAULT '',
+    created_at         TEXT DEFAULT (datetime('now'))
+);
+"""
+
+CREATE_COMPETITOR_EVENTS = """
+CREATE TABLE IF NOT EXISTS competitor_events (
+    id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_date           TEXT,
+    competitor           TEXT,
+    event_title          TEXT,
+    event_type           TEXT,
+    detailed_description TEXT,
+    category             TEXT,
+    location             TEXT,
+    security_implication TEXT,
+    operational_impact   TEXT,
+    financial_impact     TEXT,
+    reputational_impact  TEXT,
+    source_link          TEXT,
+    analyst_notes        TEXT,
+    source_month         TEXT,
+    deleted_at           TEXT DEFAULT NULL,
+    walmart_relevance_score REAL DEFAULT NULL,
+    priority_tier        TEXT DEFAULT '',
+    signal_type          TEXT DEFAULT '',
+    recommended_owner    TEXT DEFAULT '',
+    why_walmart_cares    TEXT DEFAULT '',
+    strategic_score      REAL DEFAULT NULL,
+    security_score       REAL DEFAULT NULL,
+    operational_score    REAL DEFAULT NULL,
+    customer_trust_score REAL DEFAULT NULL,
+    novelty_score        REAL DEFAULT NULL,
+    urgency_score        REAL DEFAULT NULL,
+    confidence_score     REAL DEFAULT NULL,
+    escalate_to_cso      INTEGER DEFAULT 0,
+    scoring_version      TEXT DEFAULT '',
+    confidence_level     TEXT DEFAULT '',
+    score_reason         TEXT DEFAULT '',
+    confidence_effect    TEXT DEFAULT '',
+    source_effect        TEXT DEFAULT '',
+    cso_candidate_reason TEXT DEFAULT '',
+    scored_at            TEXT DEFAULT '',
+    triage_status        TEXT DEFAULT 'UNREVIEWED',
+    triaged_by           TEXT DEFAULT '',
+    triaged_at           TEXT DEFAULT '',
+    triage_note          TEXT DEFAULT '',
+    walmart_actionability_context TEXT DEFAULT '',
+    correlation_summary  TEXT DEFAULT ''
+);
+"""
+
+CREATE_COMPETITOR_ENTITIES = """
+CREATE TABLE IF NOT EXISTS competitor_entities (
+    id              INTEGER PRIMARY KEY AUTOINCREMENT,
+    name            TEXT NOT NULL UNIQUE,
+    event_count     INTEGER DEFAULT 0,
+    cyber_count     INTEGER DEFAULT 0,
+    orc_count       INTEGER DEFAULT 0,
+    recall_count    INTEGER DEFAULT 0,
+    legal_count     INTEGER DEFAULT 0,
+    strategic_count INTEGER DEFAULT 0,
+    threat_level    TEXT DEFAULT 'Low',
+    top_category    TEXT,
+    categories_json TEXT,
+    monthly_json    TEXT
+);
+"""
+
 # ── Performance indexes ──────────────────────────────────────────────────────
 # These dramatically speed up the most common query patterns:
 #  - Vendor list filtering by category (sidebar pills)
@@ -160,6 +243,12 @@ def init_db() -> None:
         conn.execute(CREATE_TABLE)
         conn.execute(CREATE_VAR_REPORTS)
         conn.execute(CREATE_HIGHLIGHTS)
+        conn.execute(CREATE_INCIDENTS)
+        conn.execute(CREATE_COMPETITOR_EVENTS)
+        conn.execute(CREATE_COMPETITOR_ENTITIES)
+        conn.execute(CREATE_AUDIT_LOG)
+        for audit_index in CREATE_AUDIT_INDEXES:
+            conn.execute(audit_index)
         # Create performance indexes (IF NOT EXISTS = safe to run repeatedly)
         conn.executescript(CREATE_INDEXES)
         conn.execute("PRAGMA optimize")  # let SQLite optimize query plans

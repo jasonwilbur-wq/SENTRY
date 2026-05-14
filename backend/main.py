@@ -30,7 +30,7 @@ from database import get_connection, init_db
 from admin_routes import router as admin_router
 from vendor_assessment_routes import router as vendor_assessment_router
 from request_routes import router as request_router
-from project_routes import router as project_router
+from project_routes import ROUTER as project_router
 from incident_routes import ROUTER as incident_router
 from regulatory_routes import ROUTER as regulatory_router, get_regulatory_summary
 from analytics_routes import ROUTER as analytics_router
@@ -1240,10 +1240,24 @@ def clear_cache():
 # NOTE: all /api/competitors/* routes must be registered before the generic
 #       /{vendor_id} route if that ever becomes a concern.
 
-MONTHS_ORDERED = [
-    "Sep 2025", "Oct 2025", "Nov 2025",
-    "Dec 2025", "Jan 2026", "Feb 2026",
-]
+MONTH_LABELS = {m: i for i, m in enumerate(["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], start=1)}
+
+
+def _competitor_month_sort_key(label: str) -> tuple[int, int, str]:
+    parts = (label or "").split()
+    if len(parts) >= 2 and parts[0] in MONTH_LABELS:
+        try:
+            return (int(parts[1]), MONTH_LABELS[parts[0]], label)
+        except ValueError:
+            pass
+    return (9999, 99, label or "")
+
+
+def _competitor_months(conn) -> list[str]:
+    rows = conn.execute(
+        "SELECT DISTINCT source_month FROM competitor_events WHERE source_month IS NOT NULL AND source_month != ''"
+    ).fetchall()
+    return sorted([r[0] for r in rows], key=_competitor_month_sort_key)
 
 
 @app.get("/api/competitors/stats")
@@ -1305,10 +1319,11 @@ def competitor_monthly(top: int = Query(5, ge=1, le=10)):
             (top,)
         ).fetchall()
     ]
+    months = _competitor_months(conn)
     result = {}
     for name in top_names:
         monthly = []
-        for month in MONTHS_ORDERED:
+        for month in months:
             cnt = conn.execute(
                 "SELECT COUNT(*) FROM competitor_events "
                 "WHERE competitor=? AND source_month LIKE ?",
@@ -1317,7 +1332,7 @@ def competitor_monthly(top: int = Query(5, ge=1, le=10)):
             monthly.append(cnt)
         result[name] = monthly
     conn.close()
-    return {"months": MONTHS_ORDERED, "series": result}
+    return {"months": months, "series": result}
 
 
 @app.get("/api/competitors/heatmap")

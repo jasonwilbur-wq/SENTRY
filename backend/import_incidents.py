@@ -131,7 +131,7 @@ def _normalise_date(raw: str) -> str:
     if not raw or not raw.strip():
         return ""
     raw = raw.strip()
-    for fmt in ("%Y-%m-%d", "%m/%d/%Y", "%m-%d-%Y", "%d/%m/%Y",
+    for fmt in ("%Y-%m-%d", "%Y-%m-%d %H:%M:%S", "%m/%d/%Y", "%m-%d-%Y", "%d/%m/%Y",
                 "%B %d, %Y", "%b %d, %Y", "%Y/%m/%d"):
         try:
             return datetime.strptime(raw, fmt).strftime("%Y-%m-%d")
@@ -186,6 +186,40 @@ def _load_sources() -> list[tuple[str, list[dict]]]:
         print(f"[INFO] Using incident CSVs from {INCIDENT_DIR}")
         return sources
 
+    workbook_paths = sorted(glob.glob(INCIDENT_WORKBOOK_GLOB))
+    if workbook_paths:
+        workbook_path = workbook_paths[-1]
+        wb = openpyxl.load_workbook(workbook_path, data_only=True)
+        sources: list[tuple[str, list[dict]]] = []
+
+        for ws in wb.worksheets:
+            raw_rows = list(ws.iter_rows(values_only=True))
+            if not raw_rows:
+                continue
+
+            headers = [str(c or f"col_{i}").strip().lower() for i, c in enumerate(raw_rows[0])]
+            has_required = any(h in _COL_SUMMARY for h in headers) and any(h in _COL_DATE for h in headers)
+            if not has_required:
+                continue
+
+            rows = [
+                {
+                    headers[i]: "" if cell is None else str(cell).strip()
+                    for i, cell in enumerate(row[: len(headers)])
+                }
+                for row in raw_rows[1:]
+                if not all(cell is None or str(cell).strip() == "" for cell in row)
+            ]
+            if rows:
+                sources.append((f"{os.path.basename(workbook_path)}:{ws.title}", rows))
+
+        if sources:
+            print(f"[INFO] Using incident workbook fallback: {workbook_path} ({len(sources)} sheets)")
+            return sources
+
+        print(f"[WARN] Incident workbook has no usable sheets: {workbook_path}")
+        return []
+
     legacy_csv_files = sorted(glob.glob(str(LEGACY_INCIDENT_DIR / "*.csv")))
     if legacy_csv_files:
         sources = []
@@ -196,28 +230,6 @@ def _load_sources() -> list[tuple[str, list[dict]]]:
         print(f"[INFO] Using legacy incident CSVs from {LEGACY_INCIDENT_DIR}")
         return sources
 
-    workbook_paths = sorted(glob.glob(INCIDENT_WORKBOOK_GLOB))
-    if workbook_paths:
-        workbook_path = workbook_paths[0]
-        wb = openpyxl.load_workbook(workbook_path, data_only=True)
-        ws = wb.worksheets[0]
-        raw_rows = list(ws.iter_rows(values_only=True))
-        if not raw_rows:
-            print(f"[WARN] Incident workbook is empty: {workbook_path}")
-            return []
-
-        headers = [str(c or f"col_{i}").strip() for i, c in enumerate(raw_rows[0])]
-        rows = [
-            {
-                headers[i]: "" if cell is None else str(cell).strip()
-                for i, cell in enumerate(row)
-            }
-            for row in raw_rows[1:]
-            if not all(cell is None for cell in row)
-        ]
-        print(f"[INFO] Using incident workbook fallback: {workbook_path}")
-        return [(os.path.basename(workbook_path), rows)]
-
     print(f"[WARN] No incident CSVs found in {INCIDENT_DIR}")
     print(f"[WARN] No incident workbook matched {INCIDENT_WORKBOOK_GLOB}")
     return []
@@ -225,13 +237,18 @@ def _load_sources() -> list[tuple[str, list[dict]]]:
 
 # ── Main import ───────────────────────────────────────────────────────────
 
-def import_all() -> None:
+def import_all(clear_existing: bool = True) -> None:
     init_db()
     sources = _load_sources()
     if not sources:
         return
 
     conn = get_connection()
+    if clear_existing:
+        conn.execute("DELETE FROM incidents")
+        conn.commit()
+        print("[INFO] Cleared existing incidents table before refresh")
+
     inserted = 0
     skipped  = 0
 
@@ -256,6 +273,7 @@ def import_all() -> None:
             row_id   = _row_id(fname, inc_type, date, summary)
 
             try:
+                before = conn.total_changes
                 conn.execute(
                     """
                     INSERT OR IGNORE INTO incidents
@@ -270,7 +288,8 @@ def import_all() -> None:
                      summary, impact, action,
                      source, tags, fname),
                 )
-                inserted += 1
+                if conn.total_changes > before:
+                    inserted += 1
             except Exception as exc:
                 print(f"[ERROR] insert {fname}: {exc}")
 

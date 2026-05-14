@@ -13,8 +13,6 @@
  */
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import * as d3 from 'd3';
-import * as topojson from 'topojson-client';
-import type { Topology, GeometryCollection } from 'topojson-specification';
 import { JURISDICTION_COORDS } from '../data/regulatoryGeoData';
 import { fetchRegulatoryGeo, type RegulatoryGeoJurisdiction } from '../services/api';
 import { MapDetailPopover, RAG_FILL, RAG_GLOW, type PopoverState } from './MapDetailPopover';
@@ -110,18 +108,13 @@ export const RegulatoryMap2D: React.FC<Props> = ({
   const svgRef = useRef<SVGSVGElement>(null);
   const tipRef = useRef<HTMLDivElement>(null);
   const [allNodes, setAllNodes] = useState<MapNode[]>([]);
-  const [worldGeo, setWorldGeo] = useState<GeoJSON.FeatureCollection | null>(null);
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
   const [transform, setTransform] = useState({ k: 1, x: 0, y: 0 });
   const [popover, setPopover] = useState<PopoverState | null>(null);
 
   // ── Load data ──────────────────────────────────────────────────────
   useEffect(() => {
-    const loadWorld = import('world-atlas/countries-110m.json').then(mod => {
-      const topo = (mod.default ?? mod) as unknown as Topology<{ countries: GeometryCollection }>;
-      setWorldGeo(topojson.feature(topo, topo.objects.countries) as unknown as GeoJSON.FeatureCollection);
-    });
-    const loadRegs = fetchRegulatoryGeo('all').then(({ jurisdictions }) => {
+    fetchRegulatoryGeo('all').then(({ jurisdictions }) => {
       const scoped = jurisdictions.filter((j) => matchesGeoScope(j, geoScope));
       const effective = scoped.length > 0 ? scoped : jurisdictions;
 
@@ -131,8 +124,7 @@ export const RegulatoryMap2D: React.FC<Props> = ({
           return c ? { jurisdiction: g.jurisdiction, label: c.label, lat: c.lat, lon: c.lon, geo: g } : null;
         })
         .filter((n): n is MapNode => n !== null));
-    });
-    Promise.all([loadWorld, loadRegs]).catch(err => console.warn('Map load failed', err));
+    }).catch(err => console.warn('Map load failed', err));
   }, [geoScope]);
 
   const filteredNodes = useMemo(() => {
@@ -164,10 +156,10 @@ export const RegulatoryMap2D: React.FC<Props> = ({
   // ── Projection + force layout ──────────────────────────────────────
   const W = 960, H = 500;
 
-  const projection = useMemo(() => {
-    if (!worldGeo) return null;
-    return d3.geoNaturalEarth1().fitSize([W - 60, H - 40], worldGeo).translate([W / 2, H / 2]);
-  }, [worldGeo]);
+  const projection = useMemo(
+    () => d3.geoNaturalEarth1().fitExtent([[30, 20], [W - 30, H - 20]], { type: 'Sphere' }),
+    [],
+  );
 
   const maxCount = useMemo(() => Math.max(...filteredNodes.map(n => n.geo.total), 1), [filteredNodes]);
   const rScale = useCallback((count: number) => 3 + (count / maxCount) * 10, [maxCount]);
@@ -183,7 +175,7 @@ export const RegulatoryMap2D: React.FC<Props> = ({
   // ── D3 Zoom ────────────────────────────────────────────────────────
   useEffect(() => {
     const svg = svgRef.current;
-    if (!svg || !worldGeo) return;
+    if (!svg) return;
     const zoom = d3.zoom<SVGSVGElement, unknown>()
       .scaleExtent([1, 8])
       .on('zoom', (event) => {
@@ -191,7 +183,7 @@ export const RegulatoryMap2D: React.FC<Props> = ({
       });
     d3.select(svg).call(zoom);
     return () => { d3.select(svg).on('.zoom', null); };
-  }, [worldGeo]);
+  }, []);
 
   // ── Marker click handler ───────────────────────────────────────────
   const CLUSTER_RADIUS = 30; // SVG viewBox px
@@ -298,7 +290,7 @@ export const RegulatoryMap2D: React.FC<Props> = ({
   }, [onJurisdictionClick, selectedJurisdiction]);
 
   // ── Loading ────────────────────────────────────────────────────────
-  if (!worldGeo || !pathGen) {
+  if (!pathGen) {
     return (
       <div ref={wrapRef} className="w-full h-full flex items-center justify-center" style={{ background: '#000B28' }}>
         <div className="flex flex-col items-center gap-2">
@@ -332,11 +324,8 @@ export const RegulatoryMap2D: React.FC<Props> = ({
 
         <g transform={`translate(${transform.x},${transform.y}) scale(${transform.k})`}>
           <rect x={-200} y={-200} width={W + 400} height={H + 400} fill="#000B28" />
+          <path d={pathGen({ type: 'Sphere' }) ?? ''} fill="#081a33" stroke="#1e4a8a" strokeWidth={1.2} />
           <path d={pathGen(graticule) ?? ''} fill="none" stroke="rgba(0,83,226,0.2)" strokeWidth={0.4} />
-          {worldGeo.features.map((feat, i) => (
-            <path key={i} d={pathGen(feat) ?? ''} fill="#0f2847" stroke="#1e4a8a" strokeWidth={0.6} />
-          ))}
-          <path d={pathGen({ type: 'Sphere' }) ?? ''} fill="none" stroke="#1e4a8a" strokeWidth={1.2} />
 
           {/* Connector lines + origin dots */}
           {showConnectors && placedNodes.map(node => {

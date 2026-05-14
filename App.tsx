@@ -156,12 +156,51 @@ function useGreeting() {
   return { greeting, dateLabel, timeLabel };
 }
 
+function useBackendHealth(enabled: boolean) {
+  const [state, setState] = useState<'checking' | 'online' | 'offline'>('checking');
+  const [detail, setDetail] = useState('Checking SENTRY data connection');
+
+  useEffect(() => {
+    if (!enabled) return;
+    let cancelled = false;
+
+    const check = async () => {
+      try {
+        const response = await fetch('/api/health', { headers: { 'Content-Type': 'application/json' } });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const payload = await response.json();
+        const workspace = payload.workspace_available ?? {};
+        const missing = Object.entries(workspace)
+          .filter(([, value]) => value === false)
+          .map(([key]) => key.replaceAll('_', ' '));
+        if (cancelled) return;
+        setState('online');
+        setDetail(missing.length ? `Online · missing ${missing.slice(0, 2).join(', ')}` : 'Online · data workspace mounted');
+      } catch (error) {
+        if (cancelled) return;
+        setState('offline');
+        setDetail(error instanceof Error ? `Backend offline · ${error.message}` : 'Backend offline');
+      }
+    };
+
+    check();
+    const interval = window.setInterval(check, 30_000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [enabled]);
+
+  return { state, detail };
+}
+
 // ── Main app ─────────────────────────────────────────────────────────────────
 const App: React.FC = () => {
   const [showLanding, setShowLanding] = useState(() => !readPlatformEntered());
   const [currentView, setCurrentView] = useState<ViewState>(() => readStoredView());
   const [paletteOpen, setPaletteOpen] = useState(false);
   const { greeting, dateLabel, timeLabel } = useGreeting();
+  const backendHealth = useBackendHealth(!showLanding);
 
   const handleEnterPlatform = useCallback((initialView?: ViewState) => {
     setShowLanding(false);
@@ -283,14 +322,19 @@ const App: React.FC = () => {
                   {/* Live status pill */}
                   <div
                     className="flex items-center gap-2 px-2.5 py-1.5 rounded-full"
-                    style={{ background: 'rgba(34,197,94,0.10)', border: '1px solid rgba(34,197,94,0.25)' }}
-                    title="All SENTRY services healthy"
+                    style={{
+                      background: backendHealth.state === 'offline' ? 'rgba(239,68,68,0.10)' : 'rgba(34,197,94,0.10)',
+                      border: backendHealth.state === 'offline' ? '1px solid rgba(239,68,68,0.25)' : '1px solid rgba(34,197,94,0.25)',
+                    }}
+                    title={backendHealth.detail}
                   >
                     <span className="relative flex h-1.5 w-1.5">
-                      <span className="absolute inset-0 rounded-full bg-green-400 animate-ping-ring opacity-60" />
-                      <span className="relative w-1.5 h-1.5 rounded-full bg-green-400" />
+                      {backendHealth.state !== 'offline' && <span className="absolute inset-0 rounded-full bg-green-400 animate-ping-ring opacity-60" />}
+                      <span className={`relative w-1.5 h-1.5 rounded-full ${backendHealth.state === 'offline' ? 'bg-red-400' : 'bg-green-400'}`} />
                     </span>
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-green-400">Live</span>
+                    <span className={`text-[10px] font-bold uppercase tracking-widest ${backendHealth.state === 'offline' ? 'text-red-400' : 'text-green-400'}`}>
+                      {backendHealth.state === 'checking' ? 'Sync' : backendHealth.state === 'offline' ? 'Offline' : 'Live'}
+                    </span>
                   </div>
                 </div>
 

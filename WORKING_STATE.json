@@ -30,12 +30,14 @@
     "Whether the user has restarted the backend using the new stable launcher behavior.",
     "Whether the frontend has reloaded the new localhost same-origin API routing logic.",
     "Whether stale Vite processes on port 3000 were causing the user to browse an outdated frontend instance.",
-    "Whether the backend launcher was failing before bind because uv was unavailable on the local machine."
+    "Whether the backend launcher was failing before bind because uv was unavailable on the local machine.",
+    "Whether the backend is currently serving non-empty JSON for localhost API routes across vendor, stats, incident, and regulatory surfaces.",
+    "Whether the frontend is suppressing data due to route-level runtime errors or stale failed fetch state."
   ],
   "output_files_generated": [
     "WORKING_STATE.json"
   ],
-  "validation_status": "frontend_missing_regulatory_map_dependencies_identified_package_manifest_updated_npm_install_required",
+  "validation_status": "root_cause_hypothesis_frontend_compile_backend_availability_and_stale_runtime_state_identified",
   "last_completed_phase": "validation",
   "current_phase": "validation",
   "artifacts_touched": [

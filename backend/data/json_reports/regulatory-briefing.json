@@ -1,8 +1,8 @@
 {
   "id": "regulatory-briefing",
   "title": "SENTRY Regulatory Intelligence Briefing \u2014 Global Security & Emerging Technology",
-  "summary": "As of April 2026, SENTRY's regulatory tracker covers 1323 unique obligations across 72 jurisdictions, spanning AI, Biometrics, ALPR/LPR, Drones/UAS, and Data Privacy technologies. 370 Red and 668 Amber obligations require immediate attention. Top 3 actions: (1) Validate AI governance controls against EU AI Act and state-level RAISE Act requirements; (2) Review ALPR/LPR data retention compliance for enacted state laws; (3) Confirm biometric consent and disclosure posture across all US store deployments.",
-  "created_at": "2026-04-27T14:08:03Z",
+  "summary": "As of May 2026, SENTRY's regulatory tracker covers 1323 unique obligations across 72 jurisdictions, spanning AI, Biometrics, ALPR/LPR, Drones/UAS, and Data Privacy technologies. 370 Red and 668 Amber obligations require immediate attention. Top 3 actions: (1) Validate AI governance controls against EU AI Act and state-level RAISE Act requirements; (2) Review ALPR/LPR data retention compliance for enacted state laws; (3) Confirm biometric consent and disclosure posture across all US store deployments.",
+  "created_at": "2026-05-14T04:21:48Z",
   "data_through": "2026-04-30",
   "jurisdictions": [
     "Algeria",
