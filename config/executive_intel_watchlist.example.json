@@ -1,0 +1,26 @@
+{
+  "version": "1.0.0",
+  "notes": "Template only. Copy into data/executive-intel/profiles/ or a non-committed local config before collecting real executive data.",
+  "executives": [
+    {
+      "profile_id": "exec_competitor_first_last",
+      "full_name": "First Last",
+      "organization": "Competitor Name",
+      "title": "Executive Title",
+      "aliases": [],
+      "focus_topics": [
+        "global security",
+        "retail security",
+        "risk management"
+      ],
+      "collection_scope": {
+        "public_business_travel": true,
+        "initiatives": true,
+        "major_decisions": true,
+        "public_quotes": true,
+        "private_personal_data": false
+      },
+      "review_required": true
+    }
+  ]
+}

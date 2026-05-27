@@ -1,0 +1,43 @@
+{
+  "id": "sentry-exec-signal-scout-workflow",
+  "name": "SENTRY Executive Signal Scout Workflow",
+  "status": "docs_config_scaffold",
+  "architecture": "SENTRY Phase 1 single-agent-with-tools profile",
+  "primary_docs": [
+    "Docs/executive-intel/EXECUTIVE_SIGNAL_SCOUT.md",
+    "Docs/executive-intel/SOURCE_POLICY.md",
+    "Docs/executive-intel/DATA_CONTRACT.md",
+    "Docs/executive-intel/RUNBOOK.md"
+  ],
+  "local_data_root": "data/executive-intel",
+  "recommended_cadence": {
+    "daily": "lightweight_delta_watch",
+    "weekly": "analyst_review_and_digest",
+    "monthly": "deep_profile_refresh"
+  },
+  "approved_before_next_phase_required": [
+    "backend_code",
+    "database_schema",
+    "api_routes",
+    "ui_routes",
+    "scheduled_automation",
+    "external_publication"
+  ],
+  "tool_profile": {
+    "web_collection": [
+      "deterministic_http_fetch",
+      "rss_or_search_api",
+      "trafilatura_or_readability_extraction",
+      "skyvern_or_browser_use_for_rendered_public_pages"
+    ],
+    "enrichment": [
+      "element_llm_gateway",
+      "pydantic_ai_structured_extraction",
+      "walmart_est_rag_when_available"
+    ],
+    "storage": [
+      "local_json_workspace_now",
+      "sqlite_after_approval"
+    ]
+  }
+}

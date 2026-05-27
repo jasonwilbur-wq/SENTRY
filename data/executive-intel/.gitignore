@@ -1,0 +1,9 @@
+# Keep collected executive OSINT out of source control by default.
+# Public-source does not mean "dump it into git like a gremlin."
+*
+
+# Keep templates and local instructions trackable.
+!.gitignore
+!README.md
+!templates/
+!templates/*.json

@@ -1,60 +1,75 @@
 {
-  "request_type": ["launch readiness", "vendor assessment", "website/UX review", "mixed task"],
-  "required_slots": ["repository_path", "operational_source", "delivery_mode", "reported_issue"],
+  "request_type": [
+    "competitor intelligence",
+    "executive OSINT workflow",
+    "agent/toolset scaffold",
+    "docs/config implementation"
+  ],
+  "required_slots": [
+    "repository_path",
+    "agent_name",
+    "build_depth",
+    "source_boundary",
+    "travel_boundary",
+    "first_output_surface",
+    "agent_architecture"
+  ],
   "filled_slots": {
     "repository_path": "C:\\Users\\j0w16ja\\SENTRY_v2-main",
-    "operational_source": "C:\\Users\\j0w16ja\\OneDrive - Walmart Inc\\Desktop\\SENTRY",
-    "delivery_mode": "localhost",
-    "reported_issue": "Vendor information is not visible in SENTRY"
+    "agent_name": "SENTRY Executive Signal Scout / exec-signal-scout",
+    "build_depth": "Docs/config scaffold plus backend prototype package. No schema, API, UI, scheduler, or collection run yet.",
+    "source_boundary": "Any open-source data that can be located, using OSINT best practices and verification before use. Competitor pricing, assortment, offerings, bypass behavior, and private/personally invasive collection are prohibited.",
+    "travel_boundary": "Business travel details only when publicly sourced and business-relevant; no home/private tracking or real-time/current-location stalking.",
+    "first_output_surface": "Local organized data folder under data/executive-intel/ with git-ignore protections.",
+    "agent_architecture": "Both: SENTRY single-agent-with-tools workflow profile and standalone Code Puppy-style manifest draft."
   },
   "missing_slots": [],
   "assumptions": [
-    "The Vendor Directory is loading but receiving zero visible vendors rather than failing completely.",
-    "The canonical profile CSV in 00_System is present and should be used to bootstrap directory visibility when needed.",
-    "A backend restart is acceptable to activate startup bootstrap logic.",
-    "A cached frontend query failure may be preventing vendor data from repopulating after the backend recovered.",
-    "A cached successful-empty response may also be preventing the default Vendor Directory view from self-healing.",
-    "The backend should prefer source-backed vendor profiles from Desktop Vendor Assessments over DB-derived visibility when the source is available.",
-    "The broader Desktop SENTRY workspace is now the explicit user-designated local data root for incident, project, regulatory, and vendor source material."
+    "Public-source does not automatically mean safe for CSO-facing use; signals require verification and analyst review.",
+    "Daily full web crawling is not recommended initially; daily delta watch plus weekly analyst synthesis is safer.",
+    "RAG remains dependency-pending for this workflow until the local MCP/tool contract is confirmed; a direct helper attempt failed due missing rank_bm25 in the attempted runtime.",
+    "No actual executive data collection has been performed yet.",
+    "Backend prototype includes models, source policy validation, normalization, dedupe, and targeted tests only."
   ],
-  "risk_tier": "medium",
-  "orchestration_pattern": "startup_vendor_bootstrap_for_localhost_validation",
-  "approval_points": [],
+  "risk_tier": "medium_high",
+  "orchestration_pattern": "single_agent_with_tools_plus_optional_manifest",
+  "approval_points": [
+    "Backend prototype implementation was approved by user with 'proceed'. Approval still required before expanding beyond local prototype.",
+    "Approval required before SQLite schema/API/UI changes.",
+    "Approval required before browser collection or scheduled runs.",
+    "Approval required before sending, sharing, publishing, or promoting CSO-facing output."
+  ],
+  "confirmation_points": [
+    "User selected docs/config scaffold only.",
+    "User selected both SENTRY workflow profile and standalone manifest.",
+    "User requested organized local data folder."
+  ],
   "open_questions": [
-    "Whether the current DB is actually empty versus populated with only noncanonical vendor rows.",
-    "Whether any separate frontend cache or browser state is also obscuring the refreshed directory after backend restart.",
-    "Whether the user has refreshed the browser tab since the cached-error retry guard was added.",
-    "Whether the browser is currently pointed at the active Vite instance if multiple localhost ports were used during recovery.",
-    "Whether the backend process has been restarted since source-backed directory preference was added.",
-    "Whether uvicorn reload mode is leaving the backend unavailable after filesystem-triggered restarts inside backend\\.venv.",
-    "Whether the user has restarted the backend using the new stable launcher behavior.",
-    "Whether the frontend has reloaded the new localhost same-origin API routing logic.",
-    "Whether stale Vite processes on port 3000 were causing the user to browse an outdated frontend instance.",
-    "Whether the backend launcher was failing before bind because uv was unavailable on the local machine.",
-    "Whether the backend is currently serving non-empty JSON for localhost API routes across vendor, stats, incident, and regulatory surfaces.",
-    "Whether the frontend is suppressing data due to route-level runtime errors or stale failed fetch state."
+    "Which executive should be used for the first approved dry run?",
+    "Should competitor-owned corporate/newsroom/event pages be default-allowed if they pass source policy, or manually allowlisted per competitor?",
+    "What retention period should apply to rejected/private/prohibited leads beyond minimal rejection metadata?"
   ],
   "output_files_generated": [
-    "WORKING_STATE.json"
+    "Docs/agent-spec/sessions/2026-05-27-executive-competitor-osint-agent.md",
+    "Docs/executive-intel/README.md",
+    "Docs/executive-intel/EXECUTIVE_SIGNAL_SCOUT.md",
+    "Docs/executive-intel/SOURCE_POLICY.md",
+    "Docs/executive-intel/DATA_CONTRACT.md",
+    "Docs/executive-intel/RUNBOOK.md",
+    "agents/exec-signal-scout.agent.json",
+    "config/executive_intel_sources.example.json",
+    "config/executive_intel_watchlist.example.json",
+    "config/executive_intel_workflow_profile.json",
+    "data/executive-intel/.gitignore",
+    "data/executive-intel/README.md",
+    "data/executive-intel/templates/executive_profile.template.json",
+    "data/executive-intel/templates/executive_signal.template.json",
+    "backend/executive_intel/__init__.py",
+    "backend/executive_intel/models.py",
+    "backend/executive_intel/policy.py",
+    "backend/executive_intel/normalization.py",
+    "backend/executive_intel/dedupe.py",
+    "backend/tests/test_executive_intel_policy.py"
   ],
-  "validation_status": "root_cause_hypothesis_frontend_compile_backend_availability_and_stale_runtime_state_identified",
-  "last_completed_phase": "validation",
-  "current_phase": "validation",
-  "artifacts_touched": [
-    "backend\\main.py",
-    "backend\\path_config.py",
-    "backend\\vendor_assessment_routes.py",
-    "backend\\build_regulatory_report.py",
-    "backend\\import_incidents.py",
-    "backend\\import_vendor_data.py",
-    "backend\\start_backend.bat",
-    "start_sentry_localhost.bat",
-    "vite.config.ts",
-    "package.json",
-    "services\\api.ts",
-    "hooks\\useQuery.ts",
-    "context\\VendorContext.tsx",
-    "DECISIONS.md",
-    "WORKING_STATE.json"
-  ]
+  "validation_status": "backend_prototype_created_targeted_tests_passed_no_runtime_collection_performed"
 }

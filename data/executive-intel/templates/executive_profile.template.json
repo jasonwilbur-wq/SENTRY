@@ -1,0 +1,12 @@
+{
+  "profile_id": "exec_org_first_last",
+  "full_name": "First Last",
+  "organization": "Competitor Name",
+  "title": "Executive Title",
+  "status": "ACTIVE",
+  "aliases": [],
+  "focus_topics": [],
+  "collection_notes": "Public business signals only. No home/private tracking.",
+  "created_at": "YYYY-MM-DDTHH:MM:SSZ",
+  "updated_at": "YYYY-MM-DDTHH:MM:SSZ"
+}

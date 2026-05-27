@@ -1,0 +1,68 @@
+{
+  "version": "1.0.0",
+  "policy_doc": "Docs/executive-intel/SOURCE_POLICY.md",
+  "default_rate_limit_seconds": 3,
+  "respect_robots_txt": true,
+  "allowed_source_types": [
+    "NEWS_ARTICLE",
+    "PRESS_RELEASE",
+    "LEADERSHIP_PAGE",
+    "EVENT_PAGE",
+    "INTERVIEW",
+    "PODCAST",
+    "VIDEO_TRANSCRIPT",
+    "FILING",
+    "GOVERNMENT_RECORD",
+    "ANALYST_PROVIDED"
+  ],
+  "blocked_content_patterns": [
+    "pricing",
+    "price match",
+    "product availability",
+    "assortment",
+    "cart",
+    "checkout",
+    "store pickup",
+    "add to cart"
+  ],
+  "competitor_domain_policy": {
+    "default": "manual_review",
+    "allowed_path_keywords": [
+      "/about",
+      "/news",
+      "/press",
+      "/investor",
+      "/leadership",
+      "/events",
+      "/blog"
+    ],
+    "blocked_path_keywords": [
+      "/product",
+      "/products",
+      "/shop",
+      "/stores",
+      "/cart",
+      "/checkout",
+      "/deals",
+      "/offers",
+      "/pricing"
+    ]
+  },
+  "verification_thresholds": {
+    "cso_draft_minimum": "one_primary_or_two_secondary",
+    "business_travel_minimum": "public_business_source_required",
+    "social_source_minimum": "analyst_review_required"
+  },
+  "browser_automation": {
+    "allowed": true,
+    "purpose": "rendered public page extraction and validation only",
+    "blocked_behaviors": [
+      "login",
+      "captcha_bypass",
+      "paywall_bypass",
+      "form_submission",
+      "credential_entry",
+      "state_changing_actions"
+    ]
+  }
+}

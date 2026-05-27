@@ -1,0 +1,18 @@
+{
+  "signal_id": "sig_YYYYMMDD_0001",
+  "profile_id": "exec_org_first_last",
+  "category": "PUBLIC_APPEARANCE",
+  "event_date": "YYYY-MM-DD",
+  "event_location": "City, Region or UNKNOWN",
+  "title": "Public signal title",
+  "summary": "Brief source-backed summary.",
+  "business_relevance": "Why this matters professionally.",
+  "walmart_cso_relevance": "Why Walmart CSO may care.",
+  "confidence_level": "REVIEW_REQUIRED",
+  "verification_status": "LEAD_ONLY",
+  "sensitivity_level": "PUBLIC_BUSINESS",
+  "analyst_review_status": "NEW",
+  "citations": [],
+  "created_at": "YYYY-MM-DDTHH:MM:SSZ",
+  "updated_at": "YYYY-MM-DDTHH:MM:SSZ"
+}
