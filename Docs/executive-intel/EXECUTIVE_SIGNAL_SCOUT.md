@@ -7,7 +7,7 @@
 - Short name: `exec-signal-scout`
 - Type: SENTRY single-agent tool/workflow profile plus optional standalone Code Puppy manifest
 - Primary domains: Competitor Intelligence, CSO Brief Intelligence
-- Status: Docs/config scaffold only; implementation pending approval
+- Status: Web-enabled Code Puppy agent manifest installed; backend prototype exists; schema/API/UI/scheduler still pending approval
 
 ## Mission
 
@@ -93,12 +93,28 @@ The workflow should produce:
 
 ### Web and OSINT tools
 
-- Deterministic HTTP fetch for static pages and feeds
-- RSS/news feed ingestion where available
-- Approved search API or exported search results
-- Trafilatura/readability-style article extraction when available
-- Skyvern / Browser-use for rendered public pages only
-- Playwright for deterministic browser validation where applicable
+The installed Code Puppy agent manifest includes web-capable tools for public, read-only OSINT collection.
+
+Preferred routing order:
+
+1. `scoutbridge` via `invoke_agent` when a concrete public URL is known.
+2. Goose broker tools when available:
+   - `goose_seleniumbase_fetch`
+   - `goose_browser_use_public_extract`
+   - `goose_registered_mcp_tools`
+   - `goose_call_registered_mcp_tool`
+3. Built-in browser tools for rendered public pages:
+   - `browser_initialize`
+   - `browser_new_page`
+   - `browser_navigate`
+   - `browser_wait_for_load`
+   - `browser_get_page_info`
+   - `browser_get_text`
+   - `browser_screenshot_analyze`
+   - `browser_close`
+4. Skyvern through Goose/MCP relay only when a real browser interaction is required and policy allows it.
+5. RSS/news/search exports or approved search APIs for discovery.
+6. Trafilatura/readability-style article extraction when available.
 
 ### LLM and enrichment
 
@@ -117,7 +133,7 @@ The workflow should produce:
 
 ## Browser Use Rules
 
-Use browser automation only when static fetch is insufficient.
+Use browser automation only when static fetch or ScoutBridge extraction is insufficient.
 
 Allowed:
 
@@ -130,9 +146,14 @@ Not allowed:
 
 - login or credentialed browsing unless explicitly approved
 - submitting forms
+- clicking controls that mutate remote state
 - bypassing MFA, CAPTCHA, bot controls, paywalls, or access restrictions
 - scraping competitor product/pricing/assortment/offering pages
-- real-time location monitoring
+- broad competitor-site crawling
+- real-time/current location monitoring
+- private travel or home-location inference
+
+Always close browser sessions/pages when done.
 
 ## Recommended Cadence
 

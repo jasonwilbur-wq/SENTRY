@@ -1,13 +1,14 @@
 {
   "id": "sentry-exec-signal-scout-workflow",
   "name": "SENTRY Executive Signal Scout Workflow",
-  "status": "docs_config_scaffold",
+  "status": "web_enabled_manifest_installed_backend_prototype",
   "architecture": "SENTRY Phase 1 single-agent-with-tools profile",
   "primary_docs": [
     "Docs/executive-intel/EXECUTIVE_SIGNAL_SCOUT.md",
     "Docs/executive-intel/SOURCE_POLICY.md",
     "Docs/executive-intel/DATA_CONTRACT.md",
-    "Docs/executive-intel/RUNBOOK.md"
+    "Docs/executive-intel/RUNBOOK.md",
+    "Docs/executive-intel/WEB_ACCESS.md"
   ],
   "local_data_root": "data/executive-intel",
   "recommended_cadence": {
@@ -38,6 +39,15 @@
     "storage": [
       "local_json_workspace_now",
       "sqlite_after_approval"
-    ]
-  }
+    ],
+    "code_puppy_web_access": [
+      "scoutbridge_via_invoke_agent",
+      "goose_seleniumbase_fetch",
+      "goose_browser_use_public_extract",
+      "browser_tools_rendered_public_pages",
+      "skyvern_via_goose_mcp_when_needed"
+    ],
+    "web_access_mode": "public_read_only"
+  },
+  "installed_agent_manifest": "C:\\\\Users\\\\j0w16ja\\\\.code_puppy\\\\agents\\\\exec-signal-scout.json"
 }

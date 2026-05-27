@@ -17,11 +17,11 @@
   "filled_slots": {
     "repository_path": "C:\\Users\\j0w16ja\\SENTRY_v2-main",
     "agent_name": "SENTRY Executive Signal Scout / exec-signal-scout",
-    "build_depth": "Docs/config scaffold plus backend prototype package. No schema, API, UI, scheduler, or collection run yet.",
+    "build_depth": "Docs/config scaffold plus backend prototype package plus web-enabled Code Puppy agent manifest. No schema, API, UI, scheduler, or collection run yet.",
     "source_boundary": "Any open-source data that can be located, using OSINT best practices and verification before use. Competitor pricing, assortment, offerings, bypass behavior, and private/personally invasive collection are prohibited.",
     "travel_boundary": "Business travel details only when publicly sourced and business-relevant; no home/private tracking or real-time/current-location stalking.",
     "first_output_surface": "Local organized data folder under data/executive-intel/ with git-ignore protections.",
-    "agent_architecture": "Both: SENTRY single-agent-with-tools workflow profile and standalone Code Puppy-style manifest draft."
+    "agent_architecture": "Both: SENTRY single-agent-with-tools workflow profile and installed standalone Code Puppy agent manifest at C:\\Users\\j0w16ja\\.code_puppy\\agents\\exec-signal-scout.json."
   },
   "missing_slots": [],
   "assumptions": [
@@ -29,14 +29,16 @@
     "Daily full web crawling is not recommended initially; daily delta watch plus weekly analyst synthesis is safer.",
     "RAG remains dependency-pending for this workflow until the local MCP/tool contract is confirmed; a direct helper attempt failed due missing rank_bm25 in the attempted runtime.",
     "No actual executive data collection has been performed yet.",
-    "Backend prototype includes models, source policy validation, normalization, dedupe, and targeted tests only."
+    "Backend prototype includes models, source policy validation, normalization, dedupe, and targeted tests only.",
+    "Agent manifest now includes Code Puppy web tools: ScoutBridge via invoke_agent, Goose broker public extraction, built-in browser tools, and Skyvern via MCP relay when allowed.",
+    "Smoke test passed after absolute SENTRY paths were added to agent instructions; no web browsing or executive collection was performed."
   ],
   "risk_tier": "medium_high",
   "orchestration_pattern": "single_agent_with_tools_plus_optional_manifest",
   "approval_points": [
     "Backend prototype implementation was approved by user with 'proceed'. Approval still required before expanding beyond local prototype.",
     "Approval required before SQLite schema/API/UI changes.",
-    "Approval required before browser collection or scheduled runs.",
+    "Approval required before browser collection against target executives or scheduled runs.",
     "Approval required before sending, sharing, publishing, or promoting CSO-facing output."
   ],
   "confirmation_points": [
@@ -69,7 +71,9 @@
     "backend/executive_intel/policy.py",
     "backend/executive_intel/normalization.py",
     "backend/executive_intel/dedupe.py",
-    "backend/tests/test_executive_intel_policy.py"
+    "backend/tests/test_executive_intel_policy.py",
+    "Docs/executive-intel/WEB_ACCESS.md",
+    "C:\\Users\\j0w16ja\\.code_puppy\\agents\\exec-signal-scout.json"
   ],
-  "validation_status": "backend_prototype_created_targeted_tests_passed_no_runtime_collection_performed"
+  "validation_status": "web_enabled_agent_manifest_installed_smoke_test_passed_no_runtime_collection_performed"
 }
