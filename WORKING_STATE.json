@@ -28,10 +28,11 @@
     "Public-source does not automatically mean safe for CSO-facing use; signals require verification and analyst review.",
     "Daily full web crawling is not recommended initially; daily delta watch plus weekly analyst synthesis is safer.",
     "RAG remains dependency-pending for this workflow until the local MCP/tool contract is confirmed; a direct helper attempt failed due missing rank_bm25 in the attempted runtime.",
-    "No actual executive data collection has been performed yet.",
+    "A first supervised public read-only collection pass has been completed for the user-provided Amazon security executive example; artifacts are stored only in the git-ignored data/executive-intel workspace.",
     "Backend prototype includes models, source policy validation, normalization, dedupe, and targeted tests only.",
     "Agent manifest now includes Code Puppy web tools: ScoutBridge via invoke_agent, Goose broker public extraction, built-in browser tools, and Skyvern via MCP relay when allowed.",
-    "Smoke test passed after absolute SENTRY paths were added to agent instructions; no web browsing or executive collection was performed."
+    "Smoke test passed after absolute SENTRY paths were added to agent instructions.",
+    "First collection artifact validation passed after normalizing citation fields; profile and 10 signals now validate against backend ExecutiveProfile/ExecutiveSignal contracts."
   ],
   "risk_tier": "medium_high",
   "orchestration_pattern": "single_agent_with_tools_plus_optional_manifest",
@@ -47,7 +48,7 @@
     "User requested organized local data folder."
   ],
   "open_questions": [
-    "Which executive should be used for the first approved dry run?",
+    "Which executive should be used for the next supervised collection run?",
     "Should competitor-owned corporate/newsroom/event pages be default-allowed if they pass source policy, or manually allowlisted per competitor?",
     "What retention period should apply to rejected/private/prohibited leads beyond minimal rejection metadata?"
   ],
@@ -75,5 +76,5 @@
     "Docs/executive-intel/WEB_ACCESS.md",
     "C:\\Users\\j0w16ja\\.code_puppy\\agents\\exec-signal-scout.json"
   ],
-  "validation_status": "web_enabled_agent_manifest_installed_smoke_test_passed_no_runtime_collection_performed"
+  "validation_status": "first_supervised_public_collection_completed_local_artifacts_contract_validated_no_db_api_scheduler_or_external_publication"
 }
