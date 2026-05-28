@@ -23,7 +23,8 @@
     "first_output_surface": "Local organized data folder under data/executive-intel/ with git-ignore protections.",
     "agent_architecture": "Standalone exec-signal-scout agent first; SENTRY is optional downstream consumer of finalized handoff bundles.",
     "usable_workflow": "CLI-enabled agent-first workflow: target template generation, portfolio readiness inspection, draft handoff preview, and finalized local handoff export after analyst approval.",
-    "collection_planning": "Search-plan command generates deterministic public-source query groups and blocked-collection reminders before browser/scout collection."
+    "collection_planning": "Search-plan command generates deterministic public-source query groups and blocked-collection reminders before browser/scout collection.",
+    "one_command_runner": "backend/run_executive_intel_workflow.ps1 runs search-plan, portfolio readiness, and draft handoff preview for a profile_id."
   },
   "missing_slots": [],
   "assumptions": [
@@ -53,7 +54,9 @@
     "Validated CLI against Stephen Schmidt artifacts: 13 signals, 13 sources, 0 invalid, 1 draft handoff signal.",
     "Handoff file output is explicit-only via --output and refuses overwrite unless --force.",
     "Added backend/executive_intel/search_plan.py and CLI search-plan command for safe public-source query planning.",
-    "Search-plan smoke test against Stephen Schmidt artifacts generated public-read-only query groups without crawling or writing artifacts."
+    "Search-plan smoke test against Stephen Schmidt artifacts generated public-read-only query groups without crawling or writing artifacts.",
+    "Added backend/run_executive_intel_workflow.ps1 one-command read-only workflow runner.",
+    "Validated one-command runner against Stephen Schmidt artifacts: search-plan, portfolio readiness, and draft handoff preview completed without writes."
   ],
   "risk_tier": "medium_high",
   "orchestration_pattern": "single_agent_with_tools_plus_optional_manifest",
@@ -114,7 +117,8 @@
     "backend/tests/test_executive_intel_cli.py",
     "config/executive_intel_target.example.json",
     "backend/executive_intel/search_plan.py",
-    "backend/tests/test_executive_intel_search_plan.py"
+    "backend/tests/test_executive_intel_search_plan.py",
+    "backend/run_executive_intel_workflow.ps1"
   ],
-  "validation_status": "usable_cli_plus_search_plan_validated_json_pycompile_22_backend_tests_and_real_artifact_smoke_passed"
+  "validation_status": "usable_one_command_exec_intel_workflow_validated_on_real_artifacts_without_writes"
 }

@@ -8,7 +8,17 @@ Do **not** begin with full autonomous daily crawling. That is not an intelligenc
 
 ## CLI Quick Start
 
-Run commands from the backend folder:
+Run the whole read-only workflow preview with one command:
+
+```powershell
+cd C:\Users\j0w16ja\SENTRY_v2-main\backend
+powershell -NoProfile -ExecutionPolicy Bypass -File .\run_executive_intel_workflow.ps1 `
+  -ProfileId exec_amazon_stephen_schmidt
+```
+
+This runs search-plan, portfolio readiness, and draft handoff preview. It writes nothing unless `-HandoffOutput` is explicitly provided.
+
+Run individual commands from the backend folder:
 
 ```powershell
 cd C:\Users\j0w16ja\SENTRY_v2-main\backend
