@@ -1,14 +1,17 @@
 {
   "id": "sentry-exec-signal-scout-workflow",
   "name": "SENTRY Executive Signal Scout Workflow",
-  "status": "web_enabled_manifest_installed_backend_prototype",
-  "architecture": "SENTRY Phase 1 single-agent-with-tools profile",
+  "status": "agent_first_handoff_contract_with_optional_sentry_review_surface",
+  "architecture": "Standalone exec-signal-scout agent first; SENTRY is optional downstream consumer of finalized handoff bundles",
   "primary_docs": [
     "Docs/executive-intel/EXECUTIVE_SIGNAL_SCOUT.md",
     "Docs/executive-intel/SOURCE_POLICY.md",
     "Docs/executive-intel/DATA_CONTRACT.md",
     "Docs/executive-intel/RUNBOOK.md",
-    "Docs/executive-intel/WEB_ACCESS.md"
+    "Docs/executive-intel/WEB_ACCESS.md",
+    "Docs/executive-intel/REVIEW_ONLY_CONTROLS.md",
+    "Docs/executive-intel/AGENT_FIRST_HANDOFF.md",
+    "Docs/executive-intel/SENTRY_INTEGRATION.md"
   ],
   "local_data_root": "data/executive-intel",
   "recommended_cadence": {
@@ -17,12 +20,12 @@
     "monthly": "deep_profile_refresh"
   },
   "approved_before_next_phase_required": [
-    "backend_code",
-    "database_schema",
-    "api_routes",
-    "ui_routes",
+    "artifact_mutation",
+    "sqlite_persistence",
     "scheduled_automation",
-    "external_publication"
+    "report_publication",
+    "outbound_delivery",
+    "sentry_import_or_db_write"
   ],
   "tool_profile": {
     "web_collection": [
@@ -38,7 +41,8 @@
     ],
     "storage": [
       "local_json_workspace_now",
-      "sqlite_after_approval"
+      "handoff_bundle_after_analyst_finalization",
+      "sqlite_only_after_separate_sentry_import_approval"
     ],
     "code_puppy_web_access": [
       "scoutbridge_via_invoke_agent",
@@ -49,5 +53,8 @@
     ],
     "web_access_mode": "public_read_only"
   },
-  "installed_agent_manifest": "C:\\\\Users\\\\j0w16ja\\\\.code_puppy\\\\agents\\\\exec-signal-scout.json"
+  "installed_agent_manifest": "C:\\\\Users\\\\j0w16ja\\\\.code_puppy\\\\agents\\\\exec-signal-scout.json",
+  "handoff_contract": "config/executive_intel_handoff_contract.json",
+  "default_output_mode": "local_review_workspace_then_finalized_handoff_bundle",
+  "sentry_role": "optional_downstream_consumer_not_required_workbench"
 }

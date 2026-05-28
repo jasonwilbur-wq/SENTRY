@@ -21,9 +21,11 @@ from executive_intel.review_controls import (
     assert_review_only_allowed,
     evaluate_review_only_controls,
 )
+from executive_intel.handoff import HandoffError, build_handoff_bundle
 
 __all__ = [
     "AnalystReviewStatus",
+    "HandoffError",
     "ExecutiveProfile",
     "ExecutiveSignal",
     "SignalCategory",
@@ -34,6 +36,7 @@ __all__ = [
     "SourceQuality",
     "VerificationStatus",
     "assert_review_only_allowed",
+    "build_handoff_bundle",
     "evaluate_review_only_controls",
     "evaluate_source_url",
     "validate_business_travel",

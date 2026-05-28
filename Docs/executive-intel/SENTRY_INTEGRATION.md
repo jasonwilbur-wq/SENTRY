@@ -1,10 +1,10 @@
-# SENTRY Executive Intel Integration
+# Optional SENTRY Executive Intel Integration
 
 ## Current Status
 
-The Executive Signal Scout pipeline now has a **review-only SENTRY integration**.
+The Executive Signal Scout pipeline is **agent-first**. SENTRY integration is optional and downstream.
 
-It turns local, git-ignored artifacts in `data/executive-intel/` into target portfolios and draft reports. It does not collect new web data, write to SQLite, mutate artifacts, schedule jobs, publish CSO-facing output, or deliver outbound reports.
+The current read-only SENTRY surface can display local, git-ignored artifacts in `data/executive-intel/` as target portfolios and draft reports. It does not collect new web data, write to SQLite, mutate artifacts, schedule jobs, publish CSO-facing output, or deliver outbound reports.
 
 ## Backend Endpoints
 
@@ -17,7 +17,7 @@ It turns local, git-ignored artifacts in `data/executive-intel/` into target por
 
 ## Frontend Surface
 
-SENTRY now includes an **Executive Intel** navigation item under Intelligence.
+If enabled/used, SENTRY includes an **Executive Intel** navigation item under Intelligence.
 
 The page shows:
 
@@ -44,7 +44,7 @@ The page is intentionally read-only:
 - no authentication, paywall, or CAPTCHA bypass
 - no competitor pricing, assortment, or offering scraping
 
-Signals still require analyst review before they are promoted to CSO-facing use. The controls block prohibited actions only; compliant review, parsing, classification, scoring, dedupe, traceability, and draft-only summaries should continue.
+Signals still require analyst review before they are promoted to CSO-facing use or included in a finalized handoff bundle. The controls block prohibited actions only; compliant review, parsing, classification, scoring, dedupe, traceability, and draft-only summaries should continue.
 
 ## Portfolio Readiness Logic
 
@@ -75,12 +75,12 @@ profile Stephen Schmidt | signals 13 | sources 13 | cso_ready 1 | invalid 0
 report_chars 12712 | publication NOT_PUBLISHED_REVIEW_REQUIRED
 ```
 
-## Next Integration Steps
+## Preferred Next Steps
 
 Recommended next steps, in order:
 
-1. Add analyst review actions as drafts only.
-2. Add a promotion queue for approved CSO-facing summaries.
-3. Add SQLite persistence only after the artifact contract settles.
-4. Add weekly digest generation after at least two more supervised target runs.
+1. Use the agent-first handoff bundle as the contract for finalized data.
+2. Run at least two more supervised target passes and analyst reviews.
+3. Only then decide whether SENTRY should import bundles manually, read files, or add an approved API/database ingestion path.
+4. Add SQLite persistence only after the handoff contract settles.
 5. Add scheduler only after review workflow and retention rules are approved.

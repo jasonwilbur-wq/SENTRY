@@ -5,15 +5,15 @@
 **SENTRY Executive Signal Scout**
 
 - Short name: `exec-signal-scout`
-- Type: SENTRY single-agent tool/workflow profile plus optional standalone Code Puppy manifest
+- Type: Standalone Code Puppy intelligence agent with optional SENTRY downstream consumption
 - Primary domains: Competitor Intelligence, CSO Brief Intelligence
-- Status: Web-enabled Code Puppy agent manifest installed; backend prototype and read-only SENTRY portfolio/report integration exist; SQLite persistence, scheduler, publication, and outbound delivery remain blocked unless explicitly approved and separately implemented
+- Status: Web-enabled Code Puppy agent manifest installed; backend validation/handoff helpers and optional read-only SENTRY portfolio/report integration exist; SQLite persistence, scheduler, publication, and outbound delivery remain blocked unless explicitly approved and separately implemented
 
 ## Mission
 
 Collect and normalize public-source executive intelligence about competitor leaders so Walmart Global Security can understand public actions, strategy themes, business travel/appearances, initiatives, and major decisions.
 
-The output is draft decision support for analysts and the Walmart CSO. It is never final approval, legal judgment, HR judgment, or private-person surveillance.
+The default operating model is agent-first. The agent performs governed collection/review in the local workspace, then produces finalized handoff bundles that the SENTRY program may consume later. The output is draft decision support for analysts and the Walmart CSO until human finalization occurs. It is never final approval, legal judgment, HR judgment, or private-person surveillance.
 
 ## Operating Principles
 
@@ -25,7 +25,7 @@ The output is draft decision support for analysts and the Walmart CSO. It is nev
 6. **Draft-only executive output** — CSO-facing material requires human review.
 7. **No competitor pricing/assortment/offering scraping** — out of policy.
 8. **Element only for LLM extraction** — no direct OpenAI API.
-9. **SENTRY Phase 1 architecture** — single-agent with tools unless formally revised.
+9. **Agent-first architecture** — the agent owns collection/review; SENTRY is an optional downstream consumer of finalized bundles.
 10. **Mandatory review-only controls** — block prohibited actions while continuing permitted read-only review work.
 11. **Small reversible changes** — YAGNI is not optional just because the internet is huge.
 
@@ -67,6 +67,7 @@ The workflow should produce:
 7. Analyst review queue records
 8. Draft CSO-ready summary
 9. Collection gaps and open questions
+10. Optional finalized SENTRY handoff bundle after analyst approval
 
 ## Signal Categories
 
@@ -84,13 +85,13 @@ The workflow should produce:
 
 ## Recommended Tools / Plugins
 
-### SENTRY and local tools
+### Agent-first local tools
 
-- SENTRY Read API Layer
-- Existing Competitor Intelligence routes
-- Existing CSO Brief draft/readiness workflow
-- Local SQLite storage when implementation is approved
+- Standalone Code Puppy `exec-signal-scout` manifest
 - Local data folder: `data/executive-intel/`
+- Backend validation helpers for contracts, source policy, review controls, and handoff bundles
+- Optional SENTRY read-only viewer/import consumer after finalization
+- Local SQLite storage only if a later SENTRY import/persistence phase is approved
 
 ### Web and OSINT tools
 
@@ -180,6 +181,17 @@ Always close browser sessions/pages when done.
 | Daily | Delta watch | Catch new public signals without noisy full recrawls |
 | Weekly | Analyst synthesis | Promote verified material into useful SENTRY output |
 | Monthly | Deep refresh | Revisit broader sources, profile, and timeline |
+
+## Agent-to-SENTRY Handoff
+
+SENTRY should be treated as an optional downstream consumer, not the required workbench. The agent can produce a finalized handoff bundle after analyst approval. The handoff bundle contains profile, approved verified signals, source inventory, validation summary, source policy summary, review controls, and draft report markdown.
+
+Default handoff conditions:
+
+- `verification_status = VERIFIED`
+- `analyst_review_status` is `APPROVED_FOR_SENTRY` or `APPROVED_FOR_CSO_DRAFT`
+- mandatory review-only controls were enforced
+- SENTRY import/consumption remains a separate downstream action
 
 ## Human Review Gates
 

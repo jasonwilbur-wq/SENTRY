@@ -18,7 +18,8 @@ This is **not** a private-person tracker. It is a governed OSINT workflow for bu
 | `RUNBOOK.md` | Manual, weekly, monthly, and future scheduler workflow |
 | `WEB_ACCESS.md` | Code Puppy web-access routing, tools, and boundaries |
 | `REVIEW_ONLY_CONTROLS.md` | Mandatory controls that block prohibited actions while allowing compliant review-only work |
-| `SENTRY_INTEGRATION.md` | Review-only SENTRY portfolio/report API and UI integration |
+| `AGENT_FIRST_HANDOFF.md` | Default architecture: standalone agent produces finalized bundles for optional SENTRY consumption |
+| `SENTRY_INTEGRATION.md` | Optional read-only SENTRY portfolio/report API and UI integration |
 
 ## Related Config
 
@@ -28,6 +29,7 @@ This is **not** a private-person tracker. It is a governed OSINT workflow for bu
 | `C:\\Users\\j0w16ja\\.code_puppy\\agents\\exec-signal-scout.json` | Installed local Code Puppy agent manifest |
 | `config/executive_intel_sources.example.json` | Source policy config template |
 | `config/executive_intel_watchlist.example.json` | Watchlist template |
+| `config/executive_intel_handoff_contract.json` | Agent-to-SENTRY finalized bundle contract |
 | `data/executive-intel/` | Local data workspace, ignored by git by default |
 
 ## Default Cadence
@@ -40,4 +42,4 @@ This is **not** a private-person tracker. It is a governed OSINT workflow for bu
 
 No outbound report, scheduled job, external write, schema change, or CSO-facing publication happens without explicit approval.
 
-The current SENTRY integration is read-only: it renders local artifacts as portfolios and draft reports without collecting new web data or writing to SQLite. Mandatory review-only controls must block prohibited actions while allowing compliant parsing, classification, scoring, dedupe, traceability, and draft-only summaries.
+The default operating model is agent-first: Executive Signal Scout performs governed review-only work and produces finalized handoff bundles. SENTRY may optionally consume those bundles later. The current SENTRY integration is read-only and optional: it renders local artifacts as portfolios and draft reports without collecting new web data or writing to SQLite. Mandatory review-only controls must block prohibited actions while allowing compliant parsing, classification, scoring, dedupe, traceability, and draft-only summaries.

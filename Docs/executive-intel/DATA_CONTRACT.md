@@ -15,6 +15,7 @@ Define a uniform local data shape for public executive competitor intelligence. 
 | `SignalCitation` | Evidence excerpt tied to a signal |
 | `CollectionRun` | Audit trail for each manual/scheduled collection run |
 | `ReviewDecision` | Analyst disposition and notes |
+| `HandoffBundle` | Finalized agent-to-SENTRY package for optional downstream consumption |
 
 ## ExecutiveProfile
 
@@ -108,6 +109,55 @@ Define a uniform local data shape for public executive competitor intelligence. 
   "notes": "No schema/API writes in docs-only scaffold."
 }
 ```
+
+## HandoffBundle
+
+The handoff bundle is the preferred seam between the standalone agent and the SENTRY program. It is generated read-only from local artifacts after analyst review.
+
+```json
+{
+  "bundle_id": "handoff_exec_amazon_stephen_schmidt_20260527T220000Z",
+  "profile_id": "exec_amazon_stephen_schmidt",
+  "generated_at": "2026-05-27T22:00:00Z",
+  "handoff_status": "FINALIZED_FOR_SENTRY_PROGRAM_HANDOFF",
+  "finalized_by": "analyst_userid",
+  "source_system": "exec-signal-scout",
+  "destination": "SENTRY_PROGRAM_OPTIONAL_IMPORT",
+  "review_only_controls_enforced": [
+    "NO_SQLITE_WRITES",
+    "NO_ARTIFACT_MUTATION",
+    "NO_SCHEDULED_COLLECTION",
+    "NO_REPORT_PUBLICATION",
+    "NO_OUTBOUND_DELIVERY",
+    "NO_PRIVATE_CURRENT_LOCATION_TRACKING",
+    "NO_AUTH_PAYWALL_CAPTCHA_BYPASS",
+    "NO_COMPETITOR_PRICING_ASSORTMENT_OFFERING_SCRAPING"
+  ],
+  "profile": {},
+  "summary": {
+    "source_count": 0,
+    "all_signal_count": 0,
+    "handoff_signal_count": 0,
+    "invalid_signal_count": 0,
+    "latest_brief_name": null
+  },
+  "signals": [],
+  "sources": [],
+  "validation": {},
+  "source_policy": {},
+  "draft_report_markdown": "",
+  "import_notes": []
+}
+```
+
+Default finalized bundles include only signals where:
+
+- `verification_status = VERIFIED`
+- `analyst_review_status` is `APPROVED_FOR_SENTRY` or `APPROVED_FOR_CSO_DRAFT`
+
+Draft dry-run bundles may include `READY_FOR_REVIEW` signals only when clearly marked `DRAFT_HANDOFF_REVIEW_ONLY`.
+
+Generating a bundle is not publication, outbound delivery, SQLite persistence, or SENTRY import. Those remain separate approval-gated actions.
 
 ## Enumerations
 

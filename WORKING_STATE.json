@@ -17,11 +17,11 @@
   "filled_slots": {
     "repository_path": "C:\\Users\\j0w16ja\\SENTRY_v2-main",
     "agent_name": "SENTRY Executive Signal Scout / exec-signal-scout",
-    "build_depth": "Docs/config scaffold plus backend prototype, web-enabled Code Puppy agent manifest, two supervised public collection passes, and read-only SENTRY portfolio/report API + UI integration. No SQLite persistence, scheduler, or publication.",
+    "build_depth": "Agent-first executive intelligence workflow with governed local workspace, mandatory review-only controls, handoff bundle contract, backend validation/handoff helpers, and optional read-only SENTRY review surface. No SQLite persistence, scheduler, publication, or outbound delivery.",
     "source_boundary": "Any open-source data that can be located, using OSINT best practices and verification before use. Competitor pricing, assortment, offerings, bypass behavior, and private/personally invasive collection are prohibited.",
     "travel_boundary": "Business travel details only when publicly sourced and business-relevant; no home/private tracking or real-time/current-location stalking.",
     "first_output_surface": "Local organized data folder under data/executive-intel/ with git-ignore protections.",
-    "agent_architecture": "Both: SENTRY single-agent-with-tools workflow profile and installed standalone Code Puppy agent manifest at C:\\Users\\j0w16ja\\.code_puppy\\agents\\exec-signal-scout.json."
+    "agent_architecture": "Standalone exec-signal-scout agent first; SENTRY is optional downstream consumer of finalized handoff bundles."
   },
   "missing_slots": [],
   "assumptions": [
@@ -41,7 +41,11 @@
     "Mandatory review-only controls are now codified as enforcement rules: no SQLite writes, no artifact mutation, no scheduled collection, no report publication, no outbound delivery, no private/current location tracking, no auth/paywall/CAPTCHA bypass, and no competitor pricing/assortment/offering scraping.",
     "The controls explicitly allow compliant review-only work to continue: reviewing approved inputs, parsing artifacts, extracting intelligence, classifying findings, scoring confidence/risk, dedupe, stale-info detection, source traceability, and draft-only summaries.",
     "Executable backend guard added at backend/executive_intel/review_controls.py and surfaced through /api/executive-intel/health.",
-    "exec-signal-scout repo manifest and installed local Code Puppy manifest were patched to treat review-only controls as mandatory operating rules."
+    "exec-signal-scout repo manifest and installed local Code Puppy manifest were patched to treat review-only controls as mandatory operating rules.",
+    "User clarified SENTRY should not necessarily be the workbench; preferred model is standalone agent producing finalized data for the SENTRY program.",
+    "Agent-first handoff contract added: exec-signal-scout -> local review-only workspace -> analyst finalization -> handoff bundle -> optional SENTRY consumption.",
+    "Backend handoff builder added at backend/executive_intel/handoff.py; default includes only VERIFIED signals approved for SENTRY/CSO draft, with draft dry-run mode clearly marked review-only.",
+    "Read-only smoke test against Stephen Schmidt artifacts built an in-memory DRAFT_HANDOFF_REVIEW_ONLY bundle with 13 total signals, 1 handoff signal, and 8 controls enforced."
   ],
   "risk_tier": "medium_high",
   "orchestration_pattern": "single_agent_with_tools_plus_optional_manifest",
@@ -93,7 +97,11 @@
     "components/ExecutiveIntelPortfolio.tsx",
     "Docs/executive-intel/REVIEW_ONLY_CONTROLS.md",
     "backend/executive_intel/review_controls.py",
-    "backend/tests/test_executive_intel_review_controls.py"
+    "backend/tests/test_executive_intel_review_controls.py",
+    "Docs/executive-intel/AGENT_FIRST_HANDOFF.md",
+    "config/executive_intel_handoff_contract.json",
+    "backend/executive_intel/handoff.py",
+    "backend/tests/test_executive_intel_handoff.py"
   ],
-  "validation_status": "mandatory_review_only_controls_codified_manifest_patched_backend_guard_and_tests_passed_21_tests"
+  "validation_status": "agent_first_handoff_contract_validated_json_pycompile_23_backend_tests_and_read_only_artifact_smoke_passed"
 }
