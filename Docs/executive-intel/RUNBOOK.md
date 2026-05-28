@@ -124,8 +124,8 @@ Use this structure for draft briefs:
 
 Approval is required before:
 
-- writing to SENTRY DB/API
-- adding UI routes
+- writing to SENTRY DB or mutating source artifacts
+- changing from review-only API/UI to analyst-edit or promotion workflows
 - scheduling automated runs
 - external publication or delivery
 - using unclear source types

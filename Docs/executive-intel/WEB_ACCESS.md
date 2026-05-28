@@ -104,6 +104,21 @@ Use only when a real browser interaction is necessary and policy allows it. Neve
 8. Mark as `LEAD_ONLY`, `READY_FOR_REVIEW`, or `VERIFIED`.
 9. Promote to CSO draft only after review threshold is met.
 
+## Mandatory Review-Only Controls
+
+Web access and artifact review must enforce the mandatory review-only controls:
+
+- no SQLite writes
+- no artifact mutation
+- no scheduled collection
+- no report publication
+- no outbound delivery
+- no private/current location tracking
+- no authentication, paywall, or CAPTCHA bypass
+- no competitor pricing, assortment, or offering scraping
+
+These controls block prohibited actions only. They do not stop compliant read-only review, parsing, classification, confidence scoring, dedupe, stale information detection, source traceability, or draft-only summaries.
+
 ## Important Constraint
 
-Web access is enabled for **collection**, not for automatic publication or operational action. Sending, sharing, scheduling, writing to external systems, schema/API integration, and CSO publication remain approval-gated.
+Web access is enabled for approved public read-only collection/review, not for automatic publication or operational action. Sending, sharing, scheduling, writing to external systems, SQLite persistence, and CSO publication remain blocked unless explicitly approved and separately implemented.

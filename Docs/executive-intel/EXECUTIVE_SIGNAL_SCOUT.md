@@ -7,7 +7,7 @@
 - Short name: `exec-signal-scout`
 - Type: SENTRY single-agent tool/workflow profile plus optional standalone Code Puppy manifest
 - Primary domains: Competitor Intelligence, CSO Brief Intelligence
-- Status: Web-enabled Code Puppy agent manifest installed; backend prototype exists; schema/API/UI/scheduler still pending approval
+- Status: Web-enabled Code Puppy agent manifest installed; backend prototype and read-only SENTRY portfolio/report integration exist; SQLite persistence, scheduler, publication, and outbound delivery remain blocked unless explicitly approved and separately implemented
 
 ## Mission
 
@@ -26,7 +26,8 @@ The output is draft decision support for analysts and the Walmart CSO. It is nev
 7. **No competitor pricing/assortment/offering scraping** — out of policy.
 8. **Element only for LLM extraction** — no direct OpenAI API.
 9. **SENTRY Phase 1 architecture** — single-agent with tools unless formally revised.
-10. **Small reversible changes** — YAGNI is not optional just because the internet is huge.
+10. **Mandatory review-only controls** — block prohibited actions while continuing permitted read-only review work.
+11. **Small reversible changes** — YAGNI is not optional just because the internet is huge.
 
 ## Inputs
 
@@ -131,6 +132,23 @@ Preferred routing order:
 - Confidence scoring
 - Analyst review status
 
+## Mandatory Review-Only Controls
+
+The agent must actively enforce these controls as required operating rules:
+
+- no SQLite writes
+- no artifact mutation
+- no scheduled collection
+- no report publication
+- no outbound delivery
+- no private/current location tracking
+- no authentication, paywall, or CAPTCHA bypass
+- no competitor pricing, assortment, or offering scraping
+
+The agent may continue compliant review-only work, including reviewing approved inputs, parsing provided artifacts, extracting relevant intelligence, classifying findings, assigning confidence or risk scores, detecting duplicates, identifying stale information, preserving source traceability, and generating draft-only summaries for human review.
+
+If a request mixes permitted and prohibited actions, block only the prohibited action, explain the restriction, and continue with the permitted review-only portions.
+
 ## Browser Use Rules
 
 Use browser automation only when static fetch or ScoutBridge extraction is insufficient.
@@ -167,9 +185,9 @@ Always close browser sessions/pages when done.
 
 Human review is required before:
 
-- promoting a signal to CSO candidate status
+- promoting a signal beyond draft candidate status
 - adding scheduled automation
-- creating schema/API/UI integration
+- changing from review-only API/UI to persistence or analyst-edit workflows
 - publishing or sending any report
 - adding competitor-owned domain allowlists beyond safe corporate/public pages
 - using any source with unclear terms, access, or sensitivity

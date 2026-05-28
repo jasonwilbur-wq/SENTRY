@@ -17,7 +17,7 @@
   "filled_slots": {
     "repository_path": "C:\\Users\\j0w16ja\\SENTRY_v2-main",
     "agent_name": "SENTRY Executive Signal Scout / exec-signal-scout",
-    "build_depth": "Docs/config scaffold plus backend prototype package plus web-enabled Code Puppy agent manifest. No schema, API, UI, scheduler, or collection run yet.",
+    "build_depth": "Docs/config scaffold plus backend prototype, web-enabled Code Puppy agent manifest, two supervised public collection passes, and read-only SENTRY portfolio/report API + UI integration. No SQLite persistence, scheduler, or publication.",
     "source_boundary": "Any open-source data that can be located, using OSINT best practices and verification before use. Competitor pricing, assortment, offerings, bypass behavior, and private/personally invasive collection are prohibited.",
     "travel_boundary": "Business travel details only when publicly sourced and business-relevant; no home/private tracking or real-time/current-location stalking.",
     "first_output_surface": "Local organized data folder under data/executive-intel/ with git-ignore protections.",
@@ -34,15 +34,23 @@
     "Smoke test passed after absolute SENTRY paths were added to agent instructions.",
     "First collection artifact validation passed after normalizing citation fields; profile and 10 signals now validate against backend ExecutiveProfile/ExecutiveSignal contracts.",
     "Second supervised corroboration pass completed for Stephen Schmidt/Amazon. It created local git-ignored artifacts, corroborated Chief Security Officer title, found no public support for SVP qualifier, and added 3 contract-valid corroboration signals.",
-    "Read-only RAG context check completed through exec-signal-scout with source_filter=Competitor; returned Amazon/Schmidt competitor context from approved local RAG sources without web browsing or file writes."
+    "Read-only RAG context check completed through exec-signal-scout with source_filter=Competitor; returned Amazon/Schmidt competitor context from approved local RAG sources without web browsing or file writes.",
+    "Read-only SENTRY integration now exposes Executive Signal Scout artifacts as target portfolios and draft reports through /api/executive-intel/* endpoints.",
+    "Executive Intel frontend page was added under Intelligence to review profiles, source counts, signal validation, CSO-ready candidates, policy summary, and latest draft brief.",
+    "Local smoke test against Stephen Schmidt artifacts returned 1 portfolio, 13 sources, 13 signals, 1 CSO-ready candidate, 0 invalid signals, and NOT_PUBLISHED_REVIEW_REQUIRED report status.",
+    "Mandatory review-only controls are now codified as enforcement rules: no SQLite writes, no artifact mutation, no scheduled collection, no report publication, no outbound delivery, no private/current location tracking, no auth/paywall/CAPTCHA bypass, and no competitor pricing/assortment/offering scraping.",
+    "The controls explicitly allow compliant review-only work to continue: reviewing approved inputs, parsing artifacts, extracting intelligence, classifying findings, scoring confidence/risk, dedupe, stale-info detection, source traceability, and draft-only summaries.",
+    "Executable backend guard added at backend/executive_intel/review_controls.py and surfaced through /api/executive-intel/health.",
+    "exec-signal-scout repo manifest and installed local Code Puppy manifest were patched to treat review-only controls as mandatory operating rules."
   ],
   "risk_tier": "medium_high",
   "orchestration_pattern": "single_agent_with_tools_plus_optional_manifest",
   "approval_points": [
     "Backend prototype implementation was approved by user with 'proceed'. Approval still required before expanding beyond local prototype.",
-    "Approval required before SQLite schema/API/UI changes.",
     "Approval required before browser collection against target executives or scheduled runs.",
-    "Approval required before sending, sharing, publishing, or promoting CSO-facing output."
+    "Approval required before sending, sharing, publishing, or promoting CSO-facing output.",
+    "Approval required before changing the current read-only API/UI into SQLite persistence, analyst-edit workflow, promotion queue, scheduled collection, or CSO-facing publication.",
+    "Review-only controls are mandatory: if a task mixes permitted and prohibited actions, block only the prohibited action and continue permitted review-only portions."
   ],
   "confirmation_points": [
     "User selected docs/config scaffold only.",
@@ -76,7 +84,16 @@
     "backend/executive_intel/dedupe.py",
     "backend/tests/test_executive_intel_policy.py",
     "Docs/executive-intel/WEB_ACCESS.md",
-    "C:\\Users\\j0w16ja\\.code_puppy\\agents\\exec-signal-scout.json"
+    "C:\\Users\\j0w16ja\\.code_puppy\\agents\\exec-signal-scout.json",
+    "Docs/executive-intel/SENTRY_INTEGRATION.md",
+    "backend/executive_intel/repository.py",
+    "backend/executive_intel_routes.py",
+    "backend/tests/test_executive_intel_routes.py",
+    "services/executiveIntelApi.ts",
+    "components/ExecutiveIntelPortfolio.tsx",
+    "Docs/executive-intel/REVIEW_ONLY_CONTROLS.md",
+    "backend/executive_intel/review_controls.py",
+    "backend/tests/test_executive_intel_review_controls.py"
   ],
-  "validation_status": "second_supervised_public_corroboration_completed_local_artifacts_contract_validated_no_db_api_scheduler_or_external_publication"
+  "validation_status": "mandatory_review_only_controls_codified_manifest_patched_backend_guard_and_tests_passed_21_tests"
 }

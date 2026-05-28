@@ -17,6 +17,8 @@ This is **not** a private-person tracker. It is a governed OSINT workflow for bu
 | `DATA_CONTRACT.md` | Uniform data model for profiles, sources, signals, and runs |
 | `RUNBOOK.md` | Manual, weekly, monthly, and future scheduler workflow |
 | `WEB_ACCESS.md` | Code Puppy web-access routing, tools, and boundaries |
+| `REVIEW_ONLY_CONTROLS.md` | Mandatory controls that block prohibited actions while allowing compliant review-only work |
+| `SENTRY_INTEGRATION.md` | Review-only SENTRY portfolio/report API and UI integration |
 
 ## Related Config
 
@@ -36,4 +38,6 @@ This is **not** a private-person tracker. It is a governed OSINT workflow for bu
 
 ## Approval Reminder
 
-No outbound report, scheduled job, external write, schema change, or production integration happens without explicit approval.
+No outbound report, scheduled job, external write, schema change, or CSO-facing publication happens without explicit approval.
+
+The current SENTRY integration is read-only: it renders local artifacts as portfolios and draft reports without collecting new web data or writing to SQLite. Mandatory review-only controls must block prohibited actions while allowing compliant parsing, classification, scoring, dedupe, traceability, and draft-only summaries.
