@@ -6,9 +6,48 @@ Start manually, then move to weekly review, then add daily deltas only after val
 
 Do **not** begin with full autonomous daily crawling. That is not an intelligence program; it is a raccoon with a network card.
 
+## CLI Quick Start
+
+Run commands from the backend folder:
+
+```powershell
+cd C:\Users\j0w16ja\SENTRY_v2-main\backend
+```
+
+Generate a target profile template:
+
+```powershell
+.venv\Scripts\python.exe -m executive_intel.cli target-template `
+  --name "Stephen Schmidt" `
+  --organization "Amazon" `
+  --title "Chief Security Officer"
+```
+
+Inspect an existing portfolio:
+
+```powershell
+.venv\Scripts\python.exe -m executive_intel.cli portfolio exec_amazon_stephen_schmidt
+```
+
+Build a draft review-only handoff bundle in stdout:
+
+```powershell
+.venv\Scripts\python.exe -m executive_intel.cli handoff exec_amazon_stephen_schmidt --draft --json
+```
+
+Write a finalized local handoff bundle after analyst approval:
+
+```powershell
+.venv\Scripts\python.exe -m executive_intel.cli handoff exec_amazon_stephen_schmidt `
+  --finalized-by "analyst_userid" `
+  --output ..\data\executive-intel\handoffs\exec_amazon_stephen_schmidt.handoff.json
+```
+
+The CLI does not write SQLite, schedule collection, publish, or deliver outbound reports. File output only occurs when `--output` is explicitly provided, and existing files are not overwritten unless `--force` is also provided.
+
 ## Manual Run Workflow
 
-1. Create or select an executive profile from `data/executive-intel/profiles/`.
+1. Create or select an executive profile from `data/executive-intel/profiles/`. Use `config/executive_intel_target.example.json` or the `target-template` CLI command as the starting shape.
 2. Build a search plan from:
    - full name + organization
    - title variants
@@ -23,7 +62,10 @@ Do **not** begin with full autonomous daily crawling. That is not an intelligenc
 7. Assign confidence and verification status.
 8. Save sources/signals locally under `data/executive-intel/`.
 9. Produce a draft brief under `data/executive-intel/briefs/`.
-10. Analyst reviews before anything becomes SENTRY/CSO-facing.
+10. Inspect readiness with `python -m executive_intel.cli portfolio <profile_id>`.
+11. Generate a draft handoff with `python -m executive_intel.cli handoff <profile_id> --draft --json`.
+12. Analyst reviews before anything becomes SENTRY/CSO-facing.
+13. Generate a finalized local handoff only after approval with `--finalized-by` and optional `--output`.
 
 ## Daily Delta Watch
 
@@ -125,6 +167,7 @@ Use this structure for draft briefs:
 Approval is required before:
 
 - writing to SENTRY DB or mutating source artifacts
+- generating a finalized local handoff bundle for SENTRY program consumption
 - changing from review-only API/UI to analyst-edit or promotion workflows
 - scheduling automated runs
 - external publication or delivery

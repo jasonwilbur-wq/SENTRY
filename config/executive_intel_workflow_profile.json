@@ -56,5 +56,17 @@
   "installed_agent_manifest": "C:\\\\Users\\\\j0w16ja\\\\.code_puppy\\\\agents\\\\exec-signal-scout.json",
   "handoff_contract": "config/executive_intel_handoff_contract.json",
   "default_output_mode": "local_review_workspace_then_finalized_handoff_bundle",
-  "sentry_role": "optional_downstream_consumer_not_required_workbench"
+  "sentry_role": "optional_downstream_consumer_not_required_workbench",
+  "usable_workflow_files": [
+    "backend/executive_intel/cli.py",
+    "config/executive_intel_target.example.json",
+    "config/executive_intel_handoff_contract.json"
+  ],
+  "cli_entrypoint": "cd backend && .venv\\Scripts\\python.exe -m executive_intel.cli",
+  "usable_commands": {
+    "target_template": "python -m executive_intel.cli target-template --name \"Stephen Schmidt\" --organization \"Amazon\" --title \"Chief Security Officer\"",
+    "portfolio": "python -m executive_intel.cli portfolio exec_amazon_stephen_schmidt",
+    "draft_handoff": "python -m executive_intel.cli handoff exec_amazon_stephen_schmidt --draft --json",
+    "finalized_handoff": "python -m executive_intel.cli handoff exec_amazon_stephen_schmidt --finalized-by analyst_userid --output ../data/executive-intel/handoffs/exec_amazon_stephen_schmidt.handoff.json"
+  }
 }

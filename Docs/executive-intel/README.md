@@ -29,6 +29,7 @@ This is **not** a private-person tracker. It is a governed OSINT workflow for bu
 | `C:\\Users\\j0w16ja\\.code_puppy\\agents\\exec-signal-scout.json` | Installed local Code Puppy agent manifest |
 | `config/executive_intel_sources.example.json` | Source policy config template |
 | `config/executive_intel_watchlist.example.json` | Watchlist template |
+| `config/executive_intel_target.example.json` | Single-target executive profile starter template |
 | `config/executive_intel_handoff_contract.json` | Agent-to-SENTRY finalized bundle contract |
 | `data/executive-intel/` | Local data workspace, ignored by git by default |
 
@@ -42,4 +43,4 @@ This is **not** a private-person tracker. It is a governed OSINT workflow for bu
 
 No outbound report, scheduled job, external write, schema change, or CSO-facing publication happens without explicit approval.
 
-The default operating model is agent-first: Executive Signal Scout performs governed review-only work and produces finalized handoff bundles. SENTRY may optionally consume those bundles later. The current SENTRY integration is read-only and optional: it renders local artifacts as portfolios and draft reports without collecting new web data or writing to SQLite. Mandatory review-only controls must block prohibited actions while allowing compliant parsing, classification, scoring, dedupe, traceability, and draft-only summaries.
+The default operating model is agent-first: Executive Signal Scout performs governed review-only work and produces finalized handoff bundles. SENTRY may optionally consume those bundles later. Use `python -m executive_intel.cli` from the backend folder to generate target templates, inspect portfolios, and build draft/finalized handoff bundles. The current SENTRY integration is read-only and optional: it renders local artifacts as portfolios and draft reports without collecting new web data or writing to SQLite. Mandatory review-only controls must block prohibited actions while allowing compliant parsing, classification, scoring, dedupe, traceability, and draft-only summaries.

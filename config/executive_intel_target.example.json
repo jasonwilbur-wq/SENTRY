@@ -1,0 +1,20 @@
+{
+  "profile_id": "exec_amazon_stephen_schmidt",
+  "full_name": "Stephen Schmidt",
+  "organization": "Amazon",
+  "title": "Chief Security Officer",
+  "status": "ACTIVE",
+  "aliases": [
+    "Steve Schmidt"
+  ],
+  "focus_topics": [
+    "global security",
+    "investigations",
+    "security operations",
+    "public appearances",
+    "public initiatives"
+  ],
+  "collection_notes": "Public business signals only. No private/current location tracking. No pricing, assortment, or offering scraping.",
+  "created_at": "2026-05-27T00:00:00Z",
+  "updated_at": "2026-05-27T00:00:00Z"
+}

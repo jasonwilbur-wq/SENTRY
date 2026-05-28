@@ -21,7 +21,8 @@
     "source_boundary": "Any open-source data that can be located, using OSINT best practices and verification before use. Competitor pricing, assortment, offerings, bypass behavior, and private/personally invasive collection are prohibited.",
     "travel_boundary": "Business travel details only when publicly sourced and business-relevant; no home/private tracking or real-time/current-location stalking.",
     "first_output_surface": "Local organized data folder under data/executive-intel/ with git-ignore protections.",
-    "agent_architecture": "Standalone exec-signal-scout agent first; SENTRY is optional downstream consumer of finalized handoff bundles."
+    "agent_architecture": "Standalone exec-signal-scout agent first; SENTRY is optional downstream consumer of finalized handoff bundles.",
+    "usable_workflow": "CLI-enabled agent-first workflow: target template generation, portfolio readiness inspection, draft handoff preview, and finalized local handoff export after analyst approval."
   },
   "missing_slots": [],
   "assumptions": [
@@ -45,7 +46,11 @@
     "User clarified SENTRY should not necessarily be the workbench; preferred model is standalone agent producing finalized data for the SENTRY program.",
     "Agent-first handoff contract added: exec-signal-scout -> local review-only workspace -> analyst finalization -> handoff bundle -> optional SENTRY consumption.",
     "Backend handoff builder added at backend/executive_intel/handoff.py; default includes only VERIFIED signals approved for SENTRY/CSO draft, with draft dry-run mode clearly marked review-only.",
-    "Read-only smoke test against Stephen Schmidt artifacts built an in-memory DRAFT_HANDOFF_REVIEW_ONLY bundle with 13 total signals, 1 handoff signal, and 8 controls enforced."
+    "Read-only smoke test against Stephen Schmidt artifacts built an in-memory DRAFT_HANDOFF_REVIEW_ONLY bundle with 13 total signals, 1 handoff signal, and 8 controls enforced.",
+    "Added backend/executive_intel/cli.py with target-template, portfolio, and handoff commands.",
+    "Added config/executive_intel_target.example.json as a single-target starter template.",
+    "Validated CLI against Stephen Schmidt artifacts: 13 signals, 13 sources, 0 invalid, 1 draft handoff signal.",
+    "Handoff file output is explicit-only via --output and refuses overwrite unless --force."
   ],
   "risk_tier": "medium_high",
   "orchestration_pattern": "single_agent_with_tools_plus_optional_manifest",
@@ -101,7 +106,10 @@
     "Docs/executive-intel/AGENT_FIRST_HANDOFF.md",
     "config/executive_intel_handoff_contract.json",
     "backend/executive_intel/handoff.py",
-    "backend/tests/test_executive_intel_handoff.py"
+    "backend/tests/test_executive_intel_handoff.py",
+    "backend/executive_intel/cli.py",
+    "backend/tests/test_executive_intel_cli.py",
+    "config/executive_intel_target.example.json"
   ],
-  "validation_status": "agent_first_handoff_contract_validated_json_pycompile_23_backend_tests_and_read_only_artifact_smoke_passed"
+  "validation_status": "usable_cli_workflow_validated_json_pycompile_19_backend_tests_and_real_artifact_cli_smoke_passed"
 }
