@@ -32,7 +32,8 @@
     "Backend prototype includes models, source policy validation, normalization, dedupe, and targeted tests only.",
     "Agent manifest now includes Code Puppy web tools: ScoutBridge via invoke_agent, Goose broker public extraction, built-in browser tools, and Skyvern via MCP relay when allowed.",
     "Smoke test passed after absolute SENTRY paths were added to agent instructions.",
-    "First collection artifact validation passed after normalizing citation fields; profile and 10 signals now validate against backend ExecutiveProfile/ExecutiveSignal contracts."
+    "First collection artifact validation passed after normalizing citation fields; profile and 10 signals now validate against backend ExecutiveProfile/ExecutiveSignal contracts.",
+    "Second supervised corroboration pass completed for Stephen Schmidt/Amazon. It created local git-ignored artifacts, corroborated Chief Security Officer title, found no public support for SVP qualifier, and added 3 contract-valid corroboration signals."
   ],
   "risk_tier": "medium_high",
   "orchestration_pattern": "single_agent_with_tools_plus_optional_manifest",
@@ -76,5 +77,5 @@
     "Docs/executive-intel/WEB_ACCESS.md",
     "C:\\Users\\j0w16ja\\.code_puppy\\agents\\exec-signal-scout.json"
   ],
-  "validation_status": "first_supervised_public_collection_completed_local_artifacts_contract_validated_no_db_api_scheduler_or_external_publication"
+  "validation_status": "second_supervised_public_corroboration_completed_local_artifacts_contract_validated_no_db_api_scheduler_or_external_publication"
 }
