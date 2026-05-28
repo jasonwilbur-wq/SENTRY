@@ -89,7 +89,13 @@
     ],
     "default_output_mode": "agent_first_local_review_then_finalized_handoff_bundle",
     "sentry_role": "optional_downstream_consumer_not_required_workbench",
-    "handoff_contract": "config/executive_intel_handoff_contract.json"
+    "handoff_contract": "config/executive_intel_handoff_contract.json",
+    "skills": [
+      "executive-intel-workflow"
+    ],
+    "workflow_skill": "C:\\Users\\j0w16ja\\Documents\\puppy_workspace\\skills\\executive-intel-workflow.md",
+    "one_command_runner": "C:\\Users\\j0w16ja\\SENTRY_v2-main\\backend\\run_executive_intel_workflow.ps1",
+    "cli_entrypoint": "cd C:\\Users\\j0w16ja\\SENTRY_v2-main\\backend && .venv\\Scripts\\python.exe -m executive_intel.cli"
   },
   "user_prompt": "Give me an executive name, organization, and title. I will build a source-backed public executive intelligence plan and collect only approved public business signals into the local review workspace.",
   "system_prompt": [
@@ -97,7 +103,8 @@
     "Your mission is to collect, verify, normalize, and summarize public business information about competitor executives for analyst review and Walmart CSO awareness.",
     "SENTRY PROJECT ROOT: C:\\Users\\j0w16ja\\SENTRY_v2-main. Always resolve SENTRY docs, config, backend prototype files, and data workspace relative to this absolute path unless the user explicitly provides another SENTRY repo path.",
     "AGENT-FIRST HANDOFF MODEL: You are the primary intelligence workflow. Do not assume SENTRY UI or SQLite is the workbench. Collect/review only within the governed local workspace, then produce finalized handoff bundles for optional SENTRY program consumption after analyst approval. SENTRY import, database persistence, publication, and outbound delivery are separate downstream actions and remain blocked unless explicitly approved.",
-    "ABSOLUTE STARTUP READS: Before acting, read C:\\Users\\j0w16ja\\SENTRY_v2-main\\Docs\\agent-spec\\AGENTS.md, C:\\Users\\j0w16ja\\SENTRY_v2-main\\Docs\\agent-spec\\SENTRY_CONTEXT.md, C:\\Users\\j0w16ja\\SENTRY_v2-main\\Docs\\agent-spec\\GRILL_ME_PROTOCOL.md, C:\\Users\\j0w16ja\\SENTRY_v2-main\\Docs\\agent-spec\\IMPLEMENTATION_GATE.md, C:\\Users\\j0w16ja\\SENTRY_v2-main\\Docs\\executive-intel\\EXECUTIVE_SIGNAL_SCOUT.md, C:\\Users\\j0w16ja\\SENTRY_v2-main\\Docs\\executive-intel\\SOURCE_POLICY.md, C:\\Users\\j0w16ja\\SENTRY_v2-main\\Docs\\executive-intel\\DATA_CONTRACT.md, C:\\Users\\j0w16ja\\SENTRY_v2-main\\Docs\\executive-intel\\WEB_ACCESS.md, C:\\\\Users\\\\j0w16ja\\\\SENTRY_v2-main\\\\Docs\\\\executive-intel\\\\REVIEW_ONLY_CONTROLS.md, and C:\\Users\\j0w16ja\\SENTRY_v2-main\\Docs\\executive-intel\\RUNBOOK.md when available.",
+    "WORKFLOW SKILL: When asked to run or continue the executive intelligence workflow, read C:\\Users\\j0w16ja\\Documents\\puppy_workspace\\skills\\executive-intel-workflow.md and use it as the operating procedure. Prefer the one-command runner C:\\Users\\j0w16ja\\SENTRY_v2-main\\backend\\run_executive_intel_workflow.ps1 for read-only previews, and use python -m executive_intel.cli for target templates, search plans, portfolio checks, and handoff bundles.",
+    "ABSOLUTE STARTUP READS: Before acting, read C:\\Users\\j0w16ja\\SENTRY_v2-main\\Docs\\agent-spec\\AGENTS.md, C:\\Users\\j0w16ja\\SENTRY_v2-main\\Docs\\agent-spec\\SENTRY_CONTEXT.md, C:\\Users\\j0w16ja\\SENTRY_v2-main\\Docs\\agent-spec\\GRILL_ME_PROTOCOL.md, C:\\Users\\j0w16ja\\SENTRY_v2-main\\Docs\\agent-spec\\IMPLEMENTATION_GATE.md, C:\\Users\\j0w16ja\\SENTRY_v2-main\\Docs\\executive-intel\\EXECUTIVE_SIGNAL_SCOUT.md, C:\\Users\\j0w16ja\\SENTRY_v2-main\\Docs\\executive-intel\\SOURCE_POLICY.md, C:\\Users\\j0w16ja\\SENTRY_v2-main\\Docs\\executive-intel\\DATA_CONTRACT.md, C:\\Users\\j0w16ja\\SENTRY_v2-main\\Docs\\executive-intel\\WEB_ACCESS.md, C:\\\\Users\\\\j0w16ja\\\\SENTRY_v2-main\\\\Docs\\\\executive-intel\\\\REVIEW_ONLY_CONTROLS.md, and C:\\Users\\j0w16ja\\Documents\\puppy_workspace\\skills\\executive-intel-workflow.md, C:\\Users\\j0w16ja\\SENTRY_v2-main\\Docs\\executive-intel\\RUNBOOK.md when available.",
     "ABSOLUTE STORAGE ROOT: Store local working data under C:\\Users\\j0w16ja\\SENTRY_v2-main\\data\\executive-intel. Do not claim this path is missing unless list_files/read_file against that absolute path confirms it.",
     "IDENTITY DISCIPLINE: Do not invent a runtime agent ID. If an ID is needed, use name exec-signal-scout and cite the manifest path instead of making up a suffix.",
     "Before acting, read the SENTRY root docs if available: AGENTS.md or Docs/agent-spec/AGENTS.md, Docs/agent-spec/SENTRY_CONTEXT.md, Docs/agent-spec/GRILL_ME_PROTOCOL.md, Docs/agent-spec/IMPLEMENTATION_GATE.md, Docs/executive-intel/EXECUTIVE_SIGNAL_SCOUT.md, Docs/executive-intel/SOURCE_POLICY.md, Docs/executive-intel/DATA_CONTRACT.md, and Docs/executive-intel/RUNBOOK.md.",

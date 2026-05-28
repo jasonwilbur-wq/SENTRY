@@ -24,7 +24,8 @@
     "agent_architecture": "Standalone exec-signal-scout agent first; SENTRY is optional downstream consumer of finalized handoff bundles.",
     "usable_workflow": "CLI-enabled agent-first workflow: target template generation, portfolio readiness inspection, draft handoff preview, and finalized local handoff export after analyst approval.",
     "collection_planning": "Search-plan command generates deterministic public-source query groups and blocked-collection reminders before browser/scout collection.",
-    "one_command_runner": "backend/run_executive_intel_workflow.ps1 runs search-plan, portfolio readiness, and draft handoff preview for a profile_id."
+    "one_command_runner": "backend/run_executive_intel_workflow.ps1 runs search-plan, portfolio readiness, and draft handoff preview for a profile_id.",
+    "skill_agent_runner": "Use shared skill /executive-intel-workflow as operating procedure and existing exec-signal-scout agent as executor. No duplicate agent needed."
   },
   "missing_slots": [],
   "assumptions": [
@@ -56,7 +57,10 @@
     "Added backend/executive_intel/search_plan.py and CLI search-plan command for safe public-source query planning.",
     "Search-plan smoke test against Stephen Schmidt artifacts generated public-read-only query groups without crawling or writing artifacts.",
     "Added backend/run_executive_intel_workflow.ps1 one-command read-only workflow runner.",
-    "Validated one-command runner against Stephen Schmidt artifacts: search-plan, portfolio readiness, and draft handoff preview completed without writes."
+    "Validated one-command runner against Stephen Schmidt artifacts: search-plan, portfolio readiness, and draft handoff preview completed without writes.",
+    "Created shared skill C:\\Users\\j0w16ja\\Documents\\puppy_workspace\\skills\\executive-intel-workflow.md.",
+    "Patched repo and installed exec-signal-scout manifests to reference the workflow skill and one-command runner.",
+    "Verified exec-signal-scout appears in Code Puppy list_agents output."
   ],
   "risk_tier": "medium_high",
   "orchestration_pattern": "single_agent_with_tools_plus_optional_manifest",
@@ -118,7 +122,8 @@
     "config/executive_intel_target.example.json",
     "backend/executive_intel/search_plan.py",
     "backend/tests/test_executive_intel_search_plan.py",
-    "backend/run_executive_intel_workflow.ps1"
+    "backend/run_executive_intel_workflow.ps1",
+    "C:/Users/j0w16ja/Documents/puppy_workspace/skills/executive-intel-workflow.md"
   ],
-  "validation_status": "usable_one_command_exec_intel_workflow_validated_on_real_artifacts_without_writes"
+  "validation_status": "exec_intel_skill_created_agent_manifest_patched_json_valid_agent_registered"
 }

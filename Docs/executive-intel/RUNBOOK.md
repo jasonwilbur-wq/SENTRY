@@ -6,6 +6,22 @@ Start manually, then move to weekly review, then add daily deltas only after val
 
 Do **not** begin with full autonomous daily crawling. That is not an intelligence program; it is a raccoon with a network card.
 
+## Skill and Agent Runner
+
+Recommended operating model:
+
+- Skill: `/executive-intel-workflow`
+- Agent: `exec-signal-scout`
+- Runner: `backend/run_executive_intel_workflow.ps1`
+
+Use the skill as the operating procedure and the agent as the executor. Do not create duplicate executive-intel agents unless a new role has materially different tools, permissions, or approval gates.
+
+Delegate with:
+
+```text
+Before performing the task, read the workspace root files AGENTS.md, AGENT_CONTEXT.md, CONSTRAINTS.md, and skills/executive-intel-workflow.md. Then use the SENTRY executive-intel RUNBOOK, SOURCE_POLICY, REVIEW_ONLY_CONTROLS, and AGENT_FIRST_HANDOFF docs. Prefer the CLI and one-command runner. Do not write SQLite, mutate artifacts, schedule collection, publish, send, scrape competitor pricing/assortment/offerings, bypass access controls, or track private/current locations without explicit approval.
+```
+
 ## CLI Quick Start
 
 Run the whole read-only workflow preview with one command:
