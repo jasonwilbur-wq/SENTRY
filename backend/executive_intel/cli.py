@@ -17,6 +17,7 @@ from typing import Any, Sequence
 from executive_intel.handoff import build_handoff_bundle
 from executive_intel.models import ExecutiveProfile
 from executive_intel.repository import ExecutiveIntelRepository
+from executive_intel.search_plan import build_search_plan
 
 
 def run(argv: Sequence[str] | None = None) -> int:
@@ -45,6 +46,14 @@ def build_parser() -> argparse.ArgumentParser:
     target.add_argument("--output", help="Optional local JSON output path")
     target.add_argument("--force", action="store_true", help="Allow overwriting --output")
     target.set_defaults(func=command_target_template)
+
+    search_plan = subparsers.add_parser("search-plan", help="Generate safe public-source search queries for a target.")
+    search_plan.add_argument("profile_id", nargs="?", help="Executive profile_id when using local artifacts")
+    search_plan.add_argument("--profile", help="Path to an executive profile JSON file")
+    search_plan.add_argument("--root", help="Executive intel artifact root; defaults to data/executive-intel")
+    search_plan.add_argument("--output", help="Optional local JSON output path")
+    search_plan.add_argument("--force", action="store_true", help="Allow overwriting --output")
+    search_plan.set_defaults(func=command_search_plan)
 
     portfolio = subparsers.add_parser("portfolio", help="Inspect one local target portfolio.")
     portfolio.add_argument("profile_id", help="Executive profile_id")
@@ -80,6 +89,13 @@ def command_target_template(args: argparse.Namespace) -> int:
     ).model_dump(mode="json")
 
     _emit_json(profile, output=args.output, force=args.force)
+    return 0
+
+
+def command_search_plan(args: argparse.Namespace) -> int:
+    profile = _load_profile_for_search_plan(args.profile_id, args.profile, args.root)
+    plan = build_search_plan(profile)
+    _emit_json(plan, output=args.output, force=args.force)
     return 0
 
 
@@ -139,6 +155,19 @@ def command_handoff(args: argparse.Namespace) -> int:
     }
     print(_to_pretty_json(payload))
     return 0
+
+
+def _load_profile_for_search_plan(
+    profile_id: str | None,
+    profile_path: str | None,
+    root: str | None,
+) -> dict[str, Any]:
+    if profile_path:
+        return json.loads(Path(profile_path).read_text(encoding="utf-8"))
+    if not profile_id:
+        raise ValueError("search-plan requires either profile_id or --profile")
+    repo = _repository(root)
+    return repo.get_portfolio(profile_id)["profile"]
 
 
 def _repository(root: str | None) -> ExecutiveIntelRepository:

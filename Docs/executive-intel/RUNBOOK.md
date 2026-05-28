@@ -23,6 +23,12 @@ Generate a target profile template:
   --title "Chief Security Officer"
 ```
 
+Generate a safe public-source search plan:
+
+```powershell
+.venv\Scripts\python.exe -m executive_intel.cli search-plan exec_amazon_stephen_schmidt
+```
+
 Inspect an existing portfolio:
 
 ```powershell
@@ -48,14 +54,14 @@ The CLI does not write SQLite, schedule collection, publish, or deliver outbound
 ## Manual Run Workflow
 
 1. Create or select an executive profile from `data/executive-intel/profiles/`. Use `config/executive_intel_target.example.json` or the `target-template` CLI command as the starting shape.
-2. Build a search plan from:
+2. Build a search plan with `python -m executive_intel.cli search-plan <profile_id>` from:
    - full name + organization
    - title variants
    - aliases
    - focus topics
    - event/conference terms
    - initiative terms
-3. Collect candidate sources using allowed sources only.
+3. Collect candidate sources using allowed sources only; prefer specific public URLs over broad crawling.
 4. Validate source against `SOURCE_POLICY.md`.
 5. Extract facts and citations.
 6. Deduplicate by executive, date, event title, and source URL.

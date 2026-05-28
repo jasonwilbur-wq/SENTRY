@@ -21,6 +21,7 @@ from executive_intel.review_controls import (
     assert_review_only_allowed,
     evaluate_review_only_controls,
 )
+from executive_intel.search_plan import build_search_plan
 from executive_intel.handoff import HandoffError, build_handoff_bundle
 
 __all__ = [
@@ -37,6 +38,7 @@ __all__ = [
     "VerificationStatus",
     "assert_review_only_allowed",
     "build_handoff_bundle",
+    "build_search_plan",
     "evaluate_review_only_controls",
     "evaluate_source_url",
     "validate_business_travel",

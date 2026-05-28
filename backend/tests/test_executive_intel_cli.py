@@ -91,6 +91,26 @@ def test_target_template_prints_profile_json(capsys):
     assert payload["focus_topics"] == ["global security"]
 
 
+def test_search_plan_prints_queries_from_profile_file(tmp_path, capsys):
+    profile_path = tmp_path / "profile.json"
+    _write_json(profile_path, {
+        "profile_id": "exec_amazon_stephen_schmidt",
+        "full_name": "Stephen Schmidt",
+        "organization": "Amazon",
+        "title": "Chief Security Officer",
+        "aliases": ["Steve Schmidt"],
+        "focus_topics": ["global security"],
+    })
+
+    exit_code = run(["search-plan", "--profile", str(profile_path)])
+
+    assert exit_code == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["mode"] == "public_read_only_search_plan"
+    assert payload["query_groups"]["public_appearances"]
+    assert "NO_COMPETITOR_PRICING_ASSORTMENT_OFFERING_SCRAPING" in payload["review_only_controls_enforced"]
+
+
 def test_portfolio_prints_readiness_summary(tmp_path, capsys):
     root = _seed_workspace(tmp_path / "executive-intel")
 
