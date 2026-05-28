@@ -23,6 +23,7 @@ const ArchitectureGraph      = lazy(() => import('./components/ArchitectureGraph
 const AdminPanel             = lazy(() => import('./components/AdminPanel').then(m => ({ default: m.AdminPanel })));
 const CompetitorIntel        = lazy(() => import('./components/CompetitorIntel').then(m => ({ default: m.CompetitorIntel })));
 const CSOIntelligence        = lazy(() => import('./components/CSOIntelligence').then(m => ({ default: m.CSOIntelligence })));
+const ExecutiveIntelPortfolio = lazy(() => import('./components/ExecutiveIntelPortfolio'));
 const IncidentIntelligence   = lazy(() => import('./components/IncidentIntelligence').then(m => ({ default: m.IncidentIntelligence })));
 const RegulatoryIntelligence = lazy(() => import('./components/RegulatoryIntelligence').then(m => ({ default: m.RegulatoryIntelligence })));
 const VendorRiskMap3D        = lazy(() => import('./components/VendorRiskMap3D'));
@@ -85,6 +86,11 @@ const VIEW_META: Record<ViewState, { title: string; subtitle: string; eyebrow: s
     eyebrow:  'Intelligence',
     title:    'CSO Intelligence',
     subtitle: 'Executive security leadership — Amazon, Target, Costco, Kroger.',
+  },
+  [ViewState.EXECUTIVE_INTEL]: {
+    eyebrow:  'Intelligence',
+    title:    'Executive Intel Portfolios',
+    subtitle: 'Review target portfolios, source evidence, normalized signals, and draft reports.',
   },
   [ViewState.REGULATORY_INTELLIGENCE]: {
     eyebrow:  'Intelligence',
@@ -401,6 +407,11 @@ const App: React.FC = () => {
                       {currentView === ViewState.CSO_INTELLIGENCE && (
                         <ViewErrorBoundary viewName="CSO Intelligence">
                           <CSOIntelligence />
+                        </ViewErrorBoundary>
+                      )}
+                      {currentView === ViewState.EXECUTIVE_INTEL && (
+                        <ViewErrorBoundary viewName="Executive Intel Portfolios">
+                          <ExecutiveIntelPortfolio />
                         </ViewErrorBoundary>
                       )}
                       {currentView === ViewState.INCIDENT_INTELLIGENCE && (

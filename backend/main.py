@@ -35,6 +35,7 @@ from incident_routes import ROUTER as incident_router
 from regulatory_routes import ROUTER as regulatory_router, get_regulatory_summary
 from analytics_routes import ROUTER as analytics_router
 from vendor_sync_routes import router as vendor_sync_router
+from executive_intel_routes import ROUTER as executive_intel_router
 from auth import SentryUser, get_current_user, get_auth_status
 from cache import ttl_cache, clear_all
 from models import (
@@ -183,6 +184,7 @@ app.include_router(incident_router)
 app.include_router(regulatory_router)
 app.include_router(analytics_router)
 app.include_router(vendor_sync_router)
+app.include_router(executive_intel_router)
 
 
 @app.get("/api/health")
