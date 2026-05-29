@@ -45,6 +45,51 @@ function StatCard({ label, value, helper }: { label: string; value: React.ReactN
   );
 }
 
+// Deterministic gradient palette for letter-avatar fallback (no external calls).
+const AVATAR_GRADIENTS: ReadonlyArray<readonly [string, string]> = [
+  ['#0053E2', '#2A6FF0'], ['#995213', '#C8821F'], ['#2A8703', '#3EA821'],
+  ['#6D28D9', '#8B5CF6'], ['#BE185D', '#E11D74'], ['#0E7490', '#0EA5C4'],
+  ['#B91C1C', '#EA1100'], ['#475569', '#64748B'],
+];
+function initialsOf(name: string): string {
+  const parts = (name || '?').replace(/\(.*?\)/g, '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+function gradientFor(name: string): readonly [string, string] {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) | 0;
+  return AVATAR_GRADIENTS[Math.abs(hash) % AVATAR_GRADIENTS.length];
+}
+
+function ExecutiveAvatar({ name, photoUrl, size = 44 }: { name: string; photoUrl?: string | null; size?: number }) {
+  const [failed, setFailed] = useState(false);
+  const dim = { width: size, height: size };
+  if (photoUrl && !failed) {
+    return (
+      <img
+        src={photoUrl}
+        alt={`${name} headshot`}
+        onError={() => setFailed(true)}
+        className="rounded-xl object-cover flex-shrink-0"
+        style={{ ...dim, border: '1px solid var(--s-border)' }}
+      />
+    );
+  }
+  const [from, to] = gradientFor(name);
+  return (
+    <div
+      aria-label={`${name} (no photo)`}
+      role="img"
+      className="rounded-xl flex items-center justify-center flex-shrink-0 font-black text-white"
+      style={{ ...dim, background: `linear-gradient(135deg, ${from}, ${to})`, fontSize: size * 0.36 }}
+    >
+      {initialsOf(name)}
+    </div>
+  );
+}
+
 const verificationTone = (status?: string): 'blue' | 'green' | 'yellow' | 'red' | 'gray' => {
   if (status === 'VERIFIED') return 'green';
   if (status === 'PARTIALLY_VERIFIED') return 'blue';
@@ -156,6 +201,27 @@ export function ExecutiveIntelPortfolio() {
     };
   }, [portfolios]);
 
+  // Group portfolios by company for the picker; companies sorted A–Z,
+  // members active-first then alphabetical.
+  const byCompany = useMemo(() => {
+    const groups = new Map<string, ExecutivePortfolioSummary[]>();
+    for (const p of portfolios) {
+      const org = p.organization || 'Other';
+      if (!groups.has(org)) groups.set(org, []);
+      groups.get(org)!.push(p);
+    }
+    return [...groups.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([org, members]) => [
+        org,
+        members.sort((a, b) => {
+          const aa = isArchived(a.status) ? 1 : 0;
+          const bb = isArchived(b.status) ? 1 : 0;
+          return aa - bb || a.full_name.localeCompare(b.full_name);
+        }),
+      ] as [string, ExecutivePortfolioSummary[]]);
+  }, [portfolios]);
+
   if (status === 'loading') {
     return <div className="text-sm" style={{ color: 'var(--s-text-dim)' }}>Loading executive intelligence portfolios…</div>;
   }
@@ -200,8 +266,12 @@ export function ExecutiveIntelPortfolio() {
               onChange={event => setSelectedId(event.target.value)}
               aria-label="Select executive intelligence target portfolio"
             >
-              {portfolios.map(item => (
-                <option key={item.profile_id} value={item.profile_id}>{optionLabel(item)}</option>
+              {byCompany.map(([org, members]) => (
+                <optgroup key={org} label={org}>
+                  {members.map(item => (
+                    <option key={item.profile_id} value={item.profile_id}>{optionLabel(item)}</option>
+                  ))}
+                </optgroup>
               ))}
             </select>
           </label>
@@ -238,6 +308,43 @@ export function ExecutiveIntelPortfolio() {
         </div>
       </Card>
 
+      <Card>
+        <h3 className="text-sm font-black uppercase tracking-[0.16em]" style={{ color: 'var(--s-text)' }}>Watchlist by company</h3>
+        <div className="mt-4 space-y-5">
+          {byCompany.map(([org, members]) => (
+            <div key={org}>
+              <div className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: 'var(--s-text-dim)' }}>{org}</div>
+              <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+                {members.map(item => {
+                  const archived = isArchived(item.status);
+                  const selected = item.profile_id === selectedId;
+                  return (
+                    <button
+                      key={item.profile_id}
+                      type="button"
+                      onClick={() => setSelectedId(item.profile_id)}
+                      className="flex items-center gap-3 rounded-xl border p-2.5 text-left transition"
+                      style={{
+                        borderColor: selected ? '#0053E2' : 'var(--s-border)',
+                        background: selected ? 'rgba(0,83,226,0.06)' : 'var(--s-card)',
+                        opacity: archived ? 0.7 : 1,
+                      }}
+                      aria-pressed={selected}
+                    >
+                      <ExecutiveAvatar name={item.full_name} photoUrl={item.photo_url} size={40} />
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-bold" style={{ color: 'var(--s-text)' }}>{item.full_name}</div>
+                        <div className="truncate text-xs" style={{ color: 'var(--s-text-dim)' }}>{archived ? '⚠ archived · ' : ''}{item.stats.signal_count} signals</div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
       {selectedSummary && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <StatCard label="Sources" value={selectedSummary.stats.source_count} helper="Collected public source records" />
@@ -258,9 +365,14 @@ export function ExecutiveIntelPortfolio() {
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           <div className="xl:col-span-1 space-y-6">
             <Card>
-              <h3 className="text-lg font-black" style={{ color: 'var(--s-text)' }}>{portfolio.profile.full_name}</h3>
-              <p className="mt-1 text-sm font-bold" style={{ color: 'var(--s-text-dim)' }}>{portfolio.profile.title}</p>
-              <p className="text-sm" style={{ color: 'var(--s-text-dim)' }}>{portfolio.profile.organization}</p>
+              <div className="flex items-start gap-3">
+                <ExecutiveAvatar name={portfolio.profile.full_name} photoUrl={portfolio.profile.photo_url} size={56} />
+                <div className="min-w-0">
+                  <h3 className="text-lg font-black" style={{ color: 'var(--s-text)' }}>{portfolio.profile.full_name}</h3>
+                  <p className="mt-1 text-sm font-bold" style={{ color: 'var(--s-text-dim)' }}>{portfolio.profile.title}</p>
+                  <p className="text-sm" style={{ color: 'var(--s-text-dim)' }}>{portfolio.profile.organization}</p>
+                </div>
+              </div>
               <div className="mt-4 flex flex-wrap gap-2">
                 <Badge tone={statusTone(portfolio.profile.status)}>{(portfolio.profile.status ?? 'ACTIVE').toUpperCase()}</Badge>
                 {portfolio.profile.officer_type === 'CHIEF_SUSTAINABILITY_OFFICER' && <Badge tone="blue">ESG / Sustainability</Badge>}

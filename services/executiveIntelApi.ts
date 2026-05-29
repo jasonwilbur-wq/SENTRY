@@ -30,6 +30,7 @@ export interface ExecutivePortfolioSummary {
   artifact_slug: string;
   full_name: string;
   organization: string;
+  photo_url?: string | null;
   title: string;
   title_svp_conclusion?: TitleSvpConclusion;
   status?: string;
@@ -52,6 +53,7 @@ export interface ExecutiveProfileRecord {
   profile_id: string;
   full_name: string;
   organization: string;
+  photo_url?: string | null;
   title: string;
   title_normalized?: string;
   title_svp_conclusion?: TitleSvpConclusion;

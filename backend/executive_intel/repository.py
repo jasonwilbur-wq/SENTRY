@@ -63,6 +63,29 @@ class ExecutiveIntelRepository:
         self.root = (root or default_executive_intel_root()).resolve()
 
     @property
+    def _public_executives_dir(self) -> Path:
+        # public/images/executives is served by Vite/static at /images/executives/<slug>.jpg
+        return Path(__file__).resolve().parents[2] / "public" / "images" / "executives"
+
+    def _photo_url(self, full_name: str, slug: str) -> str | None:
+        """Return a web path to a local headshot if one exists, else None.
+
+        Tries a name-based slug first (e.g. 'Stephen Schmidt' -> 'stephen-schmidt'),
+        then the profile file stem. UI falls back to a letter-avatar when None.
+        """
+        candidates = []
+        name_slug = re.sub(r"[^a-z0-9]+", "-", (full_name or "").lower()).strip("-")
+        if name_slug:
+            candidates.append(name_slug)
+        if slug and slug not in candidates:
+            candidates.append(slug)
+        for candidate in candidates:
+            for ext in ("jpg", "jpeg", "png", "webp"):
+                if (self._public_executives_dir / f"{candidate}.{ext}").is_file():
+                    return f"/images/executives/{candidate}.{ext}"
+        return None
+
+    @property
     def profiles_dir(self) -> Path:
         return self.root / "profiles"
 
@@ -105,6 +128,9 @@ class ExecutiveIntelRepository:
         validation = self._validate_profile_and_signals(profile, signals)
         source_policy = self._source_policy_summary(sources)
         stats = self._portfolio_stats(signals, sources, briefs, validation)
+
+        # Attach a resolved local headshot path (or None) for the UI.
+        profile = {**profile, "photo_url": self._photo_url(profile.get("full_name", ""), slug)}
 
         return {
             "profile": profile,
@@ -152,6 +178,7 @@ class ExecutiveIntelRepository:
             "artifact_slug": slug,
             "full_name": profile.get("full_name", "UNKNOWN"),
             "organization": profile.get("organization", "UNKNOWN"),
+            "photo_url": self._photo_url(profile.get("full_name", ""), slug),
             "title": profile.get("title") or profile.get("title_normalized") or "UNKNOWN",
             "title_svp_conclusion": profile.get("title_svp_conclusion"),
             "status": str(profile.get("status") or "ACTIVE").upper(),
