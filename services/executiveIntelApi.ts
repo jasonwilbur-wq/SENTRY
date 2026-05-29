@@ -1,5 +1,16 @@
 import { apiFetch } from './api';
 
+// title_svp_conclusion is a string in most profiles but a structured object
+// in at least one (Schmidt/Amazon). Accept both so the UI never renders a raw object.
+export interface TitleSvpConclusionObject {
+  status?: string;
+  evidence?: string;
+  note?: string;
+  confirmed_by_run?: string;
+  confirmed_at?: string;
+}
+export type TitleSvpConclusion = string | TitleSvpConclusionObject;
+
 export interface ExecutiveIntelStats {
   source_count: number;
   signal_count: number;
@@ -20,7 +31,7 @@ export interface ExecutivePortfolioSummary {
   full_name: string;
   organization: string;
   title: string;
-  title_svp_conclusion?: string;
+  title_svp_conclusion?: TitleSvpConclusion;
   status?: string;
   officer_type?: string;
   relevance_framing?: string;
@@ -43,7 +54,7 @@ export interface ExecutiveProfileRecord {
   organization: string;
   title: string;
   title_normalized?: string;
-  title_svp_conclusion?: string;
+  title_svp_conclusion?: TitleSvpConclusion;
   title_source_note?: string;
   status?: string;
   officer_type?: string;

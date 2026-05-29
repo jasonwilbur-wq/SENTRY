@@ -63,6 +63,23 @@ const statusTone = (status?: string): 'blue' | 'green' | 'yellow' | 'red' | 'gra
 
 const isArchived = (status?: string) => (status ?? 'ACTIVE').toUpperCase() === 'ARCHIVED';
 
+// title_svp_conclusion may be a plain string OR a structured object
+// ({status, evidence/note, confirmed_by_run, confirmed_at}). Never render the
+// raw object — React throws "Objects are not valid as a React child".
+function svpConclusionText(value: unknown): string {
+  if (!value) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'object') {
+    const obj = value as Record<string, unknown>;
+    const status = typeof obj.status === 'string' ? obj.status.replace(/_/g, ' ') : '';
+    const detail = typeof obj.evidence === 'string'
+      ? obj.evidence
+      : (typeof obj.note === 'string' ? obj.note : '');
+    return [status ? `SVP title: ${status}.` : '', detail].filter(Boolean).join(' ');
+  }
+  return '';
+}
+
 function optionLabel(item: ExecutivePortfolioSummary): string {
   const archived = isArchived(item.status);
   const prefix = archived ? '\u26A0 ' : '';
@@ -261,8 +278,8 @@ export function ExecutiveIntelPortfolio() {
               {portfolio.profile.discovery_result?.finding && (
                 <p className="mt-4 text-sm leading-6" style={{ color: 'var(--s-text-dim)' }}><strong>Discovery: </strong>{portfolio.profile.discovery_result.finding}</p>
               )}
-              {portfolio.profile.title_svp_conclusion && (
-                <p className="mt-4 text-sm leading-6" style={{ color: 'var(--s-text-dim)' }}>{portfolio.profile.title_svp_conclusion}</p>
+              {svpConclusionText(portfolio.profile.title_svp_conclusion) && (
+                <p className="mt-4 text-sm leading-6" style={{ color: 'var(--s-text-dim)' }}>{svpConclusionText(portfolio.profile.title_svp_conclusion)}</p>
               )}
             </Card>
 
