@@ -53,6 +53,31 @@ const verificationTone = (status?: string): 'blue' | 'green' | 'yellow' | 'red' 
   return 'gray';
 };
 
+const statusTone = (status?: string): 'blue' | 'green' | 'yellow' | 'red' | 'gray' => {
+  const value = (status ?? 'ACTIVE').toUpperCase();
+  if (value === 'ACTIVE') return 'green';
+  if (value === 'ARCHIVED') return 'red';
+  if (value === 'DISCOVERY') return 'yellow';
+  return 'gray';
+};
+
+const isArchived = (status?: string) => (status ?? 'ACTIVE').toUpperCase() === 'ARCHIVED';
+
+function optionLabel(item: ExecutivePortfolioSummary): string {
+  const archived = isArchived(item.status);
+  const prefix = archived ? '\u26A0 ' : '';
+  const suffix = archived ? ' (archived)' : '';
+  return `${prefix}${item.full_name} \u00b7 ${item.organization}${suffix}`;
+}
+
+// Analyst review layer: curated ESG key findings surfaced from the collection passes.
+const KEY_FINDINGS: string[] = [
+  'Ex-Walmart U.S. CEO Greg Foran is now Kroger\u2019s CEO (Feb 2026) \u2014 deepest competitive flag in this watchlist.',
+  '3 of the original 9 targets had stale/incorrect data \u2014 Target\u2019s Nusz departed, Kroger\u2019s CSO is embedded in Comms (unnamed), FedEx has no CSO (CEO owns it).',
+  'Regulatory center of gravity shifted: the U.S. SEC climate rule was withdrawn (Mar 2025); EU CSRD + California SB 253/261 are now the real mandatory triggers.',
+  'Escalation: a possible Walmart-CFO / Microsoft-board overlap was surfaced (MSFT sig_020) \u2014 route to Legal/Compliance before downstream use.',
+];
+
 export function ExecutiveIntelPortfolio() {
   const [portfolios, setPortfolios] = useState<ExecutivePortfolioSummary[]>([]);
   const [selectedId, setSelectedId] = useState<string>('');
@@ -101,6 +126,19 @@ export function ExecutiveIntelPortfolio() {
     [portfolios, selectedId],
   );
 
+  const overview = useMemo(() => {
+    const active = portfolios.filter(p => !isArchived(p.status));
+    const archived = portfolios.filter(p => isArchived(p.status));
+    return {
+      active,
+      archived,
+      totalSignals: portfolios.reduce((sum, p) => sum + p.stats.signal_count, 0),
+      totalSources: portfolios.reduce((sum, p) => sum + p.stats.source_count, 0),
+      totalCsoReady: portfolios.reduce((sum, p) => sum + p.stats.cso_ready_signal_count, 0),
+      totalInvalid: portfolios.reduce((sum, p) => sum + p.stats.invalid_signal_count, 0),
+    };
+  }, [portfolios]);
+
   if (status === 'loading') {
     return <div className="text-sm" style={{ color: 'var(--s-text-dim)' }}>Loading executive intelligence portfolios…</div>;
   }
@@ -146,10 +184,40 @@ export function ExecutiveIntelPortfolio() {
               aria-label="Select executive intelligence target portfolio"
             >
               {portfolios.map(item => (
-                <option key={item.profile_id} value={item.profile_id}>{item.full_name} · {item.organization}</option>
+                <option key={item.profile_id} value={item.profile_id}>{optionLabel(item)}</option>
               ))}
             </select>
           </label>
+        </div>
+      </Card>
+
+      <Card className="p-6">
+        <Badge tone="blue">ESG / Sustainability benchmark</Badge>
+        <h2 className="mt-3 text-xl font-black" style={{ color: 'var(--s-text)' }}>Competitor &amp; Supplier CSO Watchlist</h2>
+        <p className="mt-1 text-sm" style={{ color: 'var(--s-text-dim)' }}>
+          Sustainability (Chief Sustainability Officer) benchmarking for Walmart Enterprise Security — Emerging Technology. Not a security benchmark.
+        </p>
+        <div className="mt-5 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
+          <StatCard label="Active execs" value={overview.active.length} />
+          <StatCard label="Archived/stale" value={overview.archived.length} />
+          <StatCard label="Total signals" value={overview.totalSignals} />
+          <StatCard label="Total sources" value={overview.totalSources} />
+          <StatCard label="CSO-ready" value={overview.totalCsoReady} />
+          <StatCard label="Invalid signals" value={overview.totalInvalid} helper="Schema validation" />
+        </div>
+        <div className="mt-6">
+          <h3 className="text-sm font-black uppercase tracking-[0.16em]" style={{ color: 'var(--s-text)' }}>Key findings</h3>
+          <ul className="mt-3 space-y-2">
+            {KEY_FINDINGS.map((finding, idx) => (
+              <li key={idx} className="flex gap-2 text-sm leading-6" style={{ color: 'var(--s-text-dim)' }}>
+                <span aria-hidden="true" style={{ color: '#0053E2' }}>▸</span>
+                <span>{finding}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-4 text-xs" style={{ color: 'var(--s-text-dim)' }}>
+            Review-only. No DB writes, scheduling, or publication. Signals require analyst approval before CSO distribution.
+          </p>
         </div>
       </Card>
 
@@ -177,9 +245,22 @@ export function ExecutiveIntelPortfolio() {
               <p className="mt-1 text-sm font-bold" style={{ color: 'var(--s-text-dim)' }}>{portfolio.profile.title}</p>
               <p className="text-sm" style={{ color: 'var(--s-text-dim)' }}>{portfolio.profile.organization}</p>
               <div className="mt-4 flex flex-wrap gap-2">
+                <Badge tone={statusTone(portfolio.profile.status)}>{(portfolio.profile.status ?? 'ACTIVE').toUpperCase()}</Badge>
+                {portfolio.profile.officer_type === 'CHIEF_SUSTAINABILITY_OFFICER' && <Badge tone="blue">ESG / Sustainability</Badge>}
                 <Badge tone={portfolio.validation.profile_valid ? 'green' : 'red'}>{portfolio.validation.profile_valid ? 'Profile valid' : 'Profile invalid'}</Badge>
                 <Badge tone={portfolio.stats.portfolio_ready_for_review ? 'green' : 'yellow'}>{portfolio.stats.portfolio_ready_for_review ? 'Ready for review' : 'Needs cleanup'}</Badge>
               </div>
+              {portfolio.profile.stale_reason?.finding && (
+                <div className="mt-4 rounded-xl border p-3 text-sm leading-6" style={{ borderColor: 'rgba(234,17,0,0.28)', background: 'rgba(234,17,0,0.06)', color: 'var(--s-text-dim)' }}>
+                  <strong style={{ color: '#EA1100' }}>Archived: </strong>{portfolio.profile.stale_reason.finding}
+                  {portfolio.profile.stale_reason.superseded_by && (
+                    <div className="mt-1 text-xs">Superseded by: {portfolio.profile.stale_reason.superseded_by}</div>
+                  )}
+                </div>
+              )}
+              {portfolio.profile.discovery_result?.finding && (
+                <p className="mt-4 text-sm leading-6" style={{ color: 'var(--s-text-dim)' }}><strong>Discovery: </strong>{portfolio.profile.discovery_result.finding}</p>
+              )}
               {portfolio.profile.title_svp_conclusion && (
                 <p className="mt-4 text-sm leading-6" style={{ color: 'var(--s-text-dim)' }}>{portfolio.profile.title_svp_conclusion}</p>
               )}
@@ -223,6 +304,19 @@ export function ExecutiveIntelPortfolio() {
                     <h4 className="mt-3 font-black" style={{ color: 'var(--s-text)' }}>{signal.title}</h4>
                     <p className="mt-2 text-sm leading-6" style={{ color: 'var(--s-text-dim)' }}>{signal.summary}</p>
                     <p className="mt-3 text-sm leading-6" style={{ color: 'var(--s-text)' }}><strong>Walmart CSO relevance:</strong> {signal.walmart_cso_relevance}</p>
+                    {signal.citations?.length > 0 && (
+                      <div className="mt-3 border-t pt-3" style={{ borderColor: 'var(--s-border-light)' }}>
+                        <div className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--s-text-dim)' }}>Citations ({signal.citations.length})</div>
+                        <ul className="mt-2 space-y-1">
+                          {signal.citations.map(citation => (
+                            <li key={citation.citation_id} className="text-xs leading-5">
+                              <a href={citation.url} target="_blank" rel="noreferrer" className="underline" style={{ color: '#0053E2' }}>{citation.source_title || citation.url}</a>
+                              <span style={{ color: 'var(--s-text-dim)' }}> · {citation.source_quality}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                   </article>
                 ))}
               </div>

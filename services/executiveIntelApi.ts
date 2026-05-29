@@ -21,6 +21,10 @@ export interface ExecutivePortfolioSummary {
   organization: string;
   title: string;
   title_svp_conclusion?: string;
+  status?: string;
+  officer_type?: string;
+  relevance_framing?: string;
+  superseded_by?: string | null;
   updated_at?: string | number;
   stats: ExecutiveIntelStats;
   latest_brief?: ArtifactRef | null;
@@ -41,6 +45,19 @@ export interface ExecutiveProfileRecord {
   title_normalized?: string;
   title_svp_conclusion?: string;
   title_source_note?: string;
+  status?: string;
+  officer_type?: string;
+  relevance_framing?: string;
+  stale_reason?: {
+    finding?: string;
+    superseded_by?: string;
+    flagged_by_run?: string;
+    flagged_at?: string;
+  };
+  discovery_result?: {
+    status?: string;
+    finding?: string;
+  };
   aliases?: string[];
   focus_topics?: string[];
   collection_notes?: string;
