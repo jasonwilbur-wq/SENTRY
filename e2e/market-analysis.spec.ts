@@ -9,27 +9,12 @@
  * - Executive insight cards are present
  */
 import { test, expect, type Page } from '@playwright/test';
-import { BASE_URL, MarketAnalysis, AppShell } from './helpers/pageObjects';
+import { AppShell, MarketAnalysis } from './helpers/pageObjects';
 
 async function openMarketAnalysis(page: Page) {
-  await page.goto(BASE_URL);
-  await page.waitForTimeout(1200);
-
-  // Try nav link
-  const link = page
-    .getByRole('link', { name: /market|analysis|forecast|competitor/i })
-    .first();
-
-  if (await link.isVisible()) {
-    await link.click();
-  } else {
-    // Fallback: look for a tab button
-    const btn = page
-      .getByRole('button', { name: /market|analysis|forecast/i })
-      .first();
-    if (await btn.isVisible()) await btn.click();
-  }
-
+  const shell = new AppShell(page);
+  await shell.goto();
+  await shell.navigateTo('Market Analysis');
   await page.waitForTimeout(1500);
 }
 

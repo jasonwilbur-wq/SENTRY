@@ -8,15 +8,13 @@
  * partially pass if the backend is unreachable.
  */
 import { test, expect, type Page } from '@playwright/test';
-import { BASE_URL, API_URL, VendorDashboard } from './helpers/pageObjects';
+import { API_URL, AppShell, VendorDashboard } from './helpers/pageObjects';
 
 // Navigate to the vendor dashboard view
 async function openDashboard(page: Page) {
-  await page.goto(BASE_URL);
-  await page.waitForTimeout(1200);
-  // Try to click a nav link if one exists
-  const link = page.getByRole('link', { name: /dashboard|vendor/i }).first();
-  if (await link.isVisible()) await link.click();
+  const shell = new AppShell(page);
+  await shell.goto();
+  await shell.navigateTo('Vendor Directory');
   await page.waitForTimeout(800);
 }
 

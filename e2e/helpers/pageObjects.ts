@@ -4,10 +4,33 @@
  * Page objects encapsulate selector logic so tests stay
  * readable when the UI changes.
  */
-import { type Page, type Locator } from '@playwright/test';
+import { type Page, type Locator, type Response } from '@playwright/test';
 
-export const BASE_URL = 'http://localhost:3000';
+export const BASE_URL = 'http://127.0.0.1:3000';
 export const API_URL  = 'http://localhost:8082';
+
+/**
+ * Navigate to the Vite app with a small retry loop.
+ *
+ * Playwright can race the first dev-server connection on Windows and surface
+ * `net::ERR_CONNECTION_RESET` even though the next request succeeds. Keep this
+ * retry centralized so individual tests don't grow little flake gardens.
+ */
+export async function gotoApp(page: Page, url = BASE_URL): Promise<Response | null> {
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      return await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30_000 });
+    } catch (error) {
+      lastError = error;
+      if (attempt === 3) break;
+      await page.waitForTimeout(400 * attempt);
+    }
+  }
+
+  throw lastError;
+}
 
 // ── Landing / Shell ────────────────────────────────────────────────────────
 
@@ -24,12 +47,26 @@ export class AppShell {
   }
 
   async goto() {
-    await this.page.goto(BASE_URL);
+    await gotoApp(this.page);
+    await this.enterPlatformIfNeeded();
+    await this.sidebar.waitFor({ state: 'visible', timeout: 10_000 });
   }
 
-  /** Click a sidebar/nav link by its visible text */
+  /** Enter through the landing page when a fresh browser context starts there. */
+  async enterPlatformIfNeeded() {
+    const enterButton = this.page.getByRole('button', { name: /enter sentry/i });
+
+    try {
+      await enterButton.waitFor({ state: 'visible', timeout: 2_500 });
+      await enterButton.click();
+    } catch {
+      // Already inside the app shell, or the landing CTA is not present.
+    }
+  }
+
+  /** Click a sidebar/nav item by its visible text. */
   async navigateTo(label: string) {
-    await this.page.getByRole('link', { name: label }).first().click();
+    await this.page.getByRole('button', { name: label }).first().click();
   }
 
   /** Click a button by its accessible name */

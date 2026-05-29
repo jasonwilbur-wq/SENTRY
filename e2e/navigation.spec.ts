@@ -5,7 +5,7 @@
  * the expected view without a full page reload or crash.
  */
 import { test, expect } from '@playwright/test';
-import { AppShell, BASE_URL } from './helpers/pageObjects';
+import { AppShell } from './helpers/pageObjects';
 
 // Helper: wait for a heading/text to appear after navigation
 async function expectContentContaining(page: any, pattern: RegExp, timeout = 6000) {
@@ -15,8 +15,9 @@ async function expectContentContaining(page: any, pattern: RegExp, timeout = 600
 test.describe('Navigation — SPA Routing', () => {
 
   test.beforeEach(async ({ page }) => {
-    await page.goto(BASE_URL);
-    await page.waitForTimeout(1200);
+    const shell = new AppShell(page);
+    await shell.goto();
+    await page.waitForTimeout(600);
   });
 
   test('app loads and sidebar is visible', async ({ page }) => {
@@ -25,12 +26,10 @@ test.describe('Navigation — SPA Routing', () => {
   });
 
   test('can navigate to Vendor Dashboard view', async ({ page }) => {
-    // Look for nav links that include dashboard-related text
-    const dashLink = page.getByRole('link', { name: /dashboard|vendor/i }).first();
-    if (await dashLink.isVisible()) {
-      await dashLink.click();
-      await page.waitForTimeout(800);
-    }
+    const shell = new AppShell(page);
+    await shell.navigateTo('Vendor Directory');
+    await page.waitForTimeout(800);
+
     // Either vendors loaded or a loading state is present
     const hasVendorContent = await page.locator('body').evaluate(
       el => el.textContent?.toLowerCase().includes('vendor') ?? false,
@@ -39,36 +38,23 @@ test.describe('Navigation — SPA Routing', () => {
   });
 
   test('can navigate to Market Analysis / Forecast view', async ({ page }) => {
-    const marketLink = page.getByRole('link', { name: /market|analysis|forecast|competitor/i }).first();
-    if (await marketLink.isVisible()) {
-      await marketLink.click();
-      await page.waitForTimeout(1200);
-      // The forecast page should mention "Q1" or "Forecast" or "Security Technology"
-      await expectContentContaining(page, /Q1|forecast|security technology/i, 8000);
-    } else {
-      // If no explicit link, look for a tab or button
-      const marketBtn = page.getByRole('button', { name: /market|analysis|forecast/i }).first();
-      if (await marketBtn.isVisible()) {
-        await marketBtn.click();
-        await page.waitForTimeout(1200);
-      }
-      // Mark as passing if there's no market link (feature may not be in nav)
-    }
+    const shell = new AppShell(page);
+    await shell.navigateTo('Market Analysis');
+    await page.waitForTimeout(1200);
+
+    // The forecast page should mention "Q1" or "Forecast" or "Security Technology"
+    await expectContentContaining(page, /Q1|forecast|security technology|market analysis/i, 8000);
   });
 
   test('clicking a nav item does not trigger a full page reload', async ({ page }) => {
     // Record the number of navigations — a SPA should only have the initial one
     let navCount = 0;
     page.on('framenavigated', () => navCount++);
-    await page.goto(BASE_URL);
+    const shell = new AppShell(page);
     const initialNavCount = navCount;
 
-    // Click any link in the sidebar
-    const anyLink = page.locator('nav a, aside a').first();
-    if (await anyLink.isVisible()) {
-      await anyLink.click();
-      await page.waitForTimeout(500);
-    }
+    await shell.navigateTo('Vendor Directory');
+    await page.waitForTimeout(500);
 
     // In a true SPA, framenavigated fires once more for hash/history change.
     // But it should NOT load a new HTML document.
@@ -76,8 +62,6 @@ test.describe('Navigation — SPA Routing', () => {
   });
 
   test('SENTRY branding is present somewhere in the shell', async ({ page }) => {
-    await page.goto(BASE_URL);
-    await page.waitForTimeout(800);
     const bodyText = await page.locator('body').textContent() ?? '';
     expect(
       bodyText.toUpperCase().includes('SENTRY') ||
@@ -87,8 +71,6 @@ test.describe('Navigation — SPA Routing', () => {
   });
 
   test('back button does not crash the app', async ({ page }) => {
-    await page.goto(BASE_URL);
-    await page.waitForTimeout(800);
     await page.goBack();
     await page.goForward();
     await page.waitForTimeout(500);

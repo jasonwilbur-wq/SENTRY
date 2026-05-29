@@ -6,17 +6,17 @@
  * running the rest of the suite.
  */
 import { test, expect } from '@playwright/test';
-import { AppShell, BASE_URL } from './helpers/pageObjects';
+import { AppShell, gotoApp } from './helpers/pageObjects';
 
 test.describe('Smoke — App Bootstrap', () => {
 
   test('homepage returns HTTP 200 and loads without crashing', async ({ page }) => {
-    const response = await page.goto(BASE_URL);
+    const response = await gotoApp(page);
     expect(response?.status()).toBeLessThan(400);
   });
 
   test('page has a meaningful title', async ({ page }) => {
-    await page.goto(BASE_URL);
+    await gotoApp(page);
     const title = await page.title();
     expect(title.length).toBeGreaterThan(0);
     expect(title).not.toBe('Error');
@@ -25,14 +25,14 @@ test.describe('Smoke — App Bootstrap', () => {
   test('no uncaught JavaScript errors on load', async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (err) => errors.push(err.message));
-    await page.goto(BASE_URL);
+    await gotoApp(page);
     // Give React time to mount + async data fetches to fire
     await page.waitForTimeout(2000);
     expect(errors, `JS errors detected: ${errors.join(', ')}`).toHaveLength(0);
   });
 
   test('root #root element is present (React mounted)', async ({ page }) => {
-    await page.goto(BASE_URL);
+    await gotoApp(page);
     const root = page.locator('#root');
     await expect(root).toBeAttached();
     // Ensure React actually rendered something inside
@@ -41,7 +41,7 @@ test.describe('Smoke — App Bootstrap', () => {
   });
 
   test('app renders at least one heading', async ({ page }) => {
-    await page.goto(BASE_URL);
+    await gotoApp(page);
     await page.waitForTimeout(1000);
     const headings = page.locator('h1, h2, h3');
     await expect(headings.first()).toBeVisible();
@@ -55,7 +55,7 @@ test.describe('Smoke — App Bootstrap', () => {
         failedRequests.push(`${response.status()} ${response.url()}`);
       }
     });
-    await page.goto(BASE_URL);
+    await gotoApp(page);
     await page.waitForTimeout(1500);
     // We allow backend to be down in unit-CI; only hard-fail on frontend 5xx
     const frontendErrors = failedRequests.filter(r => !r.includes(':8082'));
@@ -63,7 +63,7 @@ test.describe('Smoke — App Bootstrap', () => {
   });
 
   test('CSS is loaded (body has non-default background)', async ({ page }) => {
-    await page.goto(BASE_URL);
+    await gotoApp(page);
     const bgColor = await page.evaluate(() =>
       window.getComputedStyle(document.body).backgroundColor,
     );
