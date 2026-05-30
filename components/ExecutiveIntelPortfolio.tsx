@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ExecutivePortfolio,
   ExecutivePortfolioSummary,
@@ -10,6 +10,8 @@ import {
 import { Badge, Card, StatCard, ExecutiveAvatar } from './executiveIntel/ui';
 import { SignalFeed } from './executiveIntel/SignalFeed';
 import { ReviewQueue } from './executiveIntel/ReviewQueue';
+import { MomentumPanel, MoveTable } from './executiveIntel/MovesAndMomentum';
+import { ComparisonRail } from './executiveIntel/ComparisonRail';
 import {
   KEY_FINDINGS,
   groupByCompany,
@@ -26,6 +28,15 @@ export function ExecutiveIntelPortfolio() {
   const [report, setReport] = useState<ExecutiveReport | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'empty' | 'error'>('loading');
   const [error, setError] = useState('');
+  const profileRef = useRef<HTMLDivElement | null>(null);
+
+  // Select a target and smoothly scroll the profile detail into view.
+  const selectAndScroll = (id: string) => {
+    setSelectedId(id);
+    requestAnimationFrame(() => {
+      profileRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -182,7 +193,7 @@ export function ExecutiveIntelPortfolio() {
                     <button
                       key={item.profile_id}
                       type="button"
-                      onClick={() => setSelectedId(item.profile_id)}
+                      onClick={() => selectAndScroll(item.profile_id)}
                       className="flex items-center gap-3 rounded-xl border p-2.5 text-left transition"
                       style={{
                         borderColor: selected ? '#0053E2' : 'var(--s-border)',
@@ -205,6 +216,8 @@ export function ExecutiveIntelPortfolio() {
         </div>
       </Card>
 
+      <ComparisonRail portfolios={portfolios} selectedId={selectedId} onSelect={selectAndScroll} />
+
       {selectedSummary && (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <StatCard label="Sources" value={selectedSummary.stats.source_count} helper="Collected public source records" />
@@ -222,7 +235,7 @@ export function ExecutiveIntelPortfolio() {
       )}
 
       {portfolio && (
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div ref={profileRef} className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           <div className="xl:col-span-1 space-y-6">
             <Card>
               <div className="flex items-start gap-3">
@@ -265,6 +278,8 @@ export function ExecutiveIntelPortfolio() {
               )}
             </Card>
 
+            <MomentumPanel signals={portfolio.signals} />
+
             <ReviewQueue signals={portfolio.signals} />
 
             <Card>
@@ -289,6 +304,8 @@ export function ExecutiveIntelPortfolio() {
           </div>
 
           <div className="xl:col-span-2 space-y-6">
+            <MoveTable signals={portfolio.signals} />
+
             <SignalFeed signals={portfolio.signals} />
 
             <Card>
