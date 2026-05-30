@@ -7,138 +7,17 @@ import {
   fetchExecutivePortfolios,
   fetchExecutiveReport,
 } from '../services/executiveIntelApi';
-
-const badgeStyle = (tone: 'blue' | 'green' | 'yellow' | 'red' | 'gray') => {
-  const styles = {
-    blue: { background: 'rgba(0,83,226,0.12)', color: '#0053E2', border: 'rgba(0,83,226,0.28)' },
-    green: { background: 'rgba(42,135,3,0.12)', color: '#2A8703', border: 'rgba(42,135,3,0.28)' },
-    yellow: { background: 'rgba(255,194,32,0.16)', color: '#995213', border: 'rgba(255,194,32,0.5)' },
-    red: { background: 'rgba(234,17,0,0.12)', color: '#EA1100', border: 'rgba(234,17,0,0.28)' },
-    gray: { background: 'var(--s-input-bg)', color: 'var(--s-text-dim)', border: 'var(--s-border-mid)' },
-  }[tone];
-  return { background: styles.background, color: styles.color, border: `1px solid ${styles.border}` };
-};
-
-function Badge({ children, tone = 'gray' }: { children: React.ReactNode; tone?: 'blue' | 'green' | 'yellow' | 'red' | 'gray' }) {
-  return (
-    <span className="inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.12em]" style={badgeStyle(tone)}>
-      {children}
-    </span>
-  );
-}
-
-function Card({ children, className = '' }: { children: React.ReactNode; className?: string }) {
-  return (
-    <section className={`rounded-2xl border p-5 shadow-sm ${className}`} style={{ background: 'var(--s-card)', borderColor: 'var(--s-border)' }}>
-      {children}
-    </section>
-  );
-}
-
-function StatCard({ label, value, helper }: { label: string; value: React.ReactNode; helper?: string }) {
-  return (
-    <Card className="p-4">
-      <div className="text-[10px] font-black uppercase tracking-[0.18em]" style={{ color: 'var(--s-text-dim)' }}>{label}</div>
-      <div className="mt-2 text-2xl font-black" style={{ color: 'var(--s-text)' }}>{value}</div>
-      {helper && <div className="mt-1 text-xs" style={{ color: 'var(--s-text-dim)' }}>{helper}</div>}
-    </Card>
-  );
-}
-
-// Deterministic gradient palette for letter-avatar fallback (no external calls).
-const AVATAR_GRADIENTS: ReadonlyArray<readonly [string, string]> = [
-  ['#0053E2', '#2A6FF0'], ['#995213', '#C8821F'], ['#2A8703', '#3EA821'],
-  ['#6D28D9', '#8B5CF6'], ['#BE185D', '#E11D74'], ['#0E7490', '#0EA5C4'],
-  ['#B91C1C', '#EA1100'], ['#475569', '#64748B'],
-];
-function initialsOf(name: string): string {
-  const parts = (name || '?').replace(/\(.*?\)/g, '').trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return '?';
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
-function gradientFor(name: string): readonly [string, string] {
-  let hash = 0;
-  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) | 0;
-  return AVATAR_GRADIENTS[Math.abs(hash) % AVATAR_GRADIENTS.length];
-}
-
-function ExecutiveAvatar({ name, photoUrl, size = 44 }: { name: string; photoUrl?: string | null; size?: number }) {
-  const [failed, setFailed] = useState(false);
-  const dim = { width: size, height: size };
-  if (photoUrl && !failed) {
-    return (
-      <img
-        src={photoUrl}
-        alt={`${name} headshot`}
-        onError={() => setFailed(true)}
-        className="rounded-xl object-cover flex-shrink-0"
-        style={{ ...dim, border: '1px solid var(--s-border)' }}
-      />
-    );
-  }
-  const [from, to] = gradientFor(name);
-  return (
-    <div
-      aria-label={`${name} (no photo)`}
-      role="img"
-      className="rounded-xl flex items-center justify-center flex-shrink-0 font-black text-white"
-      style={{ ...dim, background: `linear-gradient(135deg, ${from}, ${to})`, fontSize: size * 0.36 }}
-    >
-      {initialsOf(name)}
-    </div>
-  );
-}
-
-const verificationTone = (status?: string): 'blue' | 'green' | 'yellow' | 'red' | 'gray' => {
-  if (status === 'VERIFIED') return 'green';
-  if (status === 'PARTIALLY_VERIFIED') return 'blue';
-  if (status === 'LEAD_ONLY') return 'yellow';
-  if (status === 'REJECTED' || status === 'CONFLICTING') return 'red';
-  return 'gray';
-};
-
-const statusTone = (status?: string): 'blue' | 'green' | 'yellow' | 'red' | 'gray' => {
-  const value = (status ?? 'ACTIVE').toUpperCase();
-  if (value === 'ACTIVE') return 'green';
-  if (value === 'ARCHIVED') return 'red';
-  if (value === 'DISCOVERY') return 'yellow';
-  return 'gray';
-};
-
-const isArchived = (status?: string) => (status ?? 'ACTIVE').toUpperCase() === 'ARCHIVED';
-
-// title_svp_conclusion may be a plain string OR a structured object
-// ({status, evidence/note, confirmed_by_run, confirmed_at}). Never render the
-// raw object — React throws "Objects are not valid as a React child".
-function svpConclusionText(value: unknown): string {
-  if (!value) return '';
-  if (typeof value === 'string') return value;
-  if (typeof value === 'object') {
-    const obj = value as Record<string, unknown>;
-    const status = typeof obj.status === 'string' ? obj.status.replace(/_/g, ' ') : '';
-    const detail = typeof obj.evidence === 'string'
-      ? obj.evidence
-      : (typeof obj.note === 'string' ? obj.note : '');
-    return [status ? `SVP title: ${status}.` : '', detail].filter(Boolean).join(' ');
-  }
-  return '';
-}
-
-function optionLabel(item: ExecutivePortfolioSummary): string {
-  const archived = isArchived(item.status);
-  const prefix = archived ? '\u26A0 ' : '';
-  const suffix = archived ? ' (archived)' : '';
-  return `${prefix}${item.full_name} \u00b7 ${item.organization}${suffix}`;
-}
-
-// Analyst review layer: curated ESG key findings surfaced from the collection passes.
-const KEY_FINDINGS: string[] = [
-  'Ex-Walmart U.S. CEO Greg Foran is now Kroger\u2019s CEO (Feb 2026) \u2014 deepest competitive flag in this watchlist.',
-  '3 of the original 9 targets had stale/incorrect data \u2014 Target\u2019s Nusz departed, Kroger\u2019s CSO is embedded in Comms (unnamed), FedEx has no CSO (CEO owns it).',
-  'Regulatory center of gravity shifted: the U.S. SEC climate rule was withdrawn (Mar 2025); EU CSRD + California SB 253/261 are now the real mandatory triggers.',
-  'Escalation: a possible Walmart-CFO / Microsoft-board overlap was surfaced (MSFT sig_020) \u2014 route to Legal/Compliance before downstream use.',
-];
+import { Badge, Card, StatCard, ExecutiveAvatar } from './executiveIntel/ui';
+import { SignalFeed } from './executiveIntel/SignalFeed';
+import { ReviewQueue } from './executiveIntel/ReviewQueue';
+import {
+  KEY_FINDINGS,
+  groupByCompany,
+  isArchived,
+  optionLabel,
+  statusTone,
+  svpConclusionText,
+} from './executiveIntel/profileLogic';
 
 export function ExecutiveIntelPortfolio() {
   const [portfolios, setPortfolios] = useState<ExecutivePortfolioSummary[]>([]);
@@ -201,26 +80,7 @@ export function ExecutiveIntelPortfolio() {
     };
   }, [portfolios]);
 
-  // Group portfolios by company for the picker; companies sorted A–Z,
-  // members active-first then alphabetical.
-  const byCompany = useMemo(() => {
-    const groups = new Map<string, ExecutivePortfolioSummary[]>();
-    for (const p of portfolios) {
-      const org = p.organization || 'Other';
-      if (!groups.has(org)) groups.set(org, []);
-      groups.get(org)!.push(p);
-    }
-    return [...groups.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([org, members]) => [
-        org,
-        members.sort((a, b) => {
-          const aa = isArchived(a.status) ? 1 : 0;
-          const bb = isArchived(b.status) ? 1 : 0;
-          return aa - bb || a.full_name.localeCompare(b.full_name);
-        }),
-      ] as [string, ExecutivePortfolioSummary[]]);
-  }, [portfolios]);
+  const byCompany = useMemo(() => groupByCompany(portfolios), [portfolios]);
 
   if (status === 'loading') {
     return <div className="text-sm" style={{ color: 'var(--s-text-dim)' }}>Loading executive intelligence portfolios…</div>;
@@ -255,14 +115,14 @@ export function ExecutiveIntelPortfolio() {
             <Badge tone="blue">Review-only portfolio builder</Badge>
             <h2 className="mt-3 text-2xl font-black" style={{ color: 'var(--s-text)' }}>Executive Intelligence Targets</h2>
             <p className="mt-2 max-w-3xl text-sm leading-6" style={{ color: 'var(--s-text-dim)' }}>
-              This page proves the pipeline can build reusable target portfolios and draft reports from Executive Signal Scout artifacts without DB writes, scheduling, or publication.
+              Competitor &amp; supplier C-suite benchmarking from Executive Signal Scout artifacts. Review-only: no DB writes, scheduling, or publication.
             </p>
           </div>
           <label className="w-full lg:w-96">
             <span className="text-[11px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--s-text-dim)' }}>Target portfolio</span>
             <select
               className="sentry-input mt-2 w-full"
-              value={selectedId}
+           value={selectedId}
               onChange={event => setSelectedId(event.target.value)}
               aria-label="Select executive intelligence target portfolio"
             >
@@ -289,7 +149,7 @@ export function ExecutiveIntelPortfolio() {
           <StatCard label="Archived/stale" value={overview.archived.length} />
           <StatCard label="Total signals" value={overview.totalSignals} />
           <StatCard label="Total sources" value={overview.totalSources} />
-          <StatCard label="CSO-ready" value={overview.totalCsoReady} />
+          <StatCard label="CSO-ready" value={overview.totalCsoReady} tone="green" />
           <StatCard label="Invalid signals" value={overview.totalInvalid} helper="Schema validation" />
         </div>
         <div className="mt-6">
@@ -349,8 +209,8 @@ export function ExecutiveIntelPortfolio() {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           <StatCard label="Sources" value={selectedSummary.stats.source_count} helper="Collected public source records" />
           <StatCard label="Signals" value={selectedSummary.stats.signal_count} helper="Normalized target intelligence items" />
-          <StatCard label="Contract valid" value={`${selectedSummary.stats.valid_signal_count}/${selectedSummary.stats.signal_count}`} helper="Backend ExecutiveSignal validation" />
-          <StatCard label="CSO-ready candidates" value={selectedSummary.stats.cso_ready_signal_count} helper="Still requires analyst approval" />
+          <StatCard label="Contract valid" value={selectedSummary.stats.valid_signal_count + '/' + selectedSummary.stats.signal_count} helper="Backend ExecutiveSignal validation" />
+          <StatCard label="CSO-ready candidates" value={selectedSummary.stats.cso_ready_signal_count} helper="Still requires analyst approval" tone="green" />
         </div>
       )}
 
@@ -379,6 +239,16 @@ export function ExecutiveIntelPortfolio() {
                 <Badge tone={portfolio.validation.profile_valid ? 'green' : 'red'}>{portfolio.validation.profile_valid ? 'Profile valid' : 'Profile invalid'}</Badge>
                 <Badge tone={portfolio.stats.portfolio_ready_for_review ? 'green' : 'yellow'}>{portfolio.stats.portfolio_ready_for_review ? 'Ready for review' : 'Needs cleanup'}</Badge>
               </div>
+              {portfolio.profile.focus_topics && portfolio.profile.focus_topics.length > 0 && (
+                <div className="mt-4">
+                  <div className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--s-text-dim)' }}>Focus topics</div>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {portfolio.profile.focus_topics.map(topic => (
+                      <span key={topic} className="rounded-md px-2 py-0.5 text-xs" style={{ background: 'var(--s-input-bg)', color: 'var(--s-text-dim)' }}>{topic}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
               {portfolio.profile.stale_reason?.finding && (
                 <div className="mt-4 rounded-xl border p-3 text-sm leading-6" style={{ borderColor: 'rgba(234,17,0,0.28)', background: 'rgba(234,17,0,0.06)', color: 'var(--s-text-dim)' }}>
                   <strong style={{ color: '#EA1100' }}>Archived: </strong>{portfolio.profile.stale_reason.finding}
@@ -394,6 +264,8 @@ export function ExecutiveIntelPortfolio() {
                 <p className="mt-4 text-sm leading-6" style={{ color: 'var(--s-text-dim)' }}>{svpConclusionText(portfolio.profile.title_svp_conclusion)}</p>
               )}
             </Card>
+
+            <ReviewQueue signals={portfolio.signals} />
 
             <Card>
               <h3 className="text-sm font-black uppercase tracking-[0.16em]" style={{ color: 'var(--s-text)' }}>Source policy</h3>
@@ -417,39 +289,7 @@ export function ExecutiveIntelPortfolio() {
           </div>
 
           <div className="xl:col-span-2 space-y-6">
-            <Card>
-              <div className="flex items-center justify-between gap-3">
-                <h3 className="text-lg font-black" style={{ color: 'var(--s-text)' }}>Signals</h3>
-                <Badge tone="gray">{portfolio.signals.length} items</Badge>
-              </div>
-              <div className="mt-4 space-y-4">
-                {portfolio.signals.map(signal => (
-                  <article key={`${signal._artifact_file}-${signal.signal_id}`} className="rounded-xl border p-4" style={{ borderColor: 'var(--s-border-light)', background: 'var(--s-input-bg)' }}>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge tone={verificationTone(signal.verification_status)}>{signal.verification_status}</Badge>
-                      <Badge tone="gray">{signal.category}</Badge>
-                      <span className="text-xs" style={{ color: 'var(--s-text-dim)' }}>{signal.event_date ?? 'UNKNOWN DATE'}</span>
-                    </div>
-                    <h4 className="mt-3 font-black" style={{ color: 'var(--s-text)' }}>{signal.title}</h4>
-                    <p className="mt-2 text-sm leading-6" style={{ color: 'var(--s-text-dim)' }}>{signal.summary}</p>
-                    <p className="mt-3 text-sm leading-6" style={{ color: 'var(--s-text)' }}><strong>Walmart CSO relevance:</strong> {signal.walmart_cso_relevance}</p>
-                    {signal.citations?.length > 0 && (
-                      <div className="mt-3 border-t pt-3" style={{ borderColor: 'var(--s-border-light)' }}>
-                        <div className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--s-text-dim)' }}>Citations ({signal.citations.length})</div>
-                        <ul className="mt-2 space-y-1">
-                          {signal.citations.map(citation => (
-                            <li key={citation.citation_id} className="text-xs leading-5">
-                              <a href={citation.url} target="_blank" rel="noreferrer" className="underline" style={{ color: '#0053E2' }}>{citation.source_title || citation.url}</a>
-                              <span style={{ color: 'var(--s-text-dim)' }}> · {citation.source_quality}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </article>
-                ))}
-              </div>
-            </Card>
+            <SignalFeed signals={portfolio.signals} />
 
             <Card>
               <h3 className="text-lg font-black" style={{ color: 'var(--s-text)' }}>Latest draft brief</h3>
