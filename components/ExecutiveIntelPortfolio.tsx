@@ -11,14 +11,13 @@ import { Badge, Card, StatCard, ExecutiveAvatar } from './executiveIntel/ui';
 import { SignalFeed } from './executiveIntel/SignalFeed';
 import { ReviewQueue } from './executiveIntel/ReviewQueue';
 import { MomentumPanel, MoveTable } from './executiveIntel/MovesAndMomentum';
-import { ComparisonRail } from './executiveIntel/ComparisonRail';
+import { ExecutiveSidebar } from './executiveIntel/ExecutiveSidebar';
+import { OverviewDeck } from './executiveIntel/OverviewDeck';
 import { SwotPanel, CollectionGaps } from './executiveIntel/InsightPanels';
 import { downloadReport } from './executiveIntel/reportExport';
 import {
   KEY_FINDINGS,
-  groupByCompany,
   isArchived,
-  optionLabel,
   statusTone,
   svpConclusionText,
 } from './executiveIntel/profileLogic';
@@ -93,8 +92,6 @@ export function ExecutiveIntelPortfolio() {
     };
   }, [portfolios]);
 
-  const byCompany = useMemo(() => groupByCompany(portfolios), [portfolios]);
-
   if (status === 'loading') {
     return <div role="status" aria-live="polite" className="text-sm" style={{ color: 'var(--s-text-dim)' }}>Loading executive intelligence portfolios…</div>;
   }
@@ -125,121 +122,53 @@ export function ExecutiveIntelPortfolio() {
   return (
     <div className="space-y-6">
       <Card>
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-          <div>
-            <Badge tone="blue">Review-only portfolio builder</Badge>
-            <h2 className="mt-3 text-2xl font-black" style={{ color: 'var(--s-text)' }}>Executive Intelligence Targets</h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6" style={{ color: 'var(--s-text-dim)' }}>
-              Competitor &amp; supplier C-suite benchmarking from Executive Signal Scout artifacts. Review-only: no DB writes, scheduling, or publication.
-            </p>
-          </div>
-          <label className="w-full lg:w-96">
-            <span className="text-[11px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--s-text-dim)' }}>Target portfolio</span>
-            <select
-              className="sentry-input mt-2 w-full"
-           value={selectedId}
-              onChange={event => setSelectedId(event.target.value)}
-              aria-label="Select executive intelligence target portfolio"
-            >
-              {byCompany.map(([org, members]) => (
-                <optgroup key={org} label={org}>
-                  {members.map(item => (
-                    <option key={item.profile_id} value={item.profile_id}>{optionLabel(item)}</option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-            {portfolio && (
-              <button
-                type="button"
-                onClick={() => downloadReport(portfolio, portfolios)}
-                className="mt-2 w-full cursor-pointer rounded-lg border px-4 py-2 text-center font-black"
-                style={{ background: '#0053E2', color: '#fff', borderColor: '#0053E2' }}
-              >
-                <span aria-hidden="true">↓ </span>Download benchmark report
-              </button>
-            )}
-          </label>
-        </div>
-      </Card>
-
-      <Card className="p-6">
-        <Badge tone="blue">ESG / Sustainability benchmark</Badge>
-        <h2 className="mt-3 text-xl font-black" style={{ color: 'var(--s-text)' }}>Competitor &amp; Supplier CSO Watchlist</h2>
-        <p className="mt-1 text-sm" style={{ color: 'var(--s-text-dim)' }}>
-          Sustainability (Chief Sustainability Officer) benchmarking for Walmart Enterprise Security — Emerging Technology. Not a security benchmark.
+        <Badge tone="blue">Review-only portfolio builder</Badge>
+        <h2 className="mt-3 text-2xl font-black" style={{ color: 'var(--s-text)' }}>Executive Intelligence Targets</h2>
+        <p className="mt-2 max-w-3xl text-sm leading-6" style={{ color: 'var(--s-text-dim)' }}>
+          Competitor &amp; supplier C-suite benchmarking from Executive Signal Scout artifacts. Review-only: no DB writes, scheduling, or publication.
         </p>
-        <div className="mt-5 grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3">
-          <StatCard label="Active execs" value={overview.active.length} />
-          <StatCard label="Archived/stale" value={overview.archived.length} />
-          <StatCard label="Total signals" value={overview.totalSignals} />
-          <StatCard label="Total sources" value={overview.totalSources} />
-          <StatCard label="CSO-ready" value={overview.totalCsoReady} tone="green" />
-          <StatCard label="Invalid signals" value={overview.totalInvalid} helper="Schema validation" />
-        </div>
-        <div className="mt-6">
-          <h3 className="text-sm font-black uppercase tracking-[0.16em]" style={{ color: 'var(--s-text)' }}>Key findings</h3>
-          <ul className="mt-3 space-y-2">
-            {KEY_FINDINGS.map((finding, idx) => (
-              <li key={idx} className="flex gap-2 text-sm leading-6" style={{ color: 'var(--s-text-dim)' }}>
-                <span aria-hidden="true" style={{ color: '#0053E2' }}>▸</span>
-                <span>{finding}</span>
-              </li>
-            ))}
-          </ul>
-          <p className="mt-4 text-xs" style={{ color: 'var(--s-text-dim)' }}>
-            Review-only. No DB writes, scheduling, or publication. Signals require analyst approval before CSO distribution.
-          </p>
-        </div>
       </Card>
 
-      <Card>
-        <h3 className="text-sm font-black uppercase tracking-[0.16em]" style={{ color: 'var(--s-text)' }}>Watchlist by company</h3>
-        <div className="mt-4 space-y-5">
-          {byCompany.map(([org, members]) => (
-            <div key={org}>
-              <div className="text-xs font-black uppercase tracking-[0.14em]" style={{ color: 'var(--s-text-dim)' }}>{org}</div>
-              <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
-                {members.map(item => {
-                  const archived = isArchived(item.status);
-                  const selected = item.profile_id === selectedId;
-                  return (
-                    <button
-                      key={item.profile_id}
-                      type="button"
-                      onClick={() => selectAndScroll(item.profile_id)}
-                      className="flex items-center gap-3 rounded-xl border p-2.5 text-left transition"
-                      style={{
-                        borderColor: selected ? '#0053E2' : 'var(--s-border)',
-                        background: selected ? 'rgba(0,83,226,0.06)' : 'var(--s-card)',
-                        opacity: archived ? 0.7 : 1,
-                      }}
-                      aria-pressed={selected}
-                    >
-                      <ExecutiveAvatar name={item.full_name} photoUrl={item.photo_url} size={40} />
-                      <div className="min-w-0">
-                        <div className="truncate text-sm font-bold" style={{ color: 'var(--s-text)' }}>{item.full_name}</div>
-                        <div className="truncate text-xs" style={{ color: 'var(--s-text-dim)' }}>{archived ? '⚠ archived · ' : ''}{item.stats.signal_count} signals</div>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+      <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6 items-start">
+        <ExecutiveSidebar portfolios={portfolios} selectedId={selectedId} onSelect={selectAndScroll} />
+
+        <div className="space-y-6 min-w-0">
+          <OverviewDeck
+            stats={{
+              active: overview.active.length,
+              archived: overview.archived.length,
+              totalSignals: overview.totalSignals,
+              totalSources: overview.totalSources,
+              totalCsoReady: overview.totalCsoReady,
+              totalInvalid: overview.totalInvalid,
+            }}
+            keyFindings={KEY_FINDINGS}
+          />
+
+          {selectedSummary && (
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <h2 className="text-xl font-black" style={{ color: 'var(--s-text)' }}>{selectedSummary.full_name}</h2>
+              {portfolio && (
+                <button
+                  type="button"
+                  onClick={() => downloadReport(portfolio, portfolios)}
+                  className="cursor-pointer rounded-lg border px-4 py-2 text-center text-sm font-black"
+                  style={{ background: '#0053E2', color: '#fff', borderColor: '#0053E2' }}
+                >
+                  <span aria-hidden="true">↓ </span>Download benchmark report
+                </button>
+              )}
             </div>
-          ))}
-        </div>
-      </Card>
+          )}
 
-      <ComparisonRail portfolios={portfolios} selectedId={selectedId} onSelect={selectAndScroll} />
-
-      {selectedSummary && (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-          <StatCard label="Sources" value={selectedSummary.stats.source_count} helper="Collected public source records" />
-          <StatCard label="Signals" value={selectedSummary.stats.signal_count} helper="Normalized target intelligence items" />
-          <StatCard label="Contract valid" value={selectedSummary.stats.valid_signal_count + '/' + selectedSummary.stats.signal_count} helper="Backend ExecutiveSignal validation" />
-          <StatCard label="CSO-ready candidates" value={selectedSummary.stats.cso_ready_signal_count} helper="Still requires analyst approval" tone="green" />
-        </div>
-      )}
+          {selectedSummary && (
+            <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+              <StatCard label="Sources" value={selectedSummary.stats.source_count} helper="Collected public source records" />
+              <StatCard label="Signals" value={selectedSummary.stats.signal_count} helper="Normalized target intelligence items" />
+              <StatCard label="Contract valid" value={selectedSummary.stats.valid_signal_count + '/' + selectedSummary.stats.signal_count} helper="Backend ExecutiveSignal validation" />
+              <StatCard label="CSO-ready candidates" value={selectedSummary.stats.cso_ready_signal_count} helper="Still requires analyst approval" tone="green" />
+            </div>
+          )}
 
       {error && (
         <Card>
@@ -337,6 +266,8 @@ export function ExecutiveIntelPortfolio() {
           </div>
         </div>
       )}
+        </div>
+      </div>
     </div>
   );
 }
