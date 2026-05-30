@@ -9,6 +9,7 @@ import {
   prettyLabel,
   verificationTone,
 } from './signalLogic';
+import { classifySentiment, sentimentTone } from './insights';
 
 // ---------------------------------------------------------------------------
 // One signal, presented for analyst decision value:
@@ -32,6 +33,9 @@ export function SignalCard({ signal }: { signal: ExecutiveSignalRecord }) {
   const conflicting = signal.verification_status === 'CONFLICTING';
   const stale = isStale(signal);
   const citationCount = signal.citations?.length ?? 0;
+  const cat = (signal.category || '').toUpperCase();
+  const showSentiment = cat === 'PUBLIC_QUOTE' || cat === 'PUBLIC_APPEARANCE';
+  const sentiment = classifySentiment(signal);
 
   const borderColor = conflicting
     ? 'rgba(234,17,0,0.45)'
@@ -55,6 +59,7 @@ export function SignalCard({ signal }: { signal: ExecutiveSignalRecord }) {
           {confidenceLabel(signal.confidence_level)}
         </Badge>
         <Badge tone="gray">{prettyLabel(signal.category)}</Badge>
+        {showSentiment && <Badge tone={sentimentTone(sentiment)} title="Heuristic sentiment (AI draft)">{sentiment}</Badge>}
         <span className="ml-auto text-xs" style={{ color: 'var(--s-text-dim)' }}>
           {signal.event_date ?? 'undated'} · {ageLabel(signal.event_date)}
         </span>

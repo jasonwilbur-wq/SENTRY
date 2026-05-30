@@ -12,6 +12,8 @@ import { SignalFeed } from './executiveIntel/SignalFeed';
 import { ReviewQueue } from './executiveIntel/ReviewQueue';
 import { MomentumPanel, MoveTable } from './executiveIntel/MovesAndMomentum';
 import { ComparisonRail } from './executiveIntel/ComparisonRail';
+import { SwotPanel, CollectionGaps } from './executiveIntel/InsightPanels';
+import { downloadReport } from './executiveIntel/reportExport';
 import {
   KEY_FINDINGS,
   groupByCompany,
@@ -145,6 +147,16 @@ export function ExecutiveIntelPortfolio() {
                 </optgroup>
               ))}
             </select>
+            {portfolio && (
+              <button
+                type="button"
+                onClick={() => downloadReport(portfolio, portfolios)}
+                className="sentry-input mt-2 w-full cursor-pointer text-center font-black"
+                style={{ background: '#0053E2', color: '#fff', borderColor: '#0053E2' }}
+              >
+                ↓ Download benchmark report
+              </button>
+            )}
           </label>
         </div>
       </Card>
@@ -282,6 +294,8 @@ export function ExecutiveIntelPortfolio() {
 
             <ReviewQueue signals={portfolio.signals} />
 
+            <CollectionGaps signals={portfolio.signals} focusTopics={portfolio.profile.focus_topics} />
+
             <Card>
               <h3 className="text-sm font-black uppercase tracking-[0.16em]" style={{ color: 'var(--s-text)' }}>Source policy</h3>
               <div className="mt-4 space-y-2">
@@ -305,6 +319,8 @@ export function ExecutiveIntelPortfolio() {
 
           <div className="xl:col-span-2 space-y-6">
             <MoveTable signals={portfolio.signals} />
+
+            <SwotPanel signals={portfolio.signals} />
 
             <SignalFeed signals={portfolio.signals} />
 
