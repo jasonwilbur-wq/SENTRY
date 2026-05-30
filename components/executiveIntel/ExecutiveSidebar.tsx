@@ -43,7 +43,7 @@ export function ExecutiveSidebar({
 
   return (
     <aside
-      className="rounded-2xl border p-4 lg:sticky lg:top-4 lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto"
+      className="rounded-2xl border p-4 lg:sticky lg:top-4"
       style={{ background: 'var(--s-card)', borderColor: 'var(--s-border)' }}
       aria-label="Executive watchlist"
     >
@@ -61,7 +61,9 @@ export function ExecutiveSidebar({
         className="sentry-input mt-3 w-full text-sm"
       />
 
-      <div className="mt-3 space-y-4">
+      {/* List scrolls within a capped height so the detail pane stays reachable
+          on small/stacked screens; expands to viewport height on desktop. */}
+      <div className="mt-3 space-y-4 max-h-[45vh] overflow-y-auto lg:max-h-[calc(100vh-9rem)]">
         {groups.map(([org, members]) => (
           <div key={org}>
  <div className="px-1 text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: 'var(--s-text-dim)' }}>{org}</div>

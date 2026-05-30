@@ -318,6 +318,27 @@ body {
 }
 .btn-ghost:hover { background: var(--s-border); color: var(--s-text); }
 
+/* Form controls (inputs, selects, textareas) — consistent + 44px tap target */
+.sentry-input {
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  background: var(--s-input-bg);
+  color: var(--s-text);
+  font-size: 0.875rem;
+  border: 1px solid var(--s-border-mid);
+  border-radius: 0.5rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.sentry-input::placeholder { color: var(--s-text-faint); }
+.sentry-input:hover { border-color: var(--s-text-faint); }
+.sentry-input:focus,
+.sentry-input:focus-visible {
+  outline: 2px solid #0053E2;
+  outline-offset: 1px;
+  border-color: #0053E2;
+}
+textarea.sentry-input { min-height: 5rem; }
+
 /* Loading shimmer */
 .shimmer {
   background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
