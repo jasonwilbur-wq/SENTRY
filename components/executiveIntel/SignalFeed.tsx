@@ -55,7 +55,9 @@ export function SignalFeed({ signals }: { signals: ExecutiveSignalRecord[] }) {
     <Card>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-lg font-black" style={{ color: 'var(--s-text)' }}>Signal feed</h3>
-        <Badge tone="gray">{filtered.length} of {signals.length}</Badge>
+        <span aria-live="polite">
+          <Badge tone="gray">{filtered.length} of {signals.length}</Badge>
+        </span>
       </div>
 
       {/* Category breakdown */}

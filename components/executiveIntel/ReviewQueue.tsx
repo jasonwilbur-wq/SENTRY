@@ -20,7 +20,7 @@ export function ReviewQueue({ signals }: { signals: ExecutiveSignalRecord[] }) {
         <Badge tone={pending.length > 0 ? 'yellow' : 'green'}>{pending.length} pending</Badge>
       </div>
       {pending.length === 0 ? (
-        <p className="mt-3 text-sm" style={{ color: 'var(--s-text-dim)' }}>Nothing awaiting analyst disposition. 🎉</p>
+        <p className="mt-3 text-sm" style={{ color: 'var(--s-text-dim)' }}>Nothing awaiting analyst disposition. <span aria-hidden="true">🎉</span></p>
       ) : (
         <ul className="mt-3 space-y-2">
           {pending.slice(0, 8).map(signal => (

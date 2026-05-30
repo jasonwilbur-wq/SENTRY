@@ -54,12 +54,16 @@ export function StatCard({ label, value, helper, tone }: { label: string; value:
 export function MiniBar({ label, count, max, tone = 'blue' }: { label: string; count: number; max: number; tone?: Tone }) {
   const pct = max > 0 ? Math.round((count / max) * 100) : 0;
   return (
-    <div className="flex items-center gap-3">
-      <div className="w-36 shrink-0 truncate text-xs font-semibold" style={{ color: 'var(--s-text-dim)' }} title={label}>{label}</div>
-      <div className="relative h-3 flex-1 overflow-hidden rounded-full" style={{ background: 'var(--s-input-bg)' }}>
+    <div
+      className="flex items-center gap-3"
+      role="img"
+      aria-label={label + ': ' + count + ' (' + pct + '% of peak)'}
+    >
+      <div className="w-36 shrink-0 truncate text-xs font-semibold" style={{ color: 'var(--s-text-dim)' }} title={label} aria-hidden="true">{label}</div>
+      <div className="relative h-3 flex-1 overflow-hidden rounded-full" style={{ background: 'var(--s-input-bg)' }} aria-hidden="true">
         <div className="absolute inset-y-0 left-0 rounded-full" style={{ width: pct + '%', background: TONE_STYLES[tone].color }} />
       </div>
-      <div className="w-8 shrink-0 text-right text-xs font-black" style={{ color: 'var(--s-text)' }}>{count}</div>
+      <div className="w-8 shrink-0 text-right text-xs font-black" style={{ color: 'var(--s-text)' }} aria-hidden="true">{count}</div>
     </div>
   );
 }

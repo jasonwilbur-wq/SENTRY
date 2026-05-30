@@ -71,10 +71,10 @@ export function buildReportHtml(
     'th{background:#f0f4ff;color:#0053e2}.num{text-align:right}' +
     '.tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700;background:#eef;color:#0053e2;text-transform:uppercase}' +
     '.tag.ok{background:#e6f4e6;color:#2a8703}.tag.warn{background:#fdeaea;color:#ea1100}' +
-    '.muted{color:#777;font-size:12px;margin-left:auto}.badges{display:flex;gap:6px;align-items:center}' +
+    '.muted{color:#595959;font-size:12px;margin-left:auto}.badges{display:flex;gap:6px;align-items:center}' +
     '.rel{background:#f0f4ff;border-left:4px solid #0053e2;padding:8px 10px;border-radius:6px;font-size:14px}' +
     'details{margin-top:8px;font-size:13px}summary{cursor:pointer;color:#0053e2;font-weight:700}' +
-    'ul{margin:6px 0;padding-left:18px}.foot{color:#777;font-size:12px;margin-top:24px;text-align:center}' +
+    'ul{margin:6px 0;padding-left:18px}.foot{color:#595959;font-size:12px;margin-top:24px;text-align:center}' +
     '@media print{body{background:#fff}.wrap{max-width:none}}';
 
   return '<!doctype html><html lang="en"><head><meta charset="utf-8">' +

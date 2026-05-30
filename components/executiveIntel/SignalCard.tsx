@@ -84,9 +84,10 @@ export function SignalCard({ signal }: { signal: ExecutiveSignalRecord }) {
           <button
             type="button"
             onClick={() => setOpen(o => !o)}
-            className="flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.14em]"
+            className="flex min-h-[24px] items-center gap-2 py-1 text-[11px] font-black uppercase tracking-[0.14em]"
             style={{ color: 'var(--s-text-dim)' }}
             aria-expanded={open}
+            aria-label={(open ? 'Hide ' : 'Show ') + citationCount + ' ' + (citationCount === 1 ? 'source' : 'sources') + ' for ' + signal.title}
           >
             <span aria-hidden="true">{open ? '▾' : '▸'}</span>
             {citationCount} {citationCount === 1 ? 'source' : 'sources'}
@@ -99,6 +100,7 @@ export function SignalCard({ signal }: { signal: ExecutiveSignalRecord }) {
                   <div className="flex flex-wrap items-center gap-2">
                     <a href={citation.url} target="_blank" rel="noreferrer" className="underline" style={{ color: '#0053E2' }}>
                       {citation.source_title || citation.url}
+                      <span className="sr-only"> (opens in a new tab)</span>
                     </a>
                     <Badge tone={sourceQualityTone(citation.source_quality)}>{prettyLabel(citation.source_quality)}</Badge>
                     {citation.published_date && <span style={{ color: 'var(--s-text-dim)' }}>{citation.published_date}</span>}

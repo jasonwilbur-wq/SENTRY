@@ -96,14 +96,16 @@ export function ExecutiveIntelPortfolio() {
   const byCompany = useMemo(() => groupByCompany(portfolios), [portfolios]);
 
   if (status === 'loading') {
-    return <div className="text-sm" style={{ color: 'var(--s-text-dim)' }}>Loading executive intelligence portfolios…</div>;
+    return <div role="status" aria-live="polite" className="text-sm" style={{ color: 'var(--s-text-dim)' }}>Loading executive intelligence portfolios…</div>;
   }
 
   if (status === 'error') {
     return (
       <Card>
-        <Badge tone="red">Load failed</Badge>
-        <p className="mt-3 text-sm" style={{ color: 'var(--s-text)' }}>{error}</p>
+        <div role="alert">
+          <Badge tone="red">Load failed</Badge>
+          <p className="mt-3 text-sm" style={{ color: 'var(--s-text)' }}>{error}</p>
+        </div>
       </Card>
     );
   }
@@ -151,10 +153,10 @@ export function ExecutiveIntelPortfolio() {
               <button
                 type="button"
                 onClick={() => downloadReport(portfolio, portfolios)}
-                className="sentry-input mt-2 w-full cursor-pointer text-center font-black"
+                className="mt-2 w-full cursor-pointer rounded-lg border px-4 py-2 text-center font-black"
                 style={{ background: '#0053E2', color: '#fff', borderColor: '#0053E2' }}
               >
-                ↓ Download benchmark report
+                <span aria-hidden="true">↓ </span>Download benchmark report
               </button>
             )}
           </label>
@@ -241,8 +243,10 @@ export function ExecutiveIntelPortfolio() {
 
       {error && (
         <Card>
-          <Badge tone="red">Selected target error</Badge>
-          <p className="mt-2 text-sm" style={{ color: 'var(--s-text)' }}>{error}</p>
+          <div role="alert">
+            <Badge tone="red">Selected target error</Badge>
+            <p className="mt-2 text-sm" style={{ color: 'var(--s-text)' }}>{error}</p>
+          </div>
         </Card>
       )}
 
