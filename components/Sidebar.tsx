@@ -6,6 +6,8 @@ import { trackEvent } from '../services/analytics';
 interface SidebarProps {
   currentView: ViewState;
   onNavigate: (view: ViewState) => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 // ── Nav items grouped into sections — easier to scan than a flat list ───────
@@ -188,7 +190,7 @@ const Spark = ({ size = 26 }: { size?: number }) => (
 );
 
 // ── Component ───────────────────────────────────────────────────────────────
-export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, isOpen = false, onClose }) => {
   const { theme, toggleTheme } = useTheme();
   const isDark = theme === 'dark';
 
@@ -205,7 +207,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => 
 
   return (
     <aside
-      className="w-64 shrink-0 flex flex-col overflow-hidden relative"
+      className={`w-64 shrink-0 flex flex-col overflow-hidden fixed inset-y-0 left-0 z-50 transition-transform duration-200 md:relative md:z-auto md:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
       style={{
         background: 'var(--s-sidebar)',
         backdropFilter: 'blur(24px) saturate(160%)',
@@ -247,6 +249,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => 
             }}
           >
             {isDark ? <SunIcon /> : <MoonIcon />}
+          </button>
+          <button
+            onClick={onClose}
+            aria-label="Close navigation menu"
+            className="md:hidden w-11 h-11 flex items-center justify-center rounded-lg transition-colors"
+            style={{ color: 'var(--s-text)', border: '1px solid var(--s-border)' }}
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
         <p className="text-[10px] uppercase tracking-[0.18em] mt-3" style={{ color: 'var(--s-text-dim)' }}>

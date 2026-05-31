@@ -205,6 +205,8 @@ const App: React.FC = () => {
   const [showLanding, setShowLanding] = useState(() => !readPlatformEntered());
   const [currentView, setCurrentView] = useState<ViewState>(() => readStoredView());
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const hamburgerStyle = { color: 'var(--s-text)', borderColor: 'var(--s-border)' } as React.CSSProperties;
   const { greeting, dateLabel, timeLabel } = useGreeting();
   const backendHealth = useBackendHealth(!showLanding);
 
@@ -221,6 +223,7 @@ const App: React.FC = () => {
 
   const handleNavigate = useCallback((view: ViewState) => {
     setCurrentView(view);
+    setSidebarOpen(false); // auto-close mobile drawer after picking a view
     try { window.sessionStorage.setItem(PLATFORM_VIEW_KEY, view); } catch { /* noop */ }
     trackView(view);
   }, []);
@@ -255,7 +258,15 @@ const App: React.FC = () => {
       <AuthProvider>
         <VendorProvider>
           <div className="flex h-screen text-slate-300 overflow-hidden" style={{ background: 'var(--s-bg)' }}>
-            <Sidebar currentView={currentView} onNavigate={handleNavigate} />
+            {/* Mobile drawer backdrop */}
+            {sidebarOpen && (
+              <div
+                className="fixed inset-0 z-40 bg-black/50 md:hidden"
+                onClick={() => setSidebarOpen(false)}
+                aria-hidden
+              />
+            )}
+            <Sidebar currentView={currentView} onNavigate={handleNavigate} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
             <main className="flex-1 flex flex-col overflow-hidden relative">
               {/* Header */}
@@ -270,6 +281,9 @@ const App: React.FC = () => {
               >
                 {/* Platform brand bar + title */}
                 <div className="flex items-center gap-4 min-w-0">
+                  <button type="button" onClick={() => setSidebarOpen(true)} className="md:hidden inline-flex h-11 w-11 items-center justify-center rounded-lg shrink-0 border" style={hamburgerStyle} aria-label="Open navigation menu">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
+                  </button>
                   <div
                     className="w-1 h-11 rounded-full shrink-0"
                     style={{ background: 'linear-gradient(to bottom, #FFC220 0%, #FFC220 35%, #0053E2 70%, #001E60 100%)' }}
