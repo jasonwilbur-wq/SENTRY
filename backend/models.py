@@ -50,6 +50,12 @@ class VendorOut(BaseModel):
     use_cases: str = ""
     value_to_walmart: str = ""
     maturity_level: str = ""
+    report_count: int = 0
+    dominant_domain: str = ""
+    secondary_domains: str = ""
+    top_semantic_tags: str = ""
+    top_stakeholder_tags: str = ""
+    sample_report_path: str = ""
 
 
 class VendorsResponse(BaseModel):

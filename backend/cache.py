@@ -13,6 +13,7 @@ Usage:
     # To invalidate:
     expensive_query.cache_clear()
 """
+import os
 import threading
 import time
 from functools import wraps
@@ -29,6 +30,20 @@ class _CacheEntry:
 
 _lock = threading.Lock()
 _store: dict[str, _CacheEntry] = {}
+_MAX_ENTRIES = max(1, int(os.environ.get("SENTRY_CACHE_MAX_ENTRIES", "512")))
+
+
+def _prune_locked(now: float | None = None) -> None:
+    """Drop expired entries and keep the process-wide cache bounded."""
+    current_time = time.monotonic() if now is None else now
+
+    expired_keys = [key for key, entry in _store.items() if entry.expires_at <= current_time]
+    for key in expired_keys:
+        del _store[key]
+
+    while len(_store) > _MAX_ENTRIES:
+        oldest_key = min(_store, key=lambda key: _store[key].expires_at)
+        del _store[oldest_key]
 
 
 def ttl_cache(ttl_seconds: int = 60, key_prefix: str = ""):
@@ -56,6 +71,7 @@ def ttl_cache(ttl_seconds: int = 60, key_prefix: str = ""):
             now = time.monotonic()
 
             with _lock:
+                _prune_locked(now)
                 entry = _store.get(cache_key)
                 if entry and entry.expires_at > now:
                     _hits += 1
@@ -67,6 +83,7 @@ def ttl_cache(ttl_seconds: int = 60, key_prefix: str = ""):
 
             with _lock:
                 _store[cache_key] = _CacheEntry(result, now + ttl_seconds)
+                _prune_locked(now)
 
             return result
 
@@ -80,8 +97,9 @@ def ttl_cache(ttl_seconds: int = 60, key_prefix: str = ""):
         def cache_info() -> dict[str, Any]:
             """Return cache statistics."""
             with _lock:
+                _prune_locked()
                 size = sum(1 for k in _store if k.startswith(prefix))
-            return {"hits": _hits, "misses": _misses, "size": size}
+            return {"hits": _hits, "misses": _misses, "size": size, "max_entries": _MAX_ENTRIES}
 
         wrapper.cache_clear = cache_clear  # type: ignore[attr-defined]
         wrapper.cache_info = cache_info    # type: ignore[attr-defined]

@@ -44,9 +44,30 @@ def _parse_csv_env(key: str, default: str = "") -> set[str]:
 
 # SECURITY: default is "header" — auth is ON unless explicitly overridden.
 AUTH_MODE: str = os.environ.get("SENTRY_AUTH_MODE", "header").lower()
+APP_ENV: str = os.environ.get("SENTRY_ENV", os.environ.get("ENVIRONMENT", "development")).lower()
 
 ADMIN_USERS: set[str] = _parse_csv_env("SENTRY_ADMIN_USERS")
 ALLOWED_USERS: set[str] = _parse_csv_env("SENTRY_ALLOWED_USERS") | ADMIN_USERS
+
+
+def _validate_production_config(
+    app_env: str,
+    auth_mode: str,
+    allowed_users: set[str],
+    admin_users: set[str],
+) -> None:
+    """Fail fast on production auth configurations that are unsafe or unusable."""
+    if app_env not in {"prod", "production"}:
+        return
+    if auth_mode == "off":
+        raise RuntimeError("Refusing to start SENTRY in production with SENTRY_AUTH_MODE=off.")
+    if auth_mode == "header" and not allowed_users:
+        raise RuntimeError("Production header-auth requires SENTRY_ALLOWED_USERS or SENTRY_ADMIN_USERS.")
+    if auth_mode == "header" and not admin_users:
+        raise RuntimeError("Production header-auth requires at least one SENTRY_ADMIN_USERS entry.")
+
+
+_validate_production_config(APP_ENV, AUTH_MODE, ALLOWED_USERS, ADMIN_USERS)
 
 # Header name for Phase 1 auth.
 AUTH_HEADER = "X-Sentry-User"
