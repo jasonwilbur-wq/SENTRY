@@ -38,7 +38,6 @@ vendors are medium risk?"**
 This is composition, not new infrastructure. Backend already has competitor,
 regulatory, incident, and exec endpoints to feed it.
 
-<!-- SECTION2 -->
 ## 2 · Vendor Directory — VARs not showing up (deferred per JRW)
 
 UI is solid; revisit after UI polish. **Early signal from benchmark work:** the
@@ -74,7 +73,6 @@ event counts, threat levels, 3D viz. It answers "what happened" but never
   from a grid themselves.
 - Keep interactive exploration as the *drill-down*, lead with the value.
 
-<!-- SECTION5 -->
 ## 5 · Executive Intel — images, new leaders, confirmation, value
 
 **Good news: the architecture already exists and is strong.** The
