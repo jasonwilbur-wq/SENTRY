@@ -1,10 +1,20 @@
 import React, { useEffect, useId, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, 
   BarChart, Bar, XAxis, YAxis, Tooltip, Cell 
 } from 'recharts';
-import { Vendor, VarReport, fetchVendorById, fetchVendorVarReports, getDownloadUrl } from '../services/api';
+import {
+  Vendor,
+  VendorAssessmentEvidence,
+  VarReport,
+  fetchVendorAssessmentEvidence,
+  fetchVendorById,
+  fetchVendorVarReports,
+  getDownloadUrl,
+} from '../services/api';
 import { TechAssessmentTab } from './TechAssessmentTab';
+import { grade, isScored } from '../utils/grade';
 
 interface VendorDetailModalProps {
   vendor: Vendor;
@@ -104,6 +114,25 @@ const hasResolvedVarScore = (vendor: Vendor): boolean => {
   return normalizeScore(overall) != null;
 };
 
+const splitList = (value?: string): string[] => (
+  (value || '')
+    .split(/[;|]/)
+    .map((item) => item.trim())
+    .filter(Boolean)
+);
+
+const formatSignalLabel = (value: string): string => (
+  value.replaceAll('_', ' ').replace(/\b\w/g, (char) => char.toUpperCase())
+);
+
+const formatBytes = (value?: number): string => {
+  const bytes = Number(value || 0);
+  if (!bytes) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  const index = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  return `${(bytes / Math.pow(1024, index)).toFixed(index === 0 ? 0 : 1)} ${units[index]}`;
+};
+
 const getVarStatusMeta = (vendor: Vendor) => {
   if (!vendor.has_var) return null;
   if (hasResolvedVarScore(vendor)) {
@@ -123,7 +152,10 @@ const getVarStatusMeta = (vendor: Vendor) => {
 export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor: initialVendor, onClose }) => {
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [modalVendor, setModalVendor] = useState<Vendor>(initialVendor);
+  const [assessmentEvidence, setAssessmentEvidence] = useState<VendorAssessmentEvidence | null>(null);
   const [isHydratingVar, setIsHydratingVar] = useState(false);
+  const [isLoadingEvidence, setIsLoadingEvidence] = useState(false);
+  const [copiedPath, setCopiedPath] = useState<string | null>(null);
   const modalBaseId = useId();
   const headingId = `${modalBaseId}-heading`;
 
@@ -167,6 +199,25 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor: in
   }, [initialVendor]);
 
   const vendor = modalVendor;
+
+  useEffect(() => {
+    let cancelled = false;
+    setAssessmentEvidence(null);
+    setIsLoadingEvidence(true);
+
+    void fetchVendorAssessmentEvidence(initialVendor.id)
+      .then((evidence) => {
+        if (!cancelled) setAssessmentEvidence(evidence);
+      })
+      .catch(() => {
+        if (!cancelled) setAssessmentEvidence(null);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingEvidence(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [initialVendor.id]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -263,6 +314,21 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor: in
   };
   const lastReviewedLabel = modalVendor.last_assessed || 'Assessment date not captured';
   const companyUrl = modalVendor.company_url?.trim() || '';
+  const semanticTags = splitList(assessmentEvidence?.profile.top_semantic_tags || modalVendor.top_semantic_tags);
+  const stakeholderTags = splitList(assessmentEvidence?.profile.top_stakeholder_tags || modalVendor.top_stakeholder_tags);
+  const secondaryDomains = splitList(assessmentEvidence?.profile.secondary_domains || modalVendor.secondary_domains);
+  const reportCount = assessmentEvidence?.profile.report_count || modalVendor.report_count || productCount;
+  const sampleReportPath = assessmentEvidence?.profile.sample_report_path || modalVendor.sample_report_path || modalVendor.report_url;
+  const copyPath = async (path: string) => {
+    if (!path) return;
+    try {
+      await navigator.clipboard.writeText(path);
+      setCopiedPath(path);
+      window.setTimeout(() => setCopiedPath(null), 1600);
+    } catch {
+      setCopiedPath(null);
+    }
+  };
   const hasInsights = Boolean(
     modalVendor.vendor_highlight
       || modalVendor.use_cases
@@ -272,7 +338,7 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor: in
       || modalVendor.concerns,
   );
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 animate-fadeIn">
       {/* Backdrop — deep glassmorphism */}
       <div
@@ -355,7 +421,7 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor: in
                 )}
               </div>
               <p className="mt-2 text-sm text-slate-400">
-                {productCount} assessed {productCount === 1 ? 'product' : 'products'} • Last review {lastReviewedLabel} • Status {modalVendor.deployment_status || 'Prospect'}
+                {reportCount} source {reportCount === 1 ? 'report' : 'reports'} • Last review {lastReviewedLabel} • Status {modalVendor.deployment_status || 'Prospect'}
               </p>
               {varStatusMeta && !hasResolvedVarScore(modalVendor) && (
                 <p className="mt-2 text-xs font-medium text-amber-300">
@@ -437,6 +503,53 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor: in
                     {vendor.description || 'No working description is attached yet. Add one from the latest RFI, briefing, or analyst notes so this record is usable without opening source documents.'}
                   </p>
                 </section>
+
+                <section className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+                    <p className="text-[10px] uppercase tracking-widest text-slate-500">Dominant Domain</p>
+                    <p className="mt-1 text-sm font-bold text-white">{formatSignalLabel(assessmentEvidence?.profile.dominant_domain || modalVendor.dominant_domain || modalVendor.category)}</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+                    <p className="text-[10px] uppercase tracking-widest text-slate-500">Evidence Files</p>
+                    <p className="mt-1 text-sm font-bold text-wmt-yellow">
+                      {isLoadingEvidence ? 'Loading…' : `${assessmentEvidence?.summary.artifact_count ?? 0} artifacts`}
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800">
+                    <p className="text-[10px] uppercase tracking-widest text-slate-500">Latest Source Change</p>
+                    <p className="mt-1 text-sm font-bold text-white">{assessmentEvidence?.profile.latest_modified_utc || modalVendor.last_assessed || 'Unknown'}</p>
+                  </div>
+                </section>
+
+                {(semanticTags.length > 0 || stakeholderTags.length > 0 || secondaryDomains.length > 0) && (
+                  <section className="p-5 rounded-xl bg-slate-900/50 border border-slate-800 space-y-4">
+                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Assessment Signal Map</h3>
+                    {semanticTags.length > 0 && (
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest text-slate-500 mb-2">Semantic Tags</p>
+                        <div className="flex flex-wrap gap-2">
+                          {semanticTags.map(tag => <span key={tag} className="px-2 py-1 rounded-full text-xs border border-blue-900/50 bg-blue-900/20 text-blue-200">{formatSignalLabel(tag)}</span>)}
+                        </div>
+                      </div>
+                    )}
+                    {stakeholderTags.length > 0 && (
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest text-slate-500 mb-2">Stakeholder Signals</p>
+                        <div className="flex flex-wrap gap-2">
+                          {stakeholderTags.map(tag => <span key={tag} className="px-2 py-1 rounded-full text-xs border border-yellow-900/40 bg-yellow-900/10 text-yellow-200">{formatSignalLabel(tag)}</span>)}
+                        </div>
+                      </div>
+                    )}
+                    {secondaryDomains.length > 0 && (
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest text-slate-500 mb-2">Secondary Domains</p>
+                        <div className="flex flex-wrap gap-2">
+                          {secondaryDomains.map(domain => <span key={domain} className="px-2 py-1 rounded-full text-xs border border-slate-700 bg-slate-800/80 text-slate-300">{formatSignalLabel(domain)}</span>)}
+                        </div>
+                      </div>
+                    )}
+                  </section>
+                )}
 
                 <section>
                   <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-3">Products Assessed</h3>
@@ -764,6 +877,19 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor: in
                       <span className="px-2 py-1 rounded text-xs font-bold border border-blue-700/40 bg-blue-900/20 text-blue-200">
                         Weight Score: {weightScore !== null ? `${Number(weightScore).toFixed(1)} / 5.0` : 'N/A'}
                       </span>
+                      {isScored(weightScore) && (
+                        <span
+                          className="px-2 py-1 rounded text-xs font-black border"
+                          style={{
+                            color: grade(weightScore).colorHex,
+                            borderColor: `${grade(weightScore).colorHex}66`,
+                            background: `${grade(weightScore).colorHex}1a`,
+                          }}
+                          title={`Grade ${grade(weightScore).letter} — ${grade(weightScore).label}`}
+                        >
+                          Grade {grade(weightScore).letter}
+                        </span>
+                      )}
                       <span
                         className="px-2 py-1 rounded text-xs font-bold border"
                         style={{ borderColor: 'rgba(255,194,32,0.45)', background: 'rgba(255,194,32,0.12)', color: '#ffc220' }}
@@ -913,6 +1039,92 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor: in
                     <p className="text-slate-600 text-xs">The vendor record exists, but no downloadable assessment report is attached to this grouped company entry.</p>
                 </div>
               )}
+
+              {/* Desktop SENTRY evidence inventory */}
+              <div className="p-5 bg-slate-900/50 border border-slate-800 rounded-xl space-y-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-white">Desktop SENTRY Evidence</h3>
+                    <p className="text-xs text-slate-500 mt-1">Read-only source profile from 00_System inventory and vendor assessment reports.</p>
+                  </div>
+                  <span className="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border border-slate-700 text-slate-300 bg-slate-800/80">
+                    {isLoadingEvidence ? 'Loading' : `${assessmentEvidence?.summary.artifact_count ?? 0} artifacts`}
+                  </span>
+                </div>
+
+                {sampleReportPath && (
+                  <div className="rounded-lg border border-blue-900/30 bg-blue-950/20 p-3">
+                    <p className="text-[10px] uppercase tracking-widest text-blue-300 mb-1">Sample Report Path</p>
+                    <div className="flex items-center justify-between gap-3">
+                      <p className="text-xs text-slate-300 break-all">{sampleReportPath}</p>
+                      <button
+                        type="button"
+                        onClick={() => copyPath(sampleReportPath)}
+                        className="shrink-0 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border border-blue-800 text-blue-200 hover:bg-blue-900/30"
+                      >
+                        {copiedPath === sampleReportPath ? 'Copied' : 'Copy'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {assessmentEvidence && (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="rounded-lg bg-slate-950/60 border border-slate-800 p-3">
+                        <p className="text-[10px] uppercase tracking-widest text-slate-500">Inventory Size</p>
+                        <p className="text-sm font-bold text-white mt-1">{formatBytes(assessmentEvidence.summary.total_size_bytes)}</p>
+                      </div>
+                      <div className="rounded-lg bg-slate-950/60 border border-slate-800 p-3">
+                        <p className="text-[10px] uppercase tracking-widest text-slate-500">Source Run</p>
+                        <p className="text-sm font-bold text-white mt-1">{assessmentEvidence.source.source_run_label || 'Unknown'}</p>
+                      </div>
+                      <div className="rounded-lg bg-slate-950/60 border border-slate-800 p-3">
+                        <p className="text-[10px] uppercase tracking-widest text-slate-500">Inventory Mode</p>
+                        <p className="text-sm font-bold text-white mt-1">Read-only</p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-[10px] uppercase tracking-widest text-slate-500 mb-2">Artifact Roles</p>
+                      <div className="flex flex-wrap gap-2">
+                        {Object.entries(assessmentEvidence.summary.artifact_role_counts).slice(0, 6).map(([role, count]) => (
+                          <span key={role} className="px-2 py-1 rounded-full text-xs border border-slate-700 bg-slate-800/80 text-slate-300">
+                            {formatSignalLabel(role)} · {count}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <p className="text-[10px] uppercase tracking-widest text-slate-500">Recent Evidence Files</p>
+                      {assessmentEvidence.artifacts.slice(0, 8).map((artifact) => (
+                        <div key={`${artifact.current_path}-${artifact.sha256}`} className="rounded-lg border border-slate-800 bg-slate-950/50 p-3">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="text-sm font-semibold text-white truncate">{artifact.filename || 'Unnamed artifact'}</p>
+                              <p className="text-[11px] text-slate-500 mt-0.5">
+                                {formatSignalLabel(artifact.artifact_role || 'Artifact')} • {formatSignalLabel(artifact.primary_domain || 'Unclassified')} • {artifact.modified_utc || 'No modified date'}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => copyPath(artifact.current_path)}
+                              className="shrink-0 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border border-slate-700 text-slate-300 hover:border-wmt-blue hover:text-blue-200"
+                            >
+                              {copiedPath === artifact.current_path ? 'Copied' : 'Copy Path'}
+                            </button>
+                          </div>
+                          {artifact.current_path && <p className="mt-2 text-[11px] text-slate-600 break-all">{artifact.current_path}</p>}
+                        </div>
+                      ))}
+                      {assessmentEvidence.artifacts.length === 0 && (
+                        <p className="text-sm text-slate-500 italic">No artifact-level inventory rows found for this vendor profile.</p>
+                      )}
+                    </div>
+                  </>
+                )}
+              </div>
               
               {/* Placeholder for NDA/Contracts */}
               <div className="p-4 bg-slate-900/30 border border-slate-800 rounded-xl flex items-center justify-between opacity-60 hover:opacity-100 transition-opacity">
@@ -934,6 +1146,7 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor: in
 
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
