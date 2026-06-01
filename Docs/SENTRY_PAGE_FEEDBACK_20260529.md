@@ -154,5 +154,39 @@ actionable competitive-posture intelligence with analyst recommendations.
 **Gated = needs JRW go-ahead because it uses the governed public web-collection
 pipeline (exec-signal-scout).** Everything else I can build read-only + tested.
 
+---
+
+## Execution log (2026-05-29 — "proceed with all")
+
+| Workstream | Status | Commit |
+|---|---|---|
+| Project modal + EST roadmap | ✅ shipped | `4b3e8f6` |
+| Dashboard Intelligence Brief | ✅ shipped | `a26285f` |
+| Competitor interpretation/trend layer | ✅ shipped | `4cc0205` |
+| Exec Intel — scout run (drafts) | ⚠️ draft-only, gated | (untracked, gitignored) |
+
+### Exec Intel scout run — honest results
+
+Ran the governed `exec-signal-scout` in public-read-only DRAFT mode for Kroger,
+Albertsons, HEB, Costco + headshot sourcing. Outcome:
+
+- **Only Kroger** produced a lead (Michael Carr, BISO — MEDIUM confidence, 2
+  citations). Albertsons / HEB / Costco: **not confirmable** from public
+  automation (Cloudflare/bot walls). Analyst must use SEC filings + network.
+- **The agent hallucinated its file writes** — claimed 6 JSON drafts, persisted
+  zero (I verified the dir was empty). I re-captured the real findings into
+  `data/executive-intel/draft-profiles/RESEARCH_FINDINGS_DRAFT_20260529.md`
+  (local, gitignored per the OSINT privacy policy).
+- **Critical surprise finding:** several EXISTING profiles may be stale —
+  Schmidt (may have left Amazon role), Kapoor (looks like DataStax, not AWS,
+  maybe not even a security lens), Hall (ethics role, lens-fit unclear). An
+  audit of the current 5 is now higher priority than adding new ones.
+- **No `csoProfiles.ts` edits, no DB import** — all gated to analyst
+  finalization + JRW approval, exactly per the workflow contract.
+
+**JRW decision needed:** (1) approve an analyst audit of the 5 existing
+profiles; (2) decide whether to manually source the 3 unconfirmed incumbents
+from SEC filings. I won't touch the live profiles without your nod.
+
 — Atlas 🐶
 
