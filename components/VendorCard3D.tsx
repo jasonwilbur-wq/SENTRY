@@ -9,6 +9,7 @@
 import React, { useEffect, useRef } from 'react';
 import { GlassCard3D } from './GlassCard3D';
 import { Vendor, getDownloadUrl } from '../services/api';
+import { grade, isScored } from '../utils/grade';
 
 // ── Risk palette ─────────────────────────────────────────────────────────────
 const RISK: Record<string, { glow: string; label: string; text: string; bg: string }> = {
@@ -20,6 +21,19 @@ const RISK: Record<string, { glow: string; label: string; text: string; bg: stri
 
 // ── Category color map (first 12 categories from the DB) ─────────────────────
 const CAT_COLORS: Record<string, string> = {
+  // Canonical Desktop SENTRY semantic domains
+  'Cybersecurity':                                   '#0053e2',
+  'Enterprise Platform':                             '#7893B8',
+  'Video Surveillance':                              '#f43f5e',
+  'Drone UAS CUAS':                                  '#a78bfa',
+  'Robotics Autonomy':                               '#06b6d4',
+  'Identity Biometrics':                             '#10b981',
+  'Supply Chain Logistics':                          '#f59e0b',
+  'Retail Store Operations':                         '#FFC220',
+  'Sensors Detection':                               '#8b5cf6',
+  'Access Control':                                  '#22c55e',
+  'Other':                                           '#64748b',
+  // Legacy SENTRY DB categories
   'Video Management & Recording (VMS/NVR)':          '#0053e2',
   'Cyber-Physical & OT/Infrastructure Security':     '#f97316',
   'Counter-UAS (C-UAS)':                             '#a78bfa',
@@ -36,6 +50,12 @@ const CAT_COLORS: Record<string, string> = {
 
 function catColor(cat: string): string {
   return CAT_COLORS[cat] ?? '#64748b';
+}
+
+function formatTag(tag: string): string {
+  return tag
+    .replaceAll('_', ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 // ── SVG Score Ring ────────────────────────────────────────────────────────────
@@ -138,6 +158,12 @@ export const VendorCard3D: React.FC<VendorCard3DProps> = React.memo(({ vendor, o
   const displayScore = vendor.var_weight_score ?? vendor.overall_rating;
   const scoreSourceLabel = vendor.var_weight_score != null ? 'VAR score' : `assessed ${vendor.last_assessed}`;
   const varBadgeMeta = getVarBadgeMeta(vendor);
+  const semanticTags = (vendor.top_semantic_tags || vendor.technology_product || '')
+    .split(';')
+    .map(tag => tag.trim())
+    .filter(Boolean)
+    .slice(0, 3);
+  const reportCount = Number(vendor.report_count || vendor.all_products?.length || 0);
 
   return (
     <GlassCard3D
@@ -203,8 +229,22 @@ export const VendorCard3D: React.FC<VendorCard3DProps> = React.memo(({ vendor, o
           </div>
         </div>
 
-        {/* Score ring */}
-        <div className="relative z-20" onClick={e => e.stopPropagation()}>
+        {/* Score ring + A–F grade */}
+        <div className="relative z-20 flex items-center gap-2" onClick={e => e.stopPropagation()}>
+          {isScored(displayScore) && (
+            <span
+              className="text-sm font-black w-7 h-7 rounded-md flex items-center justify-center shrink-0"
+              style={{
+                color: grade(displayScore).colorHex,
+                border: `1.5px solid ${grade(displayScore).colorHex}66`,
+                background: `${grade(displayScore).colorHex}1a`,
+              }}
+              title={`Grade ${grade(displayScore).letter} — ${grade(displayScore).label}`}
+              aria-label={`Security grade ${grade(displayScore).letter}, ${grade(displayScore).label}`}
+            >
+              {grade(displayScore).letter}
+            </span>
+          )}
           <ScoreRing rating={displayScore} color={color} />
         </div>
       </div>
@@ -227,19 +267,33 @@ export const VendorCard3D: React.FC<VendorCard3DProps> = React.memo(({ vendor, o
             {resolvedDecisionBand}
           </span>
         )}
-        {/* Multi-product badge */}
-        {(vendor.all_products?.length ?? 0) > 1 && (
+        {/* Report/product badge */}
+        {reportCount > 1 && (
           <span className="text-[9px] font-bold px-2 py-0.5 rounded-full border
                           bg-sky-900/30 text-sky-300 border-sky-700">
-            {vendor.all_products.length} products
+            {reportCount} reports
           </span>
         )}
       </div>
 
-      {/* ── Top product ──────────────────────────────────────────── */}
+      {/* ── Semantic tags / top product ─────────────────────────── */}
       <div className="px-4 mb-3">
-        <p className="text-[9px] uppercase tracking-widest mb-0.5" style={{ color: '#334155' }}>Top Product</p>
-        <p className="text-xs text-slate-300 line-clamp-2">{vendor.technology_product}</p>
+        <p className="text-[9px] uppercase tracking-widest mb-1" style={{ color: '#334155' }}>Signal Tags</p>
+        {semanticTags.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5">
+            {semanticTags.map(tag => (
+              <span
+                key={tag}
+                className="rounded-full border px-2 py-0.5 text-[10px] text-slate-300"
+                style={{ borderColor: `${color}33`, background: `${color}12` }}
+              >
+                {formatTag(tag)}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-slate-300 line-clamp-2">{vendor.technology_product || 'Assessment profile'}</p>
+        )}
       </div>
 
       {/* ── Score progress bar ───────────────────────────────────── */}
