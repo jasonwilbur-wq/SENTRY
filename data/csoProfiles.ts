@@ -447,6 +447,109 @@ export const CSO_PROFILES: ExecutiveProfile[] = [
     ],
   },
 
+  // ── Michael Carr (Kroger) — PROVISIONAL lead ─────────────────────
+  {
+    id: 'michael-carr-kroger',
+    name: 'Michael Carr',
+    title: 'Business Information Security Officer (Unverified)',
+    company: 'Kroger',
+    threatLevel: 'MEDIUM',
+    profileImage: '/images/executives/michael-carr.jpg',
+    bio: 'PROVISIONAL lead from a 2026-05-29 public-source scout run. Michael Carr was cited as a Kroger Business Information Security Officer (BISO) in CDO Magazine InfoSec event coverage (Sep/Oct 2024). Not confirmed via an official Kroger source; currency for 2025/2026 unverified, and a CISO may sit above the BISO role. Treat as a starting lead, not an established profile.',
+    keyFindings: [
+      {
+        id: 'mc-f1',
+        type: 'org_change',
+        headline: 'Cited as Kroger Business Information Security Officer in CDO Magazine InfoSec coverage',
+        date: '2024-10-01',
+        impactScore: 8,
+        riskColor: 'YELLOW',
+        summary: 'Michael Carr appeared as a Kroger BISO in CDO Magazine Cincinnati InfoSec dinner coverage (Sep + Oct 2024). This is the only productive public source located; official Kroger leadership pages were not accessible to the scout.',
+        whyItMatters: 'Establishes a candidate point-of-contact for Kroger\'s cyber org, but the BISO title is not a traditional CISO role — org-structure verification is required before this drives any CSO-level monitoring.',
+        sources: [{ publisher: 'CDO Magazine', url: 'https://www.cdomagazine.tech/', date: '2024-10-01' }],
+      },
+    ],
+    recentActivity: [
+      { date: '2024-10-01', title: 'CDO Magazine Cincinnati InfoSec dinner coverage', type: 'Public Appearance', impact: 'Only confirmed public citation; currency unverified' },
+      { date: '2026-05-29', title: 'Identity/title corroboration gap recorded', type: 'Data Quality Signal', impact: 'Confidence capped until first-party Kroger source validates role' },
+    ],
+    strategicThreats: [
+      '⚠️ HIGH: Incumbency + currency unverified — do not attribute Kroger security strategy to this profile yet',
+      '📡 MEDIUM: BISO title suggests a possible CISO above; org structure unknown',
+    ],
+    recommendations: [
+      '🔥 IMMEDIATE: Verify current Kroger security org structure + incumbent via official/first-party sources',
+      '⚡ 30-DAY: Confirm whether a CISO sits above the BISO role before elevating profile confidence',
+      '⚡ 90-DAY: Refresh from RH-ISAC / conference rosters if official disclosure stays unavailable',
+    ],
+  },
+
+  // ── Albertsons — UNCONFIRMED placeholder ──────────────────────
+  {
+    id: 'albertsons-ciso-unconfirmed',
+    name: 'Albertsons — Security Leader (Unconfirmed)',
+    title: 'CISO / VP Security (Unconfirmed)',
+    company: 'Albertsons',
+    threatLevel: 'LOW',
+    profileImage: '',
+    bio: 'UNCONFIRMED placeholder. A 2026-05-29 public-source scout could not identify Albertsons\' top security executive (newsroom + press paths were bot-walled). Tracked here so the gap is visible. Analyst action: pull the SEC DEF 14A proxy and 10-K cybersecurity-officer disclosure, and review albertsonscompanies.com/leadership manually.',
+    keyFindings: [],
+    recentActivity: [
+      { date: '2026-05-29', title: 'Public-source identification attempt failed', type: 'Data Quality Signal', impact: 'No public incumbent found; SEC filings are the recommended next source' },
+    ],
+    strategicThreats: [
+      '⚠️ Incumbent unknown — no attribution possible until an analyst confirms via SEC filings or first-party sources',
+    ],
+    recommendations: [
+      '🔥 IMMEDIATE: Pull Albertsons SEC DEF 14A + 10-K for named cybersecurity officer',
+      '⚡ 30-DAY: Review official leadership page manually; confirm before adding any findings',
+    ],
+  },
+
+  // ── HEB — UNCONFIRMED placeholder ─────────────────────────
+  {
+    id: 'heb-security-unconfirmed',
+    name: 'H-E-B — Security Leader (Unconfirmed)',
+    title: 'Head of Security (Unconfirmed)',
+    company: 'H-E-B',
+    threatLevel: 'LOW',
+    profileImage: '',
+    bio: 'UNCONFIRMED placeholder. H-E-B is privately held with minimal public leadership disclosure; the 2026-05-29 scout found no public security executive. This gap may be structurally irreducible from public sources alone. Analyst action: use RH-ISAC network contacts and Texas Cybersecurity Summit speaker rosters.',
+    keyFindings: [],
+    recentActivity: [
+      { date: '2026-05-29', title: 'Public-source identification attempt failed', type: 'Data Quality Signal', impact: 'Private company — minimal disclosure; network intelligence required' },
+    ],
+    strategicThreats: [
+      '⚠️ Incumbent unknown — private company, no SEC filings; public attribution likely not possible',
+    ],
+    recommendations: [
+      '⚡ 30-DAY: Source via RH-ISAC contacts or Texas Cybersecurity Summit speaker lists',
+      '🎯 Treat as low-priority until a credible first-party signal appears',
+    ],
+  },
+
+  // ── Costco — UNCONFIRMED placeholder ───────────────────────
+  {
+    id: 'costco-ciso-unconfirmed',
+    name: 'Costco — Security Leader (Unconfirmed)',
+    title: 'CISO / VP Security (Unconfirmed)',
+    company: 'Costco',
+    threatLevel: 'LOW',
+    profileImage: '',
+    bio: 'UNCONFIRMED placeholder. The 2026-05-29 scout could not identify Costco\'s top security executive (investor-relations paths were bot-walled). Tracked so the gap is visible. Analyst action: pull the Costco SEC 10-K (CIK 0000909832) for a named cybersecurity officer and review investor.costco.com manually.',
+    keyFindings: [],
+    recentActivity: [
+      { date: '2026-05-29', title: 'Public-source identification attempt failed', type: 'Data Quality Signal', impact: 'No public incumbent found; SEC 10-K is the recommended next source' },
+    ],
+    strategicThreats: [
+      '⚠️ Incumbent unknown — no attribution possible until an analyst confirms via SEC filings or first-party sources',
+    ],
+    recommendations: [
+      '🔥 IMMEDIATE: Pull Costco SEC 10-K (CIK 0000909832) for named cybersecurity officer',
+      '⚡ 30-DAY: Review investor.costco.com + Gartner Security Summit speaker archives',
+    ],
+  },
+
 ];
 
 // Derived threat-summary counts for the hero badges
