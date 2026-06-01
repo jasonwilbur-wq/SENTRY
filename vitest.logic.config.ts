@@ -6,6 +6,6 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
-    include: ['components/executiveIntel/**/*.test.ts'],
+    include: ['components/executiveIntel/**/*.test.ts', 'components/securityLeadership/**/*.test.ts'],
   },
 });
