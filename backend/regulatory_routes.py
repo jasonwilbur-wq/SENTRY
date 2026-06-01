@@ -15,6 +15,8 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
 
+import trend_analytics as ta
+
 ROUTER = APIRouter(prefix="/api/regulatory", tags=["regulatory"])
 JSON_PATH = Path(__file__).parent / "data" / "json_reports" / "regulatory-briefing.json"
 
@@ -299,3 +301,31 @@ def get_regulatory_insights(
 def download_full_report() -> dict:
     """Return the full report JSON (for client-side download)."""
     return _load()
+
+
+@ROUTER.get("/trends")
+def get_regulatory_trends(
+    scope: str = Query("all", pattern="^(all|us|global)$"),
+    frequency: str = Query("monthly", pattern="^(monthly|quarterly|daily)$"),
+) -> dict:
+    """RAG-weighted regulatory trend analytics: deltas, momentum, anomalies, movers.
+
+    Weighting: Red=4, Amber=3, Yellow=2, Green=1 (volume != risk).
+    Category for top-movers = tech_category. Dated by effective_date.
+    """
+    data = _load()
+    obligations = [o for o in data["obligations"] if _matches_scope(o, scope)]
+
+    events = [
+        {
+            "date": o.get("effective_date"),
+            "weight": ta.RAG_WEIGHTS.get(o["risk"]["rag"], 1.0),
+            "category": o.get("tech_category", "Other"),
+        }
+        for o in obligations
+    ]
+    payload = ta.analyze(events, frequency=frequency, recent=24 if frequency == "monthly" else 8)
+    payload["domain"] = "regulatory"
+    payload["scope"] = scope
+    payload["weighting"] = "RAG (Red=4, Amber=3, Yellow=2, Green=1)"
+    return payload

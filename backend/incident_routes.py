@@ -8,6 +8,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Query
 
 from database import get_connection
+import trend_analytics as ta
 
 ROUTER = APIRouter(prefix="/api/incidents", tags=["incidents"])
 
@@ -167,6 +168,37 @@ def get_incident_filters() -> dict:
         "types":      types,
         "regions":    regions,
     }
+
+
+# ── Trend analytics (V1+V2+V3) ─────────────────────────────
+
+@ROUTER.get("/trends")
+def get_incident_trends(
+    frequency: str = Query("monthly", pattern="^(monthly|quarterly|daily)$"),
+) -> dict:
+    """Severity-weighted trend analytics: deltas, momentum, anomalies, movers.
+
+    Weighting: Critical=4, High=3, Medium=2, Low=1 (volume != risk).
+    Category for top-movers = incident_type.
+    """
+    conn = get_connection()
+    rows = conn.execute(
+        "SELECT incident_date, severity, incident_type FROM incidents WHERE incident_date != ''"
+    ).fetchall()
+    conn.close()
+
+    events = [
+        {
+            "date": r["incident_date"],
+            "weight": ta.SEVERITY_WEIGHTS.get(r["severity"], 1.0),
+            "category": r["incident_type"] or "Other",
+        }
+        for r in rows
+    ]
+    payload = ta.analyze(events, frequency=frequency, recent=24 if frequency == "monthly" else 8)
+    payload["domain"] = "incidents"
+    payload["weighting"] = "severity (Critical=4, High=3, Medium=2, Low=1)"
+    return payload
 
 
 # ── Morning brief contribution ─────────────────────────────────────────────
