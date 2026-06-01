@@ -16,6 +16,7 @@ import { VendorDetailModal } from './VendorDetailModal';
 import { Pagination } from './Pagination';
 import { VendorCard3D } from './VendorCard3D';
 import { VendorStatsPanel } from './VendorStatsPanel';
+import { ExecutivePostureCard } from './ExecutivePostureCard';
 import { useLazyRender } from '../hooks/useLazyRender';
 
 const PAGE_SIZE = 24;
@@ -50,6 +51,19 @@ const RISK_PILLS = [
 // ── Category pill bar (shorter labels to keep UI clean) ──────────────────────
 const PINNED_CATS: Record<string, string> = {
   'All':                                                      'All',
+  // Canonical Desktop SENTRY 00_System semantic domains
+  'Cybersecurity':                                            'Cyber',
+  'Enterprise Platform':                                      'Enterprise',
+  'Video Surveillance':                                       'Video',
+  'Drone UAS CUAS':                                           'Drone/C-UAS',
+  'Robotics Autonomy':                                        'Robotics',
+  'Identity Biometrics':                                      'Identity',
+  'Supply Chain Logistics':                                   'Supply Chain',
+  'Retail Store Operations':                                  'Retail Ops',
+  'Sensors Detection':                                        'Sensors',
+  'Access Control':                                           'Access',
+  'Other':                                                    'Other',
+  // Legacy DB categories retained for compatibility
   'Video Management & Recording (VMS/NVR)':                   'VMS/NVR',
   'Cyber-Physical & OT/Infrastructure Security':              'OT/ICS',
   'Counter-UAS (C-UAS)':                                      'C-UAS',
@@ -105,7 +119,7 @@ export const VendorDashboard: React.FC = () => {
     risk ? `Risk: ${risk}` : null,
   ].filter(Boolean) as string[];
 
-  // Categories: only show the pinned ones that exist in the DB
+  // Categories: prioritize executive semantic domains, then include any DB/source categories.
   const pinnedCategories = ['All', ...categories.filter(c => c !== 'All' && PINNED_CATS[c])];
 
   return (
@@ -127,7 +141,17 @@ export const VendorDashboard: React.FC = () => {
         />
       )}
 
-      {/* ── Search + Filter Header ───────────────────────────────── */}
+      {/* ── Executive Risk Posture (CSO view) ────────────── */}
+      {vendors.length > 0 && (
+        <div className="mb-4">
+          <ExecutivePostureCard
+            vendors={vendors}
+            scopeLabel={hasFilters ? 'current filtered view' : `page ${page} of ${totalPages}`}
+          />
+        </div>
+      )}
+
+      {/* ── Search + Filter Header ─────────────────── */}
       <div
         className="sticky top-0 z-20 bg-sentry-bg/90 backdrop-blur-md pt-2 pb-4 space-y-3"
       >
@@ -141,7 +165,7 @@ export const VendorDashboard: React.FC = () => {
               </span>
             </h2>
             <p className="text-sm text-slate-500 mt-1">
-              Search by company or product, then narrow by category and risk to compare vendors quickly.
+              Search by company, product, semantic tag, or assessment domain, then narrow by category and risk to compare vendors quickly.
             </p>
             {backendOffline && (
               <p className="text-xs text-yellow-400 mt-1.5">
