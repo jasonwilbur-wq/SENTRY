@@ -1,0 +1,8 @@
+# SENTRY Backend — development/test dependencies
+# Keep production runtime deps in requirements.txt; CI and local test runs install this file too.
+-r requirements.txt
+
+pytest==8.3.5
+pytest-asyncio==0.25.3
+pytest-cov==6.0.0
+ruff==0.9.7

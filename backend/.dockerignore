@@ -38,4 +38,15 @@ output/
 data/*.csv
 data/*.xlsx
 data/*.xls
-# data/*.db is intentionally NOT excluded — SQLite DB bundles into the image
+
+# ── Local database artifacts / generated intelligence exports ─────
+# Keep the canonical bundled database available to Docker, but never bake
+# backups, WAL/SHM files, local samples, or generated source exports into images.
+data/*.backup*
+data/*.db.backup*
+data/*.db-shm
+data/*.db-wal
+data/sample_*
+data/source/
+data/json_reports/
+!data/sentry.db

@@ -3,12 +3,16 @@
 from __future__ import annotations
 
 import csv
+import hashlib
+import re
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
 
 from cache import ttl_cache
+from database import get_connection
 from path_config import (
     SENTRY_DATA_ROOT,
     VENDOR_ASSESSMENTS_ROOT,
@@ -16,6 +20,7 @@ from path_config import (
     VENDOR_EXECUTIVE_VIEWS_ROOT as EXECUTIVE_VIEWS_ROOT,
     VENDOR_INCOMING_ROOT as INCOMING_ROOT,
     VENDOR_PROFILES_CSV,
+    VENDOR_ENRICHED_INVENTORY_CSV,
 )
 
 
@@ -47,6 +52,19 @@ def _safe_int(value: str | None) -> int:
         return int(float(str(value or "0").strip() or "0"))
     except (TypeError, ValueError):
         return 0
+
+
+def _normalize_vendor_key(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "", (value or "").lower())
+
+
+def _fallback_vendor_id(company_name: str, technology_product: str) -> str:
+    slug = f"{company_name}::{technology_product}".lower().strip()
+    return hashlib.sha256(slug.encode()).hexdigest()[:12]
+
+
+def _domain_label(value: str) -> str:
+    return str(value or "").replace("_", " ").strip() or "Unclassified"
 
 
 @ttl_cache(ttl_seconds=300, key_prefix="vendor_assessment_overview")
@@ -176,4 +194,113 @@ def get_vendor_assessment_overview(
             domain: rows[:leaders_limit]
             for domain, rows in data["domain_leaders"].items()
         },
+    }
+
+
+def _profile_for_vendor_id(vendor_id: str) -> dict[str, str] | None:
+    profiles = _read_csv_rows(VENDOR_PROFILES_CSV)
+    for row in profiles:
+        company_name = str(row.get("vendor_folder") or "").strip()
+        top_tags = str(row.get("top_semantic_tags") or "").strip()
+        technology_product = top_tags.split(";")[0].strip() if top_tags else ""
+        if _fallback_vendor_id(company_name, technology_product) == vendor_id:
+            return row
+
+    conn = get_connection()
+    try:
+        row = conn.execute("SELECT company_name FROM vendors WHERE id = ?", (vendor_id,)).fetchone()
+    finally:
+        conn.close()
+    if not row:
+        return None
+
+    normalized = _normalize_vendor_key(str(row["company_name"] or ""))
+    return next((profile for profile in profiles if _normalize_vendor_key(profile.get("vendor_folder", "")) == normalized), None)
+
+
+@ttl_cache(ttl_seconds=300, key_prefix="vendor_assessment_evidence")
+def _load_vendor_evidence(vendor_id: str) -> dict[str, Any]:
+    profile = _profile_for_vendor_id(vendor_id)
+    if not profile:
+        raise HTTPException(status_code=404, detail="Vendor assessment profile not found")
+
+    vendor_key = str(profile.get("vendor_normalized_key") or _normalize_vendor_key(profile.get("vendor_folder", ""))).strip()
+    inventory_rows = [
+        row for row in _read_csv_rows(VENDOR_ENRICHED_INVENTORY_CSV)
+        if str(row.get("vendor_normalized_key") or "").strip() == vendor_key
+    ]
+
+    artifact_role_counts = Counter(row.get("artifact_role", "Unclassified") or "Unclassified" for row in inventory_rows)
+    extension_counts = Counter(row.get("extension", "") or "unknown" for row in inventory_rows)
+    priority_counts = Counter(row.get("ai_access_priority", "") or "Unprioritized" for row in inventory_rows)
+    total_bytes = sum(_safe_int(row.get("size_bytes")) for row in inventory_rows)
+
+    artifacts = sorted(
+        inventory_rows,
+        key=lambda row: (str(row.get("modified_utc") or ""), str(row.get("filename") or "")),
+        reverse=True,
+    )
+
+    return {
+        "vendor_id": vendor_id,
+        "vendor_folder": profile.get("vendor_folder", ""),
+        "vendor_normalized_key": vendor_key,
+        "source": {
+            "operational_mode": "read_only_csv_inventory",
+            "vendor_assessments_root": str(VENDOR_ASSESSMENTS_ROOT),
+            "vendor_profiles_csv": str(VENDOR_PROFILES_CSV),
+            "enriched_inventory_csv": str(VENDOR_ENRICHED_INVENTORY_CSV),
+            "system_root": str(SYSTEM_ROOT),
+            "source_run_label": profile.get("run_label", ""),
+            "source_run_timestamp_utc": profile.get("run_timestamp_utc", ""),
+            "source_actor_id": profile.get("actor_id", ""),
+        },
+        "profile": {
+            "report_count": _safe_int(profile.get("report_count")),
+            "dominant_domain": profile.get("dominant_domain", ""),
+            "dominant_domain_label": _domain_label(profile.get("dominant_domain", "")),
+            "secondary_domains": profile.get("secondary_domains", ""),
+            "top_semantic_tags": profile.get("top_semantic_tags", ""),
+            "top_stakeholder_tags": profile.get("top_stakeholder_tags", ""),
+            "latest_modified_utc": profile.get("latest_modified_utc", ""),
+            "sample_report_path": profile.get("sample_report_path", ""),
+        },
+        "summary": {
+            "artifact_count": len(inventory_rows),
+            "total_size_bytes": total_bytes,
+            "artifact_role_counts": dict(artifact_role_counts.most_common()),
+            "extension_counts": dict(extension_counts.most_common()),
+            "priority_counts": dict(priority_counts.most_common()),
+        },
+        "artifacts": [
+            {
+                "filename": row.get("filename", ""),
+                "current_path": row.get("current_path", ""),
+                "subfolder": row.get("subfolder", ""),
+                "extension": row.get("extension", ""),
+                "artifact_role": row.get("artifact_role", ""),
+                "primary_domain": row.get("primary_domain", ""),
+                "technology_tags": row.get("technology_tags", ""),
+                "human_browse_group": row.get("human_browse_group", ""),
+                "ai_access_priority": row.get("ai_access_priority", ""),
+                "enrichment_confidence": row.get("enrichment_confidence", ""),
+                "status_label": row.get("status_label", ""),
+                "size_bytes": _safe_int(row.get("size_bytes")),
+                "modified_utc": row.get("modified_utc", ""),
+                "sha256": row.get("sha256", ""),
+            }
+            for row in artifacts[:75]
+        ],
+    }
+
+
+@router.get("/vendors/{vendor_id}/evidence")
+def get_vendor_assessment_evidence(
+    vendor_id: str,
+    artifact_limit: int = Query(25, ge=1, le=75),
+) -> dict[str, Any]:
+    data = _load_vendor_evidence(vendor_id)
+    return {
+        **data,
+        "artifacts": data["artifacts"][:artifact_limit],
     }
