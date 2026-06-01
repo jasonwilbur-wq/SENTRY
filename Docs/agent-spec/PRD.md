@@ -2,9 +2,9 @@
 
 ## Goal / Objective
 
-Reduce time to assess new security technologies and improve the quality of intelligence delivered to Walmart CSO leadership.
+Provide visibility on prospective vendors Walmart has assessed, CSO intelligence, and technology market analysis while improving the quality of Security and Technology Intelligence delivered to Walmart Global Security.
 
-SENTRY should reduce analyst manual effort across vendor assessment intake, VAR review, score extraction, backlog review, project phase visibility, and security intelligence reporting while preserving human control over final decisions, publication, destructive actions, and production-affecting changes.
+SENTRY should support both daily analyst operations and executive reporting. It should reduce analyst manual effort across vendor assessment intake, VAR review, score extraction, backlog review, project phase visibility, competitor intelligence, CSO brief drafting, and security intelligence reporting while preserving human control over final decisions, publication, destructive actions, and production-affecting changes.
 
 ## Current-State Snapshot (Codebase-Grounded)
 
@@ -35,13 +35,14 @@ The main problems to solve are:
 ## Primary Users
 
 1. Walmart CSO
-2. Walmart EST (Emerging Security Technology) Team
-3. Walmart Security Leadership
-4. Product Owners / Program Managers
-5. Compliance Reviewers
-6. Engineering Leads
-7. Walmart end users requesting technology assessments
-8. Vendors with limited or indirect status visibility only
+2. Walmart Global Security leadership
+3. Walmart EST (Emerging Security Technology) Team
+4. Analysts and program owners
+5. Product Owners / Program Managers
+6. Compliance Reviewers
+7. Engineering Leads
+8. Walmart end users requesting technology assessments
+9. Vendors with limited or indirect status visibility only
 
 ## Inputs
 
@@ -64,6 +65,7 @@ The main problems to solve are:
 - Draft decision-band recommendations
 - Draft backlog and stale-record findings
 - Draft morning brief content
+- CSO brief drafts and readiness summaries
 - Competitor, incident, and regulatory intelligence summaries
 - Vendor linking suggestions
 - Read-only architecture or workflow recommendations

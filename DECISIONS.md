@@ -1,5 +1,38 @@
 # DECISIONS
 
+## 2026-05-15 — SENTRY AI-agent operating model should use Grill Me with SENTRY-specific domain rules
+- Context: User completed the SENTRY Grill Me operating-model questionnaire to clarify mission, domain priorities, source-of-truth rules, agent authority, implementation gates, validation expectations, artifacts, glossary, failure handling, security boundaries, and future agent evolution.
+- Decision: Treat SENTRY as a Security and Technology Intelligence platform optimized for both daily analyst operations and executive reporting.
+- Primary domains:
+  - Vendor Intelligence
+  - Competitor Intelligence
+  - CSO Brief Intelligence
+- Supporting domains:
+  - Project Portfolio
+  - Regulatory Intelligence
+  - Incident Intelligence
+- Agent operating choices:
+  - Use lightweight Grill Me for all work, including when the user says "just code it."
+  - Use full Grill Me for medium/high-risk work.
+  - Produce a Shared Design Concept before medium/high-risk code changes.
+  - Include risk tiers, do-not-build list, rejected alternatives when useful, validation plan, and rollback plan for full Grill Me.
+  - Ask the user and provide courses of action when domains, source data, or prior decisions conflict.
+  - Stop and provide courses of action if architectural risk is discovered mid-implementation.
+- Source-of-truth choices:
+  - Vendor Intelligence is based on the totality of authenticated sources, including SENTRY SQLite, SharePoint VAR documents, `00_System`, imported CSVs, and backend API responses.
+  - Competitor Intelligence is based on created and curated datasets.
+  - CSO Brief Intelligence is based on OSINT plus human-in-the-loop intelligence processing.
+- Security choices:
+  - Do not read `.env.production`.
+  - Never expose secrets, tokens, service account keys, or backup files.
+  - Executive-facing outputs remain draft-only until approved.
+- Validation choices:
+  - Backend changes should use compile/import checks, targeted pytest, full pytest when practical, and route smoke tests.
+  - Frontend changes should use TypeScript checks, build, Vitest, browser validation, Playwright, and additional browser automation such as Skyvern or Browser-use when available and appropriate.
+  - Visible UI changes require browser validation when practical.
+- Status: Documented in `Docs/agent-spec/` agent operating files and summarized in `Docs/agent-spec/sessions/2026-05-15-sentry-operating-model-answers.md`.
+
+
 ## 2026-04-30 — Vendor Directory Risk & Scores data source hardening
 - Context: Risk and score presentation in Vendor Directory was not reliably surfacing Vendor Assessment Report (VAR) data at both the card layer and the modal detail layer.
 - Decision: Prefer latest available scored VAR metadata for Vendor Directory display when present.

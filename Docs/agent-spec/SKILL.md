@@ -15,6 +15,8 @@ Activate this skill when a user asks the agent to:
 - suggest relink candidates or score-extraction actions
 - recommend read-only architecture or workflow improvements
 - review a protected mutation request and return the safe next step
+- plan, refactor, implement, or review SENTRY code or documentation changes
+- run a Grill Me design interview before a medium/high-risk SENTRY change
 
 ## Required Tools
 
@@ -44,7 +46,7 @@ Activate this skill when a user asks the agent to:
 
 ### 1. Read State
 
-Load request context, role context, constraints, prior decisions, confirmation state, and approval state.
+Load request context, role context, constraints, prior decisions, SENTRY context, confirmation state, and approval state.
 
 ### 2. Classify the Request
 
@@ -57,18 +59,22 @@ Determine whether the request is:
 - architecture advice
 - protected mutation request
 - dependency-pending request
+- Grill Me design interview
+- low-risk implementation
+- medium-risk implementation
+- high-risk implementation
 
 ### 3. Gather Evidence
 
-Read the minimum required approved sources. Prefer current API views over derived or static copies when both exist. Pull SharePoint content only when needed.
+Read the minimum required approved sources. Prefer current API views over derived or static copies when both exist. Pull SharePoint content only when needed. For code, architecture, or workflow changes, inspect relevant repository files before editing.
 
 ### 4. Produce a Draft Result
 
-Return findings, draft recommendations, and supporting evidence. Separate findings from recommendations. Do not present any decision as final.
+Return findings, draft recommendations, supporting evidence, or a Shared Design Concept. Separate findings from recommendations. Do not present any decision as final. For medium/high-risk work, include a risk-ranked implementation plan before code changes.
 
 ### 5. Check Gates
 
-If the request crosses a policy gate, stop and emit an approval packet. If the request targets an implemented protected mutation, require confirmation state and prefer preview-first behavior. If the request depends on an unavailable integration, mark it DEPENDENCY_PENDING.
+Apply the SENTRY Implementation Gate. If the request crosses a policy gate, stop and emit an approval packet. If the request targets an implemented protected mutation, require confirmation state and prefer preview-first behavior. If the request depends on an unavailable integration, mark it DEPENDENCY_PENDING. For medium-risk implementation, proceed only after user direction such as `Proceed` or `Approved`. For high-risk implementation, require explicit approval.
 
 ### 6. Validate
 
@@ -122,6 +128,10 @@ Return the response in fixed output format.
 - No invented tool or permission
 - No contradiction with known constraints
 - Output sections in required order
+
+## Grill Me Extension
+
+Use lightweight Grill Me for all SENTRY work and full Grill Me for medium/high-risk work. During full Grill Me, cover user goal, business outcome, current behavior, desired behavior, data/API/UI impact, security, performance, reliability, edge cases, do-not-build list, validation, rollback, and approval gates. Maintain a glossary when terms are ambiguous.
 
 ## Output Format
 

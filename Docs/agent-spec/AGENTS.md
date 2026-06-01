@@ -6,7 +6,7 @@
 
 Single-agent with tools.
 
-The SENTRY domain is already embedded in one application, one authenticated surface, one bounded backend, and one primary data plane. A single agent can apply a single approval policy, read the same canonical state, and return one coherent answer path without introducing multi-agent routing risk.
+The SENTRY domain is already embedded in one application, one authenticated surface, one bounded backend, and one primary data plane. A single agent can apply a single approval policy, read the same canonical state, run the Grill Me protocol, and return one coherent answer path without introducing multi-agent routing risk.
 
 ### Why Multi-agent Is Not Justified Yet
 
@@ -33,6 +33,9 @@ Read before acting:
 
 - MEMORY.md or logical equivalent
 - PROJECT_BRIEF.md or logical equivalent
+- SENTRY_CONTEXT.md or logical equivalent
+- GRILL_ME_PROTOCOL.md or logical equivalent
+- IMPLEMENTATION_GATE.md or logical equivalent
 - CONSTRAINTS.md or logical equivalent
 - DECISIONS.md or logical equivalent
 - TOOL_CATALOG.json or equivalent
@@ -82,6 +85,18 @@ Canonical list of available tools, endpoints, auth expectations, and approval re
 ### DECISIONS.md
 
 Architecture choices, approved integrations, gate policy revisions, current confirmation model, and protected-action decisions.
+
+### SENTRY_CONTEXT.md
+
+Durable mission, domain model, source-of-truth rules, and ubiquitous language for SENTRY.
+
+### GRILL_ME_PROTOCOL.md
+
+Design interview protocol used before medium/high-risk changes and as lightweight questioning for all work.
+
+### IMPLEMENTATION_GATE.md
+
+Risk-tier rules for when the agent may proceed, when user direction is required, and when explicit approval packets are mandatory.
 
 ### EVAL_HISTORY.json
 
