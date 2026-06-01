@@ -2,6 +2,7 @@ import React from 'react';
 import type { ExecutiveProfile } from '../../data/csoProfiles';
 import { Badge, Card, ExecutiveAvatar } from '../executiveIntel/ui';
 import { riskTone, threatTone } from './securityLogic';
+import { deriveVerification } from './verificationLogic';
 
 // ---------------------------------------------------------------------------
 // Detail pane for a single competitor Chief Security Officer.
@@ -10,6 +11,7 @@ import { riskTone, threatTone } from './securityLogic';
 // ---------------------------------------------------------------------------
 
 export function SecurityProfileDetail({ profile }: { profile: ExecutiveProfile }) {
+  const verification = deriveVerification(profile);
   return (
     <div className="space-y-6">
       <Card>
@@ -19,11 +21,27 @@ export function SecurityProfileDetail({ profile }: { profile: ExecutiveProfile }
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="text-lg font-black" style={{ color: 'var(--s-text)' }}>{profile.name}</h3>
               <Badge tone={threatTone(profile.threatLevel)}>{profile.threatLevel}</Badge>
+              <span
+                className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-black uppercase tracking-wider"
+                style={{ background: verification.color + '1a', color: verification.color, border: '1px solid ' + verification.color + '55' }}
+                title={verification.reason}
+              >
+                {verification.level === 'verified' ? '✓' : verification.level === 'review' ? '⚠' : '○'} {verification.label}
+              </span>
             </div>
             <p className="mt-1 text-sm font-bold" style={{ color: 'var(--s-text-dim)' }}>{profile.title}</p>
             <p className="text-sm" style={{ color: 'var(--s-text-dim)' }}>{profile.company}</p>
           </div>
         </div>
+        {verification.level !== 'verified' && (
+          <div
+            className="mt-3 rounded-lg px-3 py-2 text-xs"
+            style={{ background: verification.color + '12', color: verification.color, border: '1px solid ' + verification.color + '33' }}
+            role="note"
+          >
+            <strong>Data confidence — {verification.label}:</strong> {verification.reason} Analyst verification recommended before acting on this profile.
+          </div>
+        )}
         <p className="mt-4 text-sm leading-6" style={{ color: 'var(--s-text-dim)' }}>{profile.bio}</p>
       </Card>
 

@@ -5,6 +5,7 @@ import { SecuritySidebar } from './SecuritySidebar';
 import { SecurityProfileDetail } from './SecurityProfileDetail';
 import { WalmartPositionPanel } from './WalmartPositionPanel';
 import { byThreatThenName, deriveCounts } from './securityLogic';
+import { summarizeVerification } from './verificationLogic';
 
 // ---------------------------------------------------------------------------
 // Security Leadership (Chief Security Officer) competitive intelligence.
@@ -19,6 +20,7 @@ export function SecurityLeadership({ embedded = false }: { embedded?: boolean } 
   const detailRef = useRef<HTMLDivElement | null>(null);
 
   const counts = useMemo(() => deriveCounts(profiles), [profiles]);
+  const verification = useMemo(() => summarizeVerification(profiles), [profiles]);
   const selected = useMemo(
     () => profiles.find(p => p.id === selectedId),
     [profiles, selectedId],
@@ -49,7 +51,14 @@ export function SecurityLeadership({ embedded = false }: { embedded?: boolean } 
         <StatCard label="Leaders tracked" value={counts.profiles} helper="Competitor CSO / CISO profiles" />
         <StatCard label="Key findings" value={counts.findings} helper="OSINT-derived intelligence items" />
         <StatCard label="Critical / high" value={counts.critical} helper="Orange + red risk findings" tone="red" />
-        <StatCard label="Cited sources" value={counts.sources} helper="Linked public references" />
+        <StatCard
+          label="Data confidence"
+          value={verification.verified + '/' + verification.total}
+          helper={verification.verified === verification.total
+            ? 'All profiles verified'
+            : verification.provisional + ' provisional · ' + verification.review + ' need review'}
+          tone={verification.verified === verification.total ? undefined : 'red'}
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6 items-start">
