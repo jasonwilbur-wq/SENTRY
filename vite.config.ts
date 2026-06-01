@@ -26,21 +26,25 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
-    // Split heavy vendor libs into separate chunks so Firebase CDN
-    // can cache them independently of the app code.
+    // Split heavy vendor libs so Firebase/CDN caches them independently.
+    // Keep this as a function: object-form manualChunks can emit empty chunks
+    // when dependencies are optimized or only referenced through subpaths.
     rollupOptions: {
       output: {
-        manualChunks: {
-          // React runtime
-          'vendor-react':    ['react', 'react-dom'],
-          // Charting libs (heavy — recharts pulls in d3)
-          'vendor-charts':   ['recharts', 'd3'],
-          // Three.js (3D globe)
-          'vendor-three':    ['three'],
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return undefined;
+          if (id.includes('/react/') || id.includes('/react-dom/') || id.includes('/scheduler/')) return 'vendor-react';
+          if (id.includes('@react-three')) return 'vendor-r3f';
+          if (id.includes('/three/')) return 'vendor-three';
+          if (id.includes('/recharts/')) return 'vendor-recharts';
+          if (id.includes('/d3') || id.includes('/internmap/') || id.includes('/delaunator/') || id.includes('/robust-predicates/')) return 'vendor-d3';
+          if (id.includes('/framer-motion/')) return 'vendor-motion';
+          return undefined;
         },
       },
     },
-    // Bump the warning threshold so the 206KB gzipped app doesn't warn
-    chunkSizeWarningLimit: 600,
+    // Three.js is inherently large, but it is lazy-route cached. Warn only when
+    // chunks exceed the current known 3D vendor footprint.
+    chunkSizeWarningLimit: 900,
   },
 });

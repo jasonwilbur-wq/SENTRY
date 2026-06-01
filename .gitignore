@@ -20,6 +20,10 @@ backend/.venv/
 *.log
 npm-debug.log*
 yarn-debug.log*
+dev.log
+frontend.log
+backend.log
+sentry*.log
 
 # ── IDE ────────────────────────────────────────────────────────────────────
 .vscode/*
@@ -27,6 +31,7 @@ yarn-debug.log*
 .idea/
 *.suo
 *.sw?
+~$*.docx
 
 # ── OS ─────────────────────────────────────────────────────────────────────
 .DS_Store
@@ -38,4 +43,18 @@ Thumbs.db
 *.db
 *.db-shm
 *.db-wal
-# Non-PII CSVs in backend/data are safe to commit
+# Local/generated outputs
+_audit/
+output/
+test-results/
+e2e/reports/
+tmp_*.json
+WORKING_STATE.json
+
+# Docker image / repo should never include local database backups
+backend/data/*.backup*
+backend/data/*.db.backup*
+backend/data/*.db-shm
+backend/data/*.db-wal
+
+# Non-PII CSVs in backend/data are safe to commitmobile_check_* 

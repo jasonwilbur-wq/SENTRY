@@ -23,11 +23,18 @@ export default defineConfig({
 
   reporter: [['list'], ['html', { open: 'never', outputFolder: 'e2e/reports' }]],
 
+  webServer: {
+    command: 'npm run dev -- --host 127.0.0.1',
+    url: 'http://127.0.0.1:3000',
+    reuseExistingServer: true,
+    timeout: 120_000,
+  },
+
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: 'http://127.0.0.1:3000',
     headless: true,
     screenshot: 'only-on-failure',
-    video: 'retain-on-failure',
+    video: 'off',
     /* Use locally installed Chrome — avoids corporate-proxy download issues */
     channel: 'chrome',
   },
@@ -38,10 +45,7 @@ export default defineConfig({
       use: {
         ...devices['Desktop Chrome'],
         channel: 'chrome',
-        /* Explicit path fallback if channel detection fails */
-        launchOptions: {
-          executablePath: 'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe',
-        },
+        /* Use channel detection instead of a hard-coded Windows path. */
       },
     },
   ],
