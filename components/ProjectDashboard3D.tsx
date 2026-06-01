@@ -1,9 +1,18 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Sphere, MeshDistortMaterial, Float, Text, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { PROJECTS, summarizePortfolio, loadProjects, type Project } from '../data/projectsData';
+import ESTLifecycleTimeline, { type ComplianceFields } from './ESTLifecycleTimeline';
+import { estPhaseIndex } from '../utils/estPhase';
+
+// Empty compliance scaffold — project data does not yet carry NDA/APM/ERPA/SSP
+// records, so the EST timeline renders the gate roadmap with placeholders.
+const EMPTY_COMPLIANCE: ComplianceFields = {
+  nda_numbers: [], apm_entries: [], erpa_entries: [], ssp_entries: [], compliance_notes: '',
+};
 
 // ═══════════════════════════════════════════════════════════════════════
 // 3D Project Dashboard — SENTRY Epic Edition
@@ -880,17 +889,20 @@ const ProjectDashboard3D: React.FC = () => {
         </AnimatePresence>
       </div>
 
-      {/* Project Detail Modal */}
-      <AnimatePresence>
-        {selectedProject && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-6"
-            style={{ backgroundColor: 'var(--s-modal-back)' }}
-            onClick={() => setSelectedProject(null)}
-          >
+      {/* Project Detail Modal - portaled to <body> so position:fixed centers
+          relative to the viewport (a 3D-transformed ancestor would otherwise
+          become the containing block and push it off-screen). */}
+      {createPortal(
+        <AnimatePresence>
+          {selectedProject && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[100] flex items-center justify-center p-6"
+              style={{ backgroundColor: 'var(--s-modal-back)' }}
+              onClick={() => setSelectedProject(null)}
+            >
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -971,6 +983,16 @@ const ProjectDashboard3D: React.FC = () => {
                   </div>
                 )}
 
+                {/* EST 8-gate phase roadmap - shows where this project sits */}
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-400 mb-3">EST Phase Roadmap</h3>
+                  <ESTLifecycleTimeline
+                    estPhaseIndex={estPhaseIndex(selectedProject.current_phase)}
+                    health={selectedProject.health}
+                    compliance={EMPTY_COMPLIANCE}
+                  />
+                </div>
+
                 <div>
                   <h3 className="text-sm font-semibold text-slate-400 mb-2">Last Updated</h3>
                   <p className="text-white">
@@ -981,7 +1003,9 @@ const ProjectDashboard3D: React.FC = () => {
             </motion.div>
           </motion.div>
         )}
-      </AnimatePresence>
+        </AnimatePresence>,
+        document.body,
+      )}
     </div>
   );
 };
