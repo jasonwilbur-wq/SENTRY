@@ -25,7 +25,6 @@
 
 All shipped behind the existing test suite (**57 component + 77 logic tests green**).
 
-<!-- COMMITS -->
 ## Commits (newest first)
 
 | Hash | What |
@@ -59,7 +58,6 @@ All shipped behind the existing test suite (**57 component + 77 logic tests gree
 - `backend/main.py` — registers the portfolio router
 - `vitest.logic.config.ts` — includes `utils/**/*.test.ts`
 
-<!-- VERIFY -->
 ## Verification status
 
 - ✅ `npx tsc --noEmit` clean across all changes
