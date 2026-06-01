@@ -7,6 +7,7 @@ import {
   type CompetitorEvent,
 } from '../services/api';
 import { CompetitorThreat3D, type ThreatNode } from './CompetitorThreat3D';
+import { CompetitorTrendStrip } from './CompetitorTrendStrip';
 
 interface CompetitorProfile {
   name: string;
@@ -41,14 +42,14 @@ const COMPETITOR_LOGOS: { [key: string]: string } = {
 
 // Color palette for letter avatars (fallback)
 const AVATAR_COLORS = [
-  { bg: 'from-blue-600 to-blue-800', border: 'border-blue-500', text: 'text-blue-100' },
-  { bg: 'from-purple-600 to-purple-800', border: 'border-purple-500', text: 'text-purple-100' },
-  { bg: 'from-red-600 to-red-800', border: 'border-red-500', text: 'text-red-100' },
+  { bg: 'from-blue-700 to-blue-900', border: 'border-blue-500', text: 'text-blue-100' },
+  { bg: 'from-slate-600 to-slate-800', border: 'border-slate-500', text: 'text-slate-100' },
+  { bg: 'from-red-700 to-red-900', border: 'border-red-500', text: 'text-red-100' },
   { bg: 'from-yellow-600 to-yellow-800', border: 'border-yellow-500', text: 'text-yellow-100' },
-  { bg: 'from-green-600 to-green-800', border: 'border-green-500', text: 'text-green-100' },
-  { bg: 'from-pink-600 to-pink-800', border: 'border-pink-500', text: 'text-pink-100' },
-  { bg: 'from-indigo-600 to-indigo-800', border: 'border-indigo-500', text: 'text-indigo-100' },
-  { bg: 'from-teal-600 to-teal-800', border: 'border-teal-500', text: 'text-teal-100' },
+  { bg: 'from-green-700 to-green-900', border: 'border-green-500', text: 'text-green-100' },
+  { bg: 'from-orange-700 to-orange-900', border: 'border-orange-500', text: 'text-orange-100' },
+  { bg: 'from-blue-900 to-slate-900', border: 'border-blue-700', text: 'text-blue-100' },
+  { bg: 'from-slate-700 to-zinc-900', border: 'border-slate-500', text: 'text-slate-100' },
 ];
 
 function getAvatarColor(name: string) {
@@ -82,7 +83,7 @@ function getPriorityChip(priority?: string | null) {
     return { bg: 'rgba(255,194,32,0.15)', color: '#FFC220', border: 'rgba(255,194,32,0.45)' };
   }
   if (p.includes('analyst')) {
-    return { bg: 'rgba(0,83,226,0.15)', color: '#60a5fa', border: 'rgba(0,83,226,0.45)' };
+    return { bg: 'rgba(0,83,226,0.15)', color: '#9BB7DF', border: 'rgba(0,83,226,0.45)' };
   }
   return { bg: 'rgba(100,116,139,0.18)', color: '#94a3b8', border: 'rgba(100,116,139,0.45)' };
 }
@@ -383,7 +384,7 @@ export function CompetitorIntelligence() {
             <h1
               className="text-4xl lg:text-5xl font-black mb-2 leading-tight"
               style={{
-                background: 'linear-gradient(135deg, #60a5fa 0%, #0053E2 50%, #FFC220 100%)',
+                background: 'linear-gradient(135deg, #D9E3F0 0%, #0053E2 48%, #FFC220 100%)',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
               }}
@@ -394,10 +395,10 @@ export function CompetitorIntelligence() {
               Live threat tracking across {competitors.length} competitors &mdash; {(stats?.total ?? 0).toLocaleString()} events indexed and analyst-enriched.
             </p>
             <div className="flex flex-wrap gap-2 justify-center">
-              <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(0,83,226,0.15)', color: '#60a5fa', borderColor: 'rgba(0,83,226,0.4)' }}>{stats?.total ?? 0} Events</span>
+              <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(0,83,226,0.15)', color: '#D9E3F0', borderColor: 'rgba(0,83,226,0.4)' }}>{stats?.total ?? 0} Events</span>
               <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(234,17,0,0.15)', color: '#ff6b6b', borderColor: 'rgba(234,17,0,0.4)' }}>{stats?.cyber ?? 0} Cyber</span>
               <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(255,194,32,0.15)', color: '#FFC220', borderColor: 'rgba(255,194,32,0.4)' }}>{stats?.orc ?? 0} ORC/Theft</span>
-              <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(139,92,246,0.15)', color: '#a78bfa', borderColor: 'rgba(139,92,246,0.4)' }}>{stats?.recall ?? 0} Recalls</span>
+              <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(217,95,2,0.15)', color: '#FDBA74', borderColor: 'rgba(217,95,2,0.4)' }}>{stats?.recall ?? 0} Recalls</span>
               <span className="px-3 py-1.5 rounded-full text-xs font-bold border" style={{ background: 'rgba(34,197,94,0.15)', color: '#4ade80', borderColor: 'rgba(34,197,94,0.4)' }}>Jan–Feb 2026</span>
             </div>
           </div>
@@ -428,7 +429,7 @@ export function CompetitorIntelligence() {
                       <span className="px-2 py-0.5 rounded text-[10px] font-bold border" style={{ background: chip.bg, color: chip.color, borderColor: chip.border }}>
                         {event.priority_tier || 'Unscored'}
                       </span>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold border" style={{ background: 'rgba(0,83,226,0.15)', color: '#60a5fa', borderColor: 'rgba(0,83,226,0.45)' }}>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold border" style={{ background: 'rgba(0,83,226,0.15)', color: '#D9E3F0', borderColor: 'rgba(0,83,226,0.45)' }}>
                         Score: {Math.round(event.walmart_relevance_score || 0)}
                       </span>
                       <span className="text-[10px]" style={{ color: 'var(--s-text-dim)' }}>
@@ -439,7 +440,7 @@ export function CompetitorIntelligence() {
                       {event.competitor}: {event.event_title || 'Untitled Event'}
                     </p>
                     <p className="text-xs mb-2" style={{ color: 'var(--s-text-muted)' }}>
-                      <span className="font-bold" style={{ color: '#93c5fd' }}>So what:</span> {inferSoWhat(event)}
+                      <span className="font-bold" style={{ color: '#9BB7DF' }}>So what:</span> {inferSoWhat(event)}
                     </p>
                     <p className="text-xs mb-1" style={{ color: '#FFC220' }}>
                       <span className="font-bold">Recommended action:</span> {inferAction(event)}
@@ -447,7 +448,7 @@ export function CompetitorIntelligence() {
                     <p className="text-[11px]" style={{ color: 'var(--s-text-dim)' }}>
                       <span className="font-bold">Proposed owner:</span> {inferOwner(event)}
                     </p>
-                    <p className="text-[11px] mt-1" style={{ color: '#93c5fd' }}>
+                    <p className="text-[11px] mt-1" style={{ color: '#9BB7DF' }}>
                       {correlationSummary(event)}
                     </p>
                   </div>
@@ -458,13 +459,16 @@ export function CompetitorIntelligence() {
         </div>
       </div>
 
+      {/* Trend Direction */}
+      <CompetitorTrendStrip events={allEvents} />
+
       {/* Key Insights */}
       <div className="max-w-7xl mx-auto mb-8">
         <h2 className="text-2xl font-bold mb-4">💡 Executive Intelligence</h2>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {executiveBriefings.map((brief, i) => (
             <div key={i} className="p-5 rounded-lg border-l-4 border" style={{ background: 'var(--s-card)', borderLeftColor: '#FFC220', borderColor: 'var(--s-border)' }}>
-              <h3 className="text-sm font-extrabold mb-2" style={{ color: '#60a5fa' }}>{brief.title}</h3>
+              <h3 className="text-sm font-extrabold mb-2" style={{ color: '#9BB7DF' }}>{brief.title}</h3>
               <p className="text-sm leading-relaxed mb-3" style={{ color: 'var(--s-text-muted)' }}>{brief.insight}</p>
               <p className="text-xs mb-1" style={{ color: '#FFC220' }}><span className="font-bold">Action:</span> {brief.action}</p>
               <p className="text-xs" style={{ color: 'var(--s-text-dim)' }}><span className="font-bold">Owner:</span> {brief.owner}</p>
@@ -522,7 +526,7 @@ export function CompetitorIntelligence() {
                     <div className="text-[10px]" style={{ color: 'var(--s-text-dim)' }}>Cyber</div>
                   </div>
                   <div>
-                    <div className="text-lg font-bold text-purple-400">{comp.techEvents}</div>
+                    <div className="text-lg font-bold text-blue-300">{comp.techEvents}</div>
                     <div className="text-[10px]" style={{ color: 'var(--s-text-dim)' }}>Tech</div>
                   </div>
                 </div>
@@ -530,7 +534,7 @@ export function CompetitorIntelligence() {
                 {/* Top Category */}
                 <div className="px-3 py-2" style={{ borderTop: '1px solid var(--s-border)' }}>
                   <span className="text-[10px]" style={{ color: 'var(--s-text-dim)' }}>Top: </span>
-                  <span className="text-[10px] font-medium" style={{ color: '#60a5fa' }}>{comp.topCategory}</span>
+                  <span className="text-[10px] font-medium" style={{ color: '#9BB7DF' }}>{comp.topCategory}</span>
                 </div>
 
                 {/* Expand Indicator */}
@@ -598,7 +602,7 @@ export function CompetitorIntelligence() {
                         <div className="text-xs" style={{ color: 'var(--s-text-dim)' }}>ORC/Theft</div>
                       </div>
                       <div className="p-4 rounded-lg text-center" style={{ background: 'var(--s-modal-inner)' }}>
-                        <div className="text-2xl font-bold text-purple-400">{comp.recallEvents}</div>
+                        <div className="text-2xl font-bold text-orange-300">{comp.recallEvents}</div>
                         <div className="text-xs" style={{ color: 'var(--s-text-dim)' }}>Recalls</div>
                       </div>
                       <div className="p-4 rounded-lg text-center" style={{ background: 'var(--s-modal-inner)' }}>
@@ -606,7 +610,7 @@ export function CompetitorIntelligence() {
                         <div className="text-xs" style={{ color: 'var(--s-text-dim)' }}>Legal</div>
                       </div>
                       <div className="p-4 rounded-lg text-center" style={{ background: 'var(--s-modal-inner)' }}>
-                        <div className="text-2xl font-bold text-teal-400">{comp.techEvents}</div>
+                        <div className="text-2xl font-bold text-blue-300">{comp.techEvents}</div>
                         <div className="text-xs" style={{ color: 'var(--s-text-dim)' }}>Technology</div>
                       </div>
                     </>
@@ -641,7 +645,7 @@ export function CompetitorIntelligence() {
                               </span>
                               <h4 className="font-bold mt-1" style={{ color: 'var(--s-text)' }}>{event.event_title}</h4>
                             </div>
-                            <span className="px-2 py-1 rounded text-xs ml-2" style={{ background: 'rgba(0,83,226,0.15)', color: '#60a5fa' }}>
+                            <span className="px-2 py-1 rounded text-xs ml-2" style={{ background: 'rgba(0,83,226,0.15)', color: '#D9E3F0' }}>
                               {event.category}
                             </span>
                           </div>
@@ -650,7 +654,7 @@ export function CompetitorIntelligence() {
                             <span className="px-2 py-0.5 rounded text-[10px] font-bold border" style={{ background: chip.bg, color: chip.color, borderColor: chip.border }}>
                               {event.priority_tier || 'Unscored'}
                             </span>
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold border" style={{ background: 'rgba(0,83,226,0.15)', color: '#60a5fa', borderColor: 'rgba(0,83,226,0.45)' }}>
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold border" style={{ background: 'rgba(0,83,226,0.15)', color: '#D9E3F0', borderColor: 'rgba(0,83,226,0.45)' }}>
                               Score: {Math.round(event.walmart_relevance_score || 0)}
                             </span>
                             {event.signal_type && (
@@ -661,7 +665,7 @@ export function CompetitorIntelligence() {
                           </div>
 
                           {(event.walmart_actionability_context || event.why_walmart_cares) && (
-                            <p className="text-sm mt-2" style={{ color: '#93c5fd' }}>
+                            <p className="text-sm mt-2" style={{ color: '#9BB7DF' }}>
                               <strong>Why Walmart Cares:</strong> {event.walmart_actionability_context || event.why_walmart_cares}
                             </p>
                           )}
