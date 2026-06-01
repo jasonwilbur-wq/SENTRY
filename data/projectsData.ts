@@ -314,3 +314,76 @@ export function summarizePortfolio(projects: Project[] = PROJECTS): PortfolioSum
     blockers: projects.reduce((sum, p) => sum + (p.blockers_count || 0), 0),
   };
 }
+
+// ── Live API integration ──────────────────────────────────────────
+// The backend (GET /api/projects) is the source of truth in production. The
+// static PROJECTS array above is a typed offline fallback so the 3D view still
+// renders if the API is unreachable (dev without backend, transient network).
+
+/** Coerce any backend health string into our normalized union. */
+export function normalizeHealth(raw: unknown): ProjectHealth {
+  const h = String(raw ?? '').toLowerCase().trim();
+  if (h === 'green' || h === 'yellow' || h === 'red') return h;
+  if (h === 'ok' || h === 'good' || h === 'healthy') return 'green';
+  if (h === 'warn' || h === 'warning' || h === 'at-risk' || h === 'at_risk') return 'yellow';
+  if (h === 'blocked' || h === 'critical' || h === 'danger') return 'red';
+  return 'yellow';
+}
+
+/** Map one raw backend project record into our strict Project shape. */
+export function mapApiProject(raw: Record<string, unknown>): Project {
+  const str = (v: unknown, fallback = ''): string => (v == null ? fallback : String(v));
+  const num = (v: unknown, fallback = 0): number => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : fallback;
+  };
+  return {
+    project_id: str(raw.project_id),
+    project_name: str(raw.project_name),
+    summary: str(raw.summary),
+    managing_unit: str(raw.managing_unit),
+    lifecycle_state: str(raw.lifecycle_state, 'active').toLowerCase().trim(),
+    health: normalizeHealth(raw.health),
+    current_phase: str(raw.current_phase, 'Intake'),
+    risk_score: num(raw.risk_score),
+    sensitivity: str(raw.sensitivity, 'internal'),
+    tags: str(raw.tags),
+    progress_pct: Math.max(0, Math.min(100, num(raw.progress_pct))),
+    next_milestone: str(raw.next_milestone),
+    next_due_date: str(raw.next_due_date),
+    blockers_count: num(raw.blockers_count),
+    last_update_at: str(raw.last_update_at),
+    last_update_by: str(raw.last_update_by),
+    est_cost: str(raw.est_cost),
+  };
+}
+
+export interface LoadProjectsResult {
+  projects: Project[];
+  source: 'api' | 'fallback';
+  error?: string;
+}
+
+/**
+ * Load the portfolio from the live backend, falling back to the static dataset
+ * on any failure. Never throws — always returns a usable list for the UI.
+ */
+export async function loadProjects(signal?: AbortSignal): Promise<LoadProjectsResult> {
+  try {
+    const res = await fetch('/api/projects', { signal });
+    if (!res.ok) throw new Error(`API ${res.status}`);
+    const data = (await res.json()) as { projects?: unknown };
+    const rows = Array.isArray(data.projects) ? data.projects : [];
+    if (rows.length === 0) throw new Error('API returned no projects');
+    return {
+      projects: rows.map((r) => mapApiProject(r as Record<string, unknown>)),
+      source: 'api',
+    };
+  } catch (err) {
+    return {
+      projects: PROJECTS,
+      source: 'fallback',
+      error: err instanceof Error ? err.message : 'Unknown error',
+    };
+  }
+}

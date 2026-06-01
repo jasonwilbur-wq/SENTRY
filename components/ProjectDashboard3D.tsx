@@ -1,9 +1,9 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Sphere, MeshDistortMaterial, Float, Text, Html } from '@react-three/drei';
 import * as THREE from 'three';
-import { PROJECTS, summarizePortfolio, type Project } from '../data/projectsData';
+import { PROJECTS, summarizePortfolio, loadProjects, type Project } from '../data/projectsData';
 
 // ═══════════════════════════════════════════════════════════════════════
 // 3D Project Dashboard — SENTRY Epic Edition
@@ -599,13 +599,27 @@ const ProjectCard3D: React.FC<ProjectCard3DProps> = ({ project, onClick }) => {
 // ═══════════════════════════════════════════════════════════════════════
 
 const ProjectDashboard3D: React.FC = () => {
-  // Canonical portfolio data is imported directly (typed, build-time verified).
-  // No fetch, no CSV 404 fallback, no naive comma-splitting parser.
-  const projects = PROJECTS;
+  // Live data from GET /api/projects, with the typed static PROJECTS array as a
+  // graceful offline fallback (handled inside loadProjects()).
+  const [projects, setProjects] = useState<Project[]>(PROJECTS);
+  const [dataSource, setDataSource] = useState<'api' | 'fallback' | 'loading'>('loading');
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'orbital'>('grid');
   const [filterHealth, setFilterHealth] = useState<'all' | 'green' | 'yellow' | 'red'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  useEffect(() => {
+    const controller = new AbortController();
+    loadProjects(controller.signal).then((result) => {
+      if (controller.signal.aborted) return;
+      setProjects(result.projects);
+      setDataSource(result.source);
+      if (result.source === 'fallback') {
+        console.warn('[ProjectPortfolio] Using static fallback data:', result.error);
+      }
+    });
+    return () => controller.abort();
+  }, []);
 
   const filteredProjects = useMemo(() => {
     return projects.filter(project => {
@@ -645,7 +659,19 @@ const ProjectDashboard3D: React.FC = () => {
                 </span>
                 SENTRY Project Portfolio
               </h1>
-              <p className="text-sm text-slate-400">Walmart Global Security · Emerging Technology</p>
+              <p className="text-sm text-slate-400 flex items-center gap-2">
+                Walmart Global Security · Emerging Technology
+                {dataSource === 'api' && (
+                  <span className="inline-flex items-center gap-1 text-xs text-green-400" title="Live data from /api/projects">
+                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" /> Live
+                  </span>
+                )}
+                {dataSource === 'fallback' && (
+                  <span className="inline-flex items-center gap-1 text-xs text-yellow-400" title="Backend unreachable — showing built-in snapshot">
+                    <span className="w-1.5 h-1.5 rounded-full bg-yellow-400" /> Offline snapshot
+                  </span>
+                )}
+              </p>
             </div>
 
             {/* View Mode Toggle */}
