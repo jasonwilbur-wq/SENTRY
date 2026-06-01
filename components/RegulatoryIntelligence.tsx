@@ -5,10 +5,13 @@ import {
   fetchRegulatoryInsights,
   fetchRegulatoryObligations,
   fetchRegulatorySummary,
+  fetchRegulatoryTrends,
   type RegulatoryInsights,
+  type TrendPayload,
 } from '../services/api';
 import { RegulatoryObligationModal } from './RegulatoryObligationModal';
 import { RegulatoryMapExplorer } from './RegulatoryMapExplorer';
+import { TrendInsights } from './TrendInsights';
 import { ViewErrorBoundary } from './ViewErrorBoundary';
 import {
   ActionCard,
@@ -48,6 +51,7 @@ export const RegulatoryIntelligence: React.FC = () => {
   const [selected, setSelected]           = useState<RegObligation | null>(null);
   const [geoScope, setGeoScope]           = useState<'all' | 'us' | 'global'>(() => readStoredScope());
   const [insights, setInsights]           = useState<RegulatoryInsights | null>(null);
+  const [trends, setTrends]               = useState<TrendPayload | null>(null);
   const [mapOpenSignal, setMapOpenSignal] = useState(0);
   // Filters
   const [filterRag, setFilterRag]         = useState('');
@@ -120,6 +124,12 @@ export const RegulatoryIntelligence: React.FC = () => {
         executive_bottom: ['Use table filters and RAG bands for triage.'],
       }));
   }, [geoScope, summary]);
+  // Fetch scope-aware trend analytics (non-fatal)
+  useEffect(() => {
+    fetchRegulatoryTrends(geoScope, 'monthly')
+      .then(setTrends)
+      .catch(() => setTrends(null));
+  }, [geoScope]);
   // Fetch obligations with filters
   const fetchObligations = useCallback(() => {
     setObLoading(true);
@@ -362,6 +372,8 @@ export const RegulatoryIntelligence: React.FC = () => {
         <SparklineTrend title="Monthly Breakdown" points={latestMonthly} color="#0053e2" />
         <SparklineTrend title="Quarterly Breakdown" points={latestQuarterly} color="#FFC220" />
       </div>
+      {/* ═══ RICH TREND ANALYTICS (momentum / weighted / anomalies) ═══ */}
+      <TrendInsights data={trends} title={'\u{1F4C8} What Changed (Regulatory)'} />
       {/* ═══ 5. OBLIGATION TABLE + REMEDIATION ═══════════════════════════ */}
       <div ref={obligationsSectionRef} className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         {/* Obligation table — 2/3 */}

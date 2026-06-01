@@ -11,9 +11,12 @@ import {
   fetchIncidentStats,
   fetchIncidents,
   fetchIncidentFilters,
+  fetchIncidentTrends,
   type IncidentQuery,
+  type TrendPayload,
 } from '../services/api';
 import { Pagination } from './Pagination';
+import { TrendInsights } from './TrendInsights';
 
 // ── Severity colour map ───────────────────────────────────────────────────
 
@@ -272,6 +275,7 @@ function IncidentRow({ incident }: { incident: Incident }) {
 
 export function IncidentIntelligence() {
   const [stats,     setStats]     = useState<IncidentStats | null>(null);
+  const [trends,    setTrends]    = useState<TrendPayload | null>(null);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [total,     setTotal]     = useState(0);
   const [page,      setPage]      = useState(1);
@@ -290,6 +294,7 @@ export function IncidentIntelligence() {
   // Load stats + filter options once
   useEffect(() => {
     fetchIncidentStats().then(setStats).catch(console.error);
+    fetchIncidentTrends('monthly').then(setTrends).catch(console.error);
     fetchIncidentFilters().then(f => {
       setTypes(f.types);
       setRegions(f.regions);
@@ -391,6 +396,9 @@ export function IncidentIntelligence() {
           {stats.monthly_trend.length > 0 && <TrendChart trend={stats.monthly_trend} />}
         </div>
       )}
+
+      {/* Trend analytics - What Changed */}
+      <TrendInsights data={trends} title={'\u{1F4C8} What Changed (Incidents)'} />
 
       {/* Filters */}
       <div className="rounded-xl border p-4 mb-6" style={{ background: 'var(--s-card)', borderColor: 'var(--s-border)' }}>

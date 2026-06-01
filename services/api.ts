@@ -783,6 +783,64 @@ export async function fetchMorningBrief(): Promise<MorningBrief> {
   return request('/api/morning-brief');
 }
 
+// ── Trend Analytics (shared: incidents + regulatory) ──────────────────
+
+export interface TrendPoint {
+  period: string;
+  count: number;
+  weighted: number;
+  delta?: number;
+  pct_change?: number | null;
+  direction?: 'up' | 'down' | 'flat';
+  rolling_avg?: number;
+  is_anomaly?: boolean;
+  zscore?: number;
+}
+
+export interface TrendMover {
+  category: string;
+  current: number;
+  previous: number;
+  delta: number;
+  pct_change: number | null;
+  direction: 'up' | 'down' | 'flat';
+}
+
+export interface TrendSummary {
+  latest_period: string | null;
+  latest_value: number;
+  previous_value: number;
+  delta: number;
+  pct_change: number | null;
+  direction: 'up' | 'down' | 'flat';
+  anomaly_count: number;
+}
+
+export interface TrendPayload {
+  frequency: string;
+  domain: string;
+  weighting: string;
+  scope?: string;
+  series: TrendPoint[];
+  weighted_series: TrendPoint[];
+  top_movers: TrendMover[];
+  summary: TrendSummary;
+  weighted_summary: TrendSummary;
+}
+
+export async function fetchIncidentTrends(
+  frequency: 'monthly' | 'quarterly' = 'monthly',
+): Promise<TrendPayload> {
+  return request(`/api/incidents/trends?frequency=${frequency}`);
+}
+
+export async function fetchRegulatoryTrends(
+  scope: 'all' | 'us' | 'global' = 'all',
+  frequency: 'monthly' | 'quarterly' = 'monthly',
+): Promise<TrendPayload> {
+  return request(`/api/regulatory/trends?scope=${scope}&frequency=${frequency}`);
+}
+
 // ── Regulatory Intelligence ─────────────────────────────────────────────────────────────
 
 export interface RegulatorySummary {
