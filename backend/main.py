@@ -39,6 +39,8 @@ from var_report_routes import ROUTER as var_report_router
 from vendor_sync_routes import router as vendor_sync_router
 from cso_brief_routes import ROUTER as cso_brief_router
 from executive_intel_routes import ROUTER as executive_intel_router
+from cso_profile_routes import ROUTER as cso_profile_router
+import cso_profile_store
 from auth import SentryUser, get_current_user, get_auth_status, require_admin
 from cache import clear_all
 from models import ChatRequest, ChatResponse, FormResponse
@@ -117,6 +119,7 @@ def _ensure_vendor_directory_seeded() -> None:
 async def lifespan(application: FastAPI):  # noqa: ARG001
     """Ensure DB tables exist on startup and bootstrap vendor data if needed."""
     init_db()
+    cso_profile_store.init_store()
     _ensure_vendor_directory_seeded()
     yield
 
@@ -200,6 +203,7 @@ app.include_router(var_report_router)
 app.include_router(vendor_sync_router)
 app.include_router(cso_brief_router)
 app.include_router(executive_intel_router)
+app.include_router(cso_profile_router)
 
 
 @app.get("/api/auth/me")

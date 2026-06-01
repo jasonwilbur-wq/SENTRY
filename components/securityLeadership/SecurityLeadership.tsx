@@ -1,5 +1,6 @@
-import React, { useMemo, useRef, useState } from 'react';
-import { CSO_PROFILES } from '../../data/csoProfiles';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { CSO_PROFILES, type ExecutiveProfile } from '../../data/csoProfiles';
+import { fetchExecProfiles } from '../../services/api';
 import { Badge, Card, StatCard } from '../executiveIntel/ui';
 import { SecuritySidebar } from './SecuritySidebar';
 import { SecurityProfileDetail } from './SecurityProfileDetail';
@@ -16,7 +17,28 @@ import { recentSignals, latestSignalDate } from './executiveSignals';
 // ---------------------------------------------------------------------------
 
 export function SecurityLeadership({ embedded = false }: { embedded?: boolean } = {}) {
-  const profiles = useMemo(() => [...CSO_PROFILES].sort(byThreatThenName), []);
+  // Source of truth is the SQLite-backed API (governed scout feed). Fall back
+  // to the bundled static snapshot if the backend is unavailable so the page
+  // always renders.
+  const [liveProfiles, setLiveProfiles] = useState<ExecutiveProfile[] | null>(null);
+  const [source, setSource] = useState<'live' | 'static'>('static');
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchExecProfiles<ExecutiveProfile>()
+      .then(res => {
+        if (cancelled) return;
+        if (res.profiles?.length) {
+          setLiveProfiles(res.profiles);
+          setSource('live');
+        }
+      })
+      .catch(() => { /* keep static fallback */ });
+    return () => { cancelled = true; };
+  }, []);
+
+  const base = liveProfiles ?? CSO_PROFILES;
+  const profiles = useMemo(() => [...base].sort(byThreatThenName), [base]);
   const [selectedId, setSelectedId] = useState<string>(profiles[0]?.id ?? '');
   const detailRef = useRef<HTMLDivElement | null>(null);
 
@@ -28,6 +50,13 @@ export function SecurityLeadership({ embedded = false }: { embedded?: boolean } 
     () => profiles.find(p => p.id === selectedId),
     [profiles, selectedId],
   );
+
+  // Keep a valid selection once live data arrives (or if the list changes).
+  useEffect(() => {
+    if (profiles.length && !profiles.some(p => p.id === selectedId)) {
+      setSelectedId(profiles[0].id);
+    }
+  }, [profiles, selectedId]);
 
   const selectAndScroll = (id: string) => {
     setSelectedId(id);
@@ -50,6 +79,19 @@ export function SecurityLeadership({ embedded = false }: { embedded?: boolean } 
       )}
 
       {/* Overview deck */}
+      <div className="flex items-center justify-end -mb-2">
+        <span
+          className="text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-full"
+          style={source === 'live'
+            ? { background: 'rgba(42,135,3,0.12)', color: '#4ade80', border: '1px solid rgba(42,135,3,0.3)' }
+            : { background: 'var(--s-hover-over)', color: 'var(--s-text-dim)', border: '1px solid var(--s-border)' }}
+          title={source === 'live'
+            ? 'Served live from the SQLite-backed governed scout feed'
+            : 'Backend unavailable — showing the bundled static snapshot'}
+        >
+          {source === 'live' ? '● Live feed' : '○ Snapshot'}
+        </span>
+      </div>
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         <StatCard label="Leaders tracked" value={counts.profiles} helper="Competitor CSO / CISO profiles" />
         <StatCard label="Key findings" value={counts.findings} helper="OSINT-derived intelligence items" />

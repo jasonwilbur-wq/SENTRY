@@ -649,6 +649,21 @@ export async function fetchIntelDigest(windowDays = 7, top = 8): Promise<IntelDi
   return request(`/api/intel/digest?window_days=${windowDays}&top=${top}`);
 }
 
+// ── Executive Intel — CSO profiles (SQLite-backed, governed scout feed) ──────
+
+export interface ExecProfilesMeta {
+  total: number;
+  by_source: Record<string, number>;
+  last_updated: string | null;
+}
+
+/** Live CSO executive profiles + provenance. Payloads match the frontend
+ *  ExecutiveProfile shape (data/csoProfiles.ts). Callers should fall back to
+ *  the static snapshot if this throws so the page degrades gracefully. */
+export async function fetchExecProfiles<T = unknown>(): Promise<{ meta: ExecProfilesMeta; profiles: T[] }> {
+  return request('/api/exec-intel/profiles');
+}
+
 // ── Projects ────────────────────────────────────────────────────
 
 export interface ProjectListItem {

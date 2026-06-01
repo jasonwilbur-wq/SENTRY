@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:logic": "vitest run --config vitest.logic.config.ts",
+    "seed:cso": "vite-node scripts/export-cso-seed.ts",
     "test:watch": "vitest",
     "quality": "npm run typecheck && npm run build",
     "backend:test": "cd backend && .venv\\Scripts\\python.exe -m pytest tests -q",
