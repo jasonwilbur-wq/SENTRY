@@ -64,6 +64,18 @@ async function deleteCompetitorEvent(id: number): Promise<void> {
   if (!res.ok) throw new Error(`Failed to delete event: ${res.statusText}`);
 }
 
+// ── Readiness presentation helpers ─────────────────────────────────────────
+// Humanize the backend's required-field codes into analyst-friendly labels.
+const READINESS_FIELD_LABELS: Record<string, string> = {
+  source_link: 'Source link',
+  why_walmart_cares_or_actionability: 'Why Walmart cares / actionability',
+  confidence_level_or_score: 'Confidence level / score',
+};
+
+function prettyRequiredField(code: string): string {
+  return READINESS_FIELD_LABELS[code] || code.replace(/_/g, ' ');
+}
+
 // ── Components ─────────────────────────────────────────────────────────────────
 
 function EventFormModal({
@@ -500,6 +512,28 @@ export function CompetitorIntelAdmin() {
                     </td>
                     <td className="p-3 text-slate-300">
                       {event.event_title || '—'}
+                      <div className="mt-1 space-y-0.5">
+                        <div
+                          className={`text-xs font-semibold ${event.is_brief_ready ? 'text-green-400' : 'text-amber-400'}`}
+                        >
+                          Brief readiness: {event.is_brief_ready ? 'Ready' : 'Not ready'}
+                        </div>
+                        {event.readiness_issues && event.readiness_issues.length > 0 && (
+                          <div className="text-xs text-red-400">
+                            Missing: {event.readiness_issues.map(i => i.toLowerCase()).join(', ')}
+                          </div>
+                        )}
+                        {event.readiness_required_fields && event.readiness_required_fields.length > 0 && (
+                          <div className="text-xs text-slate-400">
+                            Required for ready: {event.readiness_required_fields.map(prettyRequiredField).join(', ')}
+                          </div>
+                        )}
+                        {event.readiness_warnings && event.readiness_warnings.length > 0 && (
+                          <div className="text-xs text-slate-500">
+                            Warnings: {event.readiness_warnings.map(w => w.toLowerCase()).join(', ')}
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="p-3">
                       <span className="px-2 py-0.5 bg-blue-900/40 text-blue-300 rounded text-xs font-semibold">

@@ -4,6 +4,11 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CSOTransitionControls } from './CSOTransitionControls';
 
+// NOTE: onTransition uses the object payload contract that the real
+// CSOBriefEditPage wires up: { toStatus, note, reviewerNotes, reviewerAttestReady }.
+// The valid admin send-back from IN_REVIEW is CHANGES_REQUESTED (see backend
+// ALLOWED_TRANSITIONS in cso_brief_models.py) - there is no IN_REVIEW -> DRAFT.
+
 describe('CSOTransitionControls', () => {
   it('shows analyst-safe actions in DRAFT and hides admin actions', () => {
     render(
@@ -19,7 +24,7 @@ describe('CSOTransitionControls', () => {
     expect(screen.queryByRole('button', { name: /publish draft/i })).not.toBeInTheDocument();
   });
 
-  it('shows admin approval action in IN_REVIEW', () => {
+  it('shows admin approval and send-back actions in IN_REVIEW', () => {
     render(
       <CSOTransitionControls
         status="IN_REVIEW"
@@ -29,10 +34,10 @@ describe('CSOTransitionControls', () => {
     );
 
     expect(screen.getByRole('button', { name: /approve/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /revert to draft/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /request changes/i })).toBeInTheDocument();
   });
 
-  it('passes note and target status on click', async () => {
+  it('passes the object payload with note and target status on click', async () => {
     const user = userEvent.setup();
     const onTransition = vi.fn().mockResolvedValue(undefined);
 
@@ -44,9 +49,11 @@ describe('CSOTransitionControls', () => {
       />,
     );
 
-    await user.type(screen.getByPlaceholderText(/optional note/i), 'Ready for admin review');
+    await user.type(screen.getByPlaceholderText(/workflow note/i), 'Ready for admin review');
     await user.click(screen.getByRole('button', { name: /submit for review/i }));
 
-    expect(onTransition).toHaveBeenCalledWith('IN_REVIEW', 'Ready for admin review');
+    expect(onTransition).toHaveBeenCalledWith(
+      expect.objectContaining({ toStatus: 'IN_REVIEW', note: 'Ready for admin review' }),
+    );
   });
 });

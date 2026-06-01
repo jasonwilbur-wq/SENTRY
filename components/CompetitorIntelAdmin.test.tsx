@@ -4,6 +4,9 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { CompetitorIntelAdmin } from './CompetitorIntelAdmin';
 
 vi.mock('../services/api', () => ({
+  // apiFetch delegates to the global.fetch mock configured in beforeEach so the
+  // component's events-list fetch resolves with the seeded readiness payload.
+  apiFetch: vi.fn((path: string, options?: RequestInit) => (global.fetch as any)(path, options)),
   fetchAdminCompetitorScoringSummary: vi.fn(),
   fetchAdminCompetitorTriageQueue: vi.fn(),
   rescoreCompetitorEvents: vi.fn(),
