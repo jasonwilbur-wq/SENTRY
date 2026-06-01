@@ -613,7 +613,43 @@ export async function fetchPortfolioPosture(): Promise<PortfolioPostureResponse>
   return request('/api/portfolio/posture');
 }
 
-// ── Projects ─────────────────────────────────────────────────────────────────
+// ── Cross-domain intelligence digest (dashboard brief) ──────────────
+
+export interface IntelAttentionItem {
+  domain: 'Incident' | 'Competitor' | 'Regulatory';
+  title: string;
+  date: string;
+  severity: string;
+  why: string;
+  context: string;
+  view: string;
+  rank_score: number;
+}
+
+export interface IntelHeadline {
+  title: string;
+  date: string;
+  severity?: string;
+  type?: string;
+}
+
+export interface IntelDigestResponse {
+  generated_at: string;
+  window_days: number;
+  deltas: {
+    incidents: { count: number; headlines: IntelHeadline[] };
+    competitor: { count: number; headlines: IntelHeadline[] };
+    regulatory: { red: number; amber: number };
+  };
+  attention: IntelAttentionItem[];
+}
+
+/** Cross-domain digest: per-domain deltas + ranked attention feed. */
+export async function fetchIntelDigest(windowDays = 7, top = 8): Promise<IntelDigestResponse> {
+  return request(`/api/intel/digest?window_days=${windowDays}&top=${top}`);
+}
+
+// ── Projects ────────────────────────────────────────────────────
 
 export interface ProjectListItem {
   project_id: string;

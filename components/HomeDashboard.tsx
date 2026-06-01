@@ -14,6 +14,7 @@ import { ViewState } from '../types';
 import { useVendors } from '../context/VendorContext';
 import { RadarScope3D } from './RadarScope3D';
 import { VendorAssessmentOperationsPanel } from './VendorAssessmentOperationsPanel';
+import { IntelligenceBrief } from './IntelligenceBrief';
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -29,6 +30,16 @@ const RISK_COLORS: Record<string, string> = {
 };
 
 const SHORT_CAT: Record<string, string> = {
+  'Cybersecurity':                                    'Cyber',
+  'Enterprise Platform':                              'Enterprise',
+  'Video Surveillance':                               'Video',
+  'Drone UAS CUAS':                                   'Drone/C-UAS',
+  'Robotics Autonomy':                                'Robotics',
+  'Identity Biometrics':                              'Identity',
+  'Supply Chain Logistics':                           'Supply Chain',
+  'Retail Store Operations':                          'Retail Ops',
+  'Sensors Detection':                                'Sensors',
+  'Access Control':                                   'Access',
   'Video Management & Recording (VMS/NVR)':           'VMS/NVR',
   'Cyber-Physical & OT/Infrastructure Security':      'OT/ICS',
   'Counter-UAS (C-UAS)':                              'C-UAS',
@@ -279,15 +290,18 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({ onNavigate }) => {
 
           {/* KPI strip */}
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-2.5 min-w-[280px]">
-            <KPI label="Vendors"    value={totalVendors} color="#4d9fff" delta="active records" />
-            <KPI label="VAR Reports" value={totalVars}   color="#22c55e" delta="completed" />
+            <KPI label="Vendors"    value={totalVendors} color="#0053E2" delta="active records" />
+            <KPI label="VAR Reports" value={totalVars}   color="#2A8703" delta="completed" />
             <KPI label="Coverage"   value={coverage}     color="#FFC220" suffix="%" delta="of portfolio" />
-            <KPI label="Avg Score"  value={avgScore}     color="#a78bfa" delta="out of 10" />
+            <KPI label="Avg Score"  value={avgScore}     color="#7893B8" delta="out of 10" />
           </div>
         </div>
       </section>
 
-      {/* ── Quick actions ────────────────────────────────────── */}
+      {/* ── Intelligence Brief ─ what you need to know ────────── */}
+      <IntelligenceBrief onNavigate={onNavigate} />
+
+      {/* ── Quick actions ────────────────────────── */}
       <section>
         <div className="flex items-end justify-between mb-3">
           <div>
@@ -306,7 +320,7 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({ onNavigate }) => {
           <QuickAction
             title="Ask Sentinel"
             description="Conversational answers about vendors, risks, and gaps."
-            accent="#a78bfa"
+            accent="#7893B8"
             shortcut="S"
             onClick={() => onNavigate(ViewState.SENTINEL)}
             icon={<svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>}
@@ -507,22 +521,22 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({ onNavigate }) => {
                      focus-visible:ring-2 focus-visible:ring-wmt-blue focus-visible:outline-none"
           style={{
             background: 'linear-gradient(140deg, rgba(167,139,250,0.20) 0%, rgba(0,83,226,0.14) 60%, rgba(255,194,32,0.06) 100%)',
-            border: '1px solid rgba(167,139,250,0.35)',
-            boxShadow: '0 0 32px rgba(167,139,250,0.10) inset',
+            border: '1px solid rgba(120,147,184,0.35)',
+            boxShadow: '0 0 32px rgba(120,147,184,0.10) inset',
           }}
         >
           <div
             className="absolute -top-12 -right-10 w-44 h-44 rounded-full blur-3xl pointer-events-none
                        opacity-70 group-hover:opacity-100 transition-opacity"
-            style={{ background: 'rgba(167,139,250,0.45)' }}
+            style={{ background: 'rgba(120,147,184,0.35)' }}
             aria-hidden
           />
           <div className="relative">
             <div
               className="w-11 h-11 rounded-xl flex items-center justify-center mb-3"
               style={{
-                background: 'linear-gradient(135deg, #a78bfa 0%, #0053e2 100%)',
-                boxShadow: '0 6px 20px rgba(167,139,250,0.40)',
+                background: 'linear-gradient(135deg, #7893B8 0%, #0053e2 100%)',
+                boxShadow: '0 6px 20px rgba(120,147,184,0.32)',
               }}
             >
               <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">

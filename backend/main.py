@@ -29,6 +29,7 @@ from vendor_assessment_routes import router as vendor_assessment_router
 from request_routes import router as request_router
 from project_routes import ROUTER as project_router
 from portfolio_routes import ROUTER as portfolio_router
+from intel_digest_routes import ROUTER as intel_digest_router
 from incident_routes import ROUTER as incident_router
 from regulatory_routes import ROUTER as regulatory_router, get_regulatory_summary
 from analytics_routes import ROUTER as analytics_router
@@ -189,6 +190,7 @@ def api_health() -> dict[str, object]:
 
 app.include_router(project_router)
 app.include_router(portfolio_router)
+app.include_router(intel_digest_router)
 app.include_router(incident_router)
 app.include_router(regulatory_router)
 app.include_router(analytics_router)
