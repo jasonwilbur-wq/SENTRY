@@ -6,9 +6,17 @@
  * attention" feed. Answers the CSO's morning question without making them
  * hop across five pages.
  */
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ViewState } from '../types';
 import { fetchIntelDigest, type IntelDigestResponse, type IntelAttentionItem } from '../services/api';
+import { CSO_PROFILES } from '../data/csoProfiles';
+import { recentSignals, signalsSince } from './securityLeadership/executiveSignals';
+
+function isoDaysAgo(days: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d.toISOString().slice(0, 10);
+}
 
 interface Props {
   onNavigate: (v: ViewState) => void;
@@ -88,6 +96,11 @@ export function IntelligenceBrief({ onNavigate }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
+  // Exec signals are frontend-static (csoProfiles), so they render regardless
+  // of backend digest state — brief stays useful when the API is offline.
+  const execRecent = useMemo(() => recentSignals(CSO_PROFILES, 1), []);
+  const execCount = useMemo(() => signalsSince(CSO_PROFILES, isoDaysAgo(30)), []);
+
   useEffect(() => {
     fetchIntelDigest(7, 8)
       .then(setDigest)
@@ -142,8 +155,25 @@ export function IntelligenceBrief({ onNavigate }: Props) {
               <DeltaTile icon="🛡️" label="Incidents" value={digest.deltas.incidents.count} sub="new this week" color="#ea1100" onClick={() => onNavigate(ViewState.INCIDENT_INTELLIGENCE)} />
               <DeltaTile icon="👁️" label="Competitor" value={digest.deltas.competitor.count} sub="new events" color="#f97316" onClick={() => onNavigate(ViewState.COMPETITOR_INTEL)} />
               <DeltaTile icon="⚖️" label="Reg — Red" value={digest.deltas.regulatory.red} sub="obligations" color="#ea1100" onClick={() => onNavigate(ViewState.REGULATORY_INTELLIGENCE)} />
-              <DeltaTile icon="🟠" label="Reg — Amber" value={digest.deltas.regulatory.amber} sub="obligations" color="#f97316" onClick={() => onNavigate(ViewState.REGULATORY_INTELLIGENCE)} />
+              <DeltaTile icon="👔" label="Exec moves" value={execCount} sub="last 30 days" color="#0053e2" onClick={() => onNavigate(ViewState.EXECUTIVE_INTEL)} />
             </div>
+
+            {execRecent.length > 0 && (
+              <button
+                type="button"
+                onClick={() => onNavigate(ViewState.EXECUTIVE_INTEL)}
+                className="w-full text-left mb-4 rounded-lg border px-3 py-2 transition-colors hover:bg-white/5 focus:outline-none focus-visible:ring-2"
+                style={{ borderColor: 'var(--s-border-light)', background: 'var(--s-input-bg)' }}
+              >
+                <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest" style={{ color: '#0053e2' }}>
+                  <span>👔 Latest exec move</span>
+                  <span style={{ color: 'var(--s-text-dim)' }}>{execRecent[0].date}</span>
+                </div>
+                <div className="mt-0.5 text-[13px] font-semibold" style={{ color: 'var(--s-text)' }}>
+                  {execRecent[0].execName} ({execRecent[0].company}): {execRecent[0].headline}
+                </div>
+              </button>
+            )}
 
             <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: 'var(--s-text-dim)' }}>
               Top items needing your attention

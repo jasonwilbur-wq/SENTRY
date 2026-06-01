@@ -1,7 +1,7 @@
 /**
  * CSO Intelligence — Executive Profile data.
  * Sourced from OSINT scans. Keep data here, not in the component.
- * Last updated: 2026-04-07
+ * Freshness is derived from the data (see executiveSignals.latestSignalDate).
  */
 
 export interface Source {
@@ -552,9 +552,10 @@ export const CSO_PROFILES: ExecutiveProfile[] = [
 
 ];
 
-// Derived threat-summary counts for the hero badges
+// Derived threat-summary counts for the hero badges.
+// NOTE: do not hardcode an "updated" date here — derive freshness from the
+// data itself via executiveSignals.latestSignalDate() so it can never go stale.
 export const THREAT_COUNTS = {
   critical: CSO_PROFILES.flatMap(p => p.keyFindings).filter(f => f.riskColor === 'ORANGE' || f.riskColor === 'RED').length,
   high:     CSO_PROFILES.flatMap(p => p.keyFindings).filter(f => f.riskColor === 'YELLOW').length,
-  updated:  'Apr 7, 2026',
 };

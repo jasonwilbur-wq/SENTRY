@@ -6,6 +6,7 @@ import { SecurityProfileDetail } from './SecurityProfileDetail';
 import { WalmartPositionPanel } from './WalmartPositionPanel';
 import { byThreatThenName, deriveCounts } from './securityLogic';
 import { summarizeVerification } from './verificationLogic';
+import { recentSignals, latestSignalDate } from './executiveSignals';
 
 // ---------------------------------------------------------------------------
 // Security Leadership (Chief Security Officer) competitive intelligence.
@@ -21,6 +22,8 @@ export function SecurityLeadership({ embedded = false }: { embedded?: boolean } 
 
   const counts = useMemo(() => deriveCounts(profiles), [profiles]);
   const verification = useMemo(() => summarizeVerification(profiles), [profiles]);
+  const whatsNew = useMemo(() => recentSignals(profiles, 5), [profiles]);
+  const freshest = useMemo(() => latestSignalDate(profiles), [profiles]);
   const selected = useMemo(
     () => profiles.find(p => p.id === selectedId),
     [profiles, selectedId],
@@ -60,6 +63,46 @@ export function SecurityLeadership({ embedded = false }: { embedded?: boolean } 
           tone={verification.verified === verification.total ? undefined : 'red'}
         />
       </div>
+
+      {/* What changed since you last looked */}
+      {whatsNew.length > 0 && (
+        <Card>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <h3 className="text-sm font-black uppercase tracking-[0.16em]" style={{ color: 'var(--s-text)' }}>
+              What changed since you last looked
+            </h3>
+            {freshest && (
+              <span className="text-[11px] font-semibold" style={{ color: 'var(--s-text-dim)' }}>
+                Latest signal: {freshest}
+              </span>
+            )}
+          </div>
+          <ol className="mt-3 space-y-2">
+            {whatsNew.map((sig, idx) => (
+              <li key={idx}>
+                <button
+                  type="button"
+                  onClick={() => selectAndScroll(sig.profileId)}
+                  className="w-full text-left rounded-lg border px-3 py-2 transition-colors hover:bg-white/5 focus:outline-none focus-visible:ring-2"
+                  style={{ borderColor: 'var(--s-border-light)', background: 'var(--s-input-bg)' }}
+                >
+                  <div className="flex items-center gap-2 text-[11px] font-bold" style={{ color: 'var(--s-text-dim)' }}>
+                    <span>{sig.date}</span>
+                    <span>·</span>
+                    <span>{sig.execName} ({sig.company})</span>
+                  </div>
+                  <div className="mt-0.5 text-sm font-semibold" style={{ color: 'var(--s-text)' }}>{sig.headline}</div>
+                  {sig.whyItMatters && (
+                    <div className="mt-0.5 text-xs leading-5" style={{ color: 'var(--s-text-dim)' }}>
+                      <strong style={{ color: 'var(--s-text-muted)' }}>Why it matters: </strong>{sig.whyItMatters}
+                    </div>
+                  )}
+                </button>
+              </li>
+            ))}
+          </ol>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6 items-start">
         <SecuritySidebar profiles={profiles} selectedId={selectedId} onSelect={selectAndScroll} />
