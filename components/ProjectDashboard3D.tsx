@@ -1,33 +1,14 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Sphere, MeshDistortMaterial, Float, Text, Html } from '@react-three/drei';
 import * as THREE from 'three';
+import { PROJECTS, summarizePortfolio, type Project } from '../data/projectsData';
 
 // ═══════════════════════════════════════════════════════════════════════
 // 3D Project Dashboard — SENTRY Epic Edition
 // Walmart Global Security · Emerging Technology
 // ═══════════════════════════════════════════════════════════════════════
-
-interface Project {
-  project_id: string;
-  project_name: string;
-  summary: string;
-  managing_unit: string;
-  lifecycle_state: string;
-  health: string;
-  current_phase: string;
-  risk_score: number;
-  sensitivity: string;
-  tags: string;
-  progress_pct: number;
-  next_milestone: string;
-  next_due_date: string;
-  blockers_count: number;
-  last_update_at: string;
-  last_update_by: string;
-  est_cost: string;
-}
 
 // ═══════════════════════════════════════════════════════════════════════
 // 3D Project Orb — Floating Sphere with Health Colors
@@ -258,7 +239,7 @@ const OrbitalScene: React.FC<OrbitalSceneProps> = ({ projects, onProjectClick })
       <pointLight position={[15, 15, 15]} intensity={2} color="#0053E2" />
       <pointLight position={[-15, -15, -15]} intensity={1.5} color="#FFC220" />
       <pointLight position={[0, 20, 0]} intensity={1.5} color="#ffffff" />
-      <pointLight position={[0, -10, 0]} intensity={0.8} color="#60a5fa" />
+      <pointLight position={[0, -10, 0]} intensity={0.8} color="#9BB7DF" />
       <spotLight position={[0, 15, 0]} intensity={1.5} angle={0.8} penumbra={1} color="#ffffff" />
 
       {/* Central Core Sphere - Larger and more prominent */}
@@ -618,42 +599,13 @@ const ProjectCard3D: React.FC<ProjectCard3DProps> = ({ project, onClick }) => {
 // ═══════════════════════════════════════════════════════════════════════
 
 const ProjectDashboard3D: React.FC = () => {
-  const [projects, setProjects] = useState<Project[]>([]);
+  // Canonical portfolio data is imported directly (typed, build-time verified).
+  // No fetch, no CSV 404 fallback, no naive comma-splitting parser.
+  const projects = PROJECTS;
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'orbital'>('grid');
   const [filterHealth, setFilterHealth] = useState<'all' | 'green' | 'yellow' | 'red'>('all');
   const [searchQuery, setSearchQuery] = useState('');
-
-  // Load projects from CSV
-  useEffect(() => {
-    const loadProjects = async () => {
-      try {
-        const response = await fetch('/data/projects.csv'); // Update path as needed
-        const text = await response.text();
-        const lines = text.split('\n');
-        const headers = lines[0].split(',');
-        
-        const parsed = lines.slice(1)
-          .filter(line => line.trim())
-          .map(line => {
-            const values = line.split(',');
-            const obj: any = {};
-            headers.forEach((header, idx) => {
-              obj[header.trim()] = values[idx]?.trim() || '';
-            });
-            return obj as Project;
-          });
-
-        setProjects(parsed);
-      } catch (error) {
-        console.error('Error loading projects:', error);
-        // Fallback to hardcoded data if needed
-        setProjects(FALLBACK_PROJECTS);
-      }
-    };
-
-    loadProjects();
-  }, []);
 
   const filteredProjects = useMemo(() => {
     return projects.filter(project => {
@@ -666,14 +618,7 @@ const ProjectDashboard3D: React.FC = () => {
     });
   }, [projects, filterHealth, searchQuery]);
 
-  const stats = useMemo(() => {
-    const total = projects.length;
-    const green = projects.filter(p => p.health.toLowerCase() === 'green').length;
-    const yellow = projects.filter(p => p.health.toLowerCase() === 'yellow').length;
-    const red = projects.filter(p => p.health.toLowerCase() === 'red').length;
-    
-    return { total, green, yellow, red };
-  }, [projects]);
+  const stats = useMemo(() => summarizePortfolio(projects), [projects]);
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--s-bg)' }}>
@@ -736,7 +681,7 @@ const ProjectDashboard3D: React.FC = () => {
 
       {/* Stats Bar */}
       <div className="max-w-[1800px] mx-auto px-6 py-6">
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {/* Total Projects */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -804,6 +749,36 @@ const ProjectDashboard3D: React.FC = () => {
           >
             <p className="text-sm text-slate-400 mb-2">🔴 Red</p>
             <p className="text-3xl font-bold text-red-400">{stats.red}</p>
+          </motion.div>
+
+          {/* Active Projects */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="p-4 rounded-xl backdrop-blur-xl border"
+            style={{
+              background: 'linear-gradient(135deg, rgba(0, 83, 226, 0.1), rgba(12, 18, 36, 0.88))',
+              borderColor: 'rgba(0, 83, 226, 0.3)',
+            }}
+          >
+            <p className="text-sm text-slate-400 mb-2">⚡ Active</p>
+            <p className="text-3xl font-bold text-white">{stats.active}</p>
+          </motion.div>
+
+          {/* Blockers */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="p-4 rounded-xl backdrop-blur-xl border"
+            style={{
+              background: 'linear-gradient(135deg, rgba(153, 82, 19, 0.12), rgba(12, 18, 36, 0.88))',
+              borderColor: stats.blockers > 0 ? 'rgba(234, 17, 0, 0.45)' : 'rgba(255, 194, 32, 0.3)',
+            }}
+          >
+            <p className="text-sm text-slate-400 mb-2">🚧 Blockers</p>
+            <p className={`text-3xl font-bold ${stats.blockers > 0 ? 'text-red-400' : 'text-slate-300'}`}>{stats.blockers}</p>
           </motion.div>
         </div>
 
@@ -993,28 +968,5 @@ function getHealthColor(health: string): string {
   if (h === 'red') return '#ef4444';
   return '#64748b';
 }
-
-// Fallback data if CSV fails to load
-const FALLBACK_PROJECTS: Project[] = [
-  {
-    project_id: 'PRJ-SECROBOT-2025',
-    project_name: 'Security Robotics - Autonomous Sentry Patrols',
-    summary: 'Deploy autonomous security sentry robots to patrol Walmart parking lots',
-    managing_unit: 'Global Security',
-    lifecycle_state: 'active',
-    health: 'green',
-    current_phase: 'Lab Testing',
-    risk_score: 3,
-    sensitivity: 'confidential',
-    tags: 'robotics;security;autonomous',
-    progress_pct: 75,
-    next_milestone: 'KABAM Lab Testing',
-    next_due_date: '2026-06-30',
-    blockers_count: 0,
-    last_update_at: '2026-02-28T20:30:00Z',
-    last_update_by: 'Cody.Smith@walmart.com',
-    est_cost: '',
-  },
-];
 
 export default ProjectDashboard3D;
