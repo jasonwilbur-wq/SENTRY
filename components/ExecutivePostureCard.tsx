@@ -8,9 +8,10 @@
  *
  * WCAG: meaningful aria-labels on the grade + counts, 3:1+ contrast accents.
  */
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useState } from 'react';
 import { summarizePosture, type ScorableVendor } from '../utils/portfolio';
 import { grade, type LetterGrade } from '../utils/grade';
+import { fetchPortfolioPosture, type PortfolioPostureResponse } from '../services/api';
 
 const BAND_ORDER: LetterGrade[] = ['A', 'B', 'C', 'D', 'F'];
 
@@ -33,7 +34,48 @@ function Stat({ label, value, sub, colorHex }: {
 }
 
 export const ExecutivePostureCard: React.FC<ExecutivePostureCardProps> = ({ vendors, scopeLabel = 'current view' }) => {
-  const posture = useMemo(() => summarizePosture(vendors), [vendors]);
+  const local = useMemo(() => summarizePosture(vendors), [vendors]);
+  const [api, setApi] = useState<PortfolioPostureResponse | null>(null);
+  const [scope, setScope] = useState(scopeLabel);
+
+  useEffect(() => {
+    let alive = true;
+    fetchPortfolioPosture()
+      .then((d) => {
+        if (!alive) return;
+        setApi(d);
+        setScope('entire portfolio');
+      })
+      .catch(() => { /* keep local fallback */ });
+    return () => { alive = false; };
+  }, []);
+
+  // Unified view shape from either the full-portfolio API or the local list.
+  const view = useMemo(() => {
+    if (api) {
+      return {
+        total: api.total,
+        scored: api.scored,
+        coveragePct: api.coverage_pct,
+        meanScore: api.mean_score,
+        portfolioGrade: (api.portfolio_grade || 'F') as LetterGrade,
+        gradeBands: {
+          A: api.grade_bands.A || 0, B: api.grade_bands.B || 0, C: api.grade_bands.C || 0,
+          D: api.grade_bands.D || 0, F: api.grade_bands.F || 0,
+        } as Record<LetterGrade, number>,
+        elevatedRisk: api.elevated_risk,
+        decisionBands: api.decision_bands,
+      };
+    }
+    return {
+      total: local.total, scored: local.scored, coveragePct: local.coveragePct,
+      meanScore: local.meanScore, portfolioGrade: local.portfolioGrade,
+      gradeBands: local.gradeBands, elevatedRisk: local.elevatedRisk,
+      decisionBands: local.decisionBands,
+    };
+  }, [api, local]);
+
+  const posture = view;
   const gradeInfo = grade(posture.meanScore);
   const maxBand = Math.max(1, ...BAND_ORDER.map((b) => posture.gradeBands[b]));
 
@@ -45,7 +87,7 @@ export const ExecutivePostureCard: React.FC<ExecutivePostureCardProps> = ({ vend
       <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-lg font-bold text-white">Executive Risk Posture</h2>
-          <p className="text-xs text-slate-500">Across {posture.total} vendors &middot; {scopeLabel}</p>
+          <p className="text-xs text-slate-500">Across {posture.total} vendors &middot; {scope}</p>
         </div>
         <div
           className="w-14 h-14 rounded-xl flex items-center justify-center text-3xl font-black"

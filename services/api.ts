@@ -187,6 +187,14 @@ export interface Vendor {
   use_cases?: string;
   value_to_walmart?: string;
   maturity_level?: string;
+
+  // Source-backed vendor assessment profile fields from Desktop SENTRY 00_System
+  report_count?: number;
+  dominant_domain?: string;
+  secondary_domains?: string;
+  top_semantic_tags?: string;
+  top_stakeholder_tags?: string;
+  sample_report_path?: string;
 }
 
 export interface VendorsParams {
@@ -270,6 +278,64 @@ export interface VendorAssessmentOverview {
     intake_recommendations: number;
     intake_action_plan_rows: number;
   };
+}
+
+export interface VendorAssessmentArtifact {
+  filename: string;
+  current_path: string;
+  subfolder?: string;
+  extension?: string;
+  artifact_role?: string;
+  primary_domain?: string;
+  technology_tags?: string;
+  human_browse_group?: string;
+  ai_access_priority?: string;
+  enrichment_confidence?: string;
+  status_label?: string;
+  size_bytes?: number;
+  modified_utc?: string;
+  sha256?: string;
+}
+
+export interface VendorAssessmentEvidence {
+  vendor_id: string;
+  vendor_folder: string;
+  vendor_normalized_key: string;
+  source: {
+    operational_mode: string;
+    vendor_assessments_root: string;
+    vendor_profiles_csv: string;
+    enriched_inventory_csv: string;
+    system_root: string;
+    source_run_label?: string;
+    source_run_timestamp_utc?: string;
+    source_actor_id?: string;
+  };
+  profile: {
+    report_count: number;
+    dominant_domain: string;
+    dominant_domain_label: string;
+    secondary_domains?: string;
+    top_semantic_tags?: string;
+    top_stakeholder_tags?: string;
+    latest_modified_utc?: string;
+    sample_report_path?: string;
+  };
+  summary: {
+    artifact_count: number;
+    total_size_bytes: number;
+    artifact_role_counts: Record<string, number>;
+    extension_counts: Record<string, number>;
+    priority_counts: Record<string, number>;
+  };
+  artifacts: VendorAssessmentArtifact[];
+}
+
+export async function fetchVendorAssessmentEvidence(
+  vendorId: string,
+  artifactLimit = 25,
+): Promise<VendorAssessmentEvidence> {
+  return request(`/api/vendor-assessment/vendors/${encodeURIComponent(vendorId)}/evidence?artifact_limit=${artifactLimit}`);
 }
 
 export async function fetchVendorAssessmentOverview(params?: {
@@ -519,6 +585,34 @@ export async function fetchStats(): Promise<DirectoryStats> {
   return request('/api/stats');
 }
 
+// ── Portfolio posture (CSO Executive Risk Posture) ──────────────────
+
+export interface PortfolioTopRisk {
+  id: string;
+  company_name: string;
+  category: string;
+  risk_level: string;
+  score: number | null;
+}
+
+export interface PortfolioPostureResponse {
+  total: number;
+  scored: number;
+  coverage_pct: number;
+  mean_score: number | null;
+  portfolio_grade: string;
+  grade_bands: Record<string, number>;
+  risk_levels: Record<string, number>;
+  elevated_risk: number;
+  decision_bands: Record<string, number>;
+  top_risks: PortfolioTopRisk[];
+}
+
+/** Full-portfolio posture across ALL vendors (not just the current page). */
+export async function fetchPortfolioPosture(): Promise<PortfolioPostureResponse> {
+  return request('/api/portfolio/posture');
+}
+
 // ── Projects ─────────────────────────────────────────────────────────────────
 
 export interface ProjectListItem {
@@ -568,6 +662,8 @@ export interface Incident {
   region: string;
   summary: string;
   impact?: string;
+  recommended_action?: string;
+  source_url?: string;
   created_at?: string;
 }
 
@@ -881,6 +977,72 @@ export async function runVendorDirectorySync(params?: {
   });
 }
 
+// ── CSO Briefs ───────────────────────────────────────────────────────────────
+
+export type CSOBriefStatus = 'DRAFT' | 'IN_REVIEW' | 'CHANGES_REQUESTED' | 'APPROVED' | 'PUBLISHED_DRAFT';
+
+export interface CSOBriefGenerateResponse {
+  brief: any;
+  included_count: number;
+  candidate_count: number;
+  excluded_count: number;
+  exclusion_reason_counts: Record<string, number>;
+  excluded_items: Array<{ competitor_event_id: number; competitor?: string | null; event_title?: string | null; readiness_issues: string[] }>;
+  preflight: {
+    candidate_count: number;
+    included_count: number;
+    excluded_count: number;
+    exclusion_reason_counts: Record<string, number>;
+    excluded_items: Array<{ competitor_event_id: number; competitor?: string | null; event_title?: string | null; readiness_issues: string[] }>;
+  };
+}
+
+export async function generateCSOBrief(body: {
+  title: string;
+  period_start: string;
+  period_end: string;
+  filters?: { date_from?: string; date_to?: string; competitor?: string[]; max_items?: number };
+}): Promise<CSOBriefGenerateResponse> {
+  return request('/api/cso-briefs/generate', { method: 'POST', body: JSON.stringify(body) });
+}
+
+export async function fetchCSOBrief<T = any>(briefId: string): Promise<T> {
+  return request(`/api/cso-briefs/${encodeURIComponent(briefId)}`);
+}
+
+export async function patchCSOBrief<T = any>(briefId: string, body: { executive_summary?: string; review_notes?: string }): Promise<T> {
+  return request(`/api/cso-briefs/${encodeURIComponent(briefId)}`, { method: 'PATCH', body: JSON.stringify(body) });
+}
+
+export async function patchCSOBriefItem<T = any>(briefId: string, itemId: string, body: Record<string, unknown>): Promise<T> {
+  return request(`/api/cso-briefs/${encodeURIComponent(briefId)}/items/${encodeURIComponent(itemId)}`, { method: 'PATCH', body: JSON.stringify(body) });
+}
+
+export async function validateCSOBrief<T = any>(briefId: string): Promise<T> {
+  return request(`/api/cso-briefs/${encodeURIComponent(briefId)}/validate`, { method: 'POST' });
+}
+
+export async function transitionCSOBrief<T = any>(briefId: string, body: {
+  to_status: CSOBriefStatus;
+  note?: string;
+  reviewer_notes?: string;
+  reviewer_attest_ready?: boolean;
+}): Promise<T> {
+  return request(`/api/cso-briefs/${encodeURIComponent(briefId)}/transition`, { method: 'POST', body: JSON.stringify(body) });
+}
+
+export async function fetchCSOBriefSnapshot<T = any>(briefId: string): Promise<T> {
+  return request(`/api/cso-briefs/${encodeURIComponent(briefId)}/snapshot`);
+}
+
+export async function fetchCSOBriefAudit<T = any>(briefId: string, params?: { limit?: number; offset?: number }): Promise<T> {
+  const qs = new URLSearchParams();
+  if (params?.limit) qs.set('limit', String(params.limit));
+  if (params?.offset) qs.set('offset', String(params.offset));
+  const query = qs.toString() ? `?${qs}` : '';
+  return request(`/api/cso-briefs/${encodeURIComponent(briefId)}/audit${query}`);
+}
+
 // ── Competitor Intelligence ───────────────────────────────────────────────────
 
 export interface CompetitorStats {
@@ -907,6 +1069,16 @@ export interface CompetitorEntity {
   monthly_json: string;
 }
 
+export interface LinkedProject {
+  project_id: string;
+  project_name: string;
+  lifecycle_state?: string;
+  current_phase?: string;
+  est_phase_index?: number;
+  vendor_link_status?: string;
+  vendor_role?: string;
+}
+
 export interface CompetitorEvent {
   id: number;
   event_date: string | null;
@@ -923,6 +1095,32 @@ export interface CompetitorEvent {
   analyst_notes: string | null;
   source_link: string | null;
   source_month: string | null;
+  confidence_level?: string | null;
+  walmart_relevance_score?: number | null;
+  priority_tier?: string | null;
+  signal_type?: string | null;
+  recommended_owner?: string | null;
+  why_walmart_cares?: string | null;
+  walmart_actionability_context?: string | null;
+  correlation_summary?: string | null;
+  correlation_status?: 'MATCHED' | 'AMBIGUOUS' | 'NO_MATCH' | string;
+  matched_vendor_id?: string | null;
+  matched_vendor_name?: string | null;
+  match_method?: string | null;
+  match_label?: string | null;
+  match_confidence?: number | null;
+  match_explanation?: string | null;
+  linked_active_projects_count?: number;
+  linked_projects?: LinkedProject[];
+  candidate_vendor_names?: string[];
+  triage_status?: string | null;
+  triaged_by?: string | null;
+  triaged_at?: string | null;
+  triage_note?: string | null;
+  is_brief_ready?: boolean;
+  readiness_issues?: string[];
+  readiness_warnings?: string[];
+  readiness_required_fields?: string[];
 }
 
 export interface CompetitorEventCreate {
@@ -940,6 +1138,9 @@ export interface CompetitorEventCreate {
   analyst_notes?: string;
   source_link?: string;
   source_month?: string;
+  confidence_level?: string;
+  why_walmart_cares?: string;
+  recommended_owner?: string;
 }
 
 export interface CompetitorEventUpdate {
@@ -986,6 +1187,50 @@ export interface CompetitorHeatmap {
   matrix: number[][];
 }
 
+export interface CompetitorLocationSample {
+  name: string;
+  type: string;
+  street_address: string;
+  city: string;
+  state: string;
+  zip: string;
+  lat?: number | null;
+  lng?: number | null;
+  coordinate_source?: 'source' | 'state-estimated' | 'unmapped' | string;
+  url: string;
+  source_file: string;
+}
+
+export interface CompetitorLocationSummary {
+  name: string;
+  total_locations: number;
+  files: string[];
+  facility_types: Record<string, number>;
+  by_state: Record<string, number>;
+  geocoded_locations: number;
+  estimated_locations?: number;
+  mappable_locations?: number;
+  unmapped_locations?: number;
+  sample_locations: CompetitorLocationSample[];
+  map_points?: CompetitorLocationSample[];
+}
+
+export interface CompetitorStateLocationSummary {
+  state: string;
+  state_name: string;
+  total_locations: number;
+  competitors: Record<string, number>;
+}
+
+export interface CompetitorLocationsResponse {
+  source_available: boolean;
+  source_root: string;
+  generated_at: string;
+  total_locations: number;
+  competitors: CompetitorLocationSummary[];
+  states: CompetitorStateLocationSummary[];
+}
+
 export async function fetchCompetitorStats(): Promise<CompetitorStats> {
   return request('/api/competitors/stats');
 }
@@ -1006,6 +1251,10 @@ export async function fetchCompetitorHeatmap(
   top = 10,
 ): Promise<CompetitorHeatmap> {
   return request(`/api/competitors/heatmap?top=${top}`);
+}
+
+export async function fetchCompetitorLocations(): Promise<CompetitorLocationsResponse> {
+  return request('/api/competitors/locations');
 }
 
 export async function fetchCompetitorEvents(params?: {
@@ -1029,4 +1278,35 @@ export async function fetchCompetitorEvents(params?: {
 
 export async function fetchCompetitorCategories(): Promise<{ categories: string[] }> {
   return request('/api/competitors/categories');
+}
+
+export async function fetchCompetitorCSOCandidates(limit = 20): Promise<{ count: number; events: CompetitorEvent[] }> {
+  return request(`/api/competitors/cso-candidates?limit=${limit}`);
+}
+
+export interface AdminCompetitorScoringSummary {
+  total: number;
+  distribution: Record<string, number>;
+}
+
+export interface AdminCompetitorTriageQueueResponse {
+  total: number;
+  items: CompetitorEvent[];
+}
+
+export async function fetchAdminCompetitorScoringSummary(): Promise<AdminCompetitorScoringSummary> {
+  return request('/api/admin/competitor-events/scoring-summary');
+}
+
+export async function fetchAdminCompetitorTriageQueue(params?: {
+  triage_status?: string;
+  priority_tier?: string;
+  limit?: number;
+}): Promise<AdminCompetitorTriageQueueResponse> {
+  const qs = new URLSearchParams();
+  if (params?.triage_status) qs.set('triage_status', params.triage_status);
+  if (params?.priority_tier) qs.set('priority_tier', params.priority_tier);
+  if (params?.limit) qs.set('limit', String(params.limit));
+  const query = qs.toString() ? `?${qs}` : '';
+  return request(`/api/admin/competitor-events/triage-queue${query}`);
 }
