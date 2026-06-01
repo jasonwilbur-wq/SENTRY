@@ -12,10 +12,10 @@ interface VendorAssessmentOperationsPanelProps {
 
 function MetricCard({ label, value, tone = 'blue' }: { label: string; value: number | string; tone?: 'blue' | 'green' | 'amber' | 'violet'; }) {
   const tones = {
-    blue:   { text: '#60a5fa', border: 'rgba(96,165,250,0.25)', glow: 'rgba(96,165,250,0.10)' },
+    blue:   { text: '#9BB7DF', border: 'rgba(120,147,184,0.25)', glow: 'rgba(120,147,184,0.10)' },
     green:  { text: '#34d399', border: 'rgba(52,211,153,0.25)', glow: 'rgba(52,211,153,0.10)' },
     amber:  { text: '#fbbf24', border: 'rgba(251,191,36,0.25)', glow: 'rgba(251,191,36,0.10)' },
-    violet: { text: '#a78bfa', border: 'rgba(167,139,250,0.25)', glow: 'rgba(167,139,250,0.10)' },
+    violet: { text: '#7893B8', border: 'rgba(120,147,184,0.25)', glow: 'rgba(120,147,184,0.10)' },
   } as const;
   const palette = tones[tone];
 
@@ -31,6 +31,10 @@ function MetricCard({ label, value, tone = 'blue' }: { label: string; value: num
       <p className="text-xl font-black mt-1" style={{ color: palette.text }}>{value}</p>
     </div>
   );
+}
+
+function formatDomainLabel(value: string): string {
+  return value.replaceAll('_', ' ');
 }
 
 function CompactVendorList({
@@ -58,8 +62,8 @@ function CompactVendorList({
             <div className="min-w-0">
               <p className="text-sm font-semibold truncate" style={{ color: 'var(--s-text)' }}>{item.vendor_folder}</p>
               <p className="text-[11px] truncate" style={{ color: 'var(--s-text-dim)' }}>
-                {item.dominant_domain.replaceAll('_', ' ')}
-                {secondaryKey === 'secondary_domains' && item.secondary_domains ? ` · ${item.secondary_domains.replaceAll(';', ' · ').replaceAll('_', ' ')}` : ''}
+                {formatDomainLabel(item.dominant_domain)}
+                {secondaryKey === 'secondary_domains' && item.secondary_domains ? ` · ${item.secondary_domains.split(';').map(formatDomainLabel).join(' · ')}` : ''}
               </p>
             </div>
             <div className="text-right shrink-0">
@@ -73,6 +77,40 @@ function CompactVendorList({
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+function DomainLeaderGrid({ leaders }: { leaders: VendorAssessmentOverview['domain_leaders'] }) {
+  const labels: Record<string, string> = {
+    cybersecurity: 'Cybersecurity',
+    drone_cuas: 'Drone / C-UAS',
+    robotics: 'Robotics',
+    identity: 'Identity / Biometrics',
+  };
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+      {Object.entries(labels).map(([key, label]) => {
+        const rows = leaders[key] ?? [];
+        return (
+          <div key={key} className="rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--s-border-light)' }}>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-bold" style={{ color: 'var(--s-text)' }}>{label}</p>
+              <span className="text-[10px]" style={{ color: '#93c5fd' }}>Top {rows.length}</span>
+            </div>
+            <div className="space-y-2">
+              {rows.slice(0, 4).map((row) => (
+                <div key={`${key}-${row.vendor_folder}`} className="flex items-center justify-between gap-2 text-[11px]">
+                  <span className="truncate" style={{ color: 'var(--s-text-muted)' }}>{row.vendor_folder}</span>
+                  <span className="shrink-0 font-bold" style={{ color: '#fcd34d' }}>{row.report_count}</span>
+                </div>
+              ))}
+              {rows.length === 0 && <p className="text-[11px]" style={{ color: 'var(--s-text-dim)' }}>No leaders available.</p>}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -130,7 +168,7 @@ export const VendorAssessmentOperationsPanel: React.FC<VendorAssessmentOperation
           <button
             onClick={() => onNavigate(ViewState.ADMIN)}
             className="px-3 py-2 rounded-lg text-xs font-semibold"
-            style={{ background: 'rgba(0,83,226,0.12)', color: '#93c5fd', border: '1px solid rgba(0,83,226,0.28)' }}
+            style={{ background: 'rgba(0,83,226,0.12)', color: '#9BB7DF', border: '1px solid rgba(0,83,226,0.28)' }}
           >
             Open VAR admin
           </button>
@@ -229,6 +267,22 @@ export const VendorAssessmentOperationsPanel: React.FC<VendorAssessmentOperation
             </div>
           ))}
         </div>
+      </div>
+
+      <div className="rounded-xl p-4" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--s-border-light)' }}>
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <h4 className="text-sm font-bold" style={{ color: 'var(--s-text)' }}>Executive domain leaders</h4>
+            <p className="text-[10px]" style={{ color: 'var(--s-text-dim)' }}>Fast paths into the vendors leadership will ask about first</p>
+          </div>
+        </div>
+        {loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+            {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-28 rounded-xl bg-slate-800/40 animate-pulse" />)}
+          </div>
+        ) : (
+          <DomainLeaderGrid leaders={overview?.domain_leaders ?? {}} />
+        )}
       </div>
     </section>
   );

@@ -22,7 +22,7 @@ const VENDOR_ROLE_OPTIONS   = ['Primary Vendor', 'Alternative', 'Evaluating', 'P
 
 export const vendorStatusCfg = {
   active:     { color: '#22c55e', label: 'Active',     icon: '✓' },
-  evaluating: { color: '#60a5fa', label: 'Evaluating', icon: '◎' },
+  evaluating: { color: '#9BB7DF', label: 'Evaluating', icon: '◎' },
   inactive:   { color: '#94a3b8', label: 'Inactive',   icon: '○' },
   removed:    { color: '#f87171', label: 'Removed',    icon: '✕' },
 } as const;

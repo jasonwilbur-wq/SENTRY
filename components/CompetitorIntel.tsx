@@ -22,10 +22,11 @@ import {
 import { GlassCard3D } from './GlassCard3D';
 import { CompetitorOrbital3D } from './CompetitorOrbital3D';
 import { CompetitorEventTable } from './CompetitorEventTable';
+import { CompetitorLocationMap } from './CompetitorLocationMap';
 
 // ── Palette ──────────────────────────────────────────────────────────────
-const PALETTE = ['#0053E2','#EA1100','#FFC220','#22c55e','#7C3AED',
-                 '#0891B2','#D97706','#BE185D'];
+const PALETTE = ['#0053E2', '#C62828', '#FFC220', '#2A8703', '#7893B8',
+                 '#D95F02', '#001E60', '#111827'];
 const THREAT_BG: Record<string, string> = {
   High:   'bg-red-500/15 border-red-500/40 text-red-400',
   Medium: 'bg-yellow-500/15 border-yellow-500/40 text-yellow-300',
@@ -233,7 +234,7 @@ export const CompetitorIntel: React.FC = () => {
           <h2
             className="text-4xl lg:text-5xl font-black mb-3 leading-tight"
             style={{
-              background: 'linear-gradient(135deg, #60a5fa 0%, #0053E2 50%, #FFC220 100%)',
+              background: 'linear-gradient(135deg, #D9E3F0 0%, #0053E2 48%, #FFC220 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
             }}
@@ -252,7 +253,7 @@ export const CompetitorIntel: React.FC = () => {
             <KpiPill label="📋" value={`${stats?.total?.toLocaleString() ?? 0} Events`} color="#e2e8f0" />
             <KpiPill label="🔴" value={`${stats?.cyber ?? 0} Cyber`} color="#f87171" />
             <KpiPill label="🟡" value={`${stats?.orc ?? 0} ORC/Theft`} color="#fbbf24" />
-            <KpiPill label="🟣" value={`${stats?.recall ?? 0} Recalls`} color="#a78bfa" />
+            <KpiPill label="🟠" value={`${stats?.recall ?? 0} Recalls`} color="#D95F02" />
           </div>
 
           {/* Action Row */}
@@ -260,8 +261,11 @@ export const CompetitorIntel: React.FC = () => {
             <button className="px-5 py-2 rounded-lg bg-wmt-blue text-white text-xs font-bold shadow-[0_0_15px_rgba(0,83,226,0.4)] hover:bg-blue-600 transition-all">
               Generate Report
             </button>
-            <button className="px-5 py-2 rounded-lg bg-slate-800/80 text-slate-300 border border-slate-600 text-xs font-bold hover:bg-slate-700 hover:text-white transition-all">
-              Configure Sources
+            <button
+              onClick={() => document.getElementById('competitor-location-map')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              className="px-5 py-2 rounded-lg bg-slate-800/80 text-slate-300 border border-slate-600 text-xs font-bold hover:bg-slate-700 hover:text-white transition-all"
+            >
+              View Location Map
             </button>
           </div>
         </div>
@@ -288,7 +292,16 @@ export const CompetitorIntel: React.FC = () => {
         </div>
       </section>
 
-      {/* ═══ 3. COMPETITOR CARDS ═══════════════════════════════════════ */}
+      {/* ═══ 3. LOCATION MAP ═══════════════════════════════════════════ */}
+      <section id="competitor-location-map" className="mb-10 scroll-mt-6">
+        <SectionHeading
+          title="Competitor Location Map"
+          subtitle="Workspace-sourced store and facility footprint by state — filter by competitor"
+        />
+        <CompetitorLocationMap />
+      </section>
+
+      {/* ═══ 4. COMPETITOR CARDS ═══════════════════════════════════════ */}
       <section className="mb-10">
         <SectionHeading
           title="Competitor Profiles — Threat Overview"
@@ -348,7 +361,7 @@ export const CompetitorIntel: React.FC = () => {
                     <p className="text-[10px] text-slate-500">Cyber</p>
                   </div>
                   <div>
-                    <p className="text-lg font-black text-purple-400">{e.recall_count}</p>
+                    <p className="text-lg font-black text-orange-300">{e.recall_count}</p>
                     <p className="text-[10px] text-slate-500">Recalls</p>
                   </div>
                 </div>
@@ -383,7 +396,7 @@ export const CompetitorIntel: React.FC = () => {
         </div>
       </section>
 
-      {/* ═══ 4. MONTHLY TREND ══════════════════════════════════════════ */}
+      {/* ═══ 5. MONTHLY TREND ══════════════════════════════════════════ */}
       {monthly && (
         <section className="mb-10">
           <SectionHeading
@@ -422,7 +435,7 @@ export const CompetitorIntel: React.FC = () => {
         </section>
       )}
 
-      {/* ═══ 5. THREAT HEATMAP ═════════════════════════════════════════ */}
+      {/* ═══ 6. THREAT HEATMAP ═════════════════════════════════════════ */}
       {heatmap && (
         <section className="mb-10">
           <SectionHeading
@@ -440,7 +453,7 @@ export const CompetitorIntel: React.FC = () => {
         </section>
       )}
 
-      {/* ═══ 6. LIVE EVENT FEED ════════════════════════════════════════ */}
+      {/* ═══ 7. LIVE EVENT FEED ════════════════════════════════════════ */}
       <section>
         <SectionHeading
           title="Live Event Intelligence Feed"

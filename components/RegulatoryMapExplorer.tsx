@@ -102,7 +102,7 @@ export const RegulatoryMapExplorer: React.FC<RegulatoryMapExplorerProps> = ({
           value={minObligations}
           onChange={(e) => setMinObligations(Number(e.target.value))}
         />
-        <span style={{ color: '#60a5fa' }}>{minObligations}+</span>
+        <span style={{ color: '#9BB7DF' }}>{minObligations}+</span>
       </label>
 
       <label className="text-[10px] font-bold flex items-center gap-2" style={{ color: '#cbd5e1' }}>
@@ -148,7 +148,7 @@ export const RegulatoryMapExplorer: React.FC<RegulatoryMapExplorerProps> = ({
 
   const visibleList = (
     <div className="px-4 py-2" style={{ borderTop: '1px solid var(--s-border)', background: 'rgba(0, 11, 40, 0.6)' }}>
-      <p className="text-[10px] font-bold mb-2" style={{ color: '#93c5fd' }}>Top visible jurisdictions</p>
+      <p className="text-[10px] font-bold mb-2" style={{ color: '#9BB7DF' }}>Top visible jurisdictions</p>
       <div className="flex flex-wrap gap-1 max-h-[70px] overflow-auto pr-1">
         {topVisible.map((item) => (
           <button

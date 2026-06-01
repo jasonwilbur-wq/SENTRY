@@ -141,7 +141,7 @@ export const RegulatoryObligationModal: React.FC<Props> = ({ obligation: ob, onC
               {ob.controls.map((ctrl, i) => (
                 <div key={i} className="p-3 rounded-lg border" style={{ background: 'rgba(255,255,255,0.02)', borderColor: 'rgba(255,255,255,0.07)' }}>
                   <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="text-[10px] font-bold font-mono" style={{ color: '#60a5fa' }}>{ctrl.control_id}</span>
+                    <span className="text-[10px] font-bold font-mono" style={{ color: '#9BB7DF' }}>{ctrl.control_id}</span>
                     <span className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase"
                       style={{ background: ctrl.status === 'Compliant' ? 'rgba(42,135,3,0.2)' : ctrl.status === 'Partial' ? 'rgba(251,146,60,0.15)' : 'rgba(234,17,0,0.15)',
                                color: ctrl.status === 'Compliant' ? '#4ade80' : ctrl.status === 'Partial' ? '#fb923c' : '#ff6b6b' }}>

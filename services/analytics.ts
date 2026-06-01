@@ -9,7 +9,9 @@ interface AnalyticsEvent {
 
 const VITE_ENV = (import.meta as any).env ?? {};
 const RAW_API_BASE = String(VITE_ENV.VITE_API_URL ?? '').trim();
-const API_BASE: string = RAW_API_BASE || '';
+const IS_LOCAL_DEV_ORIGIN = typeof window !== 'undefined'
+  && ['localhost', '127.0.0.1'].includes(window.location.hostname);
+const API_BASE: string = IS_LOCAL_DEV_ORIGIN ? '' : (RAW_API_BASE || '');
 const SESSION_KEY = 'sentry.analytics.sessionId';
 const MAX_BATCH_SIZE = 20;
 const FLUSH_INTERVAL_MS = 5000;

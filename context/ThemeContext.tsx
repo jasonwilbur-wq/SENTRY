@@ -5,16 +5,27 @@ type Theme = 'dark' | 'light';
 interface ThemeContextType {
   theme: Theme;
   toggleTheme: () => void;
+  reducedMotion: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [reducedMotion, setReducedMotion] = useState(false);
   const [theme, setTheme] = useState<Theme>(() => {
     // Persist theme preference
     const saved = localStorage.getItem('sentry-theme');
     return (saved === 'light' || saved === 'dark') ? saved : 'dark';
   });
+
+  useEffect(() => {
+    const media = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+    if (!media) return;
+    const update = () => setReducedMotion(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -34,7 +45,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme, reducedMotion }}>
       {children}
     </ThemeContext.Provider>
   );

@@ -196,7 +196,7 @@ export const RegulatoryIntelligence: React.FC = () => {
         <h1
           className="text-3xl lg:text-4xl font-black mb-2 leading-tight"
           style={{
-            background: 'linear-gradient(135deg, #60a5fa 0%, #0053E2 50%, #FFC220 100%)',
+            background: 'linear-gradient(135deg, #D9E3F0 0%, #0053E2 48%, #FFC220 100%)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
           }}
@@ -234,7 +234,7 @@ export const RegulatoryIntelligence: React.FC = () => {
             ['Amber',  stats?.amber,    'rgba(249,115,22,0.15)', '#fb923c', 'rgba(249,115,22,0.4)'],
             ['Yellow', stats?.yellow,   'rgba(255,194,32,0.15)', '#FFC220', 'rgba(255,194,32,0.4)'],
             ['Green',  stats?.green,    'rgba(42,135,3,0.15)',   '#4ade80', 'rgba(42,135,3,0.4)'],
-            ['Enacted',stats?.enacted,  'rgba(0,83,226,0.15)',   '#60a5fa', 'rgba(0,83,226,0.4)'],
+            ['Enacted',stats?.enacted,  'rgba(0,83,226,0.15)',   '#D9E3F0', 'rgba(0,83,226,0.4)'],
           ] as const).map(([label, count, bg, color, border]) => (
             <span key={label} className="px-3 py-1.5 rounded-full text-xs font-bold border"
               style={{ background: bg, color, borderColor: border }}>
@@ -248,7 +248,7 @@ export const RegulatoryIntelligence: React.FC = () => {
         <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
           <h2 className="text-sm font-bold" style={{ color: 'var(--s-text)' }}>Executive Insights (Top)</h2>
           <span className="text-[10px] px-2 py-1 rounded-full"
-            style={{ background: 'rgba(0,83,226,0.15)', color: '#60a5fa', border: '1px solid rgba(0,83,226,0.3)' }}>
+            style={{ background: 'rgba(0,83,226,0.15)', color: '#D9E3F0', border: '1px solid rgba(0,83,226,0.3)' }}>
             Scope: {geoScope.toUpperCase()}
           </span>
         </div>
@@ -309,7 +309,7 @@ export const RegulatoryIntelligence: React.FC = () => {
                 Confidence: {summary?.confidence ?? '…'}
               </span>
               <span className="text-[9px] px-2 py-1 rounded-full whitespace-nowrap"
-                style={{ background: 'rgba(0,83,226,0.15)', color: '#60a5fa', border: '1px solid rgba(0,83,226,0.3)' }}>
+                style={{ background: 'rgba(0,83,226,0.15)', color: '#9BB7DF', border: '1px solid rgba(0,83,226,0.3)' }}>
                 Through {summary?.data_through ?? '…'}
               </span>
             </div>

@@ -497,7 +497,7 @@ export const RegulatoryMap2D: React.FC<Props> = ({
             }}
             className="px-3 py-1.5 rounded-full text-[10px] font-bold transition-all hover:scale-105"
             style={{ background: 'rgba(0,83,226,0.3)', border: '1px solid rgba(0,83,226,0.5)',
-              color: '#60a5fa', backdropFilter: 'blur(8px)' }}>
+              color: '#9BB7DF', backdropFilter: 'blur(8px)' }}>
             ⟲ Reset zoom ({transform.k.toFixed(1)}×)
           </button>
         </div>

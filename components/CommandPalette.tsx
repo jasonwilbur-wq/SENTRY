@@ -5,6 +5,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { ViewState } from '../types';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 interface PaletteEntry {
   view: ViewState;
@@ -12,24 +13,24 @@ interface PaletteEntry {
   description: string;
   group: string;
   keywords: string;
+  adminOnly?: boolean;
 }
 
 const ENTRIES: PaletteEntry[] = [
   { view: ViewState.HOME,               label: 'Command Center',       description: 'Mission control — KPIs and module overview',           group: 'Operations',   keywords: 'home dashboard command center kpi' },
   { view: ViewState.DIRECTORY,          label: 'Vendor Directory',     description: 'All assessed emerging technology vendors',             group: 'Operations',   keywords: 'vendors directory list search' },
-  { view: ViewState.PROJECTS,           label: 'Project Portfolio',    description: '3D view of 14 active projects, $5.05M portfolio',     group: 'Operations',   keywords: 'projects portfolio 3d cost health' },
+  { view: ViewState.PROJECTS,           label: 'Project Portfolio',    description: '3D view of 13 emerging-tech security projects',     group: 'Operations',   keywords: 'projects portfolio 3d health blockers' },
   { view: ViewState.REQUEST_ASSESSMENT, label: 'Security Assessment',  description: 'Initiate a new GRC vendor review workflow',            group: 'Operations',   keywords: 'assessment request grc review' },
   { view: ViewState.REQUEST_LAB_VISIT,  label: 'Emerging Tech Lab',    description: 'Schedule hands-on lab evaluation time',               group: 'Operations',   keywords: 'lab visit schedule booking' },
   { view: ViewState.COMPETITOR_INTEL,   label: 'Competitor Intel',     description: '1,113 analyst-enriched competitor events',            group: 'Intelligence', keywords: 'competitor intel events amazon target costco' },
-  { view: ViewState.CSO_INTELLIGENCE,   label: 'CSO Intelligence',     description: 'Executive security leadership competitive analysis',   group: 'Intelligence', keywords: 'cso leadership executive security' },
-  { view: ViewState.EXECUTIVE_INTEL,    label: 'Executive Intel',      description: 'Review target portfolios, sources, signals, and reports', group: 'Intelligence', keywords: 'executive intel portfolio targets reports osint cso' },
-  { view: ViewState.REGULATORY_INTEL,   label: 'Regulatory Intel',     description: '362 obligations — AI, Biometrics, ALPR, UAS, Privacy', group: 'Intelligence', keywords: 'regulatory compliance ai biometrics alpr uas privacy' },
-  { view: ViewState.INCIDENT_INTEL,     label: 'Incident Intelligence', description: '325+ incidents — ORC, cargo theft, cyber, violence',  group: 'Intelligence', keywords: 'incident orc theft cargo cyber violence carjacking arson fraud' },
+  { view: ViewState.EXECUTIVE_INTEL,    label: 'Executive Intelligence', description: 'Competitor C-suite: Security (CSO/CISO) and Sustainability lenses', group: 'Intelligence', keywords: 'executive intel cso ciso security sustainability leadership competitor portfolio osint' },
+  { view: ViewState.REGULATORY_INTELLIGENCE, label: 'Regulatory Intel',     description: '362 obligations — AI, Biometrics, ALPR, UAS, Privacy', group: 'Intelligence', keywords: 'regulatory compliance ai biometrics alpr uas privacy' },
+  { view: ViewState.INCIDENT_INTELLIGENCE,   label: 'Incident Intelligence', description: '325+ incidents — ORC, cargo theft, cyber, violence',  group: 'Intelligence', keywords: 'incident orc theft cargo cyber violence carjacking arson fraud' },
   { view: ViewState.COMPETITOR_ANALYSIS,label: 'Market Analysis',      description: 'Risk metrics and vendor performance comparison',       group: 'Intelligence', keywords: 'market analysis charts risk metrics' },
   { view: ViewState.RISK_MAP,           label: 'Risk Map 3D',          description: 'Vendors plotted in 3D space by risk and category',   group: 'Intelligence', keywords: 'risk map 3d scatter vendors globe' },
   { view: ViewState.ARCHITECTURE,       label: 'Architecture',         description: 'GCP four-phase framework hierarchy',                  group: 'System',       keywords: 'architecture gcp framework' },
-  { view: ViewState.ADMIN,              label: 'VAR Admin',            description: 'Manage VAR reports, scores, and vendor linkage',     group: 'System',       keywords: 'admin var reports scores' },
-  { view: ViewState.REQUEST_QUEUE,      label: 'Request Queue',        description: 'Admin triage queue for assessment and lab requests', group: 'System',       keywords: 'request queue triage status workflow admin' },
+  { view: ViewState.ADMIN,              label: 'VAR Admin',            description: 'Manage VAR reports, scores, and vendor linkage',     group: 'System',       keywords: 'admin var reports scores', adminOnly: true },
+  { view: ViewState.REQUEST_QUEUE,      label: 'Request Queue',        description: 'Admin triage queue for assessment and lab requests', group: 'System',       keywords: 'request queue triage status workflow admin', adminOnly: true },
 ];
 
 interface CommandPaletteProps {
@@ -40,6 +41,7 @@ interface CommandPaletteProps {
 
 export const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onClose, onNavigate }) => {
   const { reducedMotion } = useTheme();
+  const { user } = useAuth();
   const [query, setQuery]         = useState('');
   const [activeIdx, setActiveIdx] = useState(0);
   const inputRef                  = useRef<HTMLInputElement>(null);
@@ -47,11 +49,12 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onClose, o
   const rafRef                    = useRef<number | null>(null);
 
   // ── Filtered + grouped entries ───────────────────────────────────────────
+  const allowedEntries = ENTRIES.filter(e => !e.adminOnly || user?.is_admin);
   const filtered = query.trim()
-    ? ENTRIES.filter(e =>
+    ? allowedEntries.filter(e =>
         `${e.label} ${e.description} ${e.keywords}`.toLowerCase().includes(query.toLowerCase())
       )
-    : ENTRIES;
+    : allowedEntries;
 
   const groupedFiltered = filtered.reduce<Record<string, PaletteEntry[]>>((acc, e) => {
     (acc[e.group] ??= []).push(e);
@@ -270,7 +273,7 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({ open, onClose, o
                               className="shrink-0 text-[9px] font-mono px-1.5 py-0.5 rounded"
                               style={{
                                 background: 'rgba(0,83,226,0.3)',
-                                color: '#93c5fd',
+                                color: '#9BB7DF',
                                 border: '1px solid rgba(0,83,226,0.4)',
                               }}
                             >

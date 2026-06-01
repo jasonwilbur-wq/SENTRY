@@ -140,7 +140,7 @@ export const MapDetailPopover: React.FC<Props> = ({
                 {primary.geo.techs.map(t => (
                   <span key={t} style={{
                     fontSize: '10px', padding: '2px 7px', borderRadius: '6px',
-                    background: 'rgba(0,83,226,0.15)', color: '#60a5fa', fontWeight: 600,
+                    background: 'rgba(0,83,226,0.15)', color: '#9BB7DF', fontWeight: 600,
                   }}>{t}</span>
                 ))}
               </div>

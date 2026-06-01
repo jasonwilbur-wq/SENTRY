@@ -515,7 +515,7 @@ const EditForm: React.FC<{
               subtitle="Phase 6 gate — one entry per vendor. APM portal · OneTrust (ERPA) · ServiceNow (SSP)" isDark={isDark} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
               <div>
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#60a5fa', marginBottom: 8,
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#9BB7DF', marginBottom: 8,
                   display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span style={{ background: 'rgba(96,165,250,0.15)', border: '1px solid rgba(96,165,250,0.3)',
                     padding: '2px 8px', borderRadius: 99, fontSize: 10, fontWeight: 800, letterSpacing: '0.08em' }}>APM</span>

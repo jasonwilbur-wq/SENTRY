@@ -11,13 +11,13 @@ import {
 const CAT_STYLE: Record<string, string> = {
   Cyber:          'bg-red-500/20 text-red-400 border border-red-500/40',
   'ORC/Theft':    'bg-yellow-500/20 text-yellow-300 border border-yellow-500/40',
-  Recall:         'bg-purple-500/20 text-purple-300 border border-purple-500/40',
-  Legal:          'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40',
+  Recall:         'bg-orange-500/20 text-orange-300 border border-orange-500/40',
+  Legal:          'bg-slate-500/20 text-slate-300 border border-slate-500/40',
   Strategic:      'bg-blue-500/20 text-blue-300 border border-blue-500/40',
   Operational:    'bg-green-500/20 text-green-300 border border-green-500/40',
   Compliance:     'bg-amber-500/20 text-amber-300 border border-amber-500/40',
-  Fraud:          'bg-pink-500/20 text-pink-300 border border-pink-500/40',
-  Technology:     'bg-teal-500/20 text-teal-300 border border-teal-500/40',
+  Fraud:          'bg-red-600/20 text-red-300 border border-red-600/40',
+  Technology:     'bg-blue-600/20 text-blue-200 border border-blue-600/40',
 };
 const MONTHS = ['Sep 2025','Oct 2025','Nov 2025','Dec 2025','Jan 2026','Feb 2026'];
 

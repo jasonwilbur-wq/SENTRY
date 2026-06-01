@@ -72,7 +72,7 @@ function FilterPill({
       className="px-3 py-1 rounded-full text-[11px] font-bold border transition-all"
       style={{
         background: active ? 'rgba(0,83,226,0.22)' : 'var(--s-card)',
-        color:      active ? '#60a5fa' : 'var(--s-text-dim)',
+        color:      active ? '#9BB7DF' : 'var(--s-text-dim)',
         borderColor: active ? '#0053e2' : 'var(--s-border)',
       }}>
       {label}
@@ -129,7 +129,7 @@ function TypeChart({ byType }: { byType: { type: string; count: number }[] }) {
                 <span>{TYPE_ICONS[type] ?? '📋'}</span>
                 <span className="truncate max-w-[160px]">{type}</span>
               </span>
-              <span className="text-xs font-mono font-bold" style={{ color: '#60a5fa' }}>{count}</span>
+              <span className="text-xs font-mono font-bold" style={{ color: '#9BB7DF' }}>{count}</span>
             </div>
             <div className="h-1.5 rounded-full" style={{ background: 'var(--s-border)' }}>
               <div className="h-1.5 rounded-full transition-all duration-700"
@@ -155,11 +155,11 @@ function TrendChart({ trend }: { trend: { month: string; count: number }[] }) {
         {trend.map(({ month, count }) => (
           <div key={month} className="flex-1 flex flex-col items-center gap-1 group" title={`${month}: ${count}`}>
             <span className="text-[9px] font-mono opacity-0 group-hover:opacity-100 transition-opacity"
-              style={{ color: '#60a5fa' }}>{count}</span>
+              style={{ color: '#9BB7DF' }}>{count}</span>
             <div className="w-full rounded-t transition-all duration-500"
               style={{
                 height: `${Math.max((count / max) * 80, 4)}px`,
-                background: 'linear-gradient(to top, #0053e2, #60a5fa)',
+                background: 'linear-gradient(to top, #0053e2, #9BB7DF)',
               }} />
             <span className="text-[8px] font-mono" style={{ color: 'var(--s-text-dim)' }}>
               {month.slice(5)}
@@ -176,7 +176,7 @@ function TrendChart({ trend }: { trend: { month: string; count: number }[] }) {
 function RegionChart({ byRegion }: { byRegion: Record<string, number> }) {
   const entries = Object.entries(byRegion).sort((a, b) => b[1] - a[1]);
   const max = entries[0]?.[1] ?? 1;
-  const colors = ['#0053e2', '#3b82f6', '#60a5fa', '#93c5fd', '#FFC220', '#f97316', '#ea1100', '#a78bfa'];
+  const colors = ['#0053e2', '#001E60', '#9BB7DF', '#7893B8', '#FFC220', '#D95F02', '#C62828', '#111827'];
   return (
     <div className="rounded-xl border p-5" style={{ background: 'var(--s-card)', borderColor: 'var(--s-border)' }}>
       <h3 className="text-xs font-bold uppercase tracking-widest mb-4" style={{ color: 'var(--s-text-dim)' }}>
@@ -214,7 +214,7 @@ function IncidentRow({ incident }: { incident: Incident }) {
           <div className="flex flex-wrap items-center gap-2 mb-1.5">
             <SeverityBadge level={incident.severity} />
             <span className="text-[10px] px-2 py-0.5 rounded"
-              style={{ background: 'rgba(0,83,226,0.14)', color: '#60a5fa' }}>
+              style={{ background: 'rgba(0,83,226,0.14)', color: '#D9E3F0' }}> 
               {TYPE_ICONS[incident.incident_type] ?? '📋'} {incident.incident_type}
             </span>
             {incident.incident_date && (
@@ -246,7 +246,7 @@ function IncidentRow({ incident }: { incident: Incident }) {
           {incident.recommended_action && (
             <div>
               <p className="text-[10px] font-bold uppercase tracking-widest mb-1"
-                style={{ color: '#60a5fa' }}>Recommended Action</p>
+                style={{ color: '#9BB7DF' }}>Recommended Action</p>
               <p className="text-xs leading-relaxed" style={{ color: 'var(--s-text-muted)' }}>
                 {incident.recommended_action}
               </p>
@@ -364,7 +364,7 @@ export function IncidentIntelligence() {
               🟠 High: {highCount}
             </span>
             <span className="px-3 py-1.5 rounded-full text-xs font-bold border"
-              style={{ background: 'rgba(0,83,226,0.15)', color: '#60a5fa', borderColor: 'rgba(0,83,226,0.4)' }}>
+              style={{ background: 'rgba(0,83,226,0.15)', color: '#D9E3F0', borderColor: 'rgba(0,83,226,0.4)' }}> 
               {stats?.total ?? '—'} Total Incidents
             </span>
           </div>
@@ -377,8 +377,8 @@ export function IncidentIntelligence() {
           <KpiTile label="Total Incidents"  value={stats.total}                        accent="#FFC220" />
           <KpiTile label="Critical"         value={critCount}                           accent="#ea1100" />
           <KpiTile label="High Severity"    value={highCount}                           accent="#f97316" />
-          <KpiTile label="Incident Types"   value={stats.by_type.length}               accent="#60a5fa" />
-          <KpiTile label="Regions Covered"  value={Object.keys(stats.by_region).length} accent="#a78bfa" />
+          <KpiTile label="Incident Types"   value={stats.by_type.length}               accent="#9BB7DF" />
+          <KpiTile label="Regions Covered"  value={Object.keys(stats.by_region).length} accent="#7893B8" />
         </div>
       )}
 

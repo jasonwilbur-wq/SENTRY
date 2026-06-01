@@ -68,7 +68,7 @@ export const HotspotChips: React.FC<{
           style={{
             background: selected ? 'rgba(255,194,32,0.18)' : 'rgba(0,83,226,0.1)',
             borderColor: selected ? 'rgba(255,194,32,0.45)' : 'rgba(0,83,226,0.3)',
-            color: selected ? '#FFC220' : '#60a5fa',
+            color: selected ? '#FFC220' : '#9BB7DF',
           }}
           aria-label={`Filter by hotspot ${hotspot.jurisdiction}`}
           title={`${hotspot.jurisdiction} · ${hotspot.total} obligations`}

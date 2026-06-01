@@ -51,6 +51,8 @@ interface AuthContextValue {
   isReady: boolean;
 }
 
+export const SENTRY_USER_SESSION_KEY = 'sentry.auth.user';
+
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 // ── Provider ─────────────────────────────────────────────────────────────────
@@ -66,8 +68,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let cancelled = false;
 
     const run = async () => {
-      // ── Step 1: Read configured identity from env var ─────────────────
-      const configuredUser = (import.meta.env.VITE_SENTRY_USER ?? '').trim();
+      // ── Step 1: Read configured identity from env var or session login ─
+      let storedUser = '';
+      try {
+        storedUser = window.sessionStorage.getItem(SENTRY_USER_SESSION_KEY) ?? '';
+      } catch {
+        storedUser = '';
+      }
+      const ignoreEnvUser = Boolean(
+        (window as typeof window & { __SENTRY_E2E_DISABLE_ENV_USER__?: boolean }).__SENTRY_E2E_DISABLE_ENV_USER__,
+      );
+      const envUser = ignoreEnvUser ? '' : (import.meta.env.VITE_SENTRY_USER ?? '');
+      const configuredUser = (envUser || storedUser).trim();
 
       // Wire identity into the API client immediately
       // (so /api/auth/me sends the header)
@@ -103,7 +115,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!configuredUser) {
         setAuthError(
           'Authentication is required but no user identity is configured. ' +
-          'Set VITE_SENTRY_USER in your .env.development file ' +
+          'Enter your SENTRY user ID, or set VITE_SENTRY_USER in your .env.development file ' +
           '(e.g. VITE_SENTRY_USER=your_userid) and restart the dev server.'
         );
         setIsReady(true);

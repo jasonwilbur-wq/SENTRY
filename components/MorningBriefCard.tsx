@@ -106,7 +106,7 @@ export function MorningBriefCard({ onNavigate }: Props) {
               color="#fb923c" />
             <BriefRow icon="👁️" label="Competitor Events"
               value={brief.competitors.total_events}
-              color="#60a5fa" />
+              color="#9BB7DF" />
             <BriefRow icon="⏳" label="Stale Vendor Assessments (>180d)"
               value={brief.vendors.stale_assessments.length}
               color={brief.vendors.stale_assessments.length > 0 ? '#fb923c' : '#4ade80'} />
@@ -136,13 +136,13 @@ export function MorningBriefCard({ onNavigate }: Props) {
       {/* Footer CTA */}
       <div className="px-5 pb-4 pt-2 flex gap-2">
         <button
-          onClick={() => onNavigate(ViewState.INCIDENT_INTEL)}
+          onClick={() => onNavigate(ViewState.INCIDENT_INTELLIGENCE)}
           className="flex-1 py-2 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-colors"
           style={{ background: 'rgba(234,17,0,0.10)', color: '#ff6b6b', border: '1px solid rgba(234,17,0,0.3)' }}>
           View Incidents
         </button>
         <button
-          onClick={() => onNavigate(ViewState.REGULATORY_INTEL)}
+          onClick={() => onNavigate(ViewState.REGULATORY_INTELLIGENCE)}
           className="flex-1 py-2 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-colors"
           style={{ background: 'rgba(0,83,226,0.10)', color: '#60a5fa', border: '1px solid rgba(0,83,226,0.3)' }}>
           Regulatory

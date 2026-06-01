@@ -6,6 +6,7 @@
  * a matching drop-shadow glow on hover.
  */
 import React, { useRef, useCallback } from 'react';
+import { ATLAS_COLORS } from '../utils/designTokens';
 
 interface GlassCard3DProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
@@ -16,8 +17,8 @@ interface GlassCard3DProps extends React.HTMLAttributes<HTMLDivElement> {
 export const GlassCard3D: React.FC<GlassCard3DProps> = ({
   children,
   className = '',
-  glowColor = '#0053e2',
-  intensity = 8,
+  glowColor = ATLAS_COLORS.walmartBlue,
+  intensity = 6,
   style,
   ...rest
 }) => {
@@ -30,11 +31,11 @@ export const GlassCard3D: React.FC<GlassCard3DProps> = ({
     const x = (e.clientX - rect.left) / rect.width  - 0.5; // −0.5 → 0.5
     const y = (e.clientY - rect.top)  / rect.height - 0.5;
     el.style.transform =
-      `perspective(900px) rotateY(${x * intensity * 1.5}deg) rotateX(${-y * intensity}deg) translateZ(6px) scale(1.015)`;
+      `perspective(900px) rotateY(${x * intensity * 1.2}deg) rotateX(${-y * intensity}deg) translateZ(3px) scale(1.008)`;
     el.style.boxShadow =
-      `${x * -12}px ${y * -10}px 40px ${glowColor}44,
-       0 4px 24px rgba(0,0,0,0.55),
-       inset 0 1px 0 rgba(255,255,255,0.08)`;
+      `${x * -8}px ${y * -7}px 28px ${glowColor}2e,
+       0 8px 24px rgba(0,0,0,0.36),
+       inset 0 1px 0 rgba(255,255,255,0.06)`;
   }, [intensity, glowColor]);
 
   const handleMouseLeave = useCallback(() => {
@@ -47,7 +48,7 @@ export const GlassCard3D: React.FC<GlassCard3DProps> = ({
   return (
     <div
       ref={ref}
-      className={className}
+      className={`atlas-card ${className}`}
       {...rest}
       style={{
         transition: 'transform 0.18s ease-out, box-shadow 0.18s ease-out',

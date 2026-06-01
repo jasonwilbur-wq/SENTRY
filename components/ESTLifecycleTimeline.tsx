@@ -147,7 +147,7 @@ const SectionLabel: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 );
 
 const ComplianceBadge: React.FC<{ label: string; value: string; status: string }> = ({ label, value, status }) => {
-  const color = COMPLIANCE_COLORS[status] ?? '#60a5fa';
+  const color = COMPLIANCE_COLORS[status] ?? '#9BB7DF';
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 6,

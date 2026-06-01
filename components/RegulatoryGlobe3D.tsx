@@ -515,7 +515,7 @@ export const RegulatoryGlobe3D: React.FC<Props> = ({
         style={{
           background: 'rgba(0,83,226,0.2)',
           border: '1px solid rgba(0,83,226,0.4)',
-          color: '#60a5fa',
+          color: '#9BB7DF',
           backdropFilter: 'blur(8px)',
         }}
         title="Toggle US-focused view"

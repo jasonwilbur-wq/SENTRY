@@ -41,6 +41,18 @@
   --wmt-blue:   #0053E2;
   --wmt-yellow: #FFC220;
   --wmt-navy:   #001E60;
+
+  /* SENTRY Atlas accents — Walmart Security Intelligence, not generic neon AI */
+  --s-ink:              #050A18;
+  --s-graphite:         #111827;
+  --s-steel:            #7893B8;
+  --s-grid:             rgba(120,147,184,0.12);
+  --s-accent-primary:   #0053E2;
+  --s-accent-spark:     #FFC220;
+  --s-accent-operation: #7893B8;
+  --s-accent-alert:     #D95F02;
+  --s-accent-critical:  #C62828;
+  --s-accent-secure:    #2A8703;
 }
 
 :root[data-theme="light"] {
@@ -70,6 +82,18 @@
   --s-text-muted:   #334155;
   --s-text-dim:     #475569;
   --s-text-faint:   #64748b;
+
+  /* SENTRY Atlas accents — tuned for light surfaces */
+  --s-ink:              #f8fafc;
+  --s-graphite:         #e2e8f0;
+  --s-steel:            #475569;
+  --s-grid:             rgba(71,85,105,0.14);
+  --s-accent-primary:   #0053E2;
+  --s-accent-spark:     #D89A00;
+  --s-accent-operation: #475569;
+  --s-accent-alert:     #B45309;
+  --s-accent-critical:  #B91C1C;
+  --s-accent-secure:    #2A8703;
 }
 
 /* ── 2. Tailwind @theme tokens ───────────────────────────── */
@@ -250,31 +274,49 @@ body {
 /* Glass surface — opt-in, not imposed globally */
 .glass {
   background: var(--s-panel);
-  backdrop-filter: blur(16px) saturate(160%);
-  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(10px) saturate(135%);
+  -webkit-backdrop-filter: blur(10px) saturate(135%);
   border: 1px solid var(--s-border);
 }
 
 .glass-heavy {
   background: var(--s-card);
-  backdrop-filter: blur(32px) saturate(180%);
-  -webkit-backdrop-filter: blur(32px) saturate(180%);
+  backdrop-filter: blur(18px) saturate(145%);
+  -webkit-backdrop-filter: blur(18px) saturate(145%);
   border: 1px solid var(--s-border);
 }
 
-/* Neon text utilities */
-.neon-blue  { color: #4d9fff; text-shadow: 0 0 12px rgba(0,83,226,0.8), 0 0 32px rgba(0,83,226,0.4); }
-.neon-yellow{ color: #FFC220; text-shadow: 0 0 12px rgba(255,194,32,0.8), 0 0 32px rgba(255,194,32,0.4); }
+/* Atlas surface — subtle command-grid texture for working app cards */
+.atlas-card {
+  position: relative;
+}
+.atlas-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(120,147,184,0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(120,147,184,0.045) 1px, transparent 1px),
+    linear-gradient(135deg, rgba(255,194,32,0.035), transparent 38%);
+  background-size: 28px 28px, 28px 28px, 100% 100%;
+  opacity: 0.38;
+}
+
+/* Brand text utilities — restrained, no generic neon bloom */
+.neon-blue  { color: #9BB7DF; text-shadow: 0 0 10px rgba(0,83,226,0.28); }
+.neon-yellow{ color: #FFC220; text-shadow: 0 0 10px rgba(255,194,32,0.30); }
 
 /* Gradient text */
 .gradient-text-blue {
-  background: linear-gradient(135deg, #4d9fff 0%, #0053E2 50%, #001E60 100%);
+  background: linear-gradient(135deg, #D9E3F0 0%, #0053E2 50%, #001E60 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 .gradient-text-brand {
-  background: linear-gradient(135deg, #ffffff 0%, #A9DDF7 40%, #4d9fff 100%);
+  background: linear-gradient(135deg, #ffffff 0%, #D9E3F0 42%, #0053E2 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -296,7 +338,7 @@ body {
   cursor: pointer;
   transition: background-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
 }
-.btn-primary:hover  { background-color: #0047c7; box-shadow: 0 0 20px rgba(0,83,226,0.45); }
+.btn-primary:hover  { background-color: #0047c7; box-shadow: 0 8px 22px rgba(0,83,226,0.26); }
 .btn-primary:active { transform: scale(0.97); }
 .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
 

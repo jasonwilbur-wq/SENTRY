@@ -107,7 +107,7 @@ export const CSOBriefGeneratePage: React.FC = () => {
               type="button"
               onClick={() => window.location.assign(`/cso-briefs/${encodeURIComponent(generatedBriefId)}/edit`)}
               className="px-3 py-2 rounded text-xs font-bold border"
-              style={{ borderColor: '#0053e2', color: '#60a5fa' }}
+              style={{ borderColor: '#0053e2', color: '#9BB7DF' }}
             >
               Open draft brief editor
             </button>

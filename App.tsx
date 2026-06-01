@@ -2,7 +2,7 @@ import React, { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { ViewState } from './types';
 import { VendorProvider } from './context/VendorContext';
 import { ThemeProvider } from './context/ThemeContext';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, SENTRY_USER_SESSION_KEY, useAuth } from './context/AuthContext';
 import { Sidebar } from './components/Sidebar';
 import { PageTransition } from './components/PageTransition';
 import { ViewErrorBoundary } from './components/ViewErrorBoundary';
@@ -22,8 +22,7 @@ const CompetitorAnalysis     = lazy(() => import('./components/CompetitorAnalysi
 const ArchitectureGraph      = lazy(() => import('./components/ArchitectureGraph').then(m => ({ default: m.ArchitectureGraph })));
 const AdminPanel             = lazy(() => import('./components/AdminPanel').then(m => ({ default: m.AdminPanel })));
 const CompetitorIntel        = lazy(() => import('./components/CompetitorIntel').then(m => ({ default: m.CompetitorIntel })));
-const CSOIntelligence        = lazy(() => import('./components/CSOIntelligence').then(m => ({ default: m.CSOIntelligence })));
-const ExecutiveIntelPortfolio = lazy(() => import('./components/ExecutiveIntelPortfolio'));
+const ExecutiveIntelligence  = lazy(() => import('./components/ExecutiveIntelligence').then(m => ({ default: m.ExecutiveIntelligence })));
 const IncidentIntelligence   = lazy(() => import('./components/IncidentIntelligence').then(m => ({ default: m.IncidentIntelligence })));
 const RegulatoryIntelligence = lazy(() => import('./components/RegulatoryIntelligence').then(m => ({ default: m.RegulatoryIntelligence })));
 const VendorRiskMap3D        = lazy(() => import('./components/VendorRiskMap3D'));
@@ -60,7 +59,7 @@ const VIEW_META: Record<ViewState, { title: string; subtitle: string; eyebrow: s
   [ViewState.PROJECTS]: {
     eyebrow:  'Projects',
     title:    'Project Portfolio',
-    subtitle: '3D portfolio view — 14 active projects, $5.05M committed.',
+    subtitle: '3D portfolio view — 13 emerging-technology security projects across the lifecycle.',
   },
   [ViewState.REQUEST_ASSESSMENT]: {
     eyebrow:  'Workflows',
@@ -82,15 +81,16 @@ const VIEW_META: Record<ViewState, { title: string; subtitle: string; eyebrow: s
     title:    'Competitor Intelligence',
     subtitle: 'Live tracking across retail competitors — 1,113 analyst-enriched events.',
   },
-  [ViewState.CSO_INTELLIGENCE]: {
-    eyebrow:  'Intelligence',
-    title:    'CSO Intelligence',
-    subtitle: 'Executive security leadership — Amazon, Target, Costco, Kroger.',
-  },
   [ViewState.EXECUTIVE_INTEL]: {
     eyebrow:  'Intelligence',
-    title:    'Executive Intel Portfolios',
-    subtitle: 'Review target portfolios, source evidence, normalized signals, and draft reports.',
+    title:    'Executive Intelligence',
+    subtitle: 'Competitor C-suite benchmarking - Security (CSO/CISO) and Sustainability lenses.',
+  },
+  // Deprecated: merged into EXECUTIVE_INTEL. Kept for type completeness only.
+  [ViewState.CSO_INTELLIGENCE]: {
+    eyebrow:  'Intelligence',
+    title:    'Executive Intelligence',
+    subtitle: 'Competitor C-suite benchmarking - Security (CSO/CISO) and Sustainability lenses.',
   },
   [ViewState.REGULATORY_INTELLIGENCE]: {
     eyebrow:  'Intelligence',
@@ -139,7 +139,10 @@ function readPlatformEntered(): boolean {
 function readStoredView(): ViewState {
   try {
     const stored = window.sessionStorage.getItem(PLATFORM_VIEW_KEY);
-    return stored && isViewState(stored) ? stored : ViewState.HOME;
+    if (!stored || !isViewState(stored)) return ViewState.HOME;
+    // CSO_INTELLIGENCE was merged into the unified Executive Intelligence view.
+    if (stored === ViewState.CSO_INTELLIGENCE) return ViewState.EXECUTIVE_INTEL;
+    return stored;
   } catch { return ViewState.HOME; }
 }
 
@@ -200,6 +203,110 @@ function useBackendHealth(enabled: boolean) {
   return { state, detail };
 }
 
+function AuthGate({ children }: { children: React.ReactNode }) {
+  const { isReady, authError, authWarning } = useAuth();
+  const [identity, setIdentity] = useState('');
+
+  const submitIdentity = (event: React.FormEvent) => {
+    event.preventDefault();
+    const trimmed = identity.trim();
+    if (!trimmed) return;
+    try { window.sessionStorage.setItem(SENTRY_USER_SESSION_KEY, trimmed); } catch { /* noop */ }
+    window.location.reload();
+  };
+
+  const resetIdentity = () => {
+    try { window.sessionStorage.removeItem(SENTRY_USER_SESSION_KEY); } catch { /* noop */ }
+    window.location.reload();
+  };
+
+  if (!isReady) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--s-bg)', color: 'var(--s-text)' }}>
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-wmt-blue border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs text-slate-500 uppercase tracking-widest font-semibold">Verifying access</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (authError) {
+    const canEnterIdentity = authError.includes('no user identity is configured');
+
+    return (
+      <div className="min-h-screen flex items-center justify-center px-6" style={{ background: 'var(--s-bg)' }}>
+        <div className="max-w-xl w-full rounded-2xl border p-6 text-center" style={{ background: 'var(--s-card)', borderColor: 'rgba(234,17,0,0.35)' }}>
+          <div className="text-5xl mb-4">🔒</div>
+          <h1 className="text-xl font-black mb-2" style={{ color: 'var(--s-text)' }}>SENTRY access required</h1>
+          <p className="text-sm leading-6" style={{ color: 'var(--s-text-dim)' }}>{authError}</p>
+          {canEnterIdentity ? (
+            <form onSubmit={submitIdentity} className="mt-5 flex flex-col sm:flex-row gap-2">
+              <input
+                value={identity}
+                onChange={(event) => setIdentity(event.target.value)}
+                placeholder="your_userid"
+                aria-label="SENTRY user ID"
+                className="sentry-input flex-1 text-sm"
+                autoFocus
+              />
+              <button
+                type="submit"
+                className="px-4 py-2 rounded-lg text-sm font-bold"
+                style={{ background: '#0053E2', color: '#fff' }}
+              >
+                Continue
+              </button>
+            </form>
+          ) : (
+            <button
+              type="button"
+              onClick={resetIdentity}
+              className="mt-5 px-4 py-2 rounded-lg text-sm font-bold"
+              style={{ background: 'var(--s-input-bg)', color: 'var(--s-text)', border: '1px solid var(--s-border-mid)' }}
+            >
+              Use a different user ID
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {authWarning && (
+        <div
+          className="fixed top-3 left-1/2 -translate-x-1/2 z-[70] rounded-full px-4 py-2 text-[11px] font-bold shadow-lg"
+          style={{ background: 'rgba(255,194,32,0.14)', border: '1px solid rgba(255,194,32,0.45)', color: '#FFC220' }}
+          role="status"
+        >
+          {authWarning}
+        </div>
+      )}
+      {children}
+    </>
+  );
+}
+
+function RequireAdmin({ children, viewName = 'this workspace' }: { children: React.ReactNode; viewName?: string }) {
+  const { user } = useAuth();
+
+  if (!user?.is_admin) {
+    return (
+      <div className="max-w-2xl mx-auto text-center py-20 animate-fadeIn">
+        <div className="text-5xl mb-4">🔒</div>
+        <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--s-text)' }}>Admin Access Required</h2>
+        <p className="text-sm" style={{ color: 'var(--s-text-dim)' }}>
+          You need SENTRY administrator privileges to access {viewName}.
+        </p>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
+
 // ── Main app ─────────────────────────────────────────────────────────────────
 const App: React.FC = () => {
   const [showLanding, setShowLanding] = useState(() => !readPlatformEntered());
@@ -256,17 +363,18 @@ const App: React.FC = () => {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <VendorProvider>
-          <div className="flex h-screen text-slate-300 overflow-hidden" style={{ background: 'var(--s-bg)' }}>
-            {/* Mobile drawer backdrop */}
-            {sidebarOpen && (
-              <div
-                className="fixed inset-0 z-40 bg-black/50 md:hidden"
-                onClick={() => setSidebarOpen(false)}
-                aria-hidden
-              />
-            )}
-            <Sidebar currentView={currentView} onNavigate={handleNavigate} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+        <AuthGate>
+          <VendorProvider>
+            <div className="flex h-screen text-slate-300 overflow-hidden" style={{ background: 'var(--s-bg)' }}>
+              {/* Mobile drawer backdrop */}
+              {sidebarOpen && (
+                <div
+                  className="fixed inset-0 z-40 bg-black/50 md:hidden"
+                  onClick={() => setSidebarOpen(false)}
+                  aria-hidden
+                />
+              )}
+              <Sidebar currentView={currentView} onNavigate={handleNavigate} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
             <main className="flex-1 flex flex-col overflow-hidden relative">
               {/* Header */}
@@ -405,7 +513,9 @@ const App: React.FC = () => {
                       )}
                       {currentView === ViewState.REQUEST_QUEUE && (
                         <ViewErrorBoundary viewName="Request Queue">
-                          <RequestQueue />
+                          <RequireAdmin viewName="the request triage queue">
+                            <RequestQueue />
+                          </RequireAdmin>
                         </ViewErrorBoundary>
                       )}
                       {currentView === ViewState.COMPETITOR_ANALYSIS && (
@@ -418,14 +528,9 @@ const App: React.FC = () => {
                           <CompetitorIntel />
                         </ViewErrorBoundary>
                       )}
-                      {currentView === ViewState.CSO_INTELLIGENCE && (
-                        <ViewErrorBoundary viewName="CSO Intelligence">
-                          <CSOIntelligence />
-                        </ViewErrorBoundary>
-                      )}
                       {currentView === ViewState.EXECUTIVE_INTEL && (
-                        <ViewErrorBoundary viewName="Executive Intel Portfolios">
-                          <ExecutiveIntelPortfolio />
+                        <ViewErrorBoundary viewName="Executive Intelligence">
+                          <ExecutiveIntelligence />
                         </ViewErrorBoundary>
                       )}
                       {currentView === ViewState.INCIDENT_INTELLIGENCE && (
@@ -450,7 +555,9 @@ const App: React.FC = () => {
                       )}
                       {currentView === ViewState.ADMIN && (
                         <ViewErrorBoundary viewName="VAR Administration">
-                          <AdminPanel />
+                          <RequireAdmin viewName="VAR administration">
+                            <AdminPanel />
+                          </RequireAdmin>
                         </ViewErrorBoundary>
                       )}
                       {currentView === ViewState.SENTINEL && (
@@ -476,8 +583,9 @@ const App: React.FC = () => {
                 />
               </Suspense>
             </main>
-          </div>
-        </VendorProvider>
+            </div>
+          </VendorProvider>
+        </AuthGate>
       </AuthProvider>
     </ThemeProvider>
   );

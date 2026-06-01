@@ -18,49 +18,48 @@ const ACRONYM = [
 const PROOF_POINTS = [
   { value: '300+',  label: 'Vendors assessed' },
   { value: '1,113', label: 'Competitor signals' },
-  { value: '362',   label: 'Regulatory obligations' },
+  { value: '362',   label: 'Regulations tracked' },
   { value: '14',    label: 'Active EST projects' },
 ];
 
-// Animated Walmart Spark — six rays around a center, drawn with SVG so it
-// scales cleanly and we can animate stroke-dashoffset for a "wake up" reveal.
+// Animated Walmart Spark — six visible yellow sparklets around a center.
+// Keep SVG rotation in attributes instead of CSS transforms so animation does
+// not accidentally collapse every ray into the same position.
 function AnimatedSpark({ size = 88 }: { size?: number }) {
   return (
     <svg
       viewBox="0 0 100 100"
       width={size}
       height={size}
-      aria-hidden="true"
-      style={{ display: 'block' }}
+      role="img"
+      aria-label="Walmart Spark"
+      style={{ display: 'block', filter: 'drop-shadow(0 0 18px rgba(255,194,32,0.45))' }}
     >
       <defs>
         <radialGradient id="spark-glow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%"  stopColor="#FFC220" stopOpacity="0.55" />
-          <stop offset="60%" stopColor="#FFC220" stopOpacity="0.10" />
+          <stop offset="0%"  stopColor="#FFC220" stopOpacity="0.48" />
+          <stop offset="58%" stopColor="#FFC220" stopOpacity="0.16" />
           <stop offset="100%" stopColor="#FFC220" stopOpacity="0" />
         </radialGradient>
       </defs>
       <circle cx="50" cy="50" r="48" fill="url(#spark-glow)" />
       {[0, 60, 120, 180, 240, 300].map((rot, i) => (
-        <rect
-          key={rot}
-          x="47"
-          y="8"
-          width="6"
-          height="22"
-          rx="3"
-          fill="#FFC220"
-          transform={`rotate(${rot} 50 50)`}
-          style={{
-            transformOrigin: '50px 50px',
-            animation: `spark-grow 0.7s cubic-bezier(0.16,1,0.3,1) ${0.15 + i * 0.07}s both`,
-          }}
-        />
+        <g key={rot} transform={`rotate(${rot} 50 50)`}>
+          <g
+            style={{
+              opacity: 0,
+              animation: `spark-pop 0.58s cubic-bezier(0.16,1,0.3,1) ${0.12 + i * 0.08}s forwards`,
+            }}
+          >
+            <rect x="44" y="6" width="12" height="31" rx="6" fill="#FFC220" />
+          </g>
+        </g>
       ))}
+      <circle cx="50" cy="50" r="6" fill="#FFC220" opacity="0.95" />
       <style>{`
-        @keyframes spark-grow {
-          from { transform-box: fill-box; opacity: 0; transform: rotate(var(--r,0deg)) scaleY(0.3); }
-          to   { opacity: 1; }
+        @keyframes spark-pop {
+          from { opacity: 0; transform: scale(0.72); transform-origin: 50px 50px; }
+          to   { opacity: 1; transform: scale(1); transform-origin: 50px 50px; }
         }
       `}</style>
     </svg>
@@ -178,8 +177,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
         }}
       >
         {/* Spark — gives the page a real Walmart heartbeat instead of generic AI glow */}
-        <div className="flex justify-center mb-6" style={{ animation: 'float 6s ease-in-out infinite' }}>
-          <AnimatedSpark size={84} />
+        <div className="flex flex-col items-center justify-center mb-6" style={{ animation: 'float 6s ease-in-out infinite' }}>
+          <AnimatedSpark size={96} />
         </div>
 
         {/* Wordmark — single weight, monospace tracking, no per-letter dance */}
@@ -226,7 +225,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
           }}
         >
           The system of record for emerging security technology at Walmart.
-          Assess vendors, track competitor moves, monitor regulation, and run
+          Assess vendors, track competitor moves, monitor regulations, and run
           every project from one workspace.
         </p>
 
