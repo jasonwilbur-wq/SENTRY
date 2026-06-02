@@ -14,7 +14,6 @@ WARNING: Route order matters in FastAPI! Static paths like
 import csv
 import os
 import re
-import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -43,7 +42,7 @@ from cso_profile_routes import ROUTER as cso_profile_router
 import cso_profile_store
 from auth import SentryUser, get_current_user, get_auth_status, require_admin
 from cache import clear_all
-from models import ChatRequest, ChatResponse, FormResponse
+from models import ChatRequest, ChatResponse
 from path_config import (
     SENTRY_DATA_ROOT,
     VENDOR_ASSESSMENTS_ROOT,
@@ -292,8 +291,12 @@ def morning_brief() -> dict:
 # ── Chat (stub — returns helpful message when no LLM key configured) ─────
 
 @app.post("/api/chat", response_model=ChatResponse)
-def chat(req: ChatRequest):
-    """Chat endpoint stub. Wire up to Element LLM Gateway for full AI."""
+def chat(
+    req: ChatRequest,
+    user: SentryUser = Depends(get_current_user),
+):
+    """Authenticated chat stub. Wire to Element LLM Gateway for full AI."""
+    _ = user  # Reserved for future prompt attribution / audit trails.
     return ChatResponse(
         response=(
             f"Thanks for your question: *\"{req.message}\"*\n\n"
@@ -302,22 +305,6 @@ def chat(req: ChatRequest):
             "on Slack and set ELEMENT_API_KEY in your environment."
         )
     )
-
-
-# ── Forms (local stubs — generate ref IDs) ──────────────────────────
-
-@app.post("/api/assessment", response_model=FormResponse)
-def submit_assessment(data: dict):
-    """Accept a security assessment request."""
-    ref = f"SENTRY-ASM-{uuid.uuid4().hex[:8].upper()}"
-    return FormResponse(success=True, ref_id=ref, message="Assessment queued.")
-
-
-@app.post("/api/lab-visit", response_model=FormResponse)
-def submit_lab_visit(data: dict):
-    """Accept a lab visit request."""
-    ref = f"SENTRY-LAB-{uuid.uuid4().hex[:8].upper()}"
-    return FormResponse(success=True, ref_id=ref, message="Lab visit requested.")
 
 
 # ── Cache management ──────────────────────────────────────────────────────

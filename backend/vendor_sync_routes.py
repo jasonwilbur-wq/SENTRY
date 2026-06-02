@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from audit import log_mutation
+from auth import SentryUser, require_admin
 from cache import clear_all
 from database import get_connection
 from sync_vendor_directory import (
@@ -50,7 +52,10 @@ def _resolve_root(path_override: str | None) -> Path:
 
 
 @router.post("", response_model=VendorSyncResponse)
-def run_vendor_sync(req: VendorSyncRequest) -> VendorSyncResponse:
+def run_vendor_sync(
+    req: VendorSyncRequest,
+    user: SentryUser = Depends(require_admin),
+) -> VendorSyncResponse:
     root = _resolve_root(req.root_path)
 
     try:
@@ -80,11 +85,32 @@ def run_vendor_sync(req: VendorSyncRequest) -> VendorSyncResponse:
 
         vendor_ids = [v.vendor_id for v in to_remove]
         deleted_vendors, deleted_var, deleted_highlights = delete_vendors(conn, vendor_ids)
-        conn.commit()
 
         response.deleted_vendors = deleted_vendors
         response.deleted_var_reports = deleted_var
         response.deleted_highlights = deleted_highlights
+
+        log_mutation(
+            conn=conn,
+            user=user,
+            action="vendor_sync_apply",
+            entity_type="vendor_directory",
+            entity_id="canonical_sync",
+            old_value={"db_vendors_total": len(vendors)},
+            new_value={
+                "canonical_vendor_keys": len(canonical_keys),
+                "vendors_out_of_sync": len(to_remove),
+                "deleted_vendors": deleted_vendors,
+                "deleted_var_reports": deleted_var,
+                "deleted_highlights": deleted_highlights,
+            },
+            metadata={
+                "root_path": str(root),
+                "backup_path": response.backup_path,
+                "sample_removals": response.sample_removals,
+            },
+        )
+        conn.commit()
 
         # Clear cached category/stats/views after mutation.
         clear_all()

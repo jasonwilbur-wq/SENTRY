@@ -3,7 +3,7 @@
 Endpoints for VAR management, score extraction, and manual linking.
 All routes live under /api/admin/.
 
-NOTE: These are internal-only; add auth middleware before exposing externally.
+NOTE: These routes are admin-only via the router-level require_admin dependency.
 """
 from __future__ import annotations
 

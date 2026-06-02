@@ -11,9 +11,10 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, Body, Header, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException
 
 import cso_profile_store as store
+from auth import SentryUser, require_admin
 from cso_profile_import import ImportError_, import_handoff_bundle
 
 ROUTER = APIRouter(prefix="/api/exec-intel", tags=["exec-intel"])
@@ -40,17 +41,15 @@ def get_one_profile(profile_id: str) -> dict[str, Any]:
 def import_bundle(
     bundle: dict[str, Any] = Body(...),
     allow_unfinalized: bool = False,
-    x_sentry_user: str | None = Header(default=None),
+    user: SentryUser = Depends(require_admin),
 ) -> dict[str, Any]:
     """Governed write: import an Executive Signal Scout handoff bundle.
 
     Only finalized bundles are accepted unless allow_unfinalized is explicitly
-    set (dry-run/testing). Requires an identified user for the audit trail.
+    set (dry-run/testing). Requires a validated SENTRY admin for authorization
+    and audit attribution.
     """
-    actor = (x_sentry_user or "").strip()
-    if not actor:
-        raise HTTPException(status_code=401, detail="X-Sentry-User header required for governed import")
     try:
-        return import_handoff_bundle(bundle, updated_by=actor, allow_unfinalized=allow_unfinalized)
+        return import_handoff_bundle(bundle, updated_by=user.id, allow_unfinalized=allow_unfinalized)
     except ImportError_ as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
