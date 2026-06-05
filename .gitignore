@@ -54,7 +54,13 @@ WORKING_STATE.json
 # Docker image / repo should never include local database backups
 backend/data/*.backup*
 backend/data/*.db.backup*
+backend/data/*.bak*
 backend/data/*.db-shm
 backend/data/*.db-wal
+backend/data/source/*.bak*
+backend/data/source/*.xlsx.bak_*
 
-# Non-PII CSVs in backend/data are safe to commitmobile_check_* 
+# Local throwaway/debug probes
+backend/_tmp_*.py
+
+# Non-PII CSVs in backend/data are safe to commit
