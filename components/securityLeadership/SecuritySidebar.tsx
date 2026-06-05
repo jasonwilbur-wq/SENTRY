@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { ExecutiveProfile } from '../../data/csoProfiles';
 import { Badge, ExecutiveAvatar } from '../executiveIntel/ui';
 import { byThreatThenName, threatTone, topFinding } from './securityLogic';
@@ -19,15 +19,25 @@ export function SecuritySidebar({
   onSelect: (id: string) => void;
 }) {
   const [query, setQuery] = useState('');
+  const [threatFilter, setThreatFilter] = useState<'ALL' | ExecutiveProfile['threatLevel']>('ALL');
 
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const filtered = q
-      ? profiles.filter(p =>
-          (p.name + ' ' + p.company + ' ' + p.title).toLowerCase().includes(q))
-      : profiles;
+    const filtered = profiles.filter(p => {
+      const matchesQuery = q
+        ? (p.name + ' ' + p.company + ' ' + p.title).toLowerCase().includes(q)
+        : true;
+      const matchesThreat = threatFilter === 'ALL' || p.threatLevel === threatFilter;
+      return matchesQuery && matchesThreat;
+    });
     return [...filtered].sort(byThreatThenName);
-  }, [profiles, query]);
+  }, [profiles, query, threatFilter]);
+
+  useEffect(() => {
+    if (shown.length > 0 && !shown.some(item => item.id === selectedId)) {
+      onSelect(shown[0].id);
+    }
+  }, [shown, selectedId, onSelect]);
 
   return (
     <aside
@@ -49,7 +59,28 @@ export function SecuritySidebar({
         className="sentry-input mt-3 w-full text-sm"
       />
 
-      <div className="mt-3 space-y-1.5 max-h-[45vh] overflow-y-auto lg:max-h-[calc(100vh-9rem)]">
+      <div className="mt-3 flex flex-wrap gap-1.5" aria-label="Filter watchlist by threat level">
+        {(['ALL', 'CRITICAL', 'HIGH', 'MEDIUM'] as const).map(level => {
+          const selected = threatFilter === level;
+          return (
+            <button
+              key={level}
+              type="button"
+              onClick={() => setThreatFilter(level)}
+              className="rounded-full border px-2 py-1 text-[10px] font-black uppercase tracking-wider transition"
+              style={{
+                borderColor: selected ? '#0053E2' : 'var(--s-border-light)',
+                background: selected ? 'rgba(0,83,226,0.16)' : 'var(--s-input-bg)',
+                color: selected ? '#D9E3F0' : 'var(--s-text-dim)',
+              }}
+            >
+              {level === 'ALL' ? 'All' : level.toLowerCase()}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-3 space-y-1.5 max-h-[45vh] overflow-y-auto lg:max-h-[calc(100vh-12rem)]">
         {shown.map(item => {
           const selected = item.id === selectedId;
           const top = topFinding(item);

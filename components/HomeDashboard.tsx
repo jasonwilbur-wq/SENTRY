@@ -15,6 +15,7 @@ import { useVendors } from '../context/VendorContext';
 import { RadarScope3D } from './RadarScope3D';
 import { VendorAssessmentOperationsPanel } from './VendorAssessmentOperationsPanel';
 import { IntelligenceBrief } from './IntelligenceBrief';
+import { DataTrustPanel } from './DataTrustPanel';
 import {
   PieChart, Pie, Cell, Tooltip, ResponsiveContainer,
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -62,21 +63,22 @@ const TOOLTIP_STYLE = {
 };
 
 // ── Animated count-up ──────────────────────────────────────────────────────
-function useCountUp(target: number, duration = 1200): number {
+function useCountUp(target: number, duration = 1200, decimals = 0): number {
   const [val, setVal] = React.useState(0);
   const rafRef = React.useRef<number | undefined>(undefined);
   React.useEffect(() => {
     if (!target) { setVal(0); return; }
+    const factor = 10 ** decimals;
     const start = performance.now();
     const step = (now: number) => {
       const pct  = Math.min((now - start) / duration, 1);
       const ease = 1 - Math.pow(1 - pct, 4);
-      setVal(Math.round(ease * target));
+      setVal(Math.round(ease * target * factor) / factor);
       if (pct < 1) rafRef.current = requestAnimationFrame(step);
     };
     rafRef.current = requestAnimationFrame(step);
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [target, duration]);
+  }, [target, duration, decimals]);
   return val;
 }
 
@@ -95,9 +97,9 @@ function useGreeting() {
 
 // ── KPI tile ──────────────────────────────────────────────────────────────
 function KPI({
-  label, value, delta, color, suffix = '',
-}: { label: string; value: number; delta?: string; color: string; suffix?: string }) {
-  const count = useCountUp(value);
+  label, value, delta, color, suffix = '', decimals = 0,
+}: { label: string; value: number; delta?: string; color: string; suffix?: string; decimals?: number }) {
+  const count = useCountUp(value, 1200, decimals);
   return (
     <div
       className="relative px-4 py-3 rounded-xl flex flex-col gap-1 overflow-hidden"
@@ -115,7 +117,7 @@ function KPI({
         {label}
       </p>
       <p className="text-2xl font-black leading-none" style={{ color }}>
-        {count.toLocaleString()}{suffix}
+        {count.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })}{suffix}
       </p>
       {delta && (
         <p className="text-[10px] font-medium" style={{ color: 'var(--s-text-dim)' }}>{delta}</p>
@@ -290,13 +292,16 @@ export const HomeDashboard: React.FC<HomeDashboardProps> = ({ onNavigate }) => {
 
           {/* KPI strip */}
           <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4 gap-2.5 min-w-[280px]">
-            <KPI label="Vendors"    value={totalVendors} color="#0053E2" delta="active records" />
-            <KPI label="VAR Reports" value={totalVars}   color="#2A8703" delta="completed" />
-            <KPI label="Coverage"   value={coverage}     color="#FFC220" suffix="%" delta="of portfolio" />
-            <KPI label="Avg Score"  value={avgScore}     color="#7893B8" delta="out of 10" />
+            <KPI label="Vendors"    value={totalVendors} color="#0053E2" delta="canonical active records" />
+            <KPI label="VAR Reports" value={totalVars}   color="#2A8703" delta="linked/completed" />
+            <KPI label="Coverage"   value={coverage}     color="#FFC220" suffix="%" delta="VAR-linked portfolio" />
+            <KPI label="Avg Score"  value={avgScore}     color="#7893B8" delta="0–5 assessment scale" decimals={1} />
           </div>
         </div>
       </section>
+
+      {/* ── Data trust / methodology ─────────────────────────── */}
+      <DataTrustPanel />
 
       {/* ── Intelligence Brief ─ what you need to know ────────── */}
       <IntelligenceBrief onNavigate={onNavigate} />

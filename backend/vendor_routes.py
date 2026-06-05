@@ -431,7 +431,58 @@ def vendor_tech_pipeline(vendor_id: str):
     """
     conn = get_connection()
     try:
-        _, company_vendor_ids = _company_vendor_scope(conn, vendor_id)
+        try:
+            _, company_vendor_ids = _company_vendor_scope(conn, vendor_id)
+        except HTTPException as exc:
+            fallback_vendor = next((vendor for vendor in _fallback_vendor_directory() if vendor.id == vendor_id), None)
+            if not fallback_vendor:
+                raise exc
+
+            fallback_products = [
+                {
+                    "product_name": product.technology_product or fallback_vendor.technology_product or fallback_vendor.company_name,
+                    "assessment_date": product.last_assessed or fallback_vendor.last_assessed,
+                    "source_file": product.report_url or fallback_vendor.sample_report_path or "source-backed vendor directory",
+                    "pre_assessment_score": product.overall_rating or fallback_vendor.overall_rating,
+                    "pre_assessment_decision": fallback_vendor.vendor_status or fallback_vendor.deployment_status,
+                    "maturity_level": fallback_vendor.maturity_level,
+                    "initial_assessment": "Tracked",
+                    "technical_assessment": "Documented" if (product.report_url or fallback_vendor.sample_report_path) else "",
+                    "has_var": fallback_vendor.has_var,
+                    "pipeline_stage": 4 if fallback_vendor.has_var else 1,
+                }
+                for product in (fallback_vendor.all_products or [])
+            ]
+            if not fallback_products:
+                fallback_products = [{
+                    "product_name": fallback_vendor.technology_product or fallback_vendor.company_name,
+                    "assessment_date": fallback_vendor.last_assessed,
+                    "source_file": fallback_vendor.sample_report_path or fallback_vendor.report_url or "source-backed vendor directory",
+                    "pre_assessment_score": fallback_vendor.overall_rating,
+                    "pre_assessment_decision": fallback_vendor.vendor_status or fallback_vendor.deployment_status,
+                    "maturity_level": fallback_vendor.maturity_level,
+                    "initial_assessment": "Tracked",
+                    "technical_assessment": "Documented" if (fallback_vendor.sample_report_path or fallback_vendor.report_url) else "",
+                    "has_var": fallback_vendor.has_var,
+                    "pipeline_stage": 4 if fallback_vendor.has_var else 1,
+                }]
+
+            stages = [int(product["pipeline_stage"]) for product in fallback_products]
+            return {
+                "vendor_id": vendor_id,
+                "has_pipeline_data": bool(fallback_products),
+                "has_var": fallback_vendor.has_var,
+                "summary": {
+                    "total_products": len(fallback_products),
+                    "technically_assessed": sum(1 for product in fallback_products if product["technical_assessment"]),
+                    "initial_pass": 0,
+                    "initial_fail": 0,
+                    "initial_pending": len(fallback_products),
+                    "max_pipeline_stage": max(stages) if stages else 0,
+                },
+                "products": fallback_products,
+            }
+
         placeholders = ",".join(["?"] * len(company_vendor_ids))
 
         rows = conn.execute(
@@ -450,7 +501,20 @@ def vendor_tech_pipeline(vendor_id: str):
         conn.close()
 
     if not rows:
-        return {"vendor_id": vendor_id, "has_pipeline_data": False, "has_var": has_var, "products": []}
+        return {
+            "vendor_id": vendor_id,
+            "has_pipeline_data": False,
+            "has_var": has_var,
+            "summary": {
+                "total_products": 0,
+                "technically_assessed": 0,
+                "initial_pass": 0,
+                "initial_fail": 0,
+                "initial_pending": 0,
+                "max_pipeline_stage": 0,
+            },
+            "products": [],
+        }
 
     # Aggregate per product (take latest record per product)
     products: dict[str, dict] = {}

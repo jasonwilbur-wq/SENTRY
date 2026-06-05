@@ -17,19 +17,65 @@ import { Pagination } from './Pagination';
 import { VendorCard3D } from './VendorCard3D';
 import { VendorStatsPanel } from './VendorStatsPanel';
 import { ExecutivePostureCard } from './ExecutivePostureCard';
+import { VendorComparisonTray } from './VendorComparisonTray';
 import { useLazyRender } from '../hooks/useLazyRender';
 
 const PAGE_SIZE = 24;
+const MAX_COMPARE_VENDORS = 4;
 
 // ── Lazy-rendered vendor card (defers 3D/SVG until near viewport) ───────────
-function LazyVendorCard({ vendor, onClick, immediate }: {
+function LazyVendorCard({
+  vendor,
+  onClick,
+  immediate,
+  isCompared,
+  compareDisabled,
+  onToggleCompare,
+}: {
   vendor: Vendor;
   onClick: (v: Vendor) => void;
   immediate: boolean;
+  isCompared: boolean;
+  compareDisabled: boolean;
+  onToggleCompare: (v: Vendor) => void;
 }) {
   const { ref, isVisible } = useLazyRender({ rootMargin: '300px', immediate });
+  const disabled = compareDisabled && !isCompared;
+
   return (
-    <div ref={ref}>
+    <div ref={ref} className="space-y-2">
+      {isVisible && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              if (!disabled) onToggleCompare(vendor);
+            }}
+            disabled={disabled}
+            className="rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] shadow-lg transition-all hover:-translate-y-px focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
+            style={isCompared ? {
+              background: 'rgba(255,194,32,0.16)',
+              borderColor: 'rgba(255,194,32,0.75)',
+              color: '#FFC220',
+            } : disabled ? {
+              background: 'rgba(15,23,42,0.78)',
+              borderColor: 'rgba(100,116,139,0.35)',
+              color: '#64748b',
+              cursor: 'not-allowed',
+            } : {
+              background: 'rgba(0,11,40,0.78)',
+              borderColor: 'rgba(77,159,255,0.45)',
+              color: '#93c5fd',
+            }}
+            aria-pressed={isCompared}
+            aria-label={`${isCompared ? 'Remove' : 'Add'} ${vendor.company_name} ${isCompared ? 'from' : 'to'} comparison`}
+            title={disabled ? 'Remove a selected vendor before adding another comparison target.' : undefined}
+          >
+            {isCompared ? 'Selected' : 'Compare'}
+          </button>
+        </div>
+      )}
       {isVisible ? (
         <VendorCard3D vendor={vendor} onClick={onClick} />
       ) : (
@@ -102,9 +148,23 @@ export const VendorDashboard: React.FC = () => {
   } = useVendors();
 
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
+  const [comparisonVendors, setComparisonVendors] = useState<Vendor[]>([]);
 
   const handleOpenVendor  = useCallback((v: Vendor) => setSelectedVendor(v), []);
   const handleCloseModal  = useCallback(() => setSelectedVendor(null), []);
+  const handleToggleCompare = useCallback((vendor: Vendor) => {
+    setComparisonVendors(current => {
+      if (current.some(item => item.id === vendor.id)) {
+        return current.filter(item => item.id !== vendor.id);
+      }
+      if (current.length >= MAX_COMPARE_VENDORS) return current;
+      return [...current, vendor];
+    });
+  }, []);
+  const handleRemoveComparison = useCallback((vendorId: string) => {
+    setComparisonVendors(current => current.filter(item => item.id !== vendorId));
+  }, []);
+  const handleClearComparison = useCallback(() => setComparisonVendors([]), []);
   const handleClearFilter = useCallback(() => {
     setSearch('');
     setCategory('All');
@@ -312,6 +372,18 @@ export const VendorDashboard: React.FC = () => {
         )}
       </div>
 
+      {/* ── Comparison tray ────────────────────────────────────── */}
+      {comparisonVendors.length > 0 && (
+        <div className="mb-5">
+          <VendorComparisonTray
+            selectedVendors={comparisonVendors}
+            maxVendors={MAX_COMPARE_VENDORS}
+            onRemove={handleRemoveComparison}
+            onClear={handleClearComparison}
+          />
+        </div>
+      )}
+
       {/* ── Vendor Grid ─────────────────────────────────────────── */}
       {loading && <Skeleton />}
 
@@ -323,6 +395,9 @@ export const VendorDashboard: React.FC = () => {
               vendor={v}
               onClick={handleOpenVendor}
               immediate={i < 6}  /* first 2 rows render immediately */
+              isCompared={comparisonVendors.some(item => item.id === v.id)}
+              compareDisabled={comparisonVendors.length >= MAX_COMPARE_VENDORS}
+              onToggleCompare={handleToggleCompare}
             />
           ))}
         </div>

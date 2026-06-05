@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { CSO_PROFILES, type ExecutiveProfile } from '../../data/csoProfiles';
 import { fetchExecProfiles } from '../../services/api';
-import { Badge, Card, StatCard } from '../executiveIntel/ui';
+import { Badge, Card } from '../executiveIntel/ui';
 import { SecuritySidebar } from './SecuritySidebar';
 import { SecurityProfileDetail } from './SecurityProfileDetail';
 import { WalmartPositionPanel } from './WalmartPositionPanel';
 import { byThreatThenName, deriveCounts } from './securityLogic';
 import { summarizeVerification } from './verificationLogic';
 import { recentSignals, latestSignalDate } from './executiveSignals';
+import { SecurityBriefingRoom } from './SecurityBriefingRoom';
 
 // ---------------------------------------------------------------------------
 // Security Leadership (Chief Security Officer) competitive intelligence.
@@ -78,7 +79,6 @@ export function SecurityLeadership({ embedded = false }: { embedded?: boolean } 
         </Card>
       )}
 
-      {/* Overview deck */}
       <div className="flex items-center justify-end -mb-2">
         <span
           className="text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-full"
@@ -92,61 +92,17 @@ export function SecurityLeadership({ embedded = false }: { embedded?: boolean } 
           {source === 'live' ? '● Live feed' : '○ Snapshot'}
         </span>
       </div>
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-        <StatCard label="Leaders tracked" value={counts.profiles} helper="Competitor CSO / CISO profiles" />
-        <StatCard label="Key findings" value={counts.findings} helper="OSINT-derived intelligence items" />
-        <StatCard label="Critical / high" value={counts.critical} helper="Orange + red risk findings" tone="red" />
-        <StatCard
-          label="Data confidence"
-          value={verification.verified + '/' + verification.total}
-          helper={verification.verified === verification.total
-            ? 'All profiles verified'
-            : verification.provisional + ' provisional · ' + verification.review + ' need review'}
-          tone={verification.verified === verification.total ? undefined : 'red'}
-        />
-      </div>
 
-      {/* What changed since you last looked */}
-      {whatsNew.length > 0 && (
-        <Card>
-          <div className="flex items-center justify-between gap-2 flex-wrap">
-            <h3 className="text-sm font-black uppercase tracking-[0.16em]" style={{ color: 'var(--s-text)' }}>
-              What changed since you last looked
-            </h3>
-            {freshest && (
-              <span className="text-[11px] font-semibold" style={{ color: 'var(--s-text-dim)' }}>
-                Latest signal: {freshest}
-              </span>
-            )}
-          </div>
-          <ol className="mt-3 space-y-2">
-            {whatsNew.map((sig, idx) => (
-              <li key={idx}>
-                <button
-                  type="button"
-                  onClick={() => selectAndScroll(sig.profileId)}
-                  className="w-full text-left rounded-lg border px-3 py-2 transition-colors hover:bg-white/5 focus:outline-none focus-visible:ring-2"
-                  style={{ borderColor: 'var(--s-border-light)', background: 'var(--s-input-bg)' }}
-                >
-                  <div className="flex items-center gap-2 text-[11px] font-bold" style={{ color: 'var(--s-text-dim)' }}>
-                    <span>{sig.date}</span>
-                    <span>·</span>
-                    <span>{sig.execName} ({sig.company})</span>
-                  </div>
-                  <div className="mt-0.5 text-sm font-semibold" style={{ color: 'var(--s-text)' }}>{sig.headline}</div>
-                  {sig.whyItMatters && (
-                    <div className="mt-0.5 text-xs leading-5" style={{ color: 'var(--s-text-dim)' }}>
-                      <strong style={{ color: 'var(--s-text-muted)' }}>Why it matters: </strong>{sig.whyItMatters}
-                    </div>
-                  )}
-                </button>
-              </li>
-            ))}
-          </ol>
-        </Card>
-      )}
+      <SecurityBriefingRoom
+        profiles={profiles}
+        counts={counts}
+        verification={verification}
+        whatsNew={whatsNew}
+        freshest={freshest}
+        onSelectProfile={selectAndScroll}
+      />
 
-      <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-6 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-[300px_1fr] gap-6 items-start">
         <SecuritySidebar profiles={profiles} selectedId={selectedId} onSelect={selectAndScroll} />
 
         <div ref={detailRef} className="space-y-6 min-w-0">

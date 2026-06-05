@@ -1,7 +1,7 @@
 import React from 'react';
 import type { ExecutiveProfile } from '../../data/csoProfiles';
 import { Badge, Card, ExecutiveAvatar } from '../executiveIntel/ui';
-import { riskTone, threatTone } from './securityLogic';
+import { riskTone, threatTone, topFinding } from './securityLogic';
 import { deriveVerification } from './verificationLogic';
 
 // ---------------------------------------------------------------------------
@@ -10,8 +10,27 @@ import { deriveVerification } from './verificationLogic';
 // strategic threats, and analyst recommendations on the shared UI kit.
 // ---------------------------------------------------------------------------
 
+function walmartImplication(profile: ExecutiveProfile): string {
+  const text = `${profile.bio} ${profile.keyFindings.map(f => `${f.headline} ${f.whyItMatters}`).join(' ')}`.toLowerCase();
+  if (text.includes('identity') || text.includes('authentication') || text.includes('password')) {
+    return 'Benchmark Walmart identity exception governance, phishing-resistant MFA coverage, and device posture enforcement against this competitor signal.';
+  }
+  if (text.includes('hiring') || text.includes('insider')) {
+    return 'Route to insider-risk and workforce identity owners to compare hiring-fraud detection, pre-hire checks, and post-hire anomaly monitoring.';
+  }
+  if (text.includes('ai') || text.includes('agent')) {
+    return 'Compare against secure AI assessment controls, red-team automation, and detection engineering velocity for EST-sponsored AI work.';
+  }
+  if (text.includes('resilience') || text.includes('cloud')) {
+    return 'Use as a resilience benchmark for cloud dependency, cyber-physical disruption, and continuity tabletop planning.';
+  }
+  return 'Use this dossier to determine whether competitor executive movement changes Walmart security priorities, briefing posture, or owner routing.';
+}
+
 export function SecurityProfileDetail({ profile }: { profile: ExecutiveProfile }) {
   const verification = deriveVerification(profile);
+  const leadFinding = topFinding(profile);
+  const leadRecommendation = profile.recommendations[0];
   return (
     <div className="space-y-6">
       <Card>
@@ -43,6 +62,21 @@ export function SecurityProfileDetail({ profile }: { profile: ExecutiveProfile }
           </div>
         )}
         <p className="mt-4 text-sm leading-6" style={{ color: 'var(--s-text-dim)' }}>{profile.bio}</p>
+
+        <div className="mt-4 grid grid-cols-1 xl:grid-cols-3 gap-3">
+          <div className="rounded-xl border p-3" style={{ borderColor: 'rgba(255,194,32,0.28)', background: 'rgba(255,194,32,0.06)' }}>
+            <div className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: '#FFC220' }}>Top signal</div>
+            <p className="mt-1 text-xs leading-5" style={{ color: 'var(--s-text-dim)' }}>{leadFinding?.headline ?? 'No lead finding available.'}</p>
+          </div>
+          <div className="rounded-xl border p-3" style={{ borderColor: 'rgba(0,83,226,0.28)', background: 'rgba(0,83,226,0.08)' }}>
+            <div className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: '#9BB7DF' }}>Why Walmart cares</div>
+            <p className="mt-1 text-xs leading-5" style={{ color: 'var(--s-text-dim)' }}>{walmartImplication(profile)}</p>
+          </div>
+          <div className="rounded-xl border p-3" style={{ borderColor: 'rgba(42,135,3,0.28)', background: 'rgba(42,135,3,0.06)' }}>
+            <div className="text-[10px] font-black uppercase tracking-[0.16em]" style={{ color: '#4ade80' }}>Recommended action</div>
+            <p className="mt-1 text-xs leading-5" style={{ color: 'var(--s-text-dim)' }}>{leadRecommendation ?? 'Keep monitoring for material posture change.'}</p>
+          </div>
+        </div>
       </Card>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">

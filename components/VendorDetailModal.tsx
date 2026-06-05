@@ -27,7 +27,7 @@ type Tab = 'overview' | 'insights' | 'risk' | 'tech' | 'docs';
 const TABS: { id: Tab; label: string }[] = [
   { id: 'overview', label: 'Overview' },
   { id: 'insights', label: 'Insights' },
-  { id: 'risk',     label: 'Risk & Scores' },
+  { id: 'risk',     label: 'Security Posture' },
   { id: 'tech',     label: 'Technology' },
   { id: 'docs',     label: 'Documents' },
 ];
@@ -120,6 +120,24 @@ const splitList = (value?: string): string[] => (
     .map((item) => item.trim())
     .filter(Boolean)
 );
+
+const uniqueList = (items: string[]): string[] => Array.from(new Set(items.map((item) => item.trim()).filter(Boolean)));
+
+const clampPostureScore = (value: number): number => Math.max(0, Math.min(5, Number(value.toFixed(1))));
+
+const maturityScoreFromLabel = (value?: string): number | null => {
+  const normalized = (value || '').toLowerCase();
+  if (!normalized) return null;
+  if (normalized.includes('early') || normalized.includes('pilot')) return 2.5;
+  if (normalized.includes('growth') || normalized.includes('scal')) return 3.5;
+  if (normalized.includes('mature') || normalized.includes('enterprise') || normalized.includes('production')) return 4.3;
+  return 3.0;
+};
+
+const formatSignalValue = (value?: string): string => {
+  const clean = (value || '').trim();
+  return clean ? formatSignalLabel(clean) : 'Not captured';
+};
 
 const formatSignalLabel = (value: string): string => (
   value.replaceAll('_', ' ').replace(/\b\w/g, (char) => char.toUpperCase())
@@ -247,17 +265,29 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor: in
 
   const riskColor = RISK_COLOR[modalVendor.risk_level] || '#64748b';
   const weightScore = modalVendor.var_weight_score ?? modalVendor.var_scores?.Overall ?? null;
-  const decisionBand = (modalVendor.var_decision_band || '').trim();
+  const directoryScore = normalizeScore(modalVendor.overall_rating);
+  const primaryPostureScore = normalizeScore(weightScore) ?? directoryScore;
+  const decisionBand = (modalVendor.var_decision_band || decisionBandFromScore(primaryPostureScore)).trim();
   const decisionPath = (modalVendor.var_decision_path || '').trim();
   const varStatusMeta = getVarStatusMeta(modalVendor);
+  const productCount = modalVendor.all_products?.length ?? 0;
+  const sourceReportCount = assessmentEvidence?.profile.report_count || modalVendor.report_count || productCount;
+  const trackedDocumentCount = assessmentEvidence?.summary.artifact_count ?? (modalVendor.sample_report_path || modalVendor.report_url ? 1 : 0);
   const formatMetricValue = (value: number | null | undefined) => (
     value == null ? 'N/A' : `${Number(value).toFixed(1)} / 5.0`
   );
+  const scoreSourceLabel = hasResolvedVarScore(modalVendor)
+    ? 'Structured VAR'
+    : primaryPostureScore != null
+      ? 'Directory-derived'
+      : modalVendor.has_var
+        ? 'VAR linked / pending extraction'
+        : 'Pending assessment';
   const riskSummaryCards = [
-    { label: 'Weighted Score', value: formatMetricValue(weightScore), accent: '#0053e2' },
+    { label: hasResolvedVarScore(modalVendor) ? 'Weighted Score' : 'Directory Rating', value: formatMetricValue(primaryPostureScore), accent: '#0053e2' },
     { label: 'Decision Band', value: decisionBand || 'Pending', accent: '#ffc220' },
-    { label: 'Risk Score', value: formatMetricValue(modalVendor.var_scores?.Risk), accent: riskColor },
-    { label: 'Compliance', value: formatMetricValue(modalVendor.var_scores?.Compliance), accent: '#22c55e' },
+    { label: 'Risk Level', value: `${modalVendor.risk_level || 'Medium'} Risk`, accent: riskColor },
+    { label: 'Score Source', value: scoreSourceLabel, accent: hasResolvedVarScore(modalVendor) ? '#22c55e' : '#38bdf8' },
   ];
 
   type ConcernSource = 'DB' | 'VAR';
@@ -298,7 +328,6 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor: in
   const uniqueConcernItems = Array.from(
     new Map(concernItems.map((item) => [item.text, item])).values(),
   );
-  const productCount = modalVendor.all_products?.length ?? 0;
   const selectedTabIndex = TABS.findIndex(({ id }) => id === activeTab);
   const handleTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
     if (!['ArrowRight', 'ArrowLeft', 'Home', 'End'].includes(event.key)) return;
@@ -337,6 +366,72 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor: in
       || modalVendor.cons
       || modalVendor.concerns,
   );
+
+  const contextSignals = [
+    modalVendor.description,
+    modalVendor.use_cases,
+    modalVendor.value_to_walmart,
+    modalVendor.hosting_type,
+    modalVendor.data_classification,
+    modalVendor.maturity_level,
+    semanticTags.length ? semanticTags.join('|') : '',
+    stakeholderTags.length ? stakeholderTags.join('|') : '',
+  ].filter(Boolean).length;
+  const contextCompletenessScore = clampPostureScore((contextSignals / 8) * 5);
+  const evidenceCoverageScore = sourceReportCount > 0 ? clampPostureScore(2.5 + Math.min(sourceReportCount, 5) * 0.5) : 0;
+  const technologyClarityScore = clampPostureScore(
+    ((modalVendor.technology_product ? 1 : 0)
+      + (modalVendor.category ? 1 : 0)
+      + (semanticTags.length ? 1 : 0)
+      + (modalVendor.use_cases ? 1 : 0)
+      + (modalVendor.hosting_type ? 1 : 0))
+      / 5 * 5,
+  );
+  const maturityProxyScore = maturityScoreFromLabel(modalVendor.maturity_level) ?? primaryPostureScore ?? 0;
+  const fallbackRadarData = [
+    { subject: 'Readiness', A: primaryPostureScore ?? 0, fullMark: 5 },
+    { subject: 'Evidence', A: evidenceCoverageScore, fullMark: 5 },
+    { subject: 'Context', A: contextCompletenessScore, fullMark: 5 },
+    { subject: 'Tech Clarity', A: technologyClarityScore, fullMark: 5 },
+    { subject: 'Maturity', A: maturityProxyScore, fullMark: 5 },
+  ];
+  const scoreProfileData = hasVarScoreData ? radarData : fallbackRadarData;
+  const hasScoreProfileData = scoreProfileData.some(({ A }) => A > 0);
+  const detailedPostureMetrics = hasVarScoreData && modalVendor.var_scores
+    ? Object.entries(modalVendor.var_scores).filter(([, val]) => val != null)
+    : [
+        ['Directory Rating', primaryPostureScore],
+        ['Evidence Coverage', evidenceCoverageScore],
+        ['Context Completeness', contextCompletenessScore],
+        ['Technology Clarity', technologyClarityScore],
+        ['Maturity Proxy', maturityProxyScore],
+      ].filter(([, val]) => typeof val === 'number' && Number(val) > 0);
+  const useCaseItems = uniqueList([
+    ...splitList(modalVendor.use_cases),
+    modalVendor.technology_product,
+  ].filter((item): item is string => Boolean(item)));
+  const valueItems = uniqueList(splitList(modalVendor.value_to_walmart));
+  const insightTakeaways = [
+    {
+      label: 'Operational Fit',
+      value: useCaseItems[0] || `${formatSignalValue(modalVendor.category)} capability under evaluation`,
+      helper: useCaseItems.length > 1 ? `${useCaseItems.length} use-case signals captured` : 'Use-case coverage should be confirmed during intake.',
+    },
+    {
+      label: 'Walmart Value Hypothesis',
+      value: valueItems[0] || (modalVendor.value_to_walmart ? modalVendor.value_to_walmart : 'Value narrative needs analyst validation'),
+      helper: valueItems.length > 1 ? `${valueItems.length} value signals captured` : 'Tie the vendor to shrink, safety, aviation, investigations, or store operations outcomes.',
+    },
+    {
+      label: 'Assessment Next Step',
+      value: hasResolvedVarScore(modalVendor)
+        ? `Review ${decisionBand || 'current'} decision band and mitigation notes.`
+        : modalVendor.has_var || sampleReportPath
+          ? 'Extract or validate structured VAR scoring from the tracked assessment document.'
+          : 'Attach the latest assessment package and capture structured scoring.',
+      helper: `${trackedDocumentCount} tracked document${trackedDocumentCount === 1 ? '' : 's'} · ${scoreSourceLabel}`,
+    },
+  ];
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 animate-fadeIn">
@@ -652,6 +747,30 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor: in
                 </div>
               )}
 
+              {/* Analyst Takeaways */}
+              <div className="p-5 rounded-xl bg-slate-900/50 border border-slate-800">
+                <div className="flex items-start justify-between gap-3 mb-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-white uppercase tracking-widest">SENTRY Analyst Takeaways</h3>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Decision-ready narrative generated from curated insight fields, assessment evidence, and score status.
+                    </p>
+                  </div>
+                  <span className="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border border-slate-700 text-slate-300 bg-slate-800/80">
+                    {hasInsights ? 'Curated + Derived' : 'Derived from Evidence'}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {insightTakeaways.map((item) => (
+                    <div key={item.label} className="rounded-lg bg-slate-950/60 border border-slate-800 p-4">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">{item.label}</p>
+                      <p className="mt-2 text-sm font-semibold leading-relaxed text-slate-100">{item.value}</p>
+                      <p className="mt-2 text-[11px] leading-relaxed text-slate-500">{item.helper}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               {/* Two Column Layout */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Left Column */}
@@ -800,7 +919,7 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor: in
             </div>
           )}
 
-          {/* ── TAB: RISK & SCORES ────────────────────────────────────── */}
+          {/* ── TAB: SECURITY POSTURE ────────────────────────────────────── */}
           {activeTab === 'risk' && (
             <div
               id={`${modalBaseId}-panel-risk`}
@@ -809,10 +928,18 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor: in
               className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full"
             >
               <div className="flex flex-col items-center justify-center bg-slate-900/50 rounded-2xl border border-slate-800 p-6 relative">
-                 <h3 className="absolute top-6 left-6 text-sm font-bold text-slate-400 uppercase tracking-widest">VAR Score Profile</h3>
-                 {hasVarScoreData ? (
+                 <div className="absolute top-6 left-6 right-6 flex items-start justify-between gap-3">
+                   <div>
+                     <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Security Posture Profile</h3>
+                     <p className="mt-1 text-[11px] text-slate-500">{hasVarScoreData ? 'Structured VAR score dimensions' : 'Directory-derived posture proxy until VAR extraction is complete'}</p>
+                   </div>
+                   <span className="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border border-slate-700 text-slate-300 bg-slate-800/80">
+                     {scoreSourceLabel}
+                   </span>
+                 </div>
+                 {hasScoreProfileData ? (
                    <ResponsiveContainer width="100%" height={350}>
-                     <RadarChart cx="50%" cy="50%" outerRadius="70%" data={radarData}>
+                     <RadarChart cx="50%" cy="54%" outerRadius="65%" data={scoreProfileData}>
                        <PolarGrid stroke="#334155" />
                        <PolarAngleAxis dataKey="subject" tick={{ fill: '#94a3b8', fontSize: 12 }} />
                        <PolarRadiusAxis angle={30} domain={[0, 5]} tick={false} axisLine={false} />
@@ -835,12 +962,12 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor: in
                      {isHydratingVar ? (
                        <>
                          <p className="text-lg text-slate-300">Pulling latest VAR metrics…</p>
-                         <p className="text-sm">Syncing Risk & Scores from the linked Vendor Assessment Report.</p>
+                         <p className="text-sm">Syncing security posture from the linked Vendor Assessment Report.</p>
                        </>
                      ) : (
                        <>
-                         <p className="text-lg">No VAR Score Data Available</p>
-                         <p className="text-sm">Run or link an assessed Vendor Assessment Report to populate this profile.</p>
+                         <p className="text-lg">No posture data available</p>
+                         <p className="text-sm">Attach a directory rating, evidence inventory, or structured VAR score to populate this profile.</p>
                        </>
                      )}
                    </div>
@@ -852,11 +979,11 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor: in
                   <div className="p-4 rounded-xl border border-amber-500/30 bg-amber-500/10 space-y-1">
                     <h4 className="text-[11px] font-bold uppercase tracking-widest text-amber-300">Score Extraction Pending</h4>
                     <p className="text-sm text-slate-300">{varStatusMeta.helper}</p>
-                    <p className="text-xs text-slate-400">Risk & Scores is using the linked Vendor Assessment Report status, but weighted scoring fields have not been extracted yet.</p>
+                    <p className="text-xs text-slate-400">Security Posture is using the linked Vendor Assessment Report status and directory rating until weighted scoring fields are extracted.</p>
                   </div>
                 )}
 
-                {modalVendor.has_var && (
+                {(modalVendor.has_var || primaryPostureScore != null) && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {riskSummaryCards.map((card) => (
                       <div key={card.label} className="rounded-xl border border-slate-800 bg-slate-900/60 p-4">
@@ -867,27 +994,27 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor: in
                   </div>
                 )}
 
-                {modalVendor.has_var && (
+                {(modalVendor.has_var || primaryPostureScore != null) && (
                   <div className="p-4 rounded-xl border border-blue-900/40 bg-blue-950/20 space-y-2">
                     <div className="flex items-center justify-between gap-3">
-                      <h4 className="text-[11px] font-bold uppercase tracking-widest text-blue-300">VAR Decision Annotation</h4>
+                      <h4 className="text-[11px] font-bold uppercase tracking-widest text-blue-300">{hasVarScoreData ? 'VAR Decision Annotation' : 'Directory Posture Annotation'}</h4>
                       <span className="text-[10px] text-slate-400">{modalVendor.last_assessed || 'Latest'}</span>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="px-2 py-1 rounded text-xs font-bold border border-blue-700/40 bg-blue-900/20 text-blue-200">
-                        Weight Score: {weightScore !== null ? `${Number(weightScore).toFixed(1)} / 5.0` : 'N/A'}
+                        {hasVarScoreData ? 'Weight Score' : 'Directory Rating'}: {primaryPostureScore !== null ? `${Number(primaryPostureScore).toFixed(1)} / 5.0` : 'N/A'}
                       </span>
-                      {isScored(weightScore) && (
+                      {isScored(primaryPostureScore) && (
                         <span
                           className="px-2 py-1 rounded text-xs font-black border"
                           style={{
-                            color: grade(weightScore).colorHex,
-                            borderColor: `${grade(weightScore).colorHex}66`,
-                            background: `${grade(weightScore).colorHex}1a`,
+                            color: grade(primaryPostureScore).colorHex,
+                            borderColor: `${grade(primaryPostureScore).colorHex}66`,
+                            background: `${grade(primaryPostureScore).colorHex}1a`,
                           }}
-                          title={`Grade ${grade(weightScore).letter} — ${grade(weightScore).label}`}
+                          title={`Grade ${grade(primaryPostureScore).letter} — ${grade(primaryPostureScore).label}`}
                         >
-                          Grade {grade(weightScore).letter}
+                          Grade {grade(primaryPostureScore).letter}
                         </span>
                       )}
                       <span
@@ -898,38 +1025,39 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor: in
                       </span>
                     </div>
                     <p className="text-xs leading-relaxed text-slate-300">
-                      {decisionPath || 'Decision path will appear after score extraction completes.'}
+                      {decisionPath || (hasVarScoreData ? 'Decision path will appear after score extraction completes.' : 'Directory-derived annotation: use this as a triage view until structured VAR score extraction is complete.')}
                     </p>
                   </div>
                 )}
 
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Detailed Metrics</h3>
-                  {modalVendor.has_var && (
-                    <span className="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border border-blue-900/40 text-blue-300 bg-blue-900/20">
-                      VAR Source: {modalVendor.last_assessed || 'Latest'}
-                    </span>
-                  )}
+                  <span className="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border border-blue-900/40 text-blue-300 bg-blue-900/20">
+                    {hasVarScoreData ? `VAR Source: ${modalVendor.last_assessed || 'Latest'}` : 'Proxy Source: Directory + Evidence'}
+                  </span>
                 </div>
-                {modalVendor.var_scores && Object.values(modalVendor.var_scores).some((val) => val != null) ? (
+                {detailedPostureMetrics.length > 0 ? (
                   <div className="space-y-3">
-                  {Object.entries(modalVendor.var_scores)
-                    .filter(([, val]) => val != null)
-                    .map(([key, val]) => (
-                    <div key={key} className="flex items-center gap-4">
-                       <span className="w-32 text-sm text-slate-400 text-right font-medium tracking-wide">{key}</span>
+                  {detailedPostureMetrics.map(([key, val]) => (
+                    <div key={String(key)} className="flex items-center gap-4">
+                       <span className="w-36 text-sm text-slate-400 text-right font-medium tracking-wide">{String(key)}</span>
                        <div className="flex-1 h-2.5 bg-slate-900 rounded-full overflow-hidden border border-slate-800">
                          <div 
-                           className={`h-full rounded-full transition-all duration-1000 ${ (val || 0) < 3 ? 'bg-red-500' : (val || 0) < 4 ? 'bg-yellow-500' : 'bg-green-500' }`}
-                           style={{ width: `${((val || 0) / 5) * 100}%` }}
+                           className={`h-full rounded-full transition-all duration-1000 ${ (Number(val) || 0) < 3 ? 'bg-red-500' : (Number(val) || 0) < 4 ? 'bg-yellow-500' : 'bg-green-500' }`}
+                           style={{ width: `${((Number(val) || 0) / 5) * 100}%` }}
                          />
                        </div>
                        <span className="w-10 text-sm font-bold text-white text-right">{Number(val).toFixed(1)}</span>
                     </div>
                   ))}
+                  {!hasVarScoreData && (
+                    <p className="pt-2 text-[11px] leading-relaxed text-slate-500">
+                      Proxy metrics are derived from the directory rating, document inventory, and captured technology context. They should be replaced by structured VAR scores when extraction is complete.
+                    </p>
+                  )}
                   </div>
                 ) : (
-                  <p className="text-slate-500 italic">No metrics found.</p>
+                  <p className="text-slate-500 italic">No posture metrics found.</p>
                 )}
 
                 {modalVendor.has_var && uniqueConcernItems.length > 0 && (
@@ -966,6 +1094,51 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor: in
               aria-labelledby={`${modalBaseId}-tab-tech`}
               className="space-y-8"
             >
+              <div className="p-6 bg-slate-900/50 border border-slate-800 rounded-xl space-y-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-white uppercase tracking-widest">Technology Context</h3>
+                    <p className="mt-1 text-sm text-slate-400">
+                      What the capability appears to do, where it fits, and what evidence is available before reviewers open source files.
+                    </p>
+                  </div>
+                  <span className="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border border-slate-700 text-slate-300 bg-slate-800/80">
+                    {sourceReportCount} report{sourceReportCount === 1 ? '' : 's'} tracked
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="rounded-lg bg-slate-950/60 border border-slate-800 p-4">
+                    <p className="text-[10px] uppercase tracking-widest text-slate-500">Primary Capability</p>
+                    <p className="mt-2 text-sm font-semibold text-white">{modalVendor.technology_product || formatSignalValue(modalVendor.category)}</p>
+                    <p className="mt-2 text-[11px] text-slate-500">Domain: {formatSignalValue(assessmentEvidence?.profile.dominant_domain_label || modalVendor.dominant_domain || modalVendor.category)}</p>
+                  </div>
+                  <div className="rounded-lg bg-slate-950/60 border border-slate-800 p-4">
+                    <p className="text-[10px] uppercase tracking-widest text-slate-500">Use-Case Coverage</p>
+                    <p className="mt-2 text-sm font-semibold text-white">{useCaseItems.length ? `${useCaseItems.length} signal${useCaseItems.length === 1 ? '' : 's'} captured` : 'Not captured'}</p>
+                    <p className="mt-2 text-[11px] text-slate-500">{useCaseItems.slice(0, 2).join(' • ') || 'Add field, store, aviation, investigations, or asset-protection context.'}</p>
+                  </div>
+                  <div className="rounded-lg bg-slate-950/60 border border-slate-800 p-4">
+                    <p className="text-[10px] uppercase tracking-widest text-slate-500">Architecture Readiness</p>
+                    <p className="mt-2 text-sm font-semibold text-white">{modalVendor.hosting_type || 'Hosting TBD'} · {modalVendor.data_classification || 'Data class TBD'}</p>
+                    <p className="mt-2 text-[11px] text-slate-500">Capture cloud dependency, integrations, data types, and operational owner before approval.</p>
+                  </div>
+                </div>
+
+                {(semanticTags.length > 0 || secondaryDomains.length > 0) && (
+                  <div className="space-y-2">
+                    <p className="text-[10px] uppercase tracking-widest text-slate-500">Technology Signals</p>
+                    <div className="flex flex-wrap gap-2">
+                      {[...semanticTags, ...secondaryDomains].slice(0, 14).map((tag) => (
+                        <span key={tag} className="px-2 py-1 rounded-full text-xs border border-blue-900/50 bg-blue-900/20 text-blue-200">
+                          {formatSignalLabel(tag)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="p-6 bg-slate-900 border border-slate-800 rounded-xl">
                   <h4 className="text-slate-500 text-xs uppercase mb-1">Hosting Model</h4>
@@ -981,10 +1154,10 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor: in
                 <div className="flex items-center justify-between gap-3 mb-4">
                   <div>
                     <h4 className="text-slate-500 text-xs uppercase mb-1">Assessment Pipeline</h4>
-                    <p className="text-sm text-slate-400">Live product-stage progress across grouped vendor records.</p>
+                    <p className="text-sm text-slate-400">Product-stage progress from imported highlights, source-backed directory rows, and linked VAR evidence.</p>
                   </div>
                   <span className="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border border-slate-700 text-slate-300 bg-slate-800/80">
-                    Source: Highlights + VARs
+                    Source: Highlights + Evidence
                   </span>
                 </div>
                 <TechAssessmentTab vendorId={vendor.id} />
@@ -1000,6 +1173,38 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor: in
               aria-labelledby={`${modalBaseId}-tab-docs`}
               className="space-y-4"
             >
+              <div className="p-5 bg-slate-900/50 border border-slate-800 rounded-xl">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="text-sm font-bold text-white uppercase tracking-widest">Document Control Summary</h3>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Tracks linked VAR downloads plus the read-only Desktop SENTRY evidence inventory for this vendor.
+                    </p>
+                  </div>
+                  <span className="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border border-slate-700 text-slate-300 bg-slate-800/80">
+                    {trackedDocumentCount} tracked
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mt-4">
+                  <div className="rounded-lg bg-slate-950/60 border border-slate-800 p-3">
+                    <p className="text-[10px] uppercase tracking-widest text-slate-500">VAR Link</p>
+                    <p className="mt-1 text-sm font-bold text-white">{modalVendor.latest_var_id ? 'Downloadable' : sampleReportPath ? 'Path tracked' : 'Not linked'}</p>
+                  </div>
+                  <div className="rounded-lg bg-slate-950/60 border border-slate-800 p-3">
+                    <p className="text-[10px] uppercase tracking-widest text-slate-500">Evidence Files</p>
+                    <p className="mt-1 text-sm font-bold text-white">{trackedDocumentCount}</p>
+                  </div>
+                  <div className="rounded-lg bg-slate-950/60 border border-slate-800 p-3">
+                    <p className="text-[10px] uppercase tracking-widest text-slate-500">Source Mode</p>
+                    <p className="mt-1 text-sm font-bold text-white">Read-only</p>
+                  </div>
+                  <div className="rounded-lg bg-slate-950/60 border border-slate-800 p-3">
+                    <p className="text-[10px] uppercase tracking-widest text-slate-500">Latest Change</p>
+                    <p className="mt-1 text-sm font-bold text-white">{assessmentEvidence?.profile.latest_modified_utc || modalVendor.last_assessed || 'Unknown'}</p>
+                  </div>
+                </div>
+              </div>
+
               {/* VAR Report Download */}
               {vendor.has_var && vendor.latest_var_id ? (
                 <a 
@@ -1033,10 +1238,33 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor: in
                     </div>
                   </div>
                 </a>
+              ) : sampleReportPath ? (
+                <div className="p-4 bg-slate-900 border border-blue-900/30 rounded-xl">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className="w-12 h-12 rounded-lg bg-blue-900/20 border border-blue-900/50 flex items-center justify-center text-blue-400 shrink-0">
+                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-white text-sm">Assessment report tracked in Desktop SENTRY</p>
+                        <p className="mt-1 text-xs text-slate-500 break-all">{sampleReportPath}</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => copyPath(sampleReportPath)}
+                      className="shrink-0 px-3 py-2 rounded text-[10px] font-bold uppercase tracking-wider border border-blue-800 text-blue-200 hover:bg-blue-900/30"
+                    >
+                      {copiedPath === sampleReportPath ? 'Copied' : 'Copy Path'}
+                    </button>
+                  </div>
+                </div>
               ) : (
                 <div className="p-6 bg-slate-900/50 border border-dashed border-slate-800 rounded-xl text-center">
                     <p className="text-slate-400 font-medium mb-1">No linked VAR report yet</p>
-                    <p className="text-slate-600 text-xs">The vendor record exists, but no downloadable assessment report is attached to this grouped company entry.</p>
+                    <p className="text-slate-600 text-xs">Attach or inventory the latest assessment report so the document register can track it.</p>
                 </div>
               )}
 
@@ -1044,7 +1272,7 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor: in
               <div className="p-5 bg-slate-900/50 border border-slate-800 rounded-xl space-y-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h3 className="text-sm font-bold text-white">Desktop SENTRY Evidence</h3>
+                    <h3 className="text-sm font-bold text-white">Evidence Register</h3>
                     <p className="text-xs text-slate-500 mt-1">Read-only source profile from 00_System inventory and vendor assessment reports.</p>
                   </div>
                   <span className="px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider border border-slate-700 text-slate-300 bg-slate-800/80">
@@ -1085,14 +1313,26 @@ export const VendorDetailModal: React.FC<VendorDetailModalProps> = ({ vendor: in
                       </div>
                     </div>
 
-                    <div>
-                      <p className="text-[10px] uppercase tracking-widest text-slate-500 mb-2">Artifact Roles</p>
-                      <div className="flex flex-wrap gap-2">
-                        {Object.entries(assessmentEvidence.summary.artifact_role_counts).slice(0, 6).map(([role, count]) => (
-                          <span key={role} className="px-2 py-1 rounded-full text-xs border border-slate-700 bg-slate-800/80 text-slate-300">
-                            {formatSignalLabel(role)} · {count}
-                          </span>
-                        ))}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest text-slate-500 mb-2">Artifact Roles</p>
+                        <div className="flex flex-wrap gap-2">
+                          {Object.entries(assessmentEvidence.summary.artifact_role_counts).slice(0, 6).map(([role, count]) => (
+                            <span key={role} className="px-2 py-1 rounded-full text-xs border border-slate-700 bg-slate-800/80 text-slate-300">
+                              {formatSignalLabel(role)} · {count}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-[10px] uppercase tracking-widest text-slate-500 mb-2">File Types</p>
+                        <div className="flex flex-wrap gap-2">
+                          {Object.entries(assessmentEvidence.summary.extension_counts).slice(0, 6).map(([extension, count]) => (
+                            <span key={extension} className="px-2 py-1 rounded-full text-xs border border-slate-700 bg-slate-800/80 text-slate-300">
+                              {extension || 'unknown'} · {count}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     </div>
 
