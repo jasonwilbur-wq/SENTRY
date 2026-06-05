@@ -1,4 +1,29 @@
 id,jurisdiction,geo_scope,country,state,state_code,title,tech_category,status,effective_date,risk_score,risk_rag,criticality,evidence_status,source_count
+REG-38C350F1,United States (Federal),US_FEDERAL,,United States,,Biometrics Transparency and Privacy Act,Biometrics,Enacted,2026-05-02,20,Red,5,Partially,1
+REG-7F322C3F,United States (Federal),US_FEDERAL,,United States,,Consumer Data Privacy Bill / SB 4,Data Privacy,Enacted,2026-05-04,20,Red,5,Partially,1
+REG-5848DCC8,United States (Federal),US_FEDERAL,,United States,,California Privacy Protection Agency data broker enforcement priorities,Data Privacy,Enacted,2026-05-05,20,Red,5,Partially,1
+REG-45C72A7C,United States (Federal),US_FEDERAL,,United States,,Foreign Intelligence Surveillance Act (FISA),AI,Enacted,2026-03-09,20,Red,5,Partially,12
+REG-B9609F32,United States (Federal),US_FEDERAL,,United States,,Richmond Flock ALPR data-sharing policy violation,ALPR/LPR,Enacted,2026-05-01,20,Red,5,Partially,1
+REG-49E72604,United States (Federal),US_FEDERAL,,United States,,Connecticut license plate reader immigration data-sharing law,ALPR/LPR,Enacted,2026-05-04,20,Red,5,Partially,1
+REG-33AFF227,United States (Federal),US_FEDERAL,,United States,,Sunflower Labs FAA waiver for one operator to control six drones,Drones/UAS,Enacted,2026-05-05,20,Red,5,Partially,1
+REG-BDDA865A,United States (Federal),US_FEDERAL,,United States,,Illinois BIPA government-contractor exemption decision,Biometrics,Enacted,2026-05-07,20,Red,5,Partially,1
+REG-C2ED9C27,United States (Federal),US_FEDERAL,,United States,,Virginia Consumer Data Protection Act - SB 338 precise geolocation amendment,Data Privacy,Enacted,2026-04-13,20,Red,5,Partially,11
+REG-43C32934,India,COUNTRY,India,India,,Delhi High Court Interim Protection Order,AI,Enacted,2026-05-10,20,Red,5,Partially,1
+REG-358B0D39,United States (Federal),US_FEDERAL,,United States,,Municipal Flock Camera Approvals,ALPR/LPR,Enacted,2026-05-10,20,Red,5,Partially,1
+REG-ED774D10,United States (Federal),US_FEDERAL,,United States,,California Senate Bill 34 (2015),ALPR/LPR,Enacted,2015-10-01,20,Red,5,Partially,1
+REG-69816F95,United States (Federal),US_FEDERAL,,United States,,Texas lawsuit against Netflix under child data and biometric privacy theories,Biometrics,Enacted,2026-05-13,20,Red,5,Partially,1
+REG-44184567,United States (Federal),US_FEDERAL,,United States,,Amazon biometric suit over John Hancock customer calls,Biometrics,Enacted,2026-05-13,20,Red,5,Partially,1
+REG-36D38359,United States (Federal),US_FEDERAL,,United States,,Syracuse biometric surveillance business ban,Biometrics,Enacted,2026-05-18,20,Red,5,Partially,1
+REG-1AA609ED,United States (Federal),US_FEDERAL,,United States,,SB26-189 Automated Decision-Making Technology,AI,Enacted,2026-05-14,20,Red,5,Partially,1
+REG-5C8D556D,United States (Federal),US_FEDERAL,,United States,,Syracuse Biometric Surveillance Law,Biometrics,Enacted,2026-05-19,20,Red,5,Partially,1
+REG-92D2C036,United States (Federal),US_FEDERAL,,United States,,Kentucky HB58 ALPR data-use requirements,ALPR/LPR,Enacted,2026-05-21,20,Red,5,Partially,1
+REG-532A738B,United States (Federal),US_FEDERAL,,United States,,Texas AG investigation into Meta AI glasses biometric/privacy practices,Biometrics,Enacted,2026-05-22,20,Red,5,Partially,1
+REG-E0AAB3F4,United States (Federal),US_FEDERAL,,United States,,New Jersey Privacy Protection Act ALPR protections,ALPR/LPR,Enacted,2026-05-22,20,Red,5,Partially,1
+REG-C3A4086C,United States (Federal),US_FEDERAL,,United States,,Missouri lawsuit against CoinFlip over crypto ATM fraud claims,Data Privacy,Enacted,2026-05-23,20,Red,5,Partially,1
+REG-DDDD7EDF,United States (Federal),US_FEDERAL,,United States,,Biometric Transparency and Privacy Act,Biometrics,Enacted,2026-05-26,20,Red,5,Partially,1
+REG-52F9788E,United States (Federal),US_FEDERAL,,United States,,Connecticut privacy bill expanding Connecticut Data Privacy Act,Data Privacy,Enacted,2026-05-28,20,Red,5,Partially,1
+REG-4674C337,United States (Federal),US_FEDERAL,,United States,,Colorado AI Act,AI,Enacted,2026-02-01,20,Red,5,Partially,10
+REG-155A7879,Sweden,COUNTRY,Sweden,Sweden,,Police use of live facial recognition,Biometrics,Enacted,2026-05-31,20,Red,5,Partially,1
 REG-88499BAF,"Illinois, USA",US_STATE,,Illinois,IL,Biometric Information Privacy Act (BIPA) Amendment,Biometrics,Enacted,2026-04-02,20,Red,5,Partially,1
 REG-9D528979,"Colorado, USA",US_STATE,,Colorado,CO,Colorado Privacy Act (CPA) Amendment,Biometrics,Enacted,2026-04-02,20,Red,5,Partially,1
 REG-0E904819,United States (Federal),US_FEDERAL,,United States,,Unknown,Data Privacy,Enacted,2026-04-03,20,Red,5,Partially,1
@@ -6,10 +31,8 @@ REG-DB33763D,United States (Federal),US_FEDERAL,,United States,,NIST AI RMF 1.0,
 REG-3C861CAD,United States (Federal),US_FEDERAL,,United States,,FAA Flight Restriction,Drones/UAS,Enacted,2026-04-03,20,Red,5,Partially,1
 REG-73116297,United States (Federal),US_FEDERAL,,United States,,Genetic Privacy Law,Data Privacy,Enacted,2026-04-04,20,Red,5,Partially,2
 REG-672EC1F6,United States (Federal),US_FEDERAL,,United States,,RAISE Act,AI,Enacted,2026-04-04,20,Red,5,Partially,1
-REG-45C72A7C,United States (Federal),US_FEDERAL,,United States,,Foreign Intelligence Surveillance Act (FISA),AI,Enacted,2026-03-09,20,Red,5,Partially,9
 REG-A009DF69,China,COUNTRY,China,China,,Digital Humans Regulation,AI,Enacted,2026-04-04,20,Red,5,Partially,1
 REG-3B704C30,United States (Federal),US_FEDERAL,,United States,,AI Safety Agreement,AI,Enacted,2026-04-04,20,Red,5,Partially,1
-REG-C2ED9C27,United States (Federal),US_FEDERAL,,United States,,Virginia Consumer Data Protection Act,Data Privacy,Enacted,2026-03-01,20,Red,5,Partially,9
 REG-B13C5BCF,South Korea,COUNTRY,South Korea,South Korea,,AI Safety Act,AI,Enacted,2026-04-06,20,Red,5,Partially,1
 REG-0D9BCB36,United States (Federal),US_FEDERAL,,United States,,License Plate Reader Privacy Law,ALPR/LPR,Enacted,2026-04-05,20,Red,5,Partially,1
 REG-587019AF,South Korea,COUNTRY,South Korea,South Korea,,Basic Act on the Development of Artificial Intelligence,AI,Enacted,2026-04-08,20,Red,5,Partially,1
@@ -28,7 +51,7 @@ REG-C0D1AB03,Global,GLOBAL,Global,,,Supply chain security framework,AI,Enacted,2
 REG-B0B01FD3,United States (Federal),US_FEDERAL,,United States,,State Privacy Laws,ALPR/LPR,Enacted,2026-03-08,20,Red,5,Partially,2
 REG-DD487590,United States (Federal),US_FEDERAL,,United States,,Police Department Policy,ALPR/LPR,Enacted,,20,Red,5,Partially,1
 REG-C3ABD9CD,United States (Federal),US_FEDERAL,,United States,,California Privacy Rights Act (CPRA),Data Privacy,Enacted,,20,Red,5,Partially,1
-REG-BC284D00,United States (Federal),US_FEDERAL,,United States,,White House Executive Order,AI,Enacted,2025-12-11,20,Red,5,Partially,1
+REG-BC284D00,United States (Federal),US_FEDERAL,,United States,,White House Executive Order,AI,Enacted,2025-12-11,20,Red,5,Partially,2
 REG-400CB0EE,United States (Federal),US_FEDERAL,,United States,,Biometric Privacy Law,Biometrics,Enacted,,20,Red,5,Partially,1
 REG-B6BC31B8,United States (Federal),US_FEDERAL,,United States,,FAA Anti-Drone Laser Approval,Drones/UAS,Enacted,5046-01-01,20,Red,5,Partially,1
 REG-D4CF253F,United States (Federal),US_FEDERAL,,United States,,Colorado Privacy Act (CPA) Expansions,Biometrics,Enacted,5779-01-01,20,Red,5,Partially,1
@@ -38,6 +61,20 @@ REG-50BC574A,United States (Federal),US_FEDERAL,,United States,,S.B. 338 / S.B. 
 REG-36C81001,United States (Federal),US_FEDERAL,,United States,,Federal Class-Action Lawsuit,ALPR/LPR,Enacted,2026-04-16,20,Red,5,Partially,1
 REG-E858FD91,United States (Federal),US_FEDERAL,,United States,,County Board Vote,ALPR/LPR,Enacted,2026-04-16,20,Red,5,Partially,1
 REG-A4649ABF,United States (Federal),US_FEDERAL,,United States,,Executive Order 14365 & National AI Legislative Framework,AI,Enacted,2025-12-11,20,Red,5,Partially,1
+REG-61641275,United States (Federal),US_FEDERAL,,United States,,Oregon ALPR Law,ALPR/LPR,Enacted,2026-04-23,20,Red,5,Partially,1
+REG-5ED21949,United States (Federal),US_FEDERAL,,United States,,Alabama Personal Data Protection Act (APDPA),Data Privacy,Enacted,2026-04-23,20,Red,5,Partially,1
+REG-FA611D1F,United States (Federal),US_FEDERAL,,United States,,FTC Unfair or Deceptive Trade Practices,Data Privacy,Enacted,2026-04-23,20,Red,5,Partially,1
+REG-BAFB01C3,Ireland,COUNTRY,Ireland,Ireland,,GDPR,AI,Enacted,2026-04-22,20,Red,5,Partially,2
+REG-91A68806,"Illinois, USA",US_STATE,,Illinois,IL,Biometric Information Privacy Act (BIPA),Biometrics,Enacted,,20,Red,5,Partially,30
+REG-63B45FD2,"Colorado, USA",US_STATE,,Colorado,CO,Colorado Privacy Act,AI,Enacted,,20,Red,5,Partially,1
+REG-5CD0E1EC,United States (Federal),US_FEDERAL,,United States,,NIST AI Risk Management Framework,AI,Enacted,2023-01-26,20,Red,5,Partially,10
+REG-B7632D9B,United States (Federal),US_FEDERAL,,United States,,Electronic Communications Privacy Act (ECPA),Data Privacy,Enacted,,20,Red,5,Partially,2
+REG-86169BEA,"Washington, USA",US_STATE,,Washington,WA,Washington Mass Surveillance Law,ALPR/LPR,Enacted,,20,Red,5,Partially,1
+REG-DA7DA109,United States (Federal),US_FEDERAL,,United States,,Executive Order 14271,Data Privacy,Enacted,,20,Red,5,Partially,1
+REG-BB3E1051,United States (Federal),US_FEDERAL,,United States,,Maryland Surveillance Pricing Ban (SB 000),Data Privacy,Enacted,2026-04-27,20,Red,5,Partially,1
+REG-93291962,United States (Federal),US_FEDERAL,,United States,,Connecticut Data Privacy Act (CTDPA) Amendments,Data Privacy,Enacted,2026-04-28,20,Red,5,Partially,1
+REG-46812F2C,United States (Federal),US_FEDERAL,,United States,,Executive Order on AI (Trump),AI,Enacted,2025-12-11,20,Red,5,Partially,2
+REG-7D236FB9,Greece,COUNTRY,Greece,Greece,,Smart Policing System Ruling,Biometrics,Enacted,2026-04-30,20,Red,5,Partially,1
 REG-02AC694E,United States (Federal),US_FEDERAL,,United States,,Virginia State Law on ALPR,ALPR/LPR,Enacted,2026-03-01,20,Red,5,Partially,1
 REG-D44F45F8,United States (Federal),US_FEDERAL,,United States,,Executive Order No. 14179,AI,Enacted,2025-12-01,20,Red,5,Partially,1
 REG-2788B722,United States (Federal),US_FEDERAL,,United States,,Anthropic Supply Chain Risk Designation,AI,Enacted,2026-03-02,20,Red,5,Partially,1
@@ -46,7 +83,6 @@ REG-CB472A20,United States (Federal),US_FEDERAL,,United States,,Drone Export Con
 REG-98057338,United States (Federal),US_FEDERAL,,United States,,President Trump Executive Order on AI,AI,Enacted,2026-03-03,20,Red,5,Partially,1
 REG-50895B53,United States (Federal),US_FEDERAL,,United States,,US Treasury AI Risk Management Framework (FS AI RMF),AI,Enacted,2026-03-03,20,Red,5,Partially,1
 REG-A5110A28,United States (Federal),US_FEDERAL,,United States,,Virginia ALPR Regulations,ALPR/LPR,Enacted,2026-03-03,20,Red,5,Partially,1
-REG-D82C8512,United States (Federal),US_FEDERAL,,United States,,Illinois Biometric Information Privacy Act (BIPA),Biometrics,Enacted,2026-03-03,20,Red,5,Partially,4
 REG-E19E27A0,United States (Federal),US_FEDERAL,,United States,,California ALPR Law,ALPR/LPR,Enacted,,20,Red,5,Partially,1
 REG-72B9A899,United States (Federal),US_FEDERAL,,United States,,Biometric Amendment to the Colorado Privacy Act,Biometrics,Enacted,,20,Red,5,Partially,1
 REG-9E58D5BB,United States (Federal),US_FEDERAL,,United States,,Connecticut Data Privacy Act (CTDPA),Data Privacy,Enacted,2026-02-08,20,Red,5,Partially,2
@@ -82,14 +118,12 @@ REG-D0C22E4C,South Korea,COUNTRY,South Korea,South Korea,,FTC Lotte Shopping Fin
 REG-E192ABB9,Global,GLOBAL,Global,,,Discord Safety Update,Biometrics,Enacted,2026-03-16,20,Red,5,Partially,1
 REG-A2975316,United States (Federal),US_FEDERAL,,United States,,White House Executive Order (Fakes),Data Privacy,Enacted,2026-03-13,20,Red,5,Partially,1
 REG-773E451A,South Korea,COUNTRY,South Korea,South Korea,,Fair Trade Commission (FTC) Enforcement,AI,Enacted,2026-03-15,20,Red,5,Partially,1
-REG-91A68806,"Illinois, USA",US_STATE,,Illinois,IL,Biometric Information Privacy Act (BIPA),Biometrics,Enacted,,20,Red,5,Partially,28
 REG-4EDD91EF,United States (Federal),US_FEDERAL,,United States,,Anthropic Blacklisting,AI,Enacted,2026-03-03,20,Red,5,Partially,2
 REG-DD9BDE0D,United States (Federal),US_FEDERAL,,United States,,Anthropic Blacklisting (Supply Chain),AI,Enacted,2026-03-03,20,Red,5,Partially,1
 REG-2505DB02,United States (Federal),US_FEDERAL,,United States,,Section 702 (FISA),Data Privacy,Enacted,2026-04-20,20,Red,5,Partially,3
 REG-A077CBE4,United States (Federal),US_FEDERAL,,United States,,California Privacy Rights Act (CPRA) Enforcement,Data Privacy,Enacted,2026-03-15,20,Red,5,Partially,1
 REG-98121CE2,"Wisconsin, USA",US_STATE,,Wisconsin,WI,Recidivist Retail Theft Law,AI,Enacted,2026-03-21,20,Red,5,Partially,1
 REG-56117F56,"California, USA",US_STATE,,California,CA,California Privacy Rights Act (CPRA),Data Privacy,Enacted,2026-03-03,20,Red,5,Partially,2
-REG-5BD527A7,"Virginia, USA",US_STATE,,Virginia,VA,Virginia Consumer Data Protection Act (VCDPA),Data Privacy,Enacted,2026-02-18,20,Red,5,Partially,4
 REG-D2049D12,United States (Federal),US_FEDERAL,,United States,,CPRA Enforcement,Data Privacy,Enacted,2026-03-23,20,Red,5,Partially,1
 REG-F1CE32DD,United States (Federal),US_FEDERAL,,United States,,Oklahoma Consumer Data Privacy Act,Data Privacy,Enacted,2026-03-23,20,Red,5,Partially,1
 REG-77B4B202,"California, USA",US_STATE,,California,CA,San Francisco Facial Recognition Ban,Biometrics,Enacted,2026-03-25,20,Red,5,Partially,3
@@ -102,7 +136,6 @@ REG-BF89B3B3,"Florida, USA",US_STATE,,Florida,FL,Immigration Enforcement Funding
 REG-4CF3E4EC,South Korea,COUNTRY,South Korea,South Korea,,TTA PG507,AI,Enacted,2026-03-30,20,Red,5,Partially,1
 REG-B08C76AD,United States (Federal),US_FEDERAL,,United States,,Driver Privacy Act (SB 6002),ALPR/LPR,Enacted,2026-03-30,20,Red,5,Partially,1
 REG-51BE4C2B,United States (Federal),US_FEDERAL,,United States,,Oklahoma Data Privacy Act (SB 546),Data Privacy,Enacted,2026-03-31,20,Red,5,Partially,1
-REG-4674C337,United States (Federal),US_FEDERAL,,United States,,Colorado AI Act,AI,Enacted,2026-02-01,20,Red,5,Partially,9
 REG-00720D5D,South Korea,COUNTRY,South Korea,South Korea,,Basic AI Act,AI,Enacted,2026-02-01,20,Red,5,Partially,3
 REG-2E26BE76,United States (Federal),US_FEDERAL,,United States,,Legislative Document 61 (Workplace Electronic Surveillance),Data Privacy,Enacted,2026-07-14,20,Red,5,Partially,1
 REG-EE1D9AD5,United States (Federal),US_FEDERAL,,United States,,FAA Drone Operations Approval (Titan Protection),Drones/UAS,Enacted,2026-02-05,20,Red,5,Partially,1
@@ -114,7 +147,6 @@ REG-4FCA0DE1,United States (Federal),US_FEDERAL,,United States,,FAA Reauthorizat
 REG-543A6F3F,United States (Federal),US_FEDERAL,,United States,,Responsible AI Safety and Education (RAISE) Act (S6953B/A6453B),AI,Enacted,2025-12-19,20,Red,5,Partially,1
 REG-4B82F677,United States (Federal),US_FEDERAL,,United States,,FTC Consent Order (Rytr),AI,Enacted,,20,Red,5,Partially,1
 REG-AFFE2529,"Illinois, USA",US_STATE,,Illinois,IL,BIPA (Biometric Information Privacy Act),Biometrics,Enacted,,20,Red,5,Partially,1
-REG-BAFB01C3,Ireland,COUNTRY,Ireland,Ireland,,GDPR,AI,Enacted,,20,Red,5,Partially,1
 REG-808897A5,United States (Federal),US_FEDERAL,,United States,,BIPA Class Action Settlement (Kenvue),Biometrics,Enacted,2026-02-20,20,Red,5,Partially,1
 REG-D9E68F42,Global,GLOBAL,Global,,,Pax Silica Declaration,AI,Enacted,2026-02-20,20,Red,5,Partially,2
 REG-A76B4059,"Connecticut, USA",US_STATE,,Connecticut,CT,Connecticut Data Privacy Act (CTDPA),Data Privacy,Enacted,2026-02-21,20,Red,5,Partially,3
@@ -359,7 +391,6 @@ REG-D3BB8771,United States (Federal),US_FEDERAL,,United States,,FCC Covered List
 REG-AA6AB1CC,"California, USA",US_STATE,,California,CA,Delete Act / CPRA,Data Privacy,Enacted,2025-12-24,20,Red,5,Partially,3
 REG-28AD0661,South Korea,COUNTRY,South Korea,South Korea,,Telecommunications Business Act (Amendment),Biometrics,Enacted,2025-12-24,20,Red,5,Partially,1
 REG-65B83A90,United States (Federal),US_FEDERAL,,United States,,FCC Covered List / Trump Drone Ban,Drones/UAS,Enacted,2025-12-24,20,Red,5,Partially,1
-REG-46812F2C,United States (Federal),US_FEDERAL,,United States,,Executive Order on AI (Trump),AI,Enacted,2025-12-11,20,Red,5,Partially,1
 REG-836C14D1,United States (Federal),US_FEDERAL,,United States,,FTC Enforcement (Unfair Practices),AI,Enacted,2025-12-24,20,Red,5,Partially,1
 REG-2C133C9D,United States (Federal),US_FEDERAL,,United States,,Executive Order 14365 (White House),AI,Enacted,2025-12-11,20,Red,5,Partially,1
 REG-ACBCB3FD,United States (Federal),US_FEDERAL,,United States,,FCC Covered List Update,Drones/UAS,Enacted,2025-12-27,20,Red,5,Partially,2
@@ -369,13 +400,24 @@ REG-9BB0247F,United States (Federal),US_FEDERAL,,United States,,Organized Retail
 REG-7798F549,United States (Federal),US_FEDERAL,,United States,,FTC Consumer Review Consent Order,AI,Enacted,2025-12-22,20,Red,5,Partially,1
 REG-CF30AF13,United States (Federal),US_FEDERAL,,United States,,Responsible AI Safety & Education (RAISE) Act,AI,Enacted,2025-12-19,20,Red,5,Partially,1
 REG-50D6A961,United States (Federal),US_FEDERAL,,United States,,COINS Act (Outbound Investment Security Program),AI,Enacted,2025-12-30,20,Red,5,Partially,1
+REG-CFA432BD,"Virginia, USA",US_STATE,,Virginia,VA,S.B. 388 (VCDPA Amendment),Data Privacy,Enacted,2026-04-13,16,Amber,4,Partially,1
+REG-35301FC5,"Alabama, USA",US_STATE,,Alabama,AL,Alabama Personal Data Protection Act (HB 351),Data Privacy,Enacted,2026-04-17,16,Amber,4,Partially,1
+REG-3C184982,"Washington, USA",US_STATE,,Washington,WA,Automated License Plate Reader Limits,ALPR/LPR,Enacted,2026-03-01,16,Amber,4,Partially,1
+REG-F7AED499,"Washington, USA",US_STATE,,Washington,WA,Retail Theft Program Funding Veto,Data Privacy,Enacted,,16,Amber,4,Partially,1
+REG-2DFFB628,Japan,COUNTRY,Japan,Japan,,Defence Export Rules,Drones/UAS,Enacted,,16,Amber,4,Partially,1
+REG-6A9DBE30,"Oregon, USA",US_STATE,,Oregon,OR,Oregon ALPR Law,ALPR/LPR,Enacted,2026-04-23,16,Amber,4,Partially,1
+REG-F45B06D8,China,COUNTRY,China,China,,Industrial and Supply Chain Security Investigations,Data Privacy,Enacted,2026-04-24,16,Amber,4,Partially,1
+REG-C6AACD64,"Connecticut, USA",US_STATE,,Connecticut,CT,Connecticut Data Privacy Act,Data Privacy,Enacted,,16,Amber,4,Partially,4
+REG-B1C8AE88,"Oregon, USA",US_STATE,,Oregon,OR,Oregon License Plate Reader Law,ALPR/LPR,Enacted,,16,Amber,4,Partially,1
+REG-5191B5DA,China,COUNTRY,China,China,,China Export-Control Regime,Data Privacy,Enacted,,16,Amber,4,Partially,1
+REG-F23BEBA6,"Tennessee, USA",US_STATE,,Tennessee,TN,Tennessee Crypto ATM Ban,Data Privacy,Enacted,,16,Amber,4,Partially,1
+REG-5BD527A7,"Virginia, USA",US_STATE,,Virginia,VA,Virginia Consumer Data Protection Act (VCDPA),Data Privacy,Enacted,,16,Amber,4,Partially,5
 REG-23142569,South Korea,COUNTRY,South Korea,South Korea,,Prevention of Divulgence and Protection of Industrial Technology Act,Data Privacy,Enacted,2026-03-01,16,Amber,4,Partially,1
 REG-613E82D4,"New York, USA",US_STATE,,New York,NY,Dynamic Pricing Law,Data Privacy,Enacted,2026-03-08,16,Amber,4,Partially,1
 REG-C3079A2F,"Connecticut, USA",US_STATE,,Connecticut,CT,Connecticut Data Privacy Act (Update),Data Privacy,Enacted,2026-03-09,16,Amber,4,Partially,1
 REG-B16AB30C,"California, USA",US_STATE,,California,CA,License Plate Reader Tax Enforcement,ALPR/LPR,Enacted,2026-03-09,16,Amber,4,Partially,1
 REG-AA49C5B1,Global,GLOBAL,Global,,,GDPR AI Integration,Data Privacy,Enacted,2026-03-10,16,Amber,4,Partially,1
 REG-D7B5761D,"California, USA",US_STATE,,California,CA,License Plate Reader Restrictions,ALPR/LPR,Enacted,2026-03-15,16,Amber,4,Partially,1
-REG-C6AACD64,"Connecticut, USA",US_STATE,,Connecticut,CT,Connecticut Data Privacy Act,Data Privacy,Enacted,2026-03-18,16,Amber,4,Partially,3
 REG-04D9FB20,"California, USA",US_STATE,,California,CA,California Agency Data Restrictions,ALPR/LPR,Enacted,2026-03-18,16,Amber,4,Partially,1
 REG-DF0673DB,Japan,COUNTRY,Japan,Japan,,Mandatory Drone Detection for Nuclear Plants,Drones/UAS,Enacted,2026-03-19,16,Amber,4,Partially,1
 REG-7D5549BB,"Oklahoma, USA",US_STATE,,Oklahoma,OK,Oklahoma Consumer Data Privacy Law,Data Privacy,Enacted,2026-03-20,16,Amber,4,Partially,1
@@ -444,9 +486,68 @@ REG-BCE6A6BD,"Arizona, USA",US_STATE,,Arizona,AZ,Contract Cancellation (Flock Sa
 REG-DF39A9A0,"Connecticut, USA",US_STATE,,Connecticut,CT,Connecticut Data Privacy Act (CTDPA) Amendments,Data Privacy,Enacted,2025-12-20,16,Amber,4,Partially,1
 REG-18723A69,"Indiana, USA",US_STATE,,Indiana,IN,Indiana Consumer Data Protection Act (CDPA),Data Privacy,Enacted,2026-01-01,16,Amber,4,Partially,1
 REG-12156A7D,United States (Federal),US_FEDERAL,,United States,,Surveillance Camera Moratorium,Surveillance,Enacted,2025-12-26,16,Amber,4,Partially,1
+REG-53D8A356,United States (Federal),US_FEDERAL,,United States,,Proposed local law regulating license-plate camera readers,ALPR/LPR,Proposed,2026-05-04,15,Amber,4,Unknown,1
+REG-6C7EA7F1,United States (Federal),US_FEDERAL,,United States,,Careful Adoption of Agentic AI Services,AI,Proposed,2026-05-01,15,Amber,4,Unknown,1
+REG-1F0F1825,United States (Federal),US_FEDERAL,,United States,,Senate bill targeting drone threats to critical infrastructure,Drones/UAS,Proposed,2026-04-30,15,Amber,4,Unknown,1
+REG-D2A9E2B3,United States (Federal),US_FEDERAL,,United States,,FAA DETER Program,Drones/UAS,Proposed,2026-05-02,15,Amber,4,Unknown,1
+REG-4C5D88EF,United States (Federal),US_FEDERAL,,United States,,Dayton Flock license plate reader suspension,ALPR/LPR,Proposed,2026-05-02,15,Amber,4,Unknown,1
+REG-1EF1BB41,United States (Federal),US_FEDERAL,,United States,,Loomis Armored BIPA class action settlement,Biometrics,Proposed,2026-05-02,15,Amber,4,Unknown,1
+REG-493A466A,United States (Federal),US_FEDERAL,,United States,,AI OVERWATCH Act,AI,Proposed,2026-05-05,15,Amber,4,Unknown,3
+REG-D0A05119,United States (Federal),US_FEDERAL,,United States,,Drone Security Public Consultation Paper,Drones/UAS,Proposed,2026-05-01,15,Amber,4,Unknown,1
+REG-8624CAEE,United States (Federal),US_FEDERAL,,United States,,Potential White House advanced AI model review process,AI,Proposed,2026-05-04,15,Amber,4,Unknown,1
+REG-AE44A48C,United States (Federal),US_FEDERAL,,United States,,Colorado Artificial Intelligence Act (SB 24-205) enforcement pause,AI,Proposed,2026-04-27,15,Amber,4,Unknown,1
+REG-5B058CF0,United States (Federal),US_FEDERAL,,United States,,Syracuse biometric identity technology restrictions,Biometrics,Proposed,2026-05-04,15,Amber,4,Unknown,1
+REG-9A7F1157,United States (Federal),US_FEDERAL,,United States,,BIPA damages amendment retroactivity decision,Biometrics,Proposed,2026-05-06,15,Amber,4,Unknown,1
+REG-23F09452,United States (Federal),US_FEDERAL,,United States,,CAISI frontier AI model national security testing partnerships,AI,Proposed,2026-05-06,15,Amber,4,Unknown,1
+REG-8A63D640,United States (Federal),US_FEDERAL,,United States,,Utah SB 73 Online Age Verification and VPN provision,Data Privacy,Proposed,2026-05-06,15,Amber,4,Unknown,1
+REG-945575D3,United States (Federal),US_FEDERAL,,United States,,FAA Section 2209 NPRM: drone restrictions near critical infrastructure,Drones/UAS,Proposed,2026-05-06,15,Amber,4,Unknown,1
+REG-501F1EF0,United States (Federal),US_FEDERAL,,United States,,FTC v. Kochava sensitive location-data settlement,Data Privacy,Proposed,2026-05-04,15,Amber,4,Unknown,1
+REG-8465986B,United States (Federal),US_FEDERAL,,United States,,SB 4 consumer privacy package / facial recognition surveillance provisions,Biometrics,Proposed,2026-05-08,15,Amber,4,Unknown,1
+REG-EAE60A0E,United States (Federal),US_FEDERAL,,United States,,Workplace AI and electronic monitoring bill,AI,Proposed,2026-05-09,15,Amber,4,Unknown,1
+REG-DC526D02,United States (Federal),US_FEDERAL,,United States,,CCPA/CPRA cybersecurity audit requirements,Data Privacy,Proposed,2026-05-09,15,Amber,4,Unknown,1
+REG-36E0439A,United States (Federal),US_FEDERAL,,United States,,FAA Extension Safety and Security Section 2209,Drones/UAS,Proposed,2026-05-10,15,Amber,4,Unknown,1
+REG-3131352F,United States (Federal),US_FEDERAL,,United States,,Street ALPR Expansion Ordinance,ALPR/LPR,Proposed,2026-05-10,15,Amber,4,Unknown,1
+REG-33FD695C,United States (Federal),US_FEDERAL,,United States,,Bipartisan Connected Vehicle Restriction Bill,AI,Proposed,2026-05-11,15,Amber,4,Unknown,1
+REG-0C1AD22B,United States (Federal),US_FEDERAL,,United States,,Federal AI Executive Order and Action Plan,AI,Proposed,2025-07-01,15,Amber,4,Unknown,1
+REG-AC2DA741,United States (Federal),US_FEDERAL,,United States,,Security of Critical Infrastructure Act (SOCI) Next Evolution,Data Privacy,Proposed,2026-05-11,15,Amber,4,Unknown,1
+REG-F14C7869,United States (Federal),US_FEDERAL,,United States,,FAA proposed rule restricting drone operations over critical infrastructure,Drones/UAS,Proposed,2026-05-12,15,Amber,4,Unknown,1
+REG-F941246A,United States (Federal),US_FEDERAL,,United States,,Proposed ban on biometric data collection in retail stores,Biometrics,Proposed,2026-05-12,15,Amber,4,Unknown,1
+REG-46128FAE,European Union,COUNTRY,European Union,European Union,,EU AI Act frontier AI model access / enforcement preparation,AI,Enacted,2026-05-13,15,Amber,4,Partially,1
+REG-C048322E,United States (Federal),US_FEDERAL,,United States,,Proposed limits on license plate cameras at big-box retailers,ALPR/LPR,Proposed,2026-05-13,15,Amber,4,Unknown,1
+REG-B5B1F159,United States (Federal),US_FEDERAL,,United States,,Home Depot California ALPR class action,ALPR/LPR,Proposed,2026-05-14,15,Amber,4,Unknown,1
+REG-A0824B06,United States (Federal),US_FEDERAL,,United States,,NIST AI cybersecurity guidance / Cyber AI Profile,AI,Proposed,2026-05-15,15,Amber,4,Unknown,1
+REG-E6897D46,United States (Federal),US_FEDERAL,,United States,,FAA Section 2209 fixed-site UAS flight restriction NPRM,Drones/UAS,Proposed,2026-05-06,15,Amber,4,Unknown,1
+REG-DFA80283,United States (Federal),US_FEDERAL,,United States,,SB 6002 Driver Privacy Act,ALPR/LPR,Proposed,2026-03-30,15,Amber,4,Unknown,1
+REG-FC996A58,United States (Federal),US_FEDERAL,,United States,,Illinois BIPA voiceprint AI training lawsuits,Biometrics,Proposed,2026-05-16,15,Amber,4,Unknown,1
+REG-47A75736,United States (Federal),US_FEDERAL,,United States,,Proposed New York City private-business biometric data ban,Biometrics,Proposed,2026-05-19,15,Amber,4,Unknown,1
+REG-19868748,United States (Federal),US_FEDERAL,,United States,,Bipartisan House bill requiring federal agencies to use NIST AI guidance,AI,Proposed,2026-05-19,15,Amber,4,Unknown,1
+REG-42285094,United States (Federal),US_FEDERAL,,United States,,FAA Section 2209 critical infrastructure drone restriction NPRM,Drones/UAS,Proposed,2026-05-19,15,Amber,4,Unknown,1
+REG-1F708D9D,United States (Federal),US_FEDERAL,,United States,,FBI nationwide license plate reader access initiative,ALPR/LPR,Proposed,2026-05-20,15,Amber,4,Unknown,1
+REG-D10160B3,United States (Federal),US_FEDERAL,,United States,,Troy Flock Safety ALPR Policy Enhancements,ALPR/LPR,Proposed,2026-05-20,15,Amber,4,Unknown,1
+REG-754B347A,United States (Federal),US_FEDERAL,,United States,,Bipartisan legislation to ban AI surveillance pricing at grocery stores and delivery services,AI,Proposed,2026-05-18,15,Amber,4,Unknown,1
+REG-76DD6801,United States (Federal),US_FEDERAL,,United States,,Colorado AI Act repeal-and-replace update,AI,Proposed,2026-05-18,15,Amber,4,Unknown,1
+REG-2ED47FE5,United States (Federal),US_FEDERAL,,United States,,New York Senate biometric customer-warning bill,Biometrics,Proposed,2026-05-18,15,Amber,4,Unknown,1
+REG-BCB1675B,United States (Federal),US_FEDERAL,,United States,,Disneyland face-scan proposed class action,Biometrics,Proposed,2026-05-19,15,Amber,4,Unknown,1
+REG-F8B39A81,United States (Federal),US_FEDERAL,,United States,,Home Depot parking-lot ALPR surveillance lawsuit,ALPR/LPR,Proposed,2026-05-18,15,Amber,4,Unknown,1
+REG-74FFA51B,United States (Federal),US_FEDERAL,,United States,,BIPA voice model training class actions,Biometrics,Proposed,2026-05-20,15,Amber,4,Unknown,1
+REG-019EC582,United States (Federal),US_FEDERAL,,United States,,Bipartisan amendment to restrict police license plate tracking,ALPR/LPR,Proposed,2026-05-21,15,Amber,4,Unknown,1
+REG-7A98FD61,United States (Federal),US_FEDERAL,,United States,,Massachusetts proposed ban on weaponized robots and gun-toting drones,Drones/UAS,Proposed,2026-05-22,15,Amber,4,Unknown,1
+REG-8941A34F,United States (Federal),US_FEDERAL,,United States,,Disney facial recognition class-action lawsuit,Biometrics,Proposed,2026-05-21,15,Amber,4,Unknown,1
+REG-8EADE49A,United States (Federal),US_FEDERAL,,United States,,Illinois BIPA lawsuits over AI voiceprints,Biometrics,Proposed,2026-05-21,15,Amber,4,Unknown,1
+REG-FF1B0F04,United States (Federal),US_FEDERAL,,United States,,Grubhub driver facial-scan BIPA lawsuit,Biometrics,Proposed,2026-05-23,15,Amber,4,Unknown,1
+REG-36614804,United States (Federal),US_FEDERAL,,United States,,FBI near-real-time license plate reader access initiative,ALPR/LPR,Proposed,2026-05-24,15,Amber,4,Unknown,1
+REG-F7866144,United States (Federal),US_FEDERAL,,United States,,White House AI oversight/testing executive order,AI,Proposed,2026-05-22,15,Amber,4,Unknown,1
+REG-8EEE0862,United States (Federal),US_FEDERAL,,United States,,Australia-UK AI safety and security cooperation MoU,AI,Proposed,2026-05-25,15,Amber,4,Unknown,1
+REG-142954DF,Canada,COUNTRY,Canada,Canada,,Ontario highway automated licence-plate camera retail theft plan,ALPR/LPR,Proposed,2026-05-25,15,Amber,4,Unknown,1
+REG-4CF741B4,United States (Federal),US_FEDERAL,,United States,,Marco Island automated license-plate recognition appeal,ALPR/LPR,Proposed,2026-05-26,15,Amber,4,Unknown,1
+REG-5F137D90,United States (Federal),US_FEDERAL,,United States,,Illinois BIPA territorial reach and financial-services exception ruling,Biometrics,Proposed,2026-05-26,15,Amber,4,Unknown,1
+REG-DC19240C,United States (Federal),US_FEDERAL,,United States,,Connecticut legislative inquiry on ALPR cameras at Home Depot and Lowe's,ALPR/LPR,Proposed,2026-05-27,15,Amber,4,Unknown,1
+REG-5EF79790,United States (Federal),US_FEDERAL,,United States,,FAA World Cup no-drone zones,Drones/UAS,Proposed,2026-05-30,15,Amber,4,Unknown,1
+REG-1A0C78FA,United States (Federal),US_FEDERAL,,United States,,CISA guidance on careful adoption of agentic AI services,AI,Proposed,2026-05-30,15,Amber,4,Unknown,1
+REG-FEEA0F5E,United States (Federal),US_FEDERAL,,United States,,SC Public Interest Foundation v. SLED ALPR database litigation,ALPR/LPR,Proposed,2026-05-31,15,Amber,4,Unknown,1
 REG-5FAAFC70,"New York, USA",US_STATE,,New York,NY,New Betting Rules on AI and Biometrics,AI,Proposed,2026-04-01,15,Amber,4,Unknown,1
 REG-4E97087D,United States (Federal),US_FEDERAL,,United States,,American Security Robotics Act,Drones/UAS,Proposed,2026-04-01,15,Amber,4,Unknown,1
-REG-C9ADC9A0,United States (Federal),US_FEDERAL,,United States,,National AI Legislative Framework,AI,Proposed,2026-03-21,15,Amber,4,Unknown,2
+REG-C9ADC9A0,United States (Federal),US_FEDERAL,,United States,,National AI Legislative Framework,AI,Proposed,2026-03-21,15,Amber,4,Unknown,3
 REG-A104FCC3,European Union,COUNTRY,European Union,European Union,,EU AI Act (Digital Omnibus),AI,Enacted,2026-02-01,15,Amber,4,Partially,7
 REG-309739AB,United States (Federal),US_FEDERAL,,United States,,USA FREEDOM Act Reform,Data Privacy,Proposed,2026-04-01,15,Amber,4,Unknown,1
 REG-16698996,United States (Federal),US_FEDERAL,,United States,,FCC 'Drone Dominance' Public Notice,Drones/UAS,Proposed,2026-04-02,15,Amber,4,Unknown,1
@@ -460,9 +561,9 @@ REG-B2C167C7,United States (Federal),US_FEDERAL,,United States,,Biometric Inform
 REG-CEE21BCF,United States (Federal),US_FEDERAL,,United States,,Colorado Right-to-Repair Loophole,Data Privacy,Proposed,2026-04-06,15,Amber,4,Unknown,1
 REG-CD079324,United Kingdom,COUNTRY,United Kingdom,United Kingdom,,Labor Sentencing Law,AI,Enacted,2026-04-06,15,Amber,4,Partially,1
 REG-31AF271E,United States (Federal),US_FEDERAL,,United States,,De-escalation Drone Pilot Program Act,Drones/UAS,Proposed,,15,Amber,4,Unknown,1
-REG-C8C21F3E,European Union,COUNTRY,European Union,European Union,,EU AI Act,AI,Enacted,2026-03-08,15,Amber,4,Partially,84
+REG-C8C21F3E,European Union,COUNTRY,European Union,European Union,,EU AI Act,AI,Enacted,2026-04-12,15,Amber,4,Partially,88
 REG-CC956C6F,United States (Federal),US_FEDERAL,,United States,,National AI Safety Institute Standards,AI,Proposed,,15,Amber,4,Unknown,1
-REG-C0765AE7,United States (Federal),US_FEDERAL,,United States,,AI Foundation Model Transparency Act of 2026,AI,Proposed,,15,Amber,4,Unknown,1
+REG-C0765AE7,United States (Federal),US_FEDERAL,,United States,,AI Foundation Model Transparency Act of 2026,AI,Proposed,,15,Amber,4,Unknown,2
 REG-C631831F,European Union,COUNTRY,European Union,European Union,,EU Biometric Entry/Exit System,Biometrics,Enacted,,15,Amber,4,Partially,1
 REG-3576738C,United States (Federal),US_FEDERAL,,United States,,Federal Organized Retail Crime Bill,Data Privacy,Proposed,2026-04-11,15,Amber,4,Unknown,1
 REG-FD1E5412,United States (Federal),US_FEDERAL,,United States,,SB24-205,AI,Proposed,2026-04-11,15,Amber,4,Unknown,1
@@ -472,7 +573,7 @@ REG-DA96572D,United States (Federal),US_FEDERAL,,United States,,Local Privacy Or
 REG-BC810E81,United States (Federal),US_FEDERAL,,United States,,Local ALPR Regulation,ALPR/LPR,Proposed,,15,Amber,4,Unknown,1
 REG-FCCF5365,United States (Federal),US_FEDERAL,,United States,,State AI Regulation Framework,AI,Proposed,,15,Amber,4,Unknown,1
 REG-9A663AEC,South Africa,COUNTRY,South Africa,South Africa,,National Artificial Intelligence Policy,AI,Proposed,,15,Amber,4,Unknown,1
-REG-4208A85A,United States (Federal),US_FEDERAL,,United States,,Combating Organized Retail Crime Act,Data Privacy,Proposed,2026-01-21,15,Amber,4,Unknown,2
+REG-4208A85A,United States (Federal),US_FEDERAL,,United States,,Combating Organized Retail Crime Act,Data Privacy,Proposed,,15,Amber,4,Unknown,3
 REG-69509D1D,United States (Federal),US_FEDERAL,,United States,,Public Pressure against Meta Facial Recognition,Biometrics,Proposed,1913-09-15,15,Amber,4,Unknown,1
 REG-DE16600A,European Union,COUNTRY,European Union,European Union,,EU AI Act (Enforcement Delay),AI,Enacted,1914-05-20,15,Amber,4,Partially,1
 REG-E96083F7,United States (Federal),US_FEDERAL,,United States,,AI Export Restrictions Bill,AI,Proposed,5276-01-01,15,Amber,4,Unknown,1
@@ -480,9 +581,26 @@ REG-B4550471,United States (Federal),US_FEDERAL,,United States,,AI Transparency 
 REG-D303CCFA,United States (Federal),US_FEDERAL,,United States,,Class Action Lawsuit against Meta,Biometrics,Proposed,5807-01-01,15,Amber,4,Unknown,1
 REG-8AC81DD7,United States (Federal),US_FEDERAL,,United States,,City Ordinance (Common Council),Biometrics,Proposed,2026-04-16,15,Amber,4,Unknown,1
 REG-3FF6EBA5,South Africa,COUNTRY,South Africa,South Africa,,National Draft Artificial Intelligence Policy,AI,Proposed,2026-04-17,15,Amber,4,Unknown,1
+REG-2E9C80EE,United States (Federal),US_FEDERAL,,United States,,FISA Section 702 Extension,Data Privacy,Proposed,2026-03-11,15,Amber,4,Unknown,2
+REG-865B81FD,United States (Federal),US_FEDERAL,,United States,,Biometric Surveillance Ban,Biometrics,Proposed,2026-03-23,15,Amber,4,Unknown,2
+REG-AE9D548A,"Michigan, USA",US_STATE,,Michigan,MI,RAISE Act,AI,Proposed,2026-04-17,15,Amber,4,Unknown,1
+REG-CFE58493,United States (Federal),US_FEDERAL,,United States,,Executive Order 14365,AI,Proposed,2025-12-11,15,Amber,4,Unknown,2
+REG-795DB2DF,South Africa,COUNTRY,South Africa,South Africa,,Draft National AI Policy,AI,Proposed,2026-04-23,15,Amber,4,Unknown,3
+REG-CDD17126,United States (Federal),US_FEDERAL,,United States,,National Privacy Bill,Data Privacy,Proposed,2026-04-01,15,Amber,4,Unknown,1
+REG-A196DDE2,United States (Federal),US_FEDERAL,,United States,,Senate Bill 70,ALPR/LPR,Proposed,2026-04-22,15,Amber,4,Unknown,1
+REG-6D2DB47A,United States (Federal),US_FEDERAL,,United States,,SECURE Data Act,Data Privacy,Proposed,2026-04-22,15,Amber,4,Unknown,1
+REG-86E0E513,United States (Federal),US_FEDERAL,,United States,,FAA Extension Safety and Security Act of 2016 (Section 2209),Drones/UAS,Proposed,2026-04-22,15,Amber,4,Unknown,1
+REG-CB5578CA,European Union,COUNTRY,European Union,European Union,,EU AI Act and GDPR,AI,Enacted,2026-04-22,15,Amber,4,Partially,1
+REG-BACE45FC,United States (Federal),US_FEDERAL,,United States,,SAFER Transport Act,Data Privacy,Proposed,2026-03-02,15,Amber,4,Unknown,2
+REG-22E56F88,United States (Federal),US_FEDERAL,,United States,,Unnamed Drone Security Bill,Drones/UAS,Proposed,2026-04-23,15,Amber,4,Unknown,1
+REG-80B81B31,United States (Federal),US_FEDERAL,,United States,,SECURE Data Act / Surveillance Accountability Act,Data Privacy,Proposed,2026-04-23,15,Amber,4,Unknown,1
+REG-C2CA699C,United States (Federal),US_FEDERAL,,United States,,White House Executive Order on AI,AI,Proposed,2025-09-16,15,Amber,4,Unknown,2
+REG-323FE754,United States (Federal),US_FEDERAL,,United States,,Surveillance Accountability Act,Data Privacy,Proposed,,15,Amber,4,Unknown,1
+REG-FC0D56C3,United States (Federal),US_FEDERAL,,United States,,Washington Automated License Plate Reader Regulation Bill,ALPR/LPR,Proposed,2026-03-11,15,Amber,4,Unknown,2
+REG-099E618E,United States (Federal),US_FEDERAL,,United States,,Colorado Senate Bill 26-070 (PEEPS Act),ALPR/LPR,Proposed,2026-04-29,15,Amber,4,Unknown,1
+REG-73C81533,United States (Federal),US_FEDERAL,,United States,,Federal Surveillance Warrant Bill,Data Privacy,Proposed,2026-04-29,15,Amber,4,Unknown,1
 REG-3B0060E6,United States (Federal),US_FEDERAL,,United States,,Section 702,Data Privacy,Proposed,2026-03-01,15,Amber,4,Unknown,1
 REG-572D05D6,United States (Federal),US_FEDERAL,,United States,,Washington AI Detection Guardrails,Biometrics,Proposed,2026-03-02,15,Amber,4,Unknown,1
-REG-BACE45FC,United States (Federal),US_FEDERAL,,United States,,SAFER Transport Act,Data Privacy,Proposed,2026-03-02,15,Amber,4,Unknown,1
 REG-1573DA01,United States (Federal),US_FEDERAL,,United States,,National AI Plan,AI,Proposed,2026-02-24,15,Amber,4,Unknown,3
 REG-25084560,United States (Federal),US_FEDERAL,,United States,,Class Action Lawsuit Against Flock Safety,ALPR/LPR,Proposed,2026-03-02,15,Amber,4,Unknown,1
 REG-3C6DECA8,United States (Federal),US_FEDERAL,,United States,,NYC Facial Recognition Ban Bills,Biometrics,Proposed,2026-03-03,15,Amber,4,Unknown,1
@@ -532,14 +650,12 @@ REG-9005369B,United States (Federal),US_FEDERAL,,United States,,NIST OT Security
 REG-91B9C9CF,United States (Federal),US_FEDERAL,,United States,,Senate Hearing on Organized Retail Theft,ORC,Proposed,2026-03-09,15,Amber,4,Unknown,1
 REG-7C0DE238,United States (Federal),US_FEDERAL,,United States,,State Age-Verification Laws,Data Privacy,Proposed,2026-03-09,15,Amber,4,Unknown,1
 REG-8A7184A8,European Union,COUNTRY,European Union,European Union,,GDPR and AI Act,AI,Enacted,2026-03-09,15,Amber,4,Partially,1
-REG-2E9C80EE,United States (Federal),US_FEDERAL,,United States,,FISA Section 702 Extension,Data Privacy,Proposed,2026-03-11,15,Amber,4,Unknown,1
 REG-CD0E084A,United States (Federal),US_FEDERAL,,United States,,Mobile Fortify Deployment Guidelines,Biometrics,Proposed,2026-03-11,15,Amber,4,Unknown,1
 REG-C0CFFFEB,United States (Federal),US_FEDERAL,,United States,,Online Space Age Verification Legislation,Biometrics,Proposed,2026-03-11,15,Amber,4,Unknown,1
 REG-A203CA3C,United States (Federal),US_FEDERAL,,United States,,Anthropic Supply Chain Risk Lawsuit,AI,Proposed,2026-03-11,15,Amber,4,Unknown,1
 REG-81156953,United States (Federal),US_FEDERAL,,United States,,Government Surveillance Reform Act,Data Privacy,Proposed,2026-03-11,15,Amber,4,Unknown,4
 REG-7707B990,United States (Federal),US_FEDERAL,,United States,,Ohio AI Accountability call,AI,Proposed,2026-03-11,15,Amber,4,Unknown,1
 REG-FEC456E0,United States (Federal),US_FEDERAL,,United States,,San Jose ALPR Safeguards measure,ALPR/LPR,Proposed,2026-03-11,15,Amber,4,Unknown,1
-REG-FC0D56C3,United States (Federal),US_FEDERAL,,United States,,Washington Automated License Plate Reader Regulation Bill,ALPR/LPR,Proposed,2026-03-11,15,Amber,4,Unknown,1
 REG-A98224F0,United States (Federal),US_FEDERAL,,United States,,JIATF-401 Counter-UAS Guidelines,Drones/UAS,Proposed,2026-03-11,15,Amber,4,Unknown,1
 REG-7A311D35,European Union,COUNTRY,European Union,European Union,,EU AI Act Enforcement,AI,Enacted,2026-03-10,15,Amber,4,Partially,4
 REG-C9BB3D8E,United States (Federal),US_FEDERAL,,United States,,Federal AI Procurement Rules,AI,Proposed,2026-03-10,15,Amber,4,Unknown,1
@@ -589,8 +705,6 @@ REG-857D959E,United States (Federal),US_FEDERAL,,United States,,National Standar
 REG-A4ECA022,United States (Federal),US_FEDERAL,,United States,,Dutchtown ALPR Suspension,ALPR/LPR,Proposed,2026-03-17,15,Amber,4,Unknown,1
 REG-9BB3F768,United States (Federal),US_FEDERAL,,United States,,Organized Retail Crime Act,AI,Proposed,2026-02-01,15,Amber,4,Unknown,1
 REG-C5D1C941,"New York, USA",US_STATE,,New York,NY,Retail Face Scanning Ban,Biometrics,Proposed,2026-03-21,15,Amber,4,Unknown,1
-REG-5CD0E1EC,United States (Federal),US_FEDERAL,,United States,,NIST AI Risk Management Framework,AI,Proposed,2026-03-21,15,Amber,4,Unknown,9
-REG-865B81FD,United States (Federal),US_FEDERAL,,United States,,Biometric Surveillance Ban,Biometrics,Proposed,2026-03-23,15,Amber,4,Unknown,1
 REG-A6C5598D,United States (Federal),US_FEDERAL,,United States,,License Plate Reader Regulation,ALPR/LPR,Proposed,2026-03-23,15,Amber,4,Unknown,2
 REG-B46A2213,Taiwan,COUNTRY,Taiwan,Taiwan,,AI Basic Act,AI,Proposed,2026-03-22,15,Amber,4,Unknown,1
 REG-127B14A5,United States (Federal),US_FEDERAL,,United States,,Local LPR Rejections,ALPR/LPR,Proposed,2026-03-23,15,Amber,4,Unknown,1
@@ -631,7 +745,6 @@ REG-A72F4193,United States (Federal),US_FEDERAL,,United States,,Pentagon AI Blac
 REG-B9A325C8,United States (Federal),US_FEDERAL,,United States,,FCC Drone/Router Security Curbs,Drones/UAS,Proposed,2026-03-29,15,Amber,4,Unknown,1
 REG-8B20D0DC,United States (Federal),US_FEDERAL,,United States,,White House National Policy Framework for AI,AI,Proposed,2026-03-29,15,Amber,4,Unknown,1
 REG-DC4410FB,United States (Federal),US_FEDERAL,,United States,,Illinois Biometric Ban,Biometrics,Proposed,2026-03-29,15,Amber,4,Unknown,1
-REG-CFE58493,United States (Federal),US_FEDERAL,,United States,,Executive Order 14365,AI,Proposed,2025-12-11,15,Amber,4,Unknown,1
 REG-AF8BA985,United States (Federal),US_FEDERAL,,United States,,Surveillance Pricing Regulation,Data Privacy,Proposed,2026-03-30,15,Amber,4,Unknown,1
 REG-4F4CE702,United States (Federal),US_FEDERAL,,United States,,Chip Security Act,AI,Proposed,2026-03-30,15,Amber,4,Unknown,1
 REG-FF8E4002,United States (Federal),US_FEDERAL,,United States,,Anthropic Supply Chain Injunction,AI,Proposed,2026-03-30,15,Amber,4,Unknown,1
@@ -775,7 +888,6 @@ REG-378187C3,United States (Federal),US_FEDERAL,,United States,,FTC Enforcement 
 REG-589EE9A9,United States (Federal),US_FEDERAL,,United States,,Fraud Enforcement Division Creation,AI,Proposed,2026-01-22,15,Amber,4,Unknown,1
 REG-3BA0157B,United States (Federal),US_FEDERAL,,United States,,Statewide License Plate Reader Regulation,ALPR/LPR,Proposed,2026-01-21,15,Amber,4,Unknown,1
 REG-F3C44D13,United States (Federal),US_FEDERAL,,United States,,Facial Recognition Regulation,Biometrics,Proposed,2025-12-05,15,Amber,4,Unknown,2
-REG-493A466A,United States (Federal),US_FEDERAL,,United States,,AI OVERWATCH Act,AI,Proposed,2025-12-20,15,Amber,4,Unknown,2
 REG-FB19F4E7,United States (Federal),US_FEDERAL,,United States,,FCC Drone Ban (DJI),Drones/UAS,Proposed,2026-01-21,15,Amber,4,Unknown,1
 REG-2449261F,United States (Federal),US_FEDERAL,,United States,,TSA PreCheck Biometric Data Collection Update,Biometrics,Proposed,2026-01-21,15,Amber,4,Unknown,1
 REG-6A3F396C,United States (Federal),US_FEDERAL,,United States,,AI Overwatch Act / AI Export Restrictions,AI,Proposed,2026-01-22,15,Amber,4,Unknown,1
@@ -832,7 +944,6 @@ REG-AD8B62CF,United States (Federal),US_FEDERAL,,United States,,Commerce Departm
 REG-80CA670F,United States (Federal),US_FEDERAL,,United States,,Sen. Cruz AI Sandbox Bill,AI,Proposed,2025-09-10,15,Amber,4,Unknown,1
 REG-D068DF43,"Colorado, USA",US_STATE,,Colorado,CO,"Colorado Privacy Act (CPA), Proposed Rulemaking",Data Privacy,Proposed,2025-09-14,15,Amber,4,Unknown,1
 REG-CA1FC9D0,United States (Federal),US_FEDERAL,,United States,,"Arizona Supreme Court Donor-Doxxing Law, Arguments Heard",ALPR/LPR,Proposed,2025-09-14,15,Amber,4,Unknown,1
-REG-C2CA699C,United States (Federal),US_FEDERAL,,United States,,White House Executive Order on AI,AI,Proposed,2025-09-16,15,Amber,4,Unknown,1
 REG-D084B9FD,"California, USA",US_STATE,,California,CA,No Robo Bosses Act,AI,Proposed,2025-09-16,15,Amber,4,Unknown,1
 REG-05F9F139,"Oklahoma, USA",US_STATE,,Oklahoma,OK,AI Monitoring Pilot (Parole/Probation),Biometrics,Proposed,2025-09-22,15,Amber,4,Unknown,1
 REG-4198DE52,"Iowa, USA",US_STATE,,Iowa,IA,Combating Organized Retail Crime Act (CORCA),AI,Proposed,2025-09-22,15,Amber,4,Unknown,1
@@ -1037,7 +1148,20 @@ REG-34A39506,Global,GLOBAL,Global,,,ISO/IEC 42001,AI,Proposed,2025-12-29,15,Ambe
 REG-EC477D39,United States (Federal),US_FEDERAL,,United States,,State Privacy Laws / Fourth Amendment,ALPR/LPR,Proposed,2025-12-30,15,Amber,4,Unknown,1
 REG-BA3664D1,United States (Federal),US_FEDERAL,,United States,,NY Cybersecurity Law (Procurement),Data Privacy,Proposed,2025-12-30,15,Amber,4,Unknown,1
 REG-19CE795E,China,COUNTRY,China,China,,AI Chatbot Regulations,AI,Proposed,2025-12-30,15,Amber,4,Unknown,1
+REG-03F76FB0,United States (Federal),US_FEDERAL,,United States,,Protection From Predatory Pricing Act (HB 895),Other,Enacted,2026-04-28,12,Yellow,3,Partially,4
+REG-82EE11E4,United States (Federal),US_FEDERAL,,United States,,HB26-1210 Prohibit Surveillance Price & Wage Setting,Other,Enacted,2026-05-07,12,Yellow,3,Partially,1
+REG-CBF6B5A0,United States (Federal),US_FEDERAL,,United States,,NSW workplace surveillance technology guidance,Surveillance,Proposed,2026-05-07,12,Yellow,3,Unknown,1
+REG-687985C6,Canada,COUNTRY,Canada,Canada,,Ontario ban on Chinese drones in police operations,Drones/UAS,Proposed,2026-05-21,12,Yellow,3,Unknown,1
+REG-E3493AA2,United States (Federal),US_FEDERAL,,United States,,FTC enforcement action against Cox Media Group active listening claims,Other,Enacted,2026-05-27,12,Yellow,3,Partially,1
 REG-AD07AA63,"Washington, USA",US_STATE,,Washington,WA,Driver Privacy Act,ALPR/LPR,Proposed,2026-03-30,12,Yellow,3,Unknown,2
+REG-7B71D25A,"Maryland, USA",US_STATE,,Maryland,MD,Protection from Predatory Pricing Act,Data Privacy,Proposed,2026-04-17,12,Yellow,3,Unknown,2
+REG-04C46D67,"Connecticut, USA",US_STATE,,Connecticut,CT,S.B. 4,Data Privacy,Proposed,2026-04-17,12,Yellow,3,Unknown,1
+REG-FD69DA59,"Colorado, USA",US_STATE,,Colorado,CO,Senate Bill 70,ALPR/LPR,Proposed,2026-04-22,12,Yellow,3,Unknown,2
+REG-27EEB58D,"Iowa, USA",US_STATE,,Iowa,IA,Automated License Plate Reading Cameras Bill,ALPR/LPR,Proposed,2026-04-01,12,Yellow,3,Unknown,1
+REG-E1849555,United States (Federal),US_FEDERAL,,United States,,Section 702 of the Foreign Intelligence Surveillance Act (FISA),Surveillance,Proposed,2026-04-23,12,Yellow,3,Unknown,1
+REG-28078427,United States (Federal),US_FEDERAL,,United States,,Surveillance Accountability Act,Surveillance,Proposed,2026-04-23,12,Yellow,3,Unknown,1
+REG-F5800F7E,Japan,COUNTRY,Japan,Japan,,Defense Export Rules,Surveillance,Enacted,2026-04-22,12,Yellow,3,Partially,1
+REG-8ADB5225,"Iowa, USA",US_STATE,,Iowa,IA,Iowa Automated License Plate Reading Cameras Bill,ALPR/LPR,Proposed,2026-04-23,12,Yellow,3,Unknown,1
 REG-030FED09,United States (Federal),US_FEDERAL,,United States,,Florida surveillance powers bill,Surveillance,Proposed,2026-03-01,12,Yellow,3,Unknown,1
 REG-B8F03851,"Wyoming, USA",US_STATE,,Wyoming,WY,Flock License Plate Cams Removal,ALPR/LPR,Proposed,2026-03-01,12,Yellow,3,Unknown,1
 REG-ED8A0F35,United States (Federal),US_FEDERAL,,United States,,Sidewalk Delivery Robot Ordinance,Robotics,Enacted,2026-03-03,12,Yellow,3,Partially,1
@@ -1141,6 +1265,19 @@ REG-9B31AAB7,Global,GLOBAL,Global,,,ISO 20022 Adoption,Data Privacy,Proposed,202
 REG-CEDE6071,"California, USA",US_STATE,,California,CA,ALPR Data Sharing Lawsuit,ALPR/LPR,Proposed,2025-12-29,12,Yellow,3,Unknown,1
 REG-2A5E08E8,"Utah, USA",US_STATE,,Utah,UT,ALPR Deployment Pause,ALPR/LPR,Proposed,2025-12-29,12,Yellow,3,Unknown,1
 REG-245460F4,South Korea,COUNTRY,South Korea,South Korea,,Personal Information Protection Act,Data Privacy,Proposed,2025-12-30,12,Yellow,3,Unknown,1
+REG-53A1F8C7,European Union,COUNTRY,European Union,European Union,,EU AI Act high-risk AI compliance timeline,AI,Proposed,2026-05-03,10,Yellow,3,Unknown,1
+REG-3F78AADC,United Kingdom,COUNTRY,United Kingdom,United Kingdom,,UK AI deployment standards plan,AI,Proposed,2026-04-28,10,Yellow,3,Unknown,1
+REG-1F5E05BE,European Union,COUNTRY,European Union,European Union,,EU Artificial Intelligence Act / Digital Omnibus AI simplification package,AI,Proposed,2026-05-07,10,Yellow,3,Unknown,1
+REG-9877E43C,European Union,COUNTRY,European Union,European Union,,EU AI Act Digital Omnibus / machinery overlap amendments,AI,Proposed,2026-05-07,10,Yellow,3,Unknown,1
+REG-995A40E0,European Union,COUNTRY,European Union,European Union,,Digital Omnibus on AI amendments to EU AI Act,AI,Proposed,2026-05-07,10,Yellow,3,Unknown,1
+REG-51B0554D,European Union,COUNTRY,European Union,European Union,,EU AI Act compliance timeline relief and targeted simplification,AI,Proposed,2026-05-19,10,Yellow,3,Unknown,1
+REG-B2FC571C,European Union,COUNTRY,European Union,European Union,,EU AI Office GPAI enforcement powers,AI,Proposed,2026-05-19,10,Yellow,3,Unknown,1
+REG-998C1F79,European Union,COUNTRY,European Union,European Union,,EU AI Act high-risk AI system classification guidelines,AI,Proposed,2026-05-21,10,Yellow,3,Unknown,1
+REG-FCDCEA2E,European Union,COUNTRY,European Union,European Union,,European Commission guidelines on high-risk AI system classification,AI,Proposed,2026-05-30,10,Yellow,3,Unknown,1
+REG-14BB4B55,European Union,COUNTRY,European Union,European Union,,GDPR,AI,Proposed,2026-04-23,10,Yellow,3,Unknown,1
+REG-39FC0474,European Union,COUNTRY,European Union,European Union,,Digital Services Act / Digital Markets Act,AI,Proposed,2026-04-23,10,Yellow,3,Unknown,1
+REG-D1F4C217,European Union,COUNTRY,European Union,European Union,,EU AI Act (Omnibus),AI,Proposed,2026-04-30,10,Yellow,3,Unknown,1
+REG-CB74E9FB,United Kingdom,COUNTRY,United Kingdom,United Kingdom,,UK Crime and Policing Bill,AI,Proposed,2026-04-27,10,Yellow,3,Unknown,1
 REG-B43C0BAE,United Kingdom,COUNTRY,United Kingdom,United Kingdom,,UK Consumer Law,AI,Proposed,,10,Yellow,3,Unknown,1
 REG-6AD14BE4,European Union,COUNTRY,European Union,European Union,,EU AI Act / GDPR,AI,Proposed,2026-03-09,10,Yellow,3,Unknown,2
 REG-23AC3F2D,European Union,COUNTRY,European Union,European Union,,EU AI Act Conformity Assessment,Biometrics,Proposed,2026-03-11,10,Yellow,3,Unknown,1
@@ -1193,9 +1330,16 @@ REG-81597068,South Korea,COUNTRY,South Korea,South Korea,,IP Camera Security Mea
 REG-3CEBFEDB,United States (Federal),US_FEDERAL,,United States,,Improving Federal Response to Organized Retail Crime Act,Other,Proposed,2025-12-09,9,Yellow,3,Unknown,1
 REG-C296C1AC,Hong Kong,COUNTRY,Hong Kong,Hong Kong,,"Guidance on CCTV, Drones, and In-vehicle Cameras",Surveillance,Proposed,2025-12-15,9,Yellow,3,Unknown,1
 REG-A5195843,European Union,COUNTRY,European Union,European Union,,Digital Services Act (DSA),Other,Enacted,2025-12-17,9,Yellow,3,Partially,1
+REG-FA261C96,United States (Federal),US_FEDERAL,,United States,,Colorado surveillance pricing and algorithmic wage-setting ban,Other,Enacted,2026-05-13,8,Yellow,2,Partially,1
+REG-313FC714,United States (Federal),US_FEDERAL,,United States,,Maryland surveillance pricing ban,Other,Enacted,2026-05-18,8,Yellow,2,Partially,2
+REG-05468D4F,United States (Federal),US_FEDERAL,,United States,,California hospital automated weapons screening requirement,Other,Enacted,2026-05-21,8,Yellow,2,Partially,1
+REG-7BF4EF79,United States (Federal),US_FEDERAL,,United States,,CCPA Article 11 automated decision-making rules,Other,Enacted,2026-05-23,8,Yellow,2,Partially,1
+REG-8A1FE85D,United States (Federal),US_FEDERAL,,United States,,Maryland surveillance pricing legislation,Other,Enacted,2026-05-30,8,Yellow,2,Partially,2
 REG-D7B31EE0,United States (Federal),US_FEDERAL,,United States,,One-Party Consent Law,Other,Enacted,2026-04-04,8,Yellow,2,Partially,1
 REG-CC4B94FB,United States (Federal),US_FEDERAL,,United States,,City Hall Audio Recording Probe,Other,Enacted,,8,Yellow,2,Partially,1
 REG-044614DB,United States (Federal),US_FEDERAL,,United States,,Two-Party Consent Audio Recording Law,Other,Enacted,2025-07-17,8,Yellow,2,Partially,2
+REG-64336106,United States (Federal),US_FEDERAL,,United States,,One-party consent recording rule,Other,Enacted,2026-04-22,8,Yellow,2,Partially,1
+REG-44982AC5,United Kingdom,COUNTRY,United Kingdom,United Kingdom,,Crime and Policing Bill,Surveillance,Proposed,,8,Yellow,2,Unknown,1
 REG-9B42C331,United Kingdom,COUNTRY,United Kingdom,United Kingdom,,Martyn's Law (Protect Duty),Surveillance,Proposed,2026-03-05,8,Yellow,2,Unknown,1
 REG-B1061516,United States (Federal),US_FEDERAL,,United States,,Warehouse Worker Protection Law,Other,Enacted,2026-03-06,8,Yellow,2,Partially,1
 REG-C460F65D,United States (Federal),US_FEDERAL,,United States,,Location Tracking Privacy Law,Other,Enacted,2025-12-31,8,Yellow,2,Partially,1
@@ -1216,7 +1360,6 @@ REG-651954CB,United States (Federal),US_FEDERAL,,United States,,Surveillance Pri
 REG-814021F8,United States (Federal),US_FEDERAL,,United States,,CCPA/CPRA ADMT Regulations,Other,Enacted,2025-08-16,8,Yellow,2,Partially,1
 REG-6577AD72,United States (Federal),US_FEDERAL,,United States,,California Two-Party Consent Law,Other,Enacted,2025-08-01,8,Yellow,2,Partially,1
 REG-3B287383,United States (Federal),US_FEDERAL,,United States,,Consumer Data Protection Act,Other,Enacted,2023-01-01,8,Yellow,2,Partially,1
-REG-B7632D9B,United States (Federal),US_FEDERAL,,United States,,Electronic Communications Privacy Act (ECPA),Other,Enacted,1905-06-08,8,Yellow,2,Partially,1
 REG-12E791D2,"Michigan, USA",US_STATE,,Michigan,MI,Organized Retail Crime Act (amendment),Other,Enacted,2025-09-15,8,Yellow,2,Partially,1
 REG-31BC17BB,United States (Federal),US_FEDERAL,,United States,,New York algorithmic pricing law (formal name not specified),Other,Enacted,2025-10-08,8,Yellow,2,Partially,1
 REG-C6B3E78E,United States (Federal),US_FEDERAL,,United States,,Self-Service Checkout Staffing Requirements Ordinance (ORD-25-0010),Other,Enacted,2025-08-21,8,Yellow,2,Partially,1
@@ -1228,10 +1371,25 @@ REG-E942F157,United States (Federal),US_FEDERAL,,United States,,Worker Protectio
 REG-1A8E4F3A,Germany,COUNTRY,Germany,Germany,,Security Law Amendment,Other,Enacted,2025-12-06,8,Yellow,2,Partially,1
 REG-6F928DCA,United States (Federal),US_FEDERAL,,United States,,Regulatory Framework for Virtual Fencing,Other,Enacted,2025-12-11,8,Yellow,2,Partially,1
 REG-0445176F,United States (Federal),US_FEDERAL,,United States,,Two-Party Consent Law,Other,Enacted,2025-12-17,8,Yellow,2,Partially,1
+REG-C9286EDD,United States (Federal),US_FEDERAL,,United States,,CISA Adapting Zero Trust Principles to Operational Technology,Other,Proposed,2026-05-01,6,Green,2,Unknown,1
+REG-674B903B,United States (Federal),US_FEDERAL,,United States,,Surveillance Pricing Prohibition Bill,Other,Proposed,2026-05-10,6,Green,2,Unknown,1
+REG-A258DB7C,United States (Federal),US_FEDERAL,,United States,,Congressional inquiry into food retailer surveillance pricing,Other,Proposed,2026-05-13,6,Green,2,Unknown,1
+REG-D82C8512,United States (Federal),US_FEDERAL,,United States,,Illinois Biometric Information Privacy Act,Other,Proposed,2008-10-03,6,Green,2,Unknown,5
+REG-0FC21CA8,United States (Federal),US_FEDERAL,,United States,,One Fair Price Act / S8623A,Other,Proposed,2026-05-12,6,Green,2,Unknown,1
+REG-13D4B570,United States (Federal),US_FEDERAL,,United States,,Fair Price Protection Act / A4085,Other,Proposed,2026-05-14,6,Green,2,Unknown,1
+REG-A0D583F5,United States (Federal),US_FEDERAL,,United States,,Colorado AI Act amendments / ADMT law,Other,Proposed,2026-05-23,6,Green,2,Unknown,1
+REG-1BC71854,United States (Federal),US_FEDERAL,,United States,,FTC settlement with Cox Media Group and two other firms,Other,Proposed,2026-05-23,6,Green,2,Unknown,1
+REG-1CC83D3E,United States (Federal),US_FEDERAL,,United States,,Green Bay City Hall covert microphone lawsuit,Other,Proposed,2026-05-22,6,Green,2,Unknown,1
+REG-B5060202,United States (Federal),US_FEDERAL,,United States,,Michigan surveillance and dynamic pricing bills,Other,Proposed,2026-05-24,6,Green,2,Unknown,1
+REG-E58ACBD2,United States (Federal),US_FEDERAL,,United States,,Surveillance pricing bans,Other,Proposed,2026-05-23,6,Green,2,Unknown,1
+REG-4F003F4E,United States (Federal),US_FEDERAL,,United States,,Pennsylvania Supreme Court gunshot surveillance system ruling,Other,Proposed,2026-05-26,6,Green,2,Unknown,1
+REG-EFC54046,United States (Federal),US_FEDERAL,,United States,,JetBlue surveillance pricing consumer lawsuit,Other,Proposed,2026-05-25,6,Green,2,Unknown,1
+REG-19D25AF8,United States (Federal),US_FEDERAL,,United States,,Pennsylvania Supreme Court ShotSpotter case,Other,Proposed,2026-05-27,6,Green,2,Unknown,1
+REG-B818121A,United States (Federal),US_FEDERAL,,United States,,California surveillance pricing bill,Other,Proposed,2026-05-28,6,Green,2,Unknown,1
+REG-EBAB3721,United States (Federal),US_FEDERAL,,United States,,Colorado HB26-1210 Surveillance Pricing and Algorithmic Wage-Setting Bill,Other,Proposed,2026-05-28,6,Green,2,Unknown,1
 REG-736C95E6,United States (Federal),US_FEDERAL,,United States,,Unknown,Other,Proposed,2026-04-04,6,Green,2,Unknown,1
 REG-6FBB73DB,"Minnesota, USA",US_STATE,,Minnesota,MN,ALPR,Other,Proposed,,6,Green,2,Unknown,1
 REG-24B1E63C,"Illinois, USA",US_STATE,,Illinois,IL,Biometrics,Other,Proposed,2024-01-01,6,Green,2,Unknown,1
-REG-03F76FB0,United States (Federal),US_FEDERAL,,United States,,Protection from Predatory Pricing Act,Other,Proposed,2026-01-21,6,Green,2,Unknown,2
 REG-8B9C8767,United States (Federal),US_FEDERAL,,United States,,HB 945 (Florida CIA Bill),Other,Proposed,2026-03-02,6,Green,2,Unknown,1
 REG-C5A85A5B,United States (Federal),US_FEDERAL,,United States,,Workplace Surveillance Legislation,Other,Proposed,2026-03-07,6,Green,2,Unknown,1
 REG-F15B9104,United States (Federal),US_FEDERAL,,United States,,Biometric Identifier Bill,Other,Proposed,2026-03-06,6,Green,2,Unknown,1
@@ -1270,10 +1428,14 @@ REG-8BE09EC2,United States (Federal),US_FEDERAL,,United States,,Recording Consen
 REG-E15711C7,United States (Federal),US_FEDERAL,,United States,,LiDAR Security Bill,Other,Proposed,2025-12-12,6,Green,2,Unknown,1
 REG-61D4D0A5,United States (Federal),US_FEDERAL,,United States,,Anti-Theft Bill (Supply Chain),Other,Proposed,2025-12-18,6,Green,2,Unknown,1
 REG-C9909A2F,United States (Federal),US_FEDERAL,,United States,,Surveillance Pricing Legislation,Other,Proposed,2025-12-24,6,Green,2,Unknown,1
+REG-A431F1AE,United States (Federal),US_FEDERAL,,United States,,Colorado Senate Bill 70 automated license plate reader restrictions,ALPR/LPR,Failed,2026-04-29,5,Green,2,Unknown,1
 REG-0A63B215,United States (Federal),US_FEDERAL,,United States,,Moratorium on Police Use of FRT on Body Cameras,Biometrics,Failed,2023-01-01,5,Green,2,Unknown,1
 REG-73CAE936,"Colorado, USA",US_STATE,,Colorado,CO,"Colorado AI Act, Amendment Failed",AI,Failed,2025-09-14,5,Green,2,Unknown,1
 REG-078473F5,United States (Federal),US_FEDERAL,,United States,,Counter-UAS authority,Drones/UAS,Failed,2025-10-02,5,Green,2,Unknown,1
 REG-C683E224,United States (Federal),US_FEDERAL,,United States,,Connecticut Data Privacy Act and related biometric privacy proposals,Data Privacy,Failed,2025-11-26,5,Green,2,Unknown,1
+REG-83AA9EC2,China,COUNTRY,China,China,,Autonomous Agent Security Testing Policy Framework,Other,Enacted,2026-05-11,4,Green,1,Partially,1
+REG-51F867DB,"Michigan, USA",US_STATE,,Michigan,MI,One-Party Consent Recording Rule,Other,Enacted,2026-04-01,4,Green,1,Partially,1
+REG-08BA2ABA,"Michigan, USA",US_STATE,,Michigan,MI,Michigan recording law,Other,Enacted,2026-04-22,4,Green,1,Partially,1
 REG-BFA10667,Pakistan,COUNTRY,Pakistan,Pakistan,,Supreme Court Secret Recording Ruling,Other,Enacted,2026-03-11,4,Green,1,Partially,1
 REG-A660D282,"California, USA",US_STATE,,California,CA,Two-Party Consent Audio Recording Law,Other,Enacted,2026-03-12,4,Green,1,Partially,1
 REG-9035722F,"California, USA",US_STATE,,California,CA,California Privacy Regulations 2026,Other,Enacted,2026-01-01,4,Green,1,Partially,1
@@ -1296,6 +1458,8 @@ REG-D2AC8FBC,"California, USA",US_STATE,,California,CA,Automated Decisionmaking 
 REG-0AE1A431,"California, USA",US_STATE,,California,CA,AI,Other,Proposed,,3,Green,1,Unknown,1
 REG-6EB2A7B0,"Louisiana, USA",US_STATE,,Louisiana,LA,Audio Recording/Analytics,Other,Proposed,,3,Green,1,Unknown,1
 REG-AF1B0081,"Washington, USA",US_STATE,,Washington,WA,ALPR,Other,Proposed,,3,Green,1,Unknown,2
+REG-05E5B174,"Maryland, USA",US_STATE,,Maryland,MD,Dynamic Pricing Ban,Other,Proposed,2026-04-17,3,Green,1,Unknown,1
+REG-7E2F88E1,"Maryland, USA",US_STATE,,Maryland,MD,Maryland Surveillance Pricing Ban,Other,Proposed,2026-04-24,3,Green,1,Unknown,1
 REG-776F1B53,"Pennsylvania, USA",US_STATE,,Pennsylvania,PA,AI,Other,Proposed,,3,Green,1,Unknown,1
 REG-0CBE66E4,Unknown (City Level),COUNTRY,Unknown (City Level),Unknown (City Level),,CCTV/Video,Other,Proposed,,3,Green,1,Unknown,1
 REG-C8299973,"California, USA",US_STATE,,California,CA,ALPR,Other,Proposed,,3,Green,1,Unknown,2
