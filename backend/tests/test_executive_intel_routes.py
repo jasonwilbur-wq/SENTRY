@@ -86,6 +86,27 @@ def _seed_exec_workspace(root: Path) -> None:
     )
 
 
+def _seed_placeholder_person_profile(root: Path) -> None:
+    _write_json(
+        root / "profiles" / "unnamed-kroger-sustainability-lead.json",
+        {
+            "profile_id": "exec_kroger_sustainability_lead_retarget",
+            "full_name": "Kroger Group VP Communications & Public Affairs (serves as CSO; name not publicly disclosed)",
+            "organization": "Kroger",
+            "title": "Group Vice President, Communications & Public Affairs / de facto Chief Sustainability Officer",
+            "status": "ACTIVE",
+            "discovery_result": {
+                "status": "ROLE_CONFIRMED_NAME_UNDISCLOSED",
+                "finding": "Role confirmed, but named individual not publicly disclosed.",
+            },
+            "discovery_note": "Discovery placeholder until a named public incumbent is verified.",
+            "aliases": [],
+            "focus_topics": ["sustainability"],
+            "collection_notes": "Public business signals only. No home/private tracking.",
+        },
+    )
+
+
 def test_executive_intel_routes_build_portfolio_and_report(tmp_path, monkeypatch):
     root = tmp_path / "executive-intel"
     _seed_exec_workspace(root)
@@ -129,6 +150,33 @@ def test_executive_intel_routes_build_portfolio_and_report(tmp_path, monkeypatch
     report_payload = report.json()
     assert report_payload["publication_status"] == "NOT_PUBLISHED_REVIEW_REQUIRED"
     assert "# Example Security Leader Draft Brief" in report_payload["markdown"]
+
+
+def test_executive_intel_routes_exclude_unnamed_placeholder_profiles(tmp_path, monkeypatch):
+    root = tmp_path / "executive-intel"
+    _seed_exec_workspace(root)
+    _seed_placeholder_person_profile(root)
+    monkeypatch.setenv("SENTRY_EXECUTIVE_INTEL_ROOT", str(root))
+
+    import auth
+
+    auth.AUTH_MODE = "off"
+    from main import app
+
+    client = TestClient(app)
+
+    listing = client.get("/api/executive-intel/portfolios")
+    assert listing.status_code == 200
+    listing_payload = listing.json()
+    assert listing_payload["total"] == 1
+    assert listing_payload["excluded_quality_count"] == 1
+    ids = {item["profile_id"] for item in listing_payload["portfolios"]}
+    assert "exec_example_security_leader" in ids
+    assert "exec_kroger_sustainability_lead_retarget" not in ids
+
+    excluded = client.get("/api/executive-intel/portfolios/exec_kroger_sustainability_lead_retarget")
+    assert excluded.status_code == 404
+    assert "excluded by quality gate" in excluded.text
 
 
 def test_executive_intel_routes_reject_bad_profile_id(tmp_path, monkeypatch):

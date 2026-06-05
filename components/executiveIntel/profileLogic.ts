@@ -61,7 +61,7 @@ export function groupByCompany(
 // Curated analyst review layer: ESG key findings surfaced from collection passes.
 export const KEY_FINDINGS: string[] = [
   'Ex-Walmart U.S. CEO Greg Foran is now Kroger\u2019s CEO (Feb 2026) \u2014 deepest competitive flag in this watchlist.',
-  '3 of the original 9 targets had stale/incorrect data \u2014 Target\u2019s Nusz departed, Kroger\u2019s CSO is embedded in Comms (unnamed), FedEx has no CSO (CEO owns it).',
+  'Quality gate applied: unnamed / role-only sustainability placeholders are excluded from the people selector until a named public incumbent is verified.',
   'Regulatory center of gravity shifted: the U.S. SEC climate rule was withdrawn (Mar 2025); EU CSRD + California SB 253/261 are now the real mandatory triggers.',
   'Escalation: a possible Walmart-CFO / Microsoft-board overlap was surfaced (MSFT sig_020) \u2014 route to Legal/Compliance before downstream use.',
 ];

@@ -21,6 +21,42 @@ from executive_intel.models import ExecutiveProfile, ExecutiveSignal, SourceQual
 from executive_intel.policy import evaluate_source_url
 
 SAFE_PROFILE_ID = re.compile(r"^[a-z0-9][a-z0-9_-]{1,120}$")
+PLACEHOLDER_PERSON_PATTERNS = (
+    "name not publicly disclosed",
+    "not publicly disclosed",
+    "name undisclosed",
+    "identity still unresolved",
+    "identity unresolved",
+    "unnamed",
+    "discovery placeholder",
+)
+PLACEHOLDER_DISCOVERY_STATUSES = {
+    "ROLE_CONFIRMED_NAME_UNDISCLOSED",
+    "IDENTITY_UNRESOLVED",
+    "DISCOVERY_PLACEHOLDER",
+}
+
+
+def _is_placeholder_person_profile(profile: dict[str, Any]) -> bool:
+    """Return True for role-only/unnamed records that should not appear as people.
+
+    Executive Intel is a people/portfolio selector. Program-level records can be
+    useful as research notes, but a record with no named incumbent must not be
+    displayed as an active executive profile or CSO-ready candidate.
+    """
+    full_name = str(profile.get("full_name") or "").strip().lower()
+    title = str(profile.get("title") or "").strip().lower()
+    discovery = profile.get("discovery_result") if isinstance(profile.get("discovery_result"), dict) else {}
+    discovery_status = str(discovery.get("status") or "").strip().upper()
+    discovery_text = str(discovery.get("finding") or "").strip().lower()
+    notes = " ".join(
+        str(profile.get(key) or "")
+        for key in ("discovery_note", "collection_notes", "relevance_framing")
+    ).lower()
+    haystack = " ".join([full_name, title, discovery_text, notes])
+    return discovery_status in PLACEHOLDER_DISCOVERY_STATUSES or any(
+        pattern in haystack for pattern in PLACEHOLDER_PERSON_PATTERNS
+    )
 
 
 def default_executive_intel_root() -> Path:
@@ -106,18 +142,28 @@ class ExecutiveIntelRepository:
         return self.root / "briefs"
 
     def list_portfolios(self) -> dict[str, Any]:
-        profiles = [self._portfolio_summary(path) for path in self._json_files(self.profiles_dir)]
-        profiles.sort(key=lambda item: item.get("updated_at") or item.get("profile_id") or "")
+        summaries: list[dict[str, Any]] = []
+        excluded_quality_count = 0
+        for path in self._json_files(self.profiles_dir):
+            profile = self._read_json(path)
+            if _is_placeholder_person_profile(profile):
+                excluded_quality_count += 1
+                continue
+            summaries.append(self._portfolio_summary(path, profile=profile))
+        summaries.sort(key=lambda item: item.get("updated_at") or item.get("profile_id") or "")
         return {
             "root_available": self.root.exists(),
             "root": str(self.root),
-            "total": len(profiles),
-            "portfolios": profiles,
+            "total": len(summaries),
+            "excluded_quality_count": excluded_quality_count,
+            "portfolios": summaries,
         }
 
     def get_portfolio(self, profile_id: str) -> dict[str, Any]:
         self._assert_safe_profile_id(profile_id)
         profile_path, profile = self._load_profile_by_id(profile_id)
+        if _is_placeholder_person_profile(profile):
+            raise FileNotFoundError(f"Executive profile excluded by quality gate: {profile_id}")
         slug = profile_path.stem
         sources = self._load_matching_records(self.sources_dir, profile_id, "sources")
         signals = self._load_matching_signals(profile_id)
@@ -164,8 +210,8 @@ class ExecutiveIntelRepository:
             "publication_status": "NOT_PUBLISHED_REVIEW_REQUIRED",
         }
 
-    def _portfolio_summary(self, profile_path: Path) -> dict[str, Any]:
-        profile = self._read_json(profile_path)
+    def _portfolio_summary(self, profile_path: Path, profile: dict[str, Any] | None = None) -> dict[str, Any]:
+        profile = profile or self._read_json(profile_path)
         profile_id = str(profile.get("profile_id") or profile_path.stem)
         slug = profile_path.stem
         sources = self._load_matching_records(self.sources_dir, profile_id, "sources")
