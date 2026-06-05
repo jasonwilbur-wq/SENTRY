@@ -19,7 +19,32 @@ const CAT_STYLE: Record<string, string> = {
   Fraud:          'bg-red-600/20 text-red-300 border border-red-600/40',
   Technology:     'bg-blue-600/20 text-blue-200 border border-blue-600/40',
 };
+const PRIORITY_STYLE: Record<string, string> = {
+  P1: 'bg-red-500/20 text-red-300 border border-red-500/40',
+  P2: 'bg-yellow-500/20 text-yellow-200 border border-yellow-500/40',
+  P3: 'bg-blue-500/20 text-blue-200 border border-blue-500/40',
+  P4: 'bg-slate-500/20 text-slate-300 border border-slate-500/40',
+};
+const OWNER_BY_CATEGORY: Record<string, string> = {
+  Cyber: 'Cyber / InfoSec',
+  Technology: 'EST Tech',
+  'ORC/Theft': 'Asset Protection',
+  Recall: 'Food Safety',
+  Legal: 'Legal / Compliance',
+  Compliance: 'Compliance',
+  Fraud: 'Asset Protection',
+  Operational: 'Operations',
+  Strategic: 'EST Strategy',
+};
 const MONTHS = ['Sep 2025','Oct 2025','Nov 2025','Dec 2025','Jan 2026','Feb 2026'];
+const SELECT_CLASS = `sentry-native-select bg-slate-900/95 border border-white/10 rounded-lg px-3 py-2 text-sm
+                     text-slate-100 focus:border-wmt-blue focus:outline-none`;
+const SELECT_STYLE: React.CSSProperties = { colorScheme: 'dark' };
+const OPTION_STYLE: React.CSSProperties = { backgroundColor: '#0f172a', color: '#f8fafc' };
+
+function ownerFor(ev: CompetitorEvent): string {
+  return ev.recommended_owner || OWNER_BY_CATEGORY[ev.category] || 'Intel Triage';
+}
 
 interface Props {
   lockedCompetitor?: string;   // lock filter to one competitor
@@ -99,30 +124,30 @@ export const CompetitorEventTable: React.FC<Props> = ({
           <select
             value={competitor}
             onChange={e => setCompetitor(e.target.value)}
-            className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm
-                       text-white focus:border-wmt-blue focus:outline-none"
+            className={SELECT_CLASS}
+            style={SELECT_STYLE}
           >
-            <option value="">All Competitors</option>
-            {competitors.map(c => <option key={c} value={c}>{c}</option>)}
+            <option value="" style={OPTION_STYLE}>All Competitors</option>
+            {competitors.map(c => <option key={c} value={c} style={OPTION_STYLE}>{c}</option>)}
           </select>
         )}
         <select
           value={category}
           onChange={e => setCategory(e.target.value)}
-          className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm
-                     text-white focus:border-wmt-blue focus:outline-none"
+          className={SELECT_CLASS}
+          style={SELECT_STYLE}
         >
-          <option value="">All Categories</option>
-          {cats.map(c => <option key={c} value={c}>{c}</option>)}
+          <option value="" style={OPTION_STYLE}>All Categories</option>
+          {cats.map(c => <option key={c} value={c} style={OPTION_STYLE}>{c}</option>)}
         </select>
         <select
           value={month}
           onChange={e => setMonth(e.target.value)}
-          className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm
-                     text-white focus:border-wmt-blue focus:outline-none"
+          className={SELECT_CLASS}
+          style={SELECT_STYLE}
         >
-          <option value="">All Months</option>
-          {MONTHS.map(m => <option key={m} value={m}>{m}</option>)}
+          <option value="" style={OPTION_STYLE}>All Months</option>
+          {MONTHS.map(m => <option key={m} value={m} style={OPTION_STYLE}>{m}</option>)}
         </select>
       </div>
 
@@ -172,7 +197,7 @@ export const CompetitorEventTable: React.FC<Props> = ({
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="border-b border-white/8">
-                {['Date','Competitor','Event','Category','Location','Source'].map(h => (
+                {['Date','Competitor','Event','Category','Priority','Owner','Location','Source'].map(h => (
                   <th key={h} className="px-3 py-2.5 text-[10px] text-slate-500 font-bold
                                          uppercase tracking-wider">{h}</th>
                 ))}
@@ -205,6 +230,15 @@ export const CompetitorEventTable: React.FC<Props> = ({
                         {ev.category}
                       </span>
                     </td>
+                    <td className="px-3 py-2.5">
+                      <span className={`inline-block px-2 py-0.5 rounded-full text-[10px]
+                                       font-bold ${PRIORITY_STYLE[ev.priority_tier || ''] ?? 'bg-slate-500/20 text-slate-400 border border-slate-500/40'}`}>
+                        {ev.priority_tier || 'Triage'}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5 text-xs text-slate-400 max-w-[150px] truncate">
+                      {ownerFor(ev)}
+                    </td>
                     <td className="px-3 py-2.5 text-xs text-slate-500 max-w-[140px] truncate">
                       {(ev.location ?? '—').slice(0, 40)}
                     </td>
@@ -225,7 +259,7 @@ export const CompetitorEventTable: React.FC<Props> = ({
                   {/* Expandable detail row */}
                   {expanded === ev.id && (
                     <tr>
-                      <td colSpan={6} className="px-3 pb-3">
+                      <td colSpan={8} className="px-3 pb-3">
                         <div className="bg-black/30 rounded-lg p-4 text-xs text-slate-400
                                         leading-relaxed space-y-2 animate-fadeIn">
                           {ev.detailed_description && (
@@ -236,6 +270,38 @@ export const CompetitorEventTable: React.FC<Props> = ({
                           )}
                           {ev.analyst_notes && (
                             <p><strong className="text-slate-300">Analyst Notes:</strong> {ev.analyst_notes}</p>
+                          )}
+                          {ev.why_walmart_cares && (
+                            <p><strong className="text-slate-300">Why Walmart Cares:</strong> {ev.why_walmart_cares}</p>
+                          )}
+                          {ev.walmart_actionability_context && (
+                            <p><strong className="text-slate-300">Recommended Action:</strong> {ev.walmart_actionability_context}</p>
+                          )}
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 pt-2">
+                            <div className="rounded-lg border border-white/8 bg-white/[0.03] p-2">
+                              <p className="text-slate-500 uppercase tracking-wider text-[10px] font-bold">Owner</p>
+                              <p className="text-slate-300 font-semibold mt-0.5">{ownerFor(ev)}</p>
+                            </div>
+                            <div className="rounded-lg border border-white/8 bg-white/[0.03] p-2">
+                              <p className="text-slate-500 uppercase tracking-wider text-[10px] font-bold">Readiness</p>
+                              <p className="text-slate-300 font-semibold mt-0.5">{ev.is_brief_ready ? 'CSO-ready' : ev.triage_status || 'Needs triage'}</p>
+                            </div>
+                            <div className="rounded-lg border border-white/8 bg-white/[0.03] p-2">
+                              <p className="text-slate-500 uppercase tracking-wider text-[10px] font-bold">Correlation</p>
+                              <p className="text-slate-300 font-semibold mt-0.5">{ev.correlation_status || 'Not scored'}</p>
+                            </div>
+                          </div>
+                          {ev.correlation_summary && (
+                            <p><strong className="text-slate-300">Correlation Summary:</strong> {ev.correlation_summary}</p>
+                          )}
+                          {(ev.linked_projects?.length ?? 0) > 0 && (
+                            <div>
+                              <strong className="text-slate-300">Linked Projects:</strong>{' '}
+                              {ev.linked_projects?.slice(0, 3).map(p => p.project_name).join(', ')}
+                            </div>
+                          )}
+                          {(ev.readiness_issues?.length ?? 0) > 0 && (
+                            <p><strong className="text-slate-300">Readiness Issues:</strong> {ev.readiness_issues?.join('; ')}</p>
                           )}
                           <p className="text-slate-600">Source month: {ev.source_month}</p>
                         </div>

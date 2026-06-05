@@ -381,6 +381,22 @@ body {
 }
 textarea.sentry-input { min-height: 5rem; }
 
+/* Native select dropdowns: keep option text readable on dark SENTRY surfaces. */
+.sentry-native-select {
+  color-scheme: dark;
+  background-color: rgba(15, 23, 42, 0.95);
+  color: #f1f5f9;
+}
+.sentry-native-select option,
+.sentry-native-select optgroup {
+  background-color: #0f172a;
+  color: #f8fafc;
+}
+.sentry-native-select option:checked {
+  background-color: #0053E2;
+  color: #ffffff;
+}
+
 /* Loading shimmer */
 .shimmer {
   background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);

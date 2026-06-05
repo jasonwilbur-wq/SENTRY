@@ -228,8 +228,21 @@ def competitor_cso_candidates(limit: int = Query(20, ge=1, le=100)):
             """
             SELECT * FROM competitor_events
              WHERE deleted_at IS NULL
-               AND (priority_tier = 'CSO Brief' OR COALESCE(escalate_to_cso, 0) = 1)
-             ORDER BY walmart_relevance_score DESC NULLS LAST, event_date DESC
+               AND (
+                 priority_tier = 'CSO Brief'
+                 OR COALESCE(escalate_to_cso, 0) = 1
+                 OR priority_tier = 'Analyst Follow-up'
+                 OR COALESCE(walmart_relevance_score, 0) >= 55
+               )
+             ORDER BY
+               COALESCE(escalate_to_cso, 0) DESC,
+               CASE priority_tier
+                 WHEN 'CSO Brief' THEN 0
+                 WHEN 'Analyst Follow-up' THEN 1
+                 ELSE 2
+               END,
+               COALESCE(walmart_relevance_score, 0) DESC,
+               event_date DESC
              LIMIT ?
             """,
             (limit,),

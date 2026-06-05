@@ -79,7 +79,7 @@ const VIEW_META: Record<ViewState, { title: string; subtitle: string; eyebrow: s
   [ViewState.COMPETITOR_INTEL]: {
     eyebrow:  'Intelligence',
     title:    'Competitor Intelligence',
-    subtitle: 'Live tracking across retail competitors — 1,113 analyst-enriched events.',
+    subtitle: 'Decision-ready competitor signals, CSO brief candidates, activity spikes, and evidence-backed context.',
   },
   [ViewState.EXECUTIVE_INTEL]: {
     eyebrow:  'Intelligence',
