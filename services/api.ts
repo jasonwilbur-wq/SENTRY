@@ -56,7 +56,7 @@ export async function apiFetch(path: string, options?: RequestInit): Promise<Res
   });
 }
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
+export async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const method = options?.method ?? 'GET';
   const startedAt = performance.now();
 
@@ -414,6 +414,7 @@ export interface TechProduct {
   initial_assessment: string;
   technical_assessment: string;
   has_var: boolean;
+  has_var_scored: boolean;
   pipeline_stage: 0 | 1 | 2 | 3 | 4;
 }
 
@@ -430,6 +431,7 @@ export interface TechPipeline {
   vendor_id: string;
   has_pipeline_data: boolean;
   has_var: boolean;
+  has_var_scored: boolean;
   summary: TechPipelineSummary;
   products: TechProduct[];
 }

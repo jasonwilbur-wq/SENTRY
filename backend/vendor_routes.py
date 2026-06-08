@@ -32,6 +32,7 @@ from vendor_directory import (
     _decision_band_from_score,
     _decision_path_from_metrics,
 )
+from vendor_pipeline_utils import _has_structured_var_score, _pipeline_stage
 
 ROUTER = APIRouter(tags=["vendors"])
 
@@ -438,6 +439,10 @@ def vendor_tech_pipeline(vendor_id: str):
             if not fallback_vendor:
                 raise exc
 
+            fallback_has_var_scored = _has_structured_var_score(
+                fallback_vendor.var_weight_score,
+                fallback_vendor.var_scores,
+            )
             fallback_products = [
                 {
                     "product_name": product.technology_product or fallback_vendor.technology_product or fallback_vendor.company_name,
@@ -449,7 +454,13 @@ def vendor_tech_pipeline(vendor_id: str):
                     "initial_assessment": "Tracked",
                     "technical_assessment": "Documented" if (product.report_url or fallback_vendor.sample_report_path) else "",
                     "has_var": fallback_vendor.has_var,
-                    "pipeline_stage": 4 if fallback_vendor.has_var else 1,
+                    "has_var_scored": fallback_has_var_scored,
+                    "pipeline_stage": _pipeline_stage(
+                        fallback_vendor.vendor_status or fallback_vendor.deployment_status,
+                        "Tracked",
+                        "Documented" if (product.report_url or fallback_vendor.sample_report_path) else "",
+                        fallback_has_var_scored,
+                    ),
                 }
                 for product in (fallback_vendor.all_products or [])
             ]
@@ -464,7 +475,13 @@ def vendor_tech_pipeline(vendor_id: str):
                     "initial_assessment": "Tracked",
                     "technical_assessment": "Documented" if (fallback_vendor.sample_report_path or fallback_vendor.report_url) else "",
                     "has_var": fallback_vendor.has_var,
-                    "pipeline_stage": 4 if fallback_vendor.has_var else 1,
+                    "has_var_scored": fallback_has_var_scored,
+                    "pipeline_stage": _pipeline_stage(
+                        fallback_vendor.vendor_status or fallback_vendor.deployment_status,
+                        "Tracked",
+                        "Documented" if (fallback_vendor.sample_report_path or fallback_vendor.report_url) else "",
+                        fallback_has_var_scored,
+                    ),
                 }]
 
             stages = [int(product["pipeline_stage"]) for product in fallback_products]
@@ -472,6 +489,7 @@ def vendor_tech_pipeline(vendor_id: str):
                 "vendor_id": vendor_id,
                 "has_pipeline_data": bool(fallback_products),
                 "has_var": fallback_vendor.has_var,
+                "has_var_scored": fallback_has_var_scored,
                 "summary": {
                     "total_products": len(fallback_products),
                     "technically_assessed": sum(1 for product in fallback_products if product["technical_assessment"]),
@@ -497,6 +515,10 @@ def vendor_tech_pipeline(vendor_id: str):
             f"SELECT COUNT(*) FROM var_reports WHERE vendor_id IN ({placeholders})",
             company_vendor_ids,
         ).fetchone()[0] > 0
+        has_var_scored = conn.execute(
+            f"SELECT COUNT(*) FROM var_reports WHERE vendor_id IN ({placeholders}) AND overall_score IS NOT NULL",
+            company_vendor_ids,
+        ).fetchone()[0] > 0
     finally:
         conn.close()
 
@@ -505,6 +527,7 @@ def vendor_tech_pipeline(vendor_id: str):
             "vendor_id": vendor_id,
             "has_pipeline_data": False,
             "has_var": has_var,
+            "has_var_scored": has_var_scored,
             "summary": {
                 "total_products": 0,
                 "technically_assessed": 0,
@@ -531,12 +554,13 @@ def vendor_tech_pipeline(vendor_id: str):
                 "initial_assessment": row["initial_assessment"] or "",
                 "technical_assessment": row["technical_assessment"] or "",
                 "has_var": has_var,
+                "has_var_scored": has_var_scored,
                 # Computed pipeline stage (0-4)
                 "pipeline_stage": _pipeline_stage(
                     row["pre_assessment_decision"],
                     row["initial_assessment"],
                     row["technical_assessment"],
-                    has_var,
+                    has_var_scored,
                 ),
             }
 
@@ -553,6 +577,7 @@ def vendor_tech_pipeline(vendor_id: str):
         "vendor_id": vendor_id,
         "has_pipeline_data": True,
         "has_var": has_var,
+        "has_var_scored": has_var_scored,
         "summary": {
             "total_products": len(products),
             "technically_assessed": len(ta_vals),
@@ -563,28 +588,3 @@ def vendor_tech_pipeline(vendor_id: str):
         },
         "products": list(products.values()),
     }
-
-
-def _pipeline_stage(
-    pre_decision: str | None,
-    initial: str | None,
-    technical: str | None,
-    has_var: bool,
-) -> int:
-    """Return 0-4 representing how far in the pipeline this product is.
-
-    0 = not started
-    1 = pre-assessment done
-    2 = initial assessment done (Pass/Yes)
-    3 = technical assessment done
-    4 = VAR complete
-    """
-    if has_var:
-        return 4
-    if technical and technical.lower() == "yes":
-        return 3
-    if initial and initial.lower() in ("pass", "yes"):
-        return 2
-    if pre_decision:
-        return 1
-    return 0

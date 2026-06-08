@@ -15,15 +15,23 @@ const STAGE_LABELS = [
   'Initial Assessment',
   'Technical Assessment',
   'VAR Complete',
-];
+] as const;
 
-const STAGE_COLORS = [
-  'bg-gray-700 text-gray-400',
-  'bg-blue-900 text-blue-300',
-  'bg-yellow-900 text-yellow-300',
-  'bg-purple-900 text-purple-300',
-  'bg-green-900 text-green-300',
-];
+function stageLabel(stage: number, hasVarScored: boolean): string {
+  if (stage === 4 && !hasVarScored) return 'VAR Linked';
+  return STAGE_LABELS[stage] ?? 'Unknown';
+}
+
+function stageBadgeColor(stage: number, hasVarScored: boolean): string {
+  if (stage === 4 && !hasVarScored) return 'bg-amber-900 text-amber-300';
+  return [
+    'bg-gray-700 text-gray-400',
+    'bg-blue-900 text-blue-300',
+    'bg-yellow-900 text-yellow-300',
+    'bg-purple-900 text-purple-300',
+    'bg-green-900 text-green-300',
+  ][stage] ?? 'bg-gray-700 text-gray-400';
+}
 
 const IA_COLOR: Record<string, string> = {
   pass:  'text-green-400',
@@ -83,11 +91,11 @@ function formatSourceLabel(sourceFile: string) {
   return sourceFile.replace('_updated.csv', '').replace(/[_-]/g, ' ');
 }
 
-function ProductRow({ p }: { p: TechProduct }) {
-  const stageLabel = STAGE_LABELS[p.pipeline_stage] ?? 'Unknown';
-  const stageColor = STAGE_COLORS[p.pipeline_stage] ?? '';
+function ProductRow({ p, hasVarScored }: { p: TechProduct; hasVarScored: boolean }) {
+  const stageText = stageLabel(p.pipeline_stage, hasVarScored);
+  const stageColor = stageBadgeColor(p.pipeline_stage, hasVarScored);
   const iaVal      = p.initial_assessment || '—';
-  const taVal      = p.technical_assessment === 'Yes' ? '✔ Yes' : (p.technical_assessment || '—');
+  const taVal      = p.technical_assessment === 'Yes' ? 'Yes' : (p.technical_assessment || '—');
 
   return (
     <tr className="border-b border-gray-800 hover:bg-gray-800/50 transition-colors">
@@ -99,9 +107,14 @@ function ProductRow({ p }: { p: TechProduct }) {
         {p.pre_assessment_score !== null ? p.pre_assessment_score.toFixed(1) : '—'}
       </td>
       <td className="py-2 px-3">
-        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${stageColor}`}>
-          {stageLabel}
-        </span>
+        <div className="flex flex-col items-start gap-1">
+          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${stageColor}`}>
+            {stageText}
+          </span>
+          {p.has_var && !hasVarScored && (
+            <span className="text-[10px] text-amber-300">VAR linked · score extraction pending</span>
+          )}
+        </div>
       </td>
       <td className="py-2 px-3">
         <PipelineStepper stage={p.pipeline_stage} />
@@ -153,6 +166,9 @@ export function TechAssessmentTab({ vendorId }: Props) {
 
   const { summary, products } = data;
   const maxStage = summary.max_pipeline_stage;
+  const highestStageLabel = stageLabel(maxStage, data.has_var_scored);
+  const highestStageColor = stageBadgeColor(maxStage, data.has_var_scored);
+  const finalStageLabel = data.has_var_scored ? 'VAR Complete' : data.has_var ? 'VAR Linked' : 'VAR';
 
   return (
     <div className="space-y-5">
@@ -164,23 +180,28 @@ export function TechAssessmentTab({ vendorId }: Props) {
               Assessment Pipeline
             </h4>
             <p className="text-xs text-gray-400 mt-1">
-              Tracking {summary.total_products} grouped {summary.total_products === 1 ? 'product' : 'products'} across pre-assessment, technical review, and VAR completion.
+              Tracking {summary.total_products} grouped {summary.total_products === 1 ? 'product' : 'products'} across pre-assessment, technical review, VAR linking, and score extraction.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${STAGE_COLORS[maxStage] ?? ''}`}>
-              Highest Stage: {STAGE_LABELS[maxStage]}
+            <span className={`text-xs px-2.5 py-0.5 rounded-full font-medium ${highestStageColor}`}>
+              Highest Stage: {highestStageLabel}
             </span>
-            {data.has_var && (
+            {data.has_var && data.has_var_scored && (
               <span className="text-xs px-2.5 py-0.5 rounded-full font-medium bg-green-900/40 text-green-300 border border-green-800/60">
-                VAR present
+                VAR scored
+              </span>
+            )}
+            {data.has_var && !data.has_var_scored && (
+              <span className="text-xs px-2.5 py-0.5 rounded-full font-medium bg-amber-900/30 text-amber-300 border border-amber-800/70">
+                VAR linked · score extraction pending
               </span>
             )}
           </div>
         </div>
         {/* Full-width stepper */}
         <div className="flex items-center gap-0">
-          {['Pre-Assessment', 'Initial', 'Technical', 'VAR Complete'].map((label, i) => {
+          {['Pre-Assessment', 'Initial', 'Technical', finalStageLabel].map((label, i) => {
             const stepStage = i + 1;
             const active = maxStage >= stepStage;
             return (
@@ -228,7 +249,7 @@ export function TechAssessmentTab({ vendorId }: Props) {
           </thead>
           <tbody>
             {products.map(p => (
-              <ProductRow key={p.product_name} p={p} />
+              <ProductRow key={p.product_name} p={p} hasVarScored={data.has_var_scored} />
             ))}
           </tbody>
         </table>
