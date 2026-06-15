@@ -122,6 +122,14 @@ const NAV_GROUPS: NavGroup[] = [
           <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M12 2l9 16H3l9-16z" />
         ),
       },
+      {
+        view: ViewState.INTEL_TIMELINE,
+        label: 'Intel Timeline',
+        hint: 'New',
+        icon: ICON(
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+        ),
+      },
     ],
   },
   {

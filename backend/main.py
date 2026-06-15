@@ -39,6 +39,7 @@ from vendor_sync_routes import router as vendor_sync_router
 from cso_brief_routes import ROUTER as cso_brief_router
 from executive_intel_routes import ROUTER as executive_intel_router
 from cso_profile_routes import ROUTER as cso_profile_router
+from intel_timeline_routes import ROUTER as intel_timeline_router
 import cso_profile_store
 from auth import SentryUser, get_current_user, get_auth_status, require_admin
 from cache import clear_all
@@ -203,6 +204,7 @@ app.include_router(vendor_sync_router)
 app.include_router(cso_brief_router)
 app.include_router(executive_intel_router)
 app.include_router(cso_profile_router)
+app.include_router(intel_timeline_router)  # Backbone Feature #1: unified intel timeline (read-only, additive)
 
 
 @app.get("/api/auth/me")

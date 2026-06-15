@@ -24,6 +24,7 @@ const AdminPanel             = lazy(() => import('./components/AdminPanel').then
 const CompetitorIntel        = lazy(() => import('./components/CompetitorIntel').then(m => ({ default: m.CompetitorIntel })));
 const ExecutiveIntelligence  = lazy(() => import('./components/ExecutiveIntelligence').then(m => ({ default: m.ExecutiveIntelligence })));
 const IncidentIntelligence   = lazy(() => import('./components/IncidentIntelligence').then(m => ({ default: m.IncidentIntelligence })));
+const IntelTimeline          = lazy(() => import('./components/IntelTimeline'));
 const RegulatoryIntelligence = lazy(() => import('./components/RegulatoryIntelligence').then(m => ({ default: m.RegulatoryIntelligence })));
 const VendorRiskMap3D        = lazy(() => import('./components/VendorRiskMap3D'));
 const Sentinel               = lazy(() => import('./components/Sentinel').then(m => ({ default: m.Sentinel })));
@@ -101,6 +102,11 @@ const VIEW_META: Record<ViewState, { title: string; subtitle: string; eyebrow: s
     eyebrow:  'Intelligence',
     title:    'Incident Intelligence',
     subtitle: 'Retail incident tracking by severity, region, type, and operational signal.',
+  },
+  [ViewState.INTEL_TIMELINE]: {
+    eyebrow:  'Intelligence',
+    title:    'Intel Timeline',
+    subtitle: 'Unified cross-source signal feed - competitor events, incidents, and web-change alerts in one chronological view.',
   },
   [ViewState.REQUEST_QUEUE]: {
     eyebrow:  'Operations',
@@ -536,6 +542,11 @@ const App: React.FC = () => {
                       {currentView === ViewState.INCIDENT_INTELLIGENCE && (
                         <ViewErrorBoundary viewName="Incident Intelligence">
                           <IncidentIntelligence />
+                        </ViewErrorBoundary>
+                      )}
+                      {currentView === ViewState.INTEL_TIMELINE && (
+                        <ViewErrorBoundary viewName="Intel Timeline">
+                          <IntelTimeline />
                         </ViewErrorBoundary>
                       )}
                       {currentView === ViewState.REGULATORY_INTELLIGENCE && (
