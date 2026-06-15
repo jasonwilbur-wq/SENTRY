@@ -80,6 +80,7 @@ def get_timeline_stats() -> dict:
 def list_signals(
     source_system: str | None = Query(None, description="competitor_events|incidents|changedetection|manual"),
     entity_type:   str | None = Query(None),
+    classification: str | None = Query(None, description="FACT|ALLEGATION|INFERENCE|UNKNOWN"),
     vendor_id:     str | None = Query(None),
     q:             str | None = Query(None, description="Free-text search"),
     date_from:     str | None = Query(None),
@@ -100,6 +101,8 @@ def list_signals(
         where.append("source_system = ?"); params.append(source_system)
     if entity_type:
         where.append("entity_type = ?"); params.append(entity_type)
+    if classification:
+        where.append("classification = ?"); params.append(classification)
     if vendor_id:
         where.append("matched_vendor_id = ?"); params.append(vendor_id)
     if date_from:
@@ -141,5 +144,7 @@ def get_timeline_filters() -> dict:
         "SELECT DISTINCT source_system FROM intel_signals WHERE source_system IS NOT NULL ORDER BY 1")]
     entity_types = [r[0] for r in conn.execute(
         "SELECT DISTINCT entity_type FROM intel_signals WHERE entity_type IS NOT NULL ORDER BY 1")]
+    classifications = [r[0] for r in conn.execute(
+        "SELECT DISTINCT classification FROM intel_signals WHERE classification IS NOT NULL ORDER BY 1")]
     conn.close()
-    return {"enabled": True, "sources": sources, "entity_types": entity_types}
+    return {"enabled": True, "sources": sources, "entity_types": entity_types, "classifications": classifications}
