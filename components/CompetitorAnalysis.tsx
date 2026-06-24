@@ -1,7 +1,7 @@
 /**
- * CompetitorAnalysis — Q1 2026 Security Technology Forecast Market Analysis.
+ * CompetitorAnalysis — Q2 2026 Security Technology Forecast Market Analysis.
  *
- * Data: WMT_ES_Q1 Security Technology Forecast_v1.1 (Jason Wilbur, Feb 2026)
+ * Data: Q2 Forecast Package (Jason Wilbur, June 2026)
  * 3D globe: MarketGlobe · Charts: Recharts · Cards: GlassCard3D
  *
  * Fixes applied:
@@ -21,8 +21,10 @@ import { MarketGlobe } from './MarketGlobe';
 import { ChatAssistant } from './ChatAssistant';
 import { GlassCard3D } from './GlassCard3D';
 import { PilotCards } from './PilotCards';
+import { ForecastDecisionCockpit } from './forecast/ForecastDecisionCockpit';
 import {
   TECH_CATEGORIES, EXEC_INSIGHTS, KPIS, TIMELINE_ACTIONS,
+  FORECAST_META, Q2_DELTAS, EXEC_DECISIONS, POSTURE_SUMMARY,
 } from '../data/forecastData';
 import { useVendors } from '../context/VendorContext';
 import { ViewState } from '../types';
@@ -36,6 +38,7 @@ const PHASE_COLORS = ['#0053e2', '#FFC220', '#22c55e'];
 const RISK_COLORS: Record<string, string> = {
   Low: '#22c55e', Medium: '#FFC220', High: '#f87171', Critical: '#ef4444',
 };
+const POSTURE_COLORS: Record<string, string> = { Green: '#22c55e', Yellow: '#FFC220', Red: '#ef4444' };
 
 // ── Small reusable sub-components ────────────────────────────────────────────
 
@@ -63,7 +66,7 @@ function KpiCard({ label, value, unit, color }: { label: string; value: string; 
   );
 }
 
-function InsightCard({ icon, title, text }: { icon: string; title: string; text: string }) {
+function InsightCard({ icon, title, text }: { icon?: string; title: string; text: string }) {
   return (
     <GlassCard3D
       glowColor="#0053e2"
@@ -71,9 +74,80 @@ function InsightCard({ icon, title, text }: { icon: string; title: string; text:
       className="bg-slate-900/70 border border-slate-700 rounded-xl p-5 flex flex-col"
       style={{ backdropFilter: 'blur(12px)' }}
     >
-      <div className="text-2xl mb-3 select-none" aria-hidden>{icon}</div>
+      {icon && <div className="text-2xl mb-3 select-none" aria-hidden>{icon}</div>}
       <h4 className="text-white font-bold text-sm mb-2">{title}</h4>
       <p className="text-slate-400 text-xs leading-relaxed">{text}</p>
+    </GlassCard3D>
+  );
+}
+
+function ExecutiveBriefCard() {
+  return (
+    <GlassCard3D
+      glowColor="#0053e2"
+      intensity={5}
+      className="bg-slate-950/80 border border-blue-500/30 rounded-2xl p-6"
+      style={{ backdropFilter: 'blur(14px)' }}
+    >
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <span className="text-[10px] font-bold uppercase tracking-[0.24em] text-yellow-300">CSO Decision Brief</span>
+        <span className="text-[10px] text-slate-500">{FORECAST_META.status}</span>
+      </div>
+      <p className="text-white text-sm leading-relaxed max-w-5xl">{FORECAST_META.executiveThesis}</p>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mt-5">
+        {POSTURE_SUMMARY.map(p => (
+          <div key={p.label} className="rounded-xl border border-slate-700 bg-white/[0.03] p-4" style={{ borderTopColor: p.color, borderTopWidth: '3px' }}>
+            <div className="flex items-baseline justify-between gap-2">
+              <h4 className="font-black text-sm" style={{ color: p.color }}>{p.label}</h4>
+              <span className="text-2xl font-black" style={{ color: p.color }}>{p.count}</span>
+            </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed mt-1">{p.detail}</p>
+          </div>
+        ))}
+      </div>
+    </GlassCard3D>
+  );
+}
+
+function DeltaStrip() {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+      {Q2_DELTAS.map(delta => (
+        <GlassCard3D
+          key={delta.title}
+          glowColor={delta.color}
+          intensity={4}
+          className="bg-slate-900/70 border border-slate-700 rounded-xl p-4"
+          style={{ borderLeftColor: delta.color, borderLeftWidth: '3px', backdropFilter: 'blur(12px)' }}
+        >
+          <p className="text-[10px] font-black uppercase tracking-wider" style={{ color: delta.color }}>{delta.label}</p>
+          <h4 className="text-white text-sm font-bold leading-snug mt-1">{delta.title}</h4>
+          <p className="text-slate-400 text-[11px] leading-relaxed mt-2">{delta.detail}</p>
+        </GlassCard3D>
+      ))}
+    </div>
+  );
+}
+
+function DecisionList() {
+  return (
+    <GlassCard3D
+      glowColor="#FFC220"
+      intensity={4}
+      className="bg-slate-900/70 border border-yellow-500/30 rounded-2xl p-5"
+      style={{ backdropFilter: 'blur(12px)' }}
+    >
+      <h4 className="font-black text-sm text-yellow-300 mb-3">Executive action queue</h4>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3">
+        {EXEC_DECISIONS.map((decision, index) => (
+          <div key={decision} className="flex gap-3 text-xs text-slate-300 leading-relaxed">
+            <span className="shrink-0 w-6 h-6 rounded-full bg-yellow-300/10 text-yellow-300 border border-yellow-300/30 flex items-center justify-center font-black text-[10px]">
+              {index + 1}
+            </span>
+            <span>{decision}</span>
+          </div>
+        ))}
+      </div>
     </GlassCard3D>
   );
 }
@@ -96,12 +170,14 @@ function ScatterTooltipContent({ active, payload }: any) {
       <p style={{ color: 'var(--s-text-muted)' }}>Deployability: <span style={{ color: 'var(--s-text)' }}>{d.deployLabel}</span></p>
       <p style={{ color: 'var(--s-text-muted)' }}>Sensitivity: <span style={{ color: 'var(--s-text)' }}>{d.sensitivityLabel}</span></p>
       <p style={{ color: 'var(--s-text-muted)' }}>Timeline: <span style={{ color: '#FFC220' }}>{d.timeToValue}</span></p>
+      <p style={{ color: 'var(--s-text-muted)' }}>Posture: <span style={{ color: d.postureColor }}>{d.posture}</span></p>
       <p style={{ color: 'var(--s-text-muted)' }}>
         Investment: <span className="text-green-400">
           ${d.minCostK}k – ${d.maxCostK >= 1000 ? `${(d.maxCostK / 1000).toFixed(1)}M` : `${d.maxCostK}k`}
         </span>
       </p>
-      <p className="text-orange-400 mt-1 leading-snug">⚠ {d.primaryRisk}</p>
+      <p className="text-orange-400 mt-1 leading-snug">Risk: {d.primaryRisk}</p>
+      <p className="text-blue-300 mt-1 leading-snug">Action: {d.recommendedAction}</p>
     </div>
   );
 }
@@ -178,6 +254,9 @@ export const CompetitorAnalysis: React.FC<Props> = ({ onNavigate }) => {
       minCostK: tc.minCostK,
       maxCostK: tc.maxCostK,
       primaryRisk: tc.primaryRisk,
+      posture: tc.posture,
+      postureColor: POSTURE_COLORS[tc.posture],
+      recommendedAction: tc.recommendedAction,
     })),
   []);
 
@@ -216,9 +295,9 @@ export const CompetitorAnalysis: React.FC<Props> = ({ onNavigate }) => {
   };
 
   const tabs = [
-    { key: 'forecast', label: '📊 Q1 Forecast' },
-    { key: 'vendors',  label: '🏢 Vendor Data' },
-    { key: 'chat',     label: '🤖 AI Analyst' },
+    { key: 'forecast', label: 'Q2 Forecast' },
+    { key: 'vendors',  label: 'Vendor Data' },
+    { key: 'chat',     label: 'AI Analyst' },
   ] as const;
 
   return (
@@ -245,25 +324,25 @@ export const CompetitorAnalysis: React.FC<Props> = ({ onNavigate }) => {
           {/* Left text */}
           <div className="flex-1 p-8 flex flex-col justify-center min-w-0">
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-xs font-bold text-yellow-300 tracking-widest uppercase">Q1 2026</span>
+              <span className="text-xs font-bold text-yellow-300 tracking-widest uppercase">{FORECAST_META.quarter}</span>
               <span className="w-1 h-1 rounded-full bg-slate-600" />
-              <span className="text-xs text-slate-400">EST Forecast Report v1.1</span>
+  <span className="text-xs text-slate-400">{FORECAST_META.status}</span>
             </div>
             <h2 className="text-3xl font-black text-white leading-tight mb-2">
               Security Technology<br />
-              <span className="text-yellow-300">Forecast</span> Landscape
+              <span className="text-yellow-300">Q2 Forecast</span> Landscape
             </h2>
             <p className="text-slate-400 text-sm leading-relaxed max-w-sm mb-6">
-              12–24 month prioritized assessment of emerging security capabilities for
-              Walmart's enterprise security function.
+              Delta vs Q1: governed acceleration under AI, evidence-authenticity,
+              bot, provenance, drone, ORC, and biometric-regulatory pressure.
             </p>
 
             {/* Stats */}
             <div className="grid grid-cols-3 gap-3 mb-5">
               {[
-                { v: '12',   l: 'Tech Categories' },
-                { v: '8',    l: 'Pilot MVPs' },
-                { v: '$7M+', l: 'Portfolio Budget' },
+                { v: '2',    l: 'New AI Pilots' },
+                { v: '8',    l: 'Carry-Forward MVPs' },
+                { v: '2',    l: 'Red Constraints' },
               ].map(s => (
                 <div
                   key={s.l}
@@ -299,6 +378,12 @@ export const CompetitorAnalysis: React.FC<Props> = ({ onNavigate }) => {
       {/* ── KPI ROW ─────────────────────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
         {KPIS.map(k => <KpiCard key={k.label} {...k} />)}
+      </div>
+
+      {/* ── CSO DECISION BRIEF ─────────────────────────────────── */}
+      <div className="space-y-4 mb-8">
+        <ExecutiveBriefCard />
+        <DeltaStrip />
       </div>
 
       {/* ── TAB NAV ─────────────────────────────────────────────── */}
@@ -338,23 +423,35 @@ export const CompetitorAnalysis: React.FC<Props> = ({ onNavigate }) => {
       {activeTab === 'forecast' && (
         <div className="space-y-10">
 
+          {/* Executive Decisions */}
+          <section>
+            <SectionHeading
+              title="Q2 Executive Decisions"
+              subtitle="Actions from the consolidated Q2 forecast package for CSO and GSSI leadership review"
+            />
+            <DecisionList />
+          </section>
+
           {/* Executive Insights */}
           <section>
             <SectionHeading
               title="Executive Intelligence"
-              subtitle="Key strategic themes from the Q1 2026 Security Technology Forecast"
+              subtitle="Key strategic themes from the Q2 2026 Security Technology Forecast"
             />
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
               {EXEC_INSIGHTS.map(i => <InsightCard key={i.title} {...i} />)}
             </div>
           </section>
 
+          {/* Forecast Product Cockpit */}
+          <ForecastDecisionCockpit />
+
           {/* Scatter + Horizontal Bar — side-by-side */}
           <section className="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
             <ChartCard
               title="Category Matrix — Deployability vs Sensitivity"
-              subtitle="Bubble size = avg investment. Hover any bubble for details. Drag to zoom."
+              subtitle="Bubble size = avg investment. Color = category. Hover for Q2 posture, risk, and recommended action."
               height={320}
               glowColor="#0053e2"
             >
@@ -440,8 +537,8 @@ export const CompetitorAnalysis: React.FC<Props> = ({ onNavigate }) => {
           {/* Pilot Portfolio */}
           <section>
             <SectionHeading
-              title="Pilot Portfolio — 8 MVPs"
-              subtitle="8–12 weeks each · $50k – $2.0M per pilot (medium confidence) · hover any card for 3D depth"
+              title="Pilot Portfolio — 10 MVPs"
+              subtitle="Q1 carry-forward portfolio plus 2 Q2 AI-era pilots · 8–12 weeks each · hover any card for 3D depth"
             />
             <PilotCards />
           </section>
@@ -479,8 +576,8 @@ export const CompetitorAnalysis: React.FC<Props> = ({ onNavigate }) => {
           {/* Footer */}
           <div className="text-center py-4 border-t border-slate-800">
             <p className="text-[10px] text-slate-600">
-              Source: WMT_ES_Q1 Security Technology Forecast_v1.1 · Jason Wilbur, Sr. Security Manager – EST ·
-              Richard Ivy, Group Director · 15 Feb 2026 · Internal Use Only
+              Source: Q2 Forecast Package · {FORECAST_META.preparedBy} · Primary recipient: Richard Ivy, Group Director ·
+              {FORECAST_META.status} · {FORECAST_META.classification}
             </p>
           </div>
         </div>

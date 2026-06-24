@@ -10,7 +10,7 @@
  * All data comes from VendorContext (server-side filtering).
  */
 import React, { useCallback, useState } from 'react';
-import { useVendors } from '../context/VendorContext';
+import { VENDOR_PAGE_SIZE, useVendors } from '../context/VendorContext';
 import { Vendor } from '../services/api';
 import { VendorDetailModal } from './VendorDetailModal';
 import { Pagination } from './Pagination';
@@ -20,7 +20,7 @@ import { ExecutivePostureCard } from './ExecutivePostureCard';
 import { VendorComparisonTray } from './VendorComparisonTray';
 import { useLazyRender } from '../hooks/useLazyRender';
 
-const PAGE_SIZE = 24;
+const PAGE_SIZE = VENDOR_PAGE_SIZE;
 const MAX_COMPARE_VENDORS = 4;
 
 // ── Lazy-rendered vendor card (defers 3D/SVG until near viewport) ───────────

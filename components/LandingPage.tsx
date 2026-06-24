@@ -141,8 +141,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
         </svg>
         <div className="leading-tight">
           <p className="text-[10px] font-bold uppercase tracking-[0.32em]" style={{ color: '#FFC220' }}>Walmart</p>
-          <p className="text-[10px] font-medium uppercase tracking-[0.28em]" style={{ color: '#7c93b5' }}>
-            Global Security · GSA&amp;I
+          <p className="text-xs font-medium uppercase tracking-[0.22em]" style={{ color: '#9fb2d1' }}>
+            Global Security, Strategy &amp; Innovation
           </p>
         </div>
       </div>
@@ -162,8 +162,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
           <span className="animate-ping absolute inset-0 rounded-full bg-green-400 opacity-60" />
           <span className="relative rounded-full h-2 w-2 bg-green-400" />
         </span>
-        <span className="text-[10px] font-mono font-semibold tracking-[0.2em] uppercase" style={{ color: '#a9c1e6' }}>
-          IAP secured · Internal use only
+        <span className="text-xs font-mono font-semibold tracking-[0.14em] uppercase" style={{ color: '#a9c1e6' }}>
+          Internal workspace · verify auth status inside
         </span>
       </div>
 
@@ -328,7 +328,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
               >
                 {p.value}
               </p>
-              <p className="mt-1.5 text-[10px] font-semibold uppercase tracking-[0.18em]" style={{ color: '#7c93b5' }}>
+              <p className="mt-1.5 text-xs font-semibold uppercase tracking-[0.14em]" style={{ color: '#9fb2d1' }}>
                 {p.label}
               </p>
             </div>
@@ -338,8 +338,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onEnter }) => {
 
       {/* Footer */}
       <div className="absolute bottom-5 inset-x-0 text-center z-10">
-        <p className="text-[9px] font-mono uppercase tracking-[0.28em]" style={{ color: '#3b4a6b' }}>
-          Encrypted via Google Cloud IAP · Zero-Trust Enforced · {new Date().getFullYear()}
+        <p className="text-xs font-mono uppercase tracking-[0.18em]" style={{ color: '#6f819f' }}>
+          Internal use only · runtime security posture appears after access check · {new Date().getFullYear()}
         </p>
       </div>
     </div>

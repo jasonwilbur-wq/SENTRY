@@ -12,14 +12,16 @@ WARNING: Route order matters in FastAPI! Static paths like
   /api/vendors/categories MUST be registered before /{vendor_id}.
 """
 import csv
+import logging
 import os
 import re
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from fastapi import Depends, FastAPI
+from fastapi import Depends, FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from database import get_connection, init_db
 from database_reliability import database_status, write_surface_summary
@@ -41,7 +43,7 @@ from executive_intel_routes import ROUTER as executive_intel_router
 from cso_profile_routes import ROUTER as cso_profile_router
 from intel_timeline_routes import ROUTER as intel_timeline_router
 import cso_profile_store
-from auth import SentryUser, get_current_user, get_auth_status, require_admin
+from auth import SentryUser, get_current_user, get_auth_status, protected_read_dependencies, require_admin
 from cache import clear_all
 from models import ChatRequest, ChatResponse
 from path_config import (
@@ -60,6 +62,47 @@ try:
     from import_vendor_data import import_all as import_vendor_directory_data
 except ImportError:
     import_vendor_directory_data = None
+
+
+LOGGER = logging.getLogger("sentry.api")
+PRODUCTION_ENVS = {"prod", "production"}
+DEV_ALLOWED_ORIGINS = "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173"
+LOCAL_ORIGIN_PREFIXES = ("http://localhost", "http://127.0.0.1", "http://0.0.0.0")
+
+
+def _current_app_env() -> str:
+    return os.environ.get("SENTRY_ENV", os.environ.get("ENVIRONMENT", "development")).lower()
+
+
+def _build_allowed_origins(raw_origins: str | None, app_env: str) -> list[str]:
+    """Parse and validate CORS origins for local or hosted runtime.
+
+    Production requires an explicit ALLOWED_ORIGINS value with concrete HTTPS
+    origins. Localhost defaults are intentionally development-only.
+    """
+    is_production = app_env.lower() in PRODUCTION_ENVS
+    if raw_origins is None:
+        if is_production:
+            raise RuntimeError("Production SENTRY requires explicit ALLOWED_ORIGINS.")
+        raw_origins = DEV_ALLOWED_ORIGINS
+
+    origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
+    if is_production:
+        if not origins:
+            raise RuntimeError("Production SENTRY requires at least one ALLOWED_ORIGINS entry.")
+        if "*" in origins:
+            raise RuntimeError("Production SENTRY refuses wildcard ALLOWED_ORIGINS.")
+        unsafe = [
+            origin
+            for origin in origins
+            if origin.startswith(LOCAL_ORIGIN_PREFIXES) or not origin.startswith("https://")
+        ]
+        if unsafe:
+            raise RuntimeError(
+                "Production SENTRY ALLOWED_ORIGINS must be explicit https origins; "
+                f"refused: {', '.join(unsafe)}"
+            )
+    return origins
 
 
 def _startup_vendor_profiles_csv() -> Path:
@@ -134,23 +177,64 @@ app = FastAPI(
 # Set ALLOWED_ORIGINS env var to a comma-separated list of origins.
 # Defaults to localhost:3000 for local development.
 # Production: set on Cloud Run to your Firebase Hosting URL.
-_raw_origins = os.environ.get(
-    "ALLOWED_ORIGINS",
-    "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173",
-)
-ALLOWED_ORIGINS: list[str] = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+ALLOWED_ORIGINS = _build_allowed_origins(os.environ.get("ALLOWED_ORIGINS"), _current_app_env())
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
     allow_methods=["GET", "POST", "PATCH", "DELETE"],
-    allow_headers=["Content-Type", "Authorization", "X-Sentry-User"],
+    allow_headers=["Content-Type", "Authorization", "X-Sentry-User", "X-Goog-IAP-JWT-Assertion"],
 )
+
+SECURITY_HEADERS = {
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=()",
+}
+API_CONTENT_SECURITY_POLICY = (
+    "default-src 'none'; "
+    "frame-ancestors 'none'; "
+    "base-uri 'none'; "
+    "form-action 'none'"
+)
+
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next) -> Response:
+    """Attach baseline security headers to every backend response.
+
+    The strict CSP is scoped to `/api/*` so FastAPI's interactive docs remain
+    usable in local development while JSON/data endpoints stay non-renderable.
+    """
+    response: Response = await call_next(request)
+    for key, value in SECURITY_HEADERS.items():
+        response.headers.setdefault(key, value)
+    if request.url.path.startswith("/api/"):
+        response.headers.setdefault("Content-Security-Policy", API_CONTENT_SECURITY_POLICY)
+    if request.url.scheme == "https":
+        response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+    return response
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """Log unexpected failures while returning a sanitized client response."""
+    LOGGER.error(
+        "Unhandled SENTRY API exception",
+        extra={"path": request.url.path, "method": request.method},
+        exc_info=(type(exc), exc, exc.__traceback__),
+    )
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Internal server error. Contact your SENTRY administrator."},
+    )
+
 
 # ── Router wiring ──────────────────────────────────────────────────────
 app.include_router(admin_router)
-app.include_router(vendor_assessment_router)
-app.include_router(request_router)
+app.include_router(vendor_assessment_router, dependencies=protected_read_dependencies())
+app.include_router(request_router, dependencies=protected_read_dependencies())
 
 
 @app.get("/api/health")
@@ -191,20 +275,36 @@ def api_health() -> dict[str, object]:
     return payload
 
 
-app.include_router(project_router)
-app.include_router(portfolio_router)
-app.include_router(intel_digest_router)
-app.include_router(incident_router)
-app.include_router(regulatory_router)
-app.include_router(analytics_router)
-app.include_router(competitor_router)
-app.include_router(vendor_router)
-app.include_router(var_report_router)
+@app.get("/api/health/authenticated")
+def api_authenticated_health(user: SentryUser = Depends(get_current_user)) -> dict[str, object]:
+    """Authenticated readiness probe for SSO/IAP and role validation."""
+    return {
+        "status": "ok",
+        "version": app.version,
+        "user": {
+            "id": user.id,
+            "role": user.role,
+            "is_admin": user.is_admin,
+            "auth_mode": user.auth_mode,
+        },
+    }
+
+
+_protected_read_dependencies = protected_read_dependencies()
+app.include_router(project_router, dependencies=_protected_read_dependencies)
+app.include_router(portfolio_router, dependencies=_protected_read_dependencies)
+app.include_router(intel_digest_router, dependencies=_protected_read_dependencies)
+app.include_router(incident_router, dependencies=_protected_read_dependencies)
+app.include_router(regulatory_router, dependencies=_protected_read_dependencies)
+app.include_router(analytics_router, dependencies=_protected_read_dependencies)
+app.include_router(competitor_router, dependencies=_protected_read_dependencies)
+app.include_router(vendor_router, dependencies=_protected_read_dependencies)
+app.include_router(var_report_router, dependencies=_protected_read_dependencies)
 app.include_router(vendor_sync_router)
 app.include_router(cso_brief_router)
-app.include_router(executive_intel_router)
-app.include_router(cso_profile_router)
-app.include_router(intel_timeline_router)  # Backbone Feature #1: unified intel timeline (read-only, additive)
+app.include_router(executive_intel_router, dependencies=_protected_read_dependencies)
+app.include_router(cso_profile_router, dependencies=_protected_read_dependencies)
+app.include_router(intel_timeline_router, dependencies=_protected_read_dependencies)  # Backbone Feature #1: unified intel timeline (read-only, additive)
 
 
 @app.get("/api/auth/me")

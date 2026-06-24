@@ -81,7 +81,7 @@ class TestAuthHeader:
             headers={"X-Sentry-User": "hacker_eve"},
         )
         assert resp.status_code == 403
-        assert "not authorized" in resp.json()["detail"]
+        assert "Authentication failed" in resp.json()["detail"]
 
     def test_valid_admin_returns_200(self, client_header):
         resp = client_header.get(

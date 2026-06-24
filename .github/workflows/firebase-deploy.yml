@@ -108,7 +108,9 @@ jobs:
 
       # Deploy from source: Cloud Build builds the Dockerfile, pushes the
       # image to Artifact Registry, then creates/updates the Cloud Run service.
-      # SQLite DB is bundled inside the container via COPY data/ ./data/
+      # Auth is intentionally configured from secrets so production never relies
+      # on spoofable local header auth. For GCP launch, use SENTRY_AUTH_MODE=oidc
+      # or SENTRY_AUTH_MODE=iap with the matching issuer/audience/JWKS settings.
       - name: Deploy to Cloud Run
         run: |
           gcloud run deploy sentry-api \
@@ -120,7 +122,7 @@ jobs:
             --memory 512Mi \
             --min-instances 0 \
             --max-instances 5 \
-            --set-env-vars "^@^ALLOWED_ORIGINS=https://sentry-b873a.web.app,https://sentry-b873a.firebaseapp.com@SENTRY_ENV=production@SENTRY_AUTH_MODE=header@SENTRY_ALLOWED_USERS=${{ secrets.SENTRY_ALLOWED_USERS }}@SENTRY_ADMIN_USERS=${{ secrets.SENTRY_ADMIN_USERS }}" \
+            --set-env-vars "^@^ALLOWED_ORIGINS=https://sentry-b873a.web.app,https://sentry-b873a.firebaseapp.com@SENTRY_ENV=production@SENTRY_AUTH_MODE=${{ secrets.SENTRY_AUTH_MODE }}@SENTRY_ALLOWED_USERS=${{ secrets.SENTRY_ALLOWED_USERS }}@SENTRY_ADMIN_USERS=${{ secrets.SENTRY_ADMIN_USERS }}@SENTRY_ALLOWED_GROUPS=${{ secrets.SENTRY_ALLOWED_GROUPS }}@SENTRY_ADMIN_GROUPS=${{ secrets.SENTRY_ADMIN_GROUPS }}@SENTRY_OIDC_ISSUER=${{ secrets.SENTRY_OIDC_ISSUER }}@SENTRY_OIDC_AUDIENCE=${{ secrets.SENTRY_OIDC_AUDIENCE }}@SENTRY_OIDC_JWKS_URL=${{ secrets.SENTRY_OIDC_JWKS_URL }}@SENTRY_IAP_AUDIENCE=${{ secrets.SENTRY_IAP_AUDIENCE }}" \
             --quiet
 
       - name: Print Cloud Run URL

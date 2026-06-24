@@ -439,23 +439,8 @@ export const RegulatoryGlobe3D: React.FC<Props> = ({
           tip.style.left = `${Math.max(60, Math.min(rawLeft, wr.width - 60))}px`;
           tip.style.top  = `${Math.max(8, rawTop)}px`;
 
-          const ragColor = RAG_CSS[geo.worst_rag] || '#4ade80';
-          tip.innerHTML = `
-            <div style="font-weight:800;font-size:13px;margin-bottom:4px">${nd.coord.label}</div>
-            <div style="font-size:10px;color:${ragColor};font-weight:700;margin-bottom:6px">
-              ${geo.worst_rag.toUpperCase()} RISK · ${geo.total} obligation${geo.total !== 1 ? 's' : ''}
-            </div>
-            <div style="display:flex;gap:8px;font-size:10px;margin-bottom:4px">
-              ${geo.red   ? `<span style="color:#ff6b6b">●${geo.red} Red</span>` : ''}
-              ${geo.amber ? `<span style="color:#fb923c">●${geo.amber} Amb</span>` : ''}
-              ${geo.yellow? `<span style="color:#FFC220">●${geo.yellow} Yel</span>` : ''}
-              ${geo.green ? `<span style="color:#4ade80">●${geo.green} Grn</span>` : ''}
-            </div>
-            <div style="font-size:9px;color:#64748b;border-top:1px solid rgba(255,255,255,0.1);padding-top:4px">
-              ${geo.techs.slice(0, 3).join(' · ')}${geo.techs.length > 3 ? ` +${geo.techs.length - 3}` : ''}
-            </div>
-            <div style="font-size:9px;color:#475569;margin-top:2px">Click to filter table ↓</div>
-          `;
+          tip.style.borderColor = RAG_CSS[geo.worst_rag] || '#4ade80';
+          tip.textContent = `${nd.coord.label} — ${geo.worst_rag.toUpperCase()} RISK — ${geo.total} obligation${geo.total !== 1 ? 's' : ''} — ${geo.techs.slice(0, 3).join(' · ')}${geo.techs.length > 3 ? ` +${geo.techs.length - 3}` : ''}. Click to filter table.`;
         }
       } else {
         hoveredIdx = -1;

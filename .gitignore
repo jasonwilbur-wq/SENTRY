@@ -59,8 +59,10 @@ backend/data/*.db-shm
 backend/data/*.db-wal
 backend/data/source/*.bak*
 backend/data/source/*.xlsx.bak_*
+backend/data/update_backup_*/
 
 # Local throwaway/debug probes
 backend/_tmp_*.py
+DOWN
 
 # Non-PII CSVs in backend/data are safe to commit

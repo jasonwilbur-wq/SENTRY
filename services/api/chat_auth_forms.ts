@@ -25,6 +25,8 @@ export interface HealthResponse {
   auth_mode: string;
   auth_enabled: boolean;
   auth_warning: string | null;
+  auth_provider?: string;
+  auth_user_header?: string | null;
 }
 
 export interface AuthMeResponse {

@@ -2,7 +2,7 @@ import React, { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { ViewState } from './types';
 import { VendorProvider } from './context/VendorContext';
 import { ThemeProvider } from './context/ThemeContext';
-import { AuthProvider, SENTRY_USER_SESSION_KEY, useAuth } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { Sidebar } from './components/Sidebar';
 import { PageTransition } from './components/PageTransition';
 import { ViewErrorBoundary } from './components/ViewErrorBoundary';
@@ -36,7 +36,7 @@ const PLATFORM_VIEW_KEY    = 'sentry.platform.view';
 // ── Suspense fallback ───────────────────────────────────────────────────────
 function ViewLoader() {
   return (
-    <div className="flex items-center justify-center h-64">
+    <div className="flex items-center justify-center h-64" role="status" aria-live="polite">
       <div className="flex flex-col items-center gap-3">
         <div className="w-8 h-8 border-2 border-wmt-blue border-t-transparent rounded-full animate-spin" />
         <span className="text-xs text-slate-500 uppercase tracking-widest font-semibold">Loading</span>
@@ -171,6 +171,11 @@ function useGreeting() {
   return { greeting, dateLabel, timeLabel };
 }
 
+function useCommandShortcutLabel(): string {
+  if (typeof navigator === 'undefined') return 'Ctrl+K';
+  return /Mac|iPhone|iPad|iPod/i.test(navigator.platform) ? '⌘K' : 'Ctrl+K';
+}
+
 function useBackendHealth(enabled: boolean) {
   const [state, setState] = useState<'checking' | 'online' | 'offline'>('checking');
   const [detail, setDetail] = useState('Checking SENTRY data connection');
@@ -210,26 +215,20 @@ function useBackendHealth(enabled: boolean) {
 }
 
 function AuthGate({ children }: { children: React.ReactNode }) {
-  const { isReady, authError, authWarning } = useAuth();
+  const { isReady, authError, authWarning, authMode, canUseLocalIdentity, loginWithIdentity, loginWithSso, logout } = useAuth();
   const [identity, setIdentity] = useState('');
 
   const submitIdentity = (event: React.FormEvent) => {
     event.preventDefault();
     const trimmed = identity.trim();
     if (!trimmed) return;
-    try { window.sessionStorage.setItem(SENTRY_USER_SESSION_KEY, trimmed); } catch { /* noop */ }
-    window.location.reload();
-  };
-
-  const resetIdentity = () => {
-    try { window.sessionStorage.removeItem(SENTRY_USER_SESSION_KEY); } catch { /* noop */ }
-    window.location.reload();
+    loginWithIdentity(trimmed);
   };
 
   if (!isReady) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--s-bg)', color: 'var(--s-text)' }}>
-        <div className="flex flex-col items-center gap-3">
+        <div className="flex flex-col items-center gap-3" role="status" aria-live="polite">
           <div className="w-8 h-8 border-2 border-wmt-blue border-t-transparent rounded-full animate-spin" />
           <span className="text-xs text-slate-500 uppercase tracking-widest font-semibold">Verifying access</span>
         </div>
@@ -238,7 +237,8 @@ function AuthGate({ children }: { children: React.ReactNode }) {
   }
 
   if (authError) {
-    const canEnterIdentity = authError.includes('no user identity is configured');
+    const canEnterIdentity = canUseLocalIdentity && authError.includes('no user identity is configured');
+    const hostedAuth = ['oidc', 'iap', 'trusted-header'].includes(authMode ?? '');
 
     return (
       <div className="min-h-screen flex items-center justify-center px-6" style={{ background: 'var(--s-bg)' }}>
@@ -247,7 +247,11 @@ function AuthGate({ children }: { children: React.ReactNode }) {
           <h1 className="text-xl font-black mb-2" style={{ color: 'var(--s-text)' }}>SENTRY access required</h1>
           <p className="text-sm leading-6" style={{ color: 'var(--s-text-dim)' }}>{authError}</p>
           {canEnterIdentity ? (
-            <form onSubmit={submitIdentity} className="mt-5 flex flex-col sm:flex-row gap-2">
+            <>
+              <p className="mt-4 rounded-lg border px-3 py-2 text-sm leading-6 text-left" style={{ borderColor: 'rgba(255,194,32,0.35)', background: 'rgba(255,194,32,0.08)', color: '#facc15' }}>
+                Local/dev header-auth mode: enter an allowlisted user ID only for authorized testing. Production must use a trusted identity provider or proxy-asserted header.
+              </p>
+              <form onSubmit={submitIdentity} className="mt-4 flex flex-col sm:flex-row gap-2">
               <input
                 value={identity}
                 onChange={(event) => setIdentity(event.target.value)}
@@ -263,11 +267,31 @@ function AuthGate({ children }: { children: React.ReactNode }) {
               >
                 Continue
               </button>
-            </form>
+              </form>
+            </>
+          ) : hostedAuth ? (
+            <div className="mt-5 flex flex-col sm:flex-row justify-center gap-2">
+              <button
+                type="button"
+                onClick={loginWithSso}
+                className="px-4 py-2 rounded-lg text-sm font-bold"
+                style={{ background: '#0053E2', color: '#fff' }}
+              >
+                Sign in with SSO
+              </button>
+              <button
+                type="button"
+                onClick={logout}
+                className="px-4 py-2 rounded-lg text-sm font-bold"
+                style={{ background: 'var(--s-input-bg)', color: 'var(--s-text)', border: '1px solid var(--s-border-mid)' }}
+              >
+                Clear session
+              </button>
+            </div>
           ) : (
             <button
               type="button"
-              onClick={resetIdentity}
+              onClick={logout}
               className="mt-5 px-4 py-2 rounded-lg text-sm font-bold"
               style={{ background: 'var(--s-input-bg)', color: 'var(--s-text)', border: '1px solid var(--s-border-mid)' }}
             >
@@ -286,6 +310,7 @@ function AuthGate({ children }: { children: React.ReactNode }) {
           className="fixed top-3 left-1/2 -translate-x-1/2 z-[70] rounded-full px-4 py-2 text-[11px] font-bold shadow-lg"
           style={{ background: 'rgba(255,194,32,0.14)', border: '1px solid rgba(255,194,32,0.45)', color: '#FFC220' }}
           role="status"
+          aria-live="polite"
         >
           {authWarning}
         </div>
@@ -301,7 +326,7 @@ function RequireAdmin({ children, viewName = 'this workspace' }: { children: Rea
   if (!user?.is_admin) {
     return (
       <div className="max-w-2xl mx-auto text-center py-20 animate-fadeIn">
-        <div className="text-5xl mb-4">🔒</div>
+        <div className="text-5xl mb-4">Access locked</div>
         <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--s-text)' }}>Admin Access Required</h2>
         <p className="text-sm" style={{ color: 'var(--s-text-dim)' }}>
           You need SENTRY administrator privileges to access {viewName}.
@@ -313,6 +338,44 @@ function RequireAdmin({ children, viewName = 'this workspace' }: { children: Rea
   return <>{children}</>;
 }
 
+function UserAccessMenu() {
+  const { user, authMode, authProvider, loginWithSso, logout } = useAuth();
+  const providerLabel = authProvider ?? authMode ?? 'auth';
+
+  if (!user) {
+    return (
+      <button
+        type="button"
+        onClick={loginWithSso}
+        className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all hover:-translate-y-px"
+        style={{ background: '#0053E2', border: '1px solid rgba(255,255,255,0.16)', color: '#fff' }}
+      >
+        Sign in with SSO
+      </button>
+    );
+  }
+
+  return (
+    <div className="hidden lg:flex items-center gap-2 rounded-full pl-3 pr-1.5 py-1" style={{ background: 'var(--s-input-bg)', border: '1px solid var(--s-border-mid)' }}>
+      <div className="min-w-0 max-w-[180px] text-right">
+        <p className="truncate text-[11px] font-bold" style={{ color: 'var(--s-text)' }}>{user.id}</p>
+        <p className="truncate text-[9px] uppercase tracking-widest" style={{ color: 'var(--s-text-dim)' }}>
+          {user.role} via {providerLabel}
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={logout}
+        className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all hover:-translate-y-px"
+        style={{ background: 'rgba(234,17,0,0.12)', border: '1px solid rgba(234,17,0,0.28)', color: '#fca5a5' }}
+        aria-label="Sign out of SENTRY"
+      >
+        Sign out
+      </button>
+    </div>
+  );
+}
+
 // ── Main app ─────────────────────────────────────────────────────────────────
 const App: React.FC = () => {
   const [showLanding, setShowLanding] = useState(() => !readPlatformEntered());
@@ -322,6 +385,7 @@ const App: React.FC = () => {
   const hamburgerStyle = { color: 'var(--s-text)', borderColor: 'var(--s-border)' } as React.CSSProperties;
   const { greeting, dateLabel, timeLabel } = useGreeting();
   const backendHealth = useBackendHealth(!showLanding);
+  const commandShortcutLabel = useCommandShortcutLabel();
 
   const handleEnterPlatform = useCallback((initialView?: ViewState) => {
     setShowLanding(false);
@@ -372,6 +436,13 @@ const App: React.FC = () => {
         <AuthGate>
           <VendorProvider>
             <div className="flex h-screen text-slate-300 overflow-hidden" style={{ background: 'var(--s-bg)' }}>
+              <a
+                href="#main-content"
+                className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[90] focus:rounded-lg focus:px-4 focus:py-2 focus:text-sm focus:font-bold focus:outline-none focus:ring-2 focus:ring-white/80"
+                style={{ background: '#FFC220', color: '#001E60' }}
+              >
+                Skip to main content
+              </a>
               {/* Mobile drawer backdrop */}
               {sidebarOpen && (
                 <div
@@ -380,9 +451,16 @@ const App: React.FC = () => {
                   aria-hidden
                 />
               )}
-              <Sidebar currentView={currentView} onNavigate={handleNavigate} isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+              <Sidebar
+                currentView={currentView}
+                onNavigate={handleNavigate}
+                isOpen={sidebarOpen}
+                onClose={() => setSidebarOpen(false)}
+                backendState={backendHealth.state}
+                backendDetail={backendHealth.detail}
+              />
 
-            <main className="flex-1 flex flex-col overflow-hidden relative">
+            <main id="main-content" tabIndex={-1} className="flex-1 flex flex-col overflow-hidden relative">
               {/* Header */}
               <header
                 className="shrink-0 px-8 py-4 flex items-center justify-between gap-4 border-b relative"
@@ -449,13 +527,17 @@ const App: React.FC = () => {
                       className="ml-1 px-1.5 py-0.5 rounded text-[9px] font-mono font-bold"
                       style={{ background: 'var(--s-hover-over)', border: '1px solid var(--s-border)' }}
                     >
-                      ⌘K
+                      {commandShortcutLabel}
                     </kbd>
                   </button>
+
+                  <UserAccessMenu />
 
                   {/* Live status pill */}
                   <div
                     className="flex items-center gap-2 px-2.5 py-1.5 rounded-full"
+                    role="status"
+                    aria-live="polite"
                     style={{
                       background: backendHealth.state === 'offline' ? 'rgba(239,68,68,0.10)' : 'rgba(34,197,94,0.10)',
                       border: backendHealth.state === 'offline' ? '1px solid rgba(239,68,68,0.25)' : '1px solid rgba(34,197,94,0.25)',

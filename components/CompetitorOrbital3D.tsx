@@ -411,14 +411,7 @@ export const CompetitorOrbital3D: React.FC<Props> = ({ entities, onHover }) => {
           handleHover(hitData.name);
           if (tip) {
             tip.style.display = 'block';
-            tip.innerHTML =
-              `<strong style="color:#fff">${hitData.name}</strong><br>` +
-              `Events: <span style="color:#FFC220">${hitData.count}</span><br>` +
-              `Top: ${hitData.topCat}<br>` +
-              `<span style="color:${
-                hitData.threat==='High'?'#f87171':
-                hitData.threat==='Medium'?'#fbbf24':'#4ade80'
-              }">${hitData.threat} Threat</span>`;
+            tip.textContent = `${hitData.name} • Events: ${hitData.count} • Top: ${hitData.topCat} • ${hitData.threat} Threat`;
           }
         }
       } else {

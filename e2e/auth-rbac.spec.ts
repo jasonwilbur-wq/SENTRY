@@ -27,8 +27,11 @@ async function mockApi(page: Page, options: { authEnabled?: boolean; user?: Mock
     Object.defineProperty(window.navigator, 'sendBeacon', { value: () => true, configurable: true });
   });
   const authEnabled = options.authEnabled ?? true;
-  await page.route('**/api/**', async (route) => {
+  await page.route('**/*', async (route) => {
     const url = new URL(route.request().url());
+    if (!url.pathname.startsWith('/api/')) {
+      return route.fallback();
+    }
 
     if (url.pathname === '/api/health') {
       return route.fulfill({

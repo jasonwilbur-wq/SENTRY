@@ -18,7 +18,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 // ── Cache entry ──────────────────────────────────────────────────────────────
 
 interface CacheEntry<T> {
-  data: T;
+  data?: T;
   fetchedAt: number;         // Date.now() when data was last fetched
   error?: Error;
 }
@@ -115,7 +115,17 @@ export function useQuery<T>(
       }
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
-      cache.set(cacheKey, { data: data as any, fetchedAt: Date.now(), error });
+      const existingEntry = cache.get(cacheKey) as CacheEntry<T> | undefined;
+      const staleData = data ?? existingEntry?.data;
+      if (staleData !== undefined) {
+        cache.set(cacheKey, {
+          data: staleData,
+          fetchedAt: existingEntry?.fetchedAt ?? Date.now(),
+          error,
+        });
+      } else {
+        cache.delete(cacheKey);
+      }
       if (mountedRef.current) setError(error);
     } finally {
       inflight.delete(cacheKey);

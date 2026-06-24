@@ -1,5 +1,5 @@
 /**
- * PilotCards — 3D glass grid of the 8 MVP pilot programmes.
+ * PilotCards — 3D glass grid of the Q2 MVP pilot portfolio.
  * Each card tilts on mouse movement (via GlassCard3D) and shows
  * an animated cost-range bar on mount.
  */
@@ -59,7 +59,7 @@ function CostBarAnimated({
 export const PilotCards: React.FC = () => (
   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
     {PILOTS.map((pilot, idx) => {
-      const phase = idx < 4 ? 0 : idx < 7 ? 1 : 2;
+      const phase = pilot.phase ?? (idx < 4 ? 0 : idx < 7 ? 1 : 2);
       const tier  = TIER_LABEL[phase];
       const costStr =
         `$${pilot.minCostK}k – ${
@@ -109,6 +109,19 @@ export const PilotCards: React.FC = () => (
 
           {/* Cost bar */}
           <CostBarAnimated min={pilot.minCostK} max={pilot.maxCostK} color={pilot.color} />
+
+          {(pilot.posture || pilot.costConfidence) && (
+            <div className="flex items-center justify-between gap-2 border-t border-slate-700/60 pt-3 mt-1 mb-2">
+              {pilot.posture && (
+                <span className="text-[10px] uppercase tracking-wider text-slate-400">
+                  Posture: <span className="font-bold text-slate-200">{pilot.posture}</span>
+                </span>
+              )}
+              {pilot.costConfidence && (
+                <span className="text-[9px] text-slate-500 text-right">{pilot.costConfidence}</span>
+              )}
+            </div>
+          )}
 
           {/* KPIs */}
           <ul className="space-y-1 border-t border-slate-700/60 pt-3 mt-1">

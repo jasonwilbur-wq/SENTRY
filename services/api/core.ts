@@ -24,16 +24,25 @@ const IS_LOCAL_DEV_ORIGIN = typeof window !== 'undefined'
 const API_BASE: string = IS_LOCAL_DEV_ORIGIN ? '' : (RAW_API_BASE || '');
 
 let sentryUserHeader: string | null = null;
+let sentryBearerToken: string | null = null;
 
 export function setSentryUser(userId: string | null): void {
   const trimmed = userId?.trim();
   sentryUserHeader = trimmed ? trimmed : null;
 }
 
+export function setSentryBearerToken(token: string | null): void {
+  const trimmed = token?.trim();
+  sentryBearerToken = trimmed ? trimmed : null;
+}
+
 function buildHeaders(extraHeaders?: HeadersInit): Headers {
   const headers = new Headers(extraHeaders ?? {});
   if (!headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
+  }
+  if (sentryBearerToken) {
+    headers.set('Authorization', `Bearer ${sentryBearerToken}`);
   }
   if (sentryUserHeader) {
     headers.set('X-Sentry-User', sentryUserHeader);

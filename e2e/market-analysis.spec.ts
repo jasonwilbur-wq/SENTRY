@@ -1,7 +1,7 @@
 /**
  * Market Analysis (CompetitorAnalysis) E2E tests.
  *
- * Tests the Q1 2026 Security Tech Forecast page including:
+ * Tests the Q2 2026 Security Tech Forecast page including:
  * - 3D globe canvas renders
  * - KPI cards are visible
  * - Tab switching works
@@ -18,7 +18,7 @@ async function openMarketAnalysis(page: Page) {
   await page.waitForTimeout(1500);
 }
 
-test.describe('Market Analysis — Q1 2026 Forecast', () => {
+test.describe('Market Analysis — Q2 2026 Forecast', () => {
 
   test('market analysis view loads without JS errors', async ({ page }) => {
     const errors: string[] = [];
@@ -28,11 +28,11 @@ test.describe('Market Analysis — Q1 2026 Forecast', () => {
     expect(errors, `Unexpected JS errors: ${errors.join(', ')}`).toHaveLength(0);
   });
 
-  test('Q1 2026 forecast content is rendered', async ({ page }) => {
+  test('Q2 2026 forecast content is rendered', async ({ page }) => {
     await openMarketAnalysis(page);
     const body = await page.locator('body').textContent() ?? '';
     const hasForecastContent =
-      body.includes('Q1') ||
+      body.includes('Q2') ||
       body.includes('Forecast') ||
       body.includes('Security Technology') ||
       body.includes('Pilot');
@@ -64,15 +64,33 @@ test.describe('Market Analysis — Q1 2026 Forecast', () => {
     expect(hasKpiValues).toBe(true);
   });
 
-  test('Q1 Forecast tab is the default active tab', async ({ page }) => {
+  test('Q2 Forecast tab is the default active tab', async ({ page }) => {
     await openMarketAnalysis(page);
     // Executive Intelligence section should be visible by default
     const hasExecContent = await page.locator('body').evaluate(
       el => (el.textContent?.includes('Executive Intelligence') ||
+             el.textContent?.includes('Defensibility') ||
              el.textContent?.includes('Telemetry') ||
              el.textContent?.includes('Category Matrix')) ?? false,
     );
     expect(hasExecContent).toBe(true);
+  });
+
+  test('forecast cockpit product modules render', async ({ page }) => {
+    await openMarketAnalysis(page);
+    const body = await page.locator('body').textContent() ?? '';
+    expect(body).toContain('Forecast Cockpit');
+    expect(body).toContain('Executive Decision Board');
+    expect(body).toContain('Forecast Accountability Loop');
+    expect(body).toContain('Persistent Trend Ledger');
+  });
+
+  test('forecast cockpit lens and confidence filters work', async ({ page }) => {
+    await openMarketAnalysis(page);
+    await page.getByRole('button', { name: 'Evidence' }).click();
+    await expect(page.getByText('Evidence and BWC media-authenticity hardening')).toBeVisible();
+    await page.getByRole('button', { name: 'High confidence only' }).click();
+    await expect(page.getByText('Governed agentic-AI assist for security operations')).toHaveCount(0);
   });
 
   test('Vendor Data tab switches content', async ({ page }) => {
@@ -127,24 +145,22 @@ test.describe('Market Analysis — Q1 2026 Forecast', () => {
     const hasCostContent =
       body.includes('$') &&
       (body.includes('k') || body.includes('M')) &&
-      (body.includes('50') || body.includes('150') || body.includes('300'));
+      (body.includes('50') || body.includes('150') || body.includes('250') || body.includes('300'));
     expect(hasCostContent).toBe(true);
   });
 
   test('executive insight cards render (at least 2 visible)', async ({ page }) => {
     await openMarketAnalysis(page);
-    // Each card has an emoji + title + body text
-    const cards = page.locator('text=🎯, text=📡, text=⚖️, text=🛡️');
-    // At least one of the insight emoji icons should be visible
-    const emojiCount = await page.locator('body').evaluate(
+    // At least two Q2 executive insight headings should be visible.
+    const insightCount = await page.locator('body').evaluate(
       el => [
-        el.textContent?.includes('🎯'),
-        el.textContent?.includes('📡'),
-        el.textContent?.includes('⚖️'),
-        el.textContent?.includes('🛡️'),
+        el.textContent?.includes('AI Is on Both Sides'),
+        el.textContent?.includes('Defensibility Bill'),
+        el.textContent?.includes('ORC Risk Is Broad'),
+        el.textContent?.includes('Two Red Lines Hold'),
       ].filter(Boolean).length ?? 0,
     );
-    expect(emojiCount).toBeGreaterThanOrEqual(2);
+    expect(insightCount).toBeGreaterThanOrEqual(2);
   });
 
   test('Recharts SVG charts are rendered (scatter + bar)', async ({ page }) => {

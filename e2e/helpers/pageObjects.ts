@@ -115,7 +115,7 @@ export class VendorDashboard {
   }
 
   modalTab(label: string): Locator {
-    return this.detailModal.getByRole('button', { name: label });
+    return this.detailModal.getByRole('tab', { name: label });
   }
 
   modalCloseButton(): Locator {

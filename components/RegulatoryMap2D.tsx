@@ -255,24 +255,10 @@ export const RegulatoryMap2D: React.FC<Props> = ({
     const mx = e.clientX - wr.left;
     const my = e.clientY - wr.top;
     const ragColor = RAG_GLOW[node.geo.worst_rag] || '#4ade80';
-    const { red, amber, yellow, green, total, techs } = node.geo;
+    const { total, techs } = node.geo;
 
-    tip.innerHTML = `
-      <div style="font-weight:800;font-size:14px;margin-bottom:4px;color:#fff">${node.label}</div>
-      <div style="font-size:11px;color:${ragColor};font-weight:700;margin-bottom:6px">
-        ${node.geo.worst_rag.toUpperCase()} RISK · ${total} obligation${total !== 1 ? 's' : ''}
-      </div>
-      <div style="display:flex;gap:10px;font-size:11px;margin-bottom:6px">
-        ${red   ? `<span style="color:#ff6b6b">● ${red} Red</span>` : ''}
-        ${amber ? `<span style="color:#fb923c">● ${amber} Amb</span>` : ''}
-        ${yellow? `<span style="color:#ffe066">● ${yellow} Yel</span>` : ''}
-        ${green ? `<span style="color:#4ade80">● ${green} Grn</span>` : ''}
-      </div>
-      <div style="font-size:10px;color:#94a3b8;border-top:1px solid rgba(255,255,255,0.15);padding-top:5px">
-        ${techs.slice(0, 4).join(' · ')}${techs.length > 4 ? ` +${techs.length - 4}` : ''}
-      </div>
-      <div style="font-size:10px;color:#64748b;margin-top:3px">Click for details</div>
-    `;
+    tip.style.borderColor = ragColor;
+    tip.textContent = `${node.label} — ${node.geo.worst_rag.toUpperCase()} RISK — ${total} obligation${total !== 1 ? 's' : ''} — ${techs.slice(0, 4).join(' · ')}${techs.length > 4 ? ` +${techs.length - 4}` : ''}. Click for details.`;
     tip.style.display = 'block';
     tip.style.left = `${Math.min(mx + 14, wr.width - 240)}px`;
     tip.style.top  = `${Math.max(8, my - 100)}px`;

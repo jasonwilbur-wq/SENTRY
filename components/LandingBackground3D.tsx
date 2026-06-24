@@ -4,14 +4,16 @@
  */
 import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
+import { useTheme } from '../context/ThemeContext';
 
 export const LandingBackground3D: React.FC = () => {
   const mountRef = useRef<HTMLDivElement>(null);
   const [fallbackMode, setFallbackMode] = useState(false);
+  const { reducedMotion } = useTheme();
 
   useEffect(() => {
     const el = mountRef.current;
-    if (!el || fallbackMode) return;
+    if (!el || fallbackMode || reducedMotion) return;
 
     if (typeof window === 'undefined' || typeof window.WebGLRenderingContext === 'undefined') {
       setFallbackMode(true);
@@ -120,7 +122,7 @@ export const LandingBackground3D: React.FC = () => {
       setFallbackMode(true);
       return;
     }
-  }, [fallbackMode]);
+  }, [fallbackMode, reducedMotion]);
 
   return (
     <div 

@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-06-01T13:27:54.525Z",
+  "generated_at": "2026-06-17T11:24:06.454245+00:00",
   "schema": "sentry-exec-profile@1",
-  "count": 9,
+  "count": 11,
   "profiles": [
     {
       "id": "stephen-schmidt",
@@ -641,129 +641,532 @@
       ]
     },
     {
-      "id": "michael-carr-kroger",
-      "name": "Michael Carr",
-      "title": "Business Information Security Officer (Unverified)",
+      "id": "michael-haas-kroger",
+      "name": "Michael Haas",
+      "title": "Chief Information Security Officer",
       "company": "Kroger",
       "threatLevel": "MEDIUM",
-      "profileImage": "/images/executives/michael-carr.jpg",
-      "bio": "PROVISIONAL lead from a 2026-05-29 public-source scout run. Michael Carr was cited as a Kroger Business Information Security Officer (BISO) in CDO Magazine InfoSec event coverage (Sep/Oct 2024). Not confirmed via an official Kroger source; currency for 2025/2026 unverified, and a CISO may sit above the BISO role. Treat as a starting lead, not an established profile.",
+      "profileImage": "",
+      "bio": "Confirmed current CISO of The Kroger Co. (Med-High confidence). Identified via the Evanta Ohio CISO community roster and named a 2026 OhioCISO ORBIE Awards finalist representing The Kroger Co. Title nuance: a RocketReach listing renders the role as VP Information Security; CISO community + ORBIE both designate CISO. Supersedes the prior provisional BISO lead (Michael Carr, cited 2024).",
       "keyFindings": [
         {
-          "id": "mc-f1",
+          "id": "mh-f1",
           "type": "org_change",
-          "headline": "Cited as Kroger Business Information Security Officer in CDO Magazine InfoSec coverage",
-          "date": "2024-10-01",
+          "headline": "Identified as Kroger CISO via Evanta Ohio CISO community + 2026 OhioCISO ORBIE finalist listing",
+          "date": "2026-06-15",
           "impactScore": 8,
           "riskColor": "YELLOW",
-          "summary": "Michael Carr appeared as a Kroger BISO in CDO Magazine Cincinnati InfoSec dinner coverage (Sep + Oct 2024). This is the only productive public source located; official Kroger leadership pages were not accessible to the scout.",
-          "whyItMatters": "Establishes a candidate point-of-contact for Kroger's cyber org, but the BISO title is not a traditional CISO role — org-structure verification is required before this drives any CSO-level monitoring.",
+          "summary": "Two independent public sources name Michael Haas as The Kroger Co. CISO: the Evanta Ohio CISO community roster and an ORBIE 2026 OhioCISO Awards (Large Enterprise) finalist page. Identification/attribution finding, not a threat-magnitude score.",
+          "whyItMatters": "Establishes the verified top security incumbent at Walmart's largest U.S. grocery competitor (CEO Greg Foran, ex-Walmart U.S. CEO), enabling accurate CSO monitoring and benchmarking.",
           "sources": [
             {
-              "publisher": "CDO Magazine",
-              "url": "https://www.cdomagazine.tech/",
-              "date": "2024-10-01"
+              "publisher": "ORBIE (Inspire Leadership Network)",
+              "url": "https://orbie.org/honoree/michael-haas/5904",
+              "date": "2026-06-15"
+            },
+            {
+              "publisher": "Evanta (Gartner) Ohio CISO Community",
+              "url": "https://www.evanta.com/ciso/ohio",
+              "date": "2026-06-15"
+            }
+          ]
+        },
+        {
+          "id": "mh-f2",
+          "type": "governance",
+          "headline": "SEC 10-K Item 1C confirms an active CISO-led security/risk program (Audit Committee oversight); FY2023 filing had referenced an interim CISO",
+          "date": "2025-04-01",
+          "impactScore": 7,
+          "riskColor": "YELLOW",
+          "summary": "Kroger's FY2024 10-K (filed 2025-04-01) states the risk-management team reports to the CISO; the FY2023 10-K (2024-04-02) had referenced an 'interim CISO,' indicating the role was permanently filled since - consistent with Haas. The Board Audit Committee oversees cybersecurity and data-privacy risk.",
+          "whyItMatters": "SEC primary-source corroboration of the CISO governance structure, independent of community/award sources.",
+          "sources": [
+            {
+              "publisher": "board-cybersecurity.com (Kroger 10-K tracker)",
+              "url": "https://www.board-cybersecurity.com/annual-reports/tracker/20250401-kroger-co-cybersecurity-10k",
+              "date": "2025-04-01"
+            },
+            {
+              "publisher": "SEC EDGAR (Kroger 10-K)",
+              "url": "https://www.sec.gov/Archives/edgar/data/56873/000155837025004267/kr-20250201x10k.htm",
+              "date": "2025-02-01"
+            }
+          ]
+        },
+        {
+          "id": "mh-f3",
+          "type": "incident",
+          "headline": "Historical: 2021 Accellion FTA breach exposed Kroger Health / Money Services + pharmacy patient + HR data",
+          "date": "2021-02-19",
+          "impactScore": 6,
+          "riskColor": "RED",
+          "summary": "Kroger disclosed a 2021 breach via Accellion's legacy FTA file-transfer service, compromising Kroger Health and Money Services customer data, pharmacy/Little Clinic patient information, and HR files. Third-party file-transfer supply-chain exposure.",
+          "whyItMatters": "Establishes Kroger's prior third-party/supply-chain breach precedent - relevant context for shared-vendor risk monitoring.",
+          "sources": [
+            {
+              "publisher": "SecurityWeek",
+              "url": "https://www.securityweek.com/supermarket-chain-kroger-discloses-data-breach/",
+              "date": "2021-02-23"
+            },
+            {
+              "publisher": "Atlanta Journal-Constitution",
+              "url": "https://www.ajc.com/news/breaking-kroger-advises-customers-of-data-breach-affecting-pharmacy/R44FKCSVLNDTJHA53ON36HO2CA/",
+              "date": "2021-02-22"
             }
           ]
         }
       ],
       "recentActivity": [
         {
-          "date": "2024-10-01",
-          "title": "CDO Magazine Cincinnati InfoSec dinner coverage",
-          "type": "Public Appearance",
-          "impact": "Only confirmed public citation; currency unverified"
+          "date": "2026-06-15",
+          "title": "VANGUARD public-source identification (confirmed)",
+          "type": "Identification",
+          "impact": "Resolves prior Kroger security-leader gap"
+        }
+      ],
+      "strategicThreats": [
+        "MEDIUM: Largest U.S. grocery competitor; ex-Walmart CEO at the helm; shared pharmacy/tech vendors imply shared supply-chain risk",
+        "MEDIUM: Third-party file-transfer / supply-chain exposure precedent (2021 Accellion); shared pharmacy/tech vendors imply shared risk surface"
+      ],
+      "recommendations": [
+        "30-DAY: Lift to High via a Kroger official/newsroom or DEF 14A confirmation of the CISO title",
+        "90-DAY: Track Haas conference cadence (Evanta/ORBIE/RH-ISAC) for program-direction signals"
+      ]
+    },
+    {
+      "id": "aaron-hughes-albertsons",
+      "name": "Aaron Hughes",
+      "title": "FORMER SVP & CISO (departed Sept 2025) - current Albertsons CISO not publicly identified",
+      "company": "Albertsons",
+      "threatLevel": "MEDIUM",
+      "profileImage": "",
+      "bio": "LEADERSHIP TRANSITION / CORRECTION. Aaron Hughes was SVP & CISO of Albertsons Companies (Nov 2020 - Sept 2025) and DEPARTED in Sept 2025 (confirmed by his own LinkedIn post; now a Global CISO elsewhere). He retains a SentinelOne (NYSE: S) board seat (since May 2021), an ATI vice-chairmanship, and a USAF Reserve Colonel / USCYBERCOM senior-advisor role; prior Capital One Deputy CISO and U.S. Deputy Assistant Secretary of Defense for Cyber Policy. Albertsons' FY2025 10-K (filed 2026-04-27) confirms an ACTIVE CISO reporting quarterly to the Board Technology Committee, but the current incumbent is NOT publicly identified. The earlier predecessor John Kirkwood (Albertsons-Safeway Global CISO ~2015-2020) is reported deceased (~2020) and is not current. NET: Albertsons is in a security-leadership transition; current CISO = UNKNOWN.",
+      "keyFindings": [
+        {
+          "id": "ah2-f0",
+          "type": "org_change",
+          "headline": "CORRECTION: Aaron Hughes departed Albertsons Sept 2025; current CISO not publicly identified",
+          "date": "2026-06-15",
+          "impactScore": 9,
+          "riskColor": "ORANGE",
+          "summary": "Hughes' own LinkedIn post confirms he left Albertsons in Sept 2025 ('stealth mode since last fall') and is now a Global CISO elsewhere. SentinelOne/aggregator bios still listing him as current Albertsons CISO are STALE. The Albertsons FY2025 10-K (2026-04-27) confirms an active, unnamed CISO. The ai-loop caught and corrected the stale 'current' attribution.",
+          "whyItMatters": "Prevents stale attribution and flags an open monitoring gap (successor identity) at a top grocery competitor following the collapsed Kroger-Albertsons merger.",
+          "sources": [
+            {
+              "publisher": "LinkedIn (Aaron Hughes post)",
+              "url": "https://www.linkedin.com/posts/aghughes_i-have-unintentionally-been-in-stealth-mode-activity-7425260483277910016-y68y",
+              "date": "2025-11-15"
+            },
+            {
+              "publisher": "board-cybersecurity.com (Albertsons 10-K tracker)",
+              "url": "https://www.board-cybersecurity.com/annual-reports/tracker/20260427-albertsons-companies-cybersecurity-10k",
+              "date": "2026-04-27"
+            }
+          ]
         },
         {
-          "date": "2026-05-29",
-          "title": "Identity/title corroboration gap recorded",
-          "type": "Data Quality Signal",
-          "impact": "Confidence capped until first-party Kroger source validates role"
+          "id": "ah2-f1",
+          "type": "org_change",
+          "headline": "FORMER Albertsons SVP & CISO (Nov 2020 - Sept 2025); sits on SentinelOne (NYSE: S) board",
+          "date": "2026-06-15",
+          "impactScore": 7,
+          "riskColor": "YELLOW",
+          "summary": "During his tenure Hughes secured infrastructure, digital assets and payments across 2,200+ supermarkets / 20 brands. Vendor-governance nexus: SentinelOne board seat (since May 2021), ATI vice-chair, USCYBERCOM reserve advisor; prior Capital One Deputy CISO and DoD Deputy Assistant Secretary for Cyber Policy.",
+          "whyItMatters": "Even as a former incumbent, the SentinelOne board link is a standing vendor-governance signal if Walmart uses or evaluates that vendor.",
+          "sources": [
+            {
+              "publisher": "George Mason University, National Security Institute",
+              "url": "https://nationalsecurity.gmu.edu/aaron-hughes/",
+              "date": "2026-06-15"
+            },
+            {
+              "publisher": "SentinelOne (Investor Relations, board)",
+              "url": "https://investors.sentinelone.com/governance/board-of-directors/",
+              "date": "2026-06-15"
+            }
+          ]
         }
       ],
-      "strategicThreats": [
-        "⚠️ HIGH: Incumbency + currency unverified — do not attribute Kroger security strategy to this profile yet",
-        "📡 MEDIUM: BISO title suggests a possible CISO above; org structure unknown"
-      ],
-      "recommendations": [
-        "🔥 IMMEDIATE: Verify current Kroger security org structure + incumbent via official/first-party sources",
-        "⚡ 30-DAY: Confirm whether a CISO sits above the BISO role before elevating profile confidence",
-        "⚡ 90-DAY: Refresh from RH-ISAC / conference rosters if official disclosure stays unavailable"
-      ]
-    },
-    {
-      "id": "albertsons-ciso-unconfirmed",
-      "name": "Albertsons — Security Leader (Unconfirmed)",
-      "title": "CISO / VP Security (Unconfirmed)",
-      "company": "Albertsons",
-      "threatLevel": "LOW",
-      "profileImage": "",
-      "bio": "UNCONFIRMED placeholder. A 2026-05-29 public-source scout could not identify Albertsons' top security executive (newsroom + press paths were bot-walled). Tracked here so the gap is visible. Analyst action: pull the SEC DEF 14A proxy and 10-K cybersecurity-officer disclosure, and review albertsonscompanies.com/leadership manually.",
-      "keyFindings": [],
       "recentActivity": [
         {
-          "date": "2026-05-29",
-          "title": "Public-source identification attempt failed",
-          "type": "Data Quality Signal",
-          "impact": "No public incumbent found; SEC filings are the recommended next source"
+          "date": "2025-09-15",
+          "title": "Aaron Hughes departed Albertsons (per his LinkedIn)",
+          "type": "Org change",
+          "impact": "Albertsons CISO seat in transition"
+        },
+        {
+          "date": "2026-04-27",
+          "title": "Albertsons FY2025 10-K confirms an active (unnamed) CISO",
+          "type": "Governance",
+          "impact": "Role active; incumbent not public"
         }
       ],
       "strategicThreats": [
-        "⚠️ Incumbent unknown — no attribution possible until an analyst confirms via SEC filings or first-party sources"
+        "MEDIUM: Leadership transition window = elevated insider/access-change risk; current CISO identity unknown (monitoring gap)",
+        "Standing vendor-governance signal: former CISO retains SentinelOne (NYSE: S) board seat"
       ],
       "recommendations": [
-        "🔥 IMMEDIATE: Pull Albertsons SEC DEF 14A + 10-K for named cybersecurity officer",
-        "⚡ 30-DAY: Review official leadership page manually; confirm before adding any findings"
+        "30-DAY: Identify Albertsons' current/acting CISO (post-Sept-2025) via newsroom, LinkedIn, or DEF 14A",
+        "90-DAY: Re-baseline the Albertsons security org once the successor is public"
       ]
     },
     {
-      "id": "heb-security-unconfirmed",
-      "name": "H-E-B — Security Leader (Unconfirmed)",
-      "title": "Head of Security (Unconfirmed)",
+      "id": "lauren-luensmann-heb",
+      "name": "Lauren Luensmann",
+      "title": "Group Vice President & Chief Information Security Officer",
       "company": "H-E-B",
-      "threatLevel": "LOW",
+      "threatLevel": "MEDIUM",
       "profileImage": "",
-      "bio": "UNCONFIRMED placeholder. H-E-B is privately held with minimal public leadership disclosure; the 2026-05-29 scout found no public security executive. This gap may be structurally irreducible from public sources alone. Analyst action: use RH-ISAC network contacts and Texas Cybersecurity Summit speaker rosters.",
-      "keyFindings": [],
+      "bio": "Confirmed Group VP & CISO of H-E-B (High confidence). Identified via an H-E-B company-primary careers-blog interview (2025-01-29) describing her role as Chief Information Security Officer, corroborated by TheOrg and RocketReach. Background: ex-Rackspace; Texas A&M Mays MBA; based Seguin, TX. Resolves the prior UNKNOWN for privately held H-E-B.",
+      "keyFindings": [
+        {
+          "id": "ll-f1",
+          "type": "org_change",
+          "headline": "Confirmed H-E-B Group VP & CISO via H-E-B company-primary careers blog",
+          "date": "2025-01-29",
+          "impactScore": 9,
+          "riskColor": "YELLOW",
+          "summary": "H-E-B's own careers blog publishes an interview with Lauren Luensmann about her role as Chief Information Security Officer; TheOrg and RocketReach corroborate the Group VP & CISO title. Company-primary identification finding.",
+          "whyItMatters": "Resolves a previously structural gap: identifies the top security incumbent at Walmart's strongest Texas competitor despite H-E-B being private with minimal disclosure.",
+          "sources": [
+            {
+              "publisher": "H-E-B Careers (company-official)",
+              "url": "https://careers.heb.com/blog/here-everyone-belongs-lauren-luensmann",
+              "date": "2025-01-29"
+            },
+            {
+              "publisher": "TheOrg",
+              "url": "https://theorg.com/org/h-e-b/org-chart/lauren-luensmann",
+              "date": "2026-06-15"
+            }
+          ]
+        },
+        {
+          "id": "ll-f2",
+          "type": "org_change",
+          "headline": "Confirmed via H-E-B company-primary careers blog (~3-yr tenure); program focused on building/maturing security posture",
+          "date": "2025-01-29",
+          "impactScore": 8,
+          "riskColor": "YELLOW",
+          "summary": "H-E-B's own careers blog (2025-01-29) quotes Luensmann describing her CISO role and a program focused on visibility, enhanced capabilities and risk reduction on the Digital front. TheOfficialBoard, ZoomInfo (~3 years) and TheOrg corroborate Group VP & CISO (prior Rackspace). Resolves a previously UNKNOWN private-company gap with a primary source.",
+          "whyItMatters": "Primary-source confirmation of the security leader at a major private grocery peer, and a signal that the program is still maturing (not yet mature).",
+          "sources": [
+            {
+              "publisher": "H-E-B Careers (company primary)",
+              "url": "https://careers.heb.com/blog/here-everyone-belongs-lauren-luensmann",
+              "date": "2025-01-29"
+            },
+            {
+              "publisher": "TheOfficialBoard",
+              "url": "https://www.theofficialboard.com/biography/lauren-luensmann-21e8d",
+              "date": "2026-03-02"
+            }
+          ]
+        }
+      ],
       "recentActivity": [
         {
-          "date": "2026-05-29",
-          "title": "Public-source identification attempt failed",
-          "type": "Data Quality Signal",
-          "impact": "Private company — minimal disclosure; network intelligence required"
+          "date": "2026-06-15",
+          "title": "VANGUARD public-source identification (confirmed, company-primary)",
+          "type": "Identification",
+          "impact": "Resolves prior H-E-B UNKNOWN gap"
+        },
+        {
+          "date": "2025-01-29",
+          "title": "H-E-B careers blog: Luensmann describes CISO role / maturing security posture",
+          "type": "Primary confirmation",
+          "impact": "Resolves private-company gap"
         }
       ],
       "strategicThreats": [
-        "⚠️ Incumbent unknown — private company, no SEC filings; public attribution likely not possible"
+        "MEDIUM: Strongest Texas competitor; security leadership now attributable for monitoring/benchmarking"
       ],
       "recommendations": [
-        "⚡ 30-DAY: Source via RH-ISAC contacts or Texas Cybersecurity Summit speaker lists",
-        "🎯 Treat as low-priority until a credible first-party signal appears"
+        "90-DAY: Monitor Texas Cybersecurity Summit / RH-ISAC rosters for Luensmann program signals"
       ]
     },
     {
-      "id": "costco-ciso-unconfirmed",
-      "name": "Costco — Security Leader (Unconfirmed)",
-      "title": "CISO / VP Security (Unconfirmed)",
+      "id": "erick-rudiak-costco",
+      "name": "Erick Rudiak",
+      "title": "Chief Information Security Officer",
       "company": "Costco",
-      "threatLevel": "LOW",
+      "threatLevel": "MEDIUM",
       "profileImage": "",
-      "bio": "UNCONFIRMED placeholder. The 2026-05-29 scout could not identify Costco's top security executive (investor-relations paths were bot-walled). Tracked so the gap is visible. Analyst action: pull the Costco SEC 10-K (CIK 0000909832) for a named cybersecurity officer and review investor.costco.com manually.",
-      "keyFindings": [],
+      "bio": "Costco Wholesale CISO (Med-High confidence, upgraded). Corroborated by his own 2026 LinkedIn post referencing working in InfoSec at Costco and hiring a Director, Threat Exposure Management; his personal CV (Walgreens Boots Alliance Global CISO 2024-2025, then interim CIO 2025); and a RocketReach Costco management org chart (Rudiak CISO; CTO Torsten Lubach). Reportedly brought in by Costco exec Neal Sample. Predecessor Jon Raper departed to Chevron (2025). Not yet lifted to High pending a Costco-official or press source.",
+      "keyFindings": [
+        {
+          "id": "er-f1",
+          "type": "org_change",
+          "headline": "Identified as current Costco CISO (succeeding Jon Raper, who moved to Chevron)",
+          "date": "2026-06-15",
+          "impactScore": 7,
+          "riskColor": "YELLOW",
+          "summary": "LinkedIn (Costco, Seattle) + Rudiak's own CV + aggregators identify Erick Rudiak as Costco CISO; predecessor Jon Raper's move to Chevron (Jul 2025) is independently confirmed. MEDIUM confidence pending a company-official/press source.",
+          "whyItMatters": "Identifies the likely current top security incumbent at Walmart's direct membership-warehouse competitor (Sam's Club peer), with an explicit lift-to-High path.",
+          "sources": [
+            {
+              "publisher": "LinkedIn (Erick Rudiak)",
+              "url": "https://www.linkedin.com/in/erickrudiak",
+              "date": "2026-06-15"
+            },
+            {
+              "publisher": "TheOrg (Jon Raper, Chevron - ex-Costco)",
+              "url": "https://theorg.com/org/chevron-corporation/org-chart/jon-raper",
+              "date": "2026-06-15"
+            }
+          ]
+        },
+        {
+          "id": "er-f2",
+          "type": "org_change",
+          "headline": "Self-corroborated as Costco CISO (own 2026 LinkedIn post + personal CV + org chart); prior Walgreens Global CISO 2024-25",
+          "date": "2026-06-15",
+          "impactScore": 8,
+          "riskColor": "YELLOW",
+          "summary": "Rudiak's own LinkedIn post references 'working in InfoSec at Costco' and a Director, Threat Exposure Management hire; his CV lists Walgreens Boots Alliance Global CISO (2024-25) then interim CIO; RocketReach lists him as Costco CISO. Upgrades confidence from single-aggregator to self-authored primary and signals a building/hiring posture (threat-exposure management).",
+          "whyItMatters": "Confirms a warehouse-club peer is actively building its security program (threat-exposure management) under a new, experienced CISO.",
+          "sources": [
+            {
+              "publisher": "LinkedIn (Erick Rudiak post)",
+              "url": "https://www.linkedin.com/posts/erickrudiak_hiring-director-threat-exposure-management-activity-7471298731510771712-g6IJ",
+              "date": "2026-02-15"
+            },
+            {
+              "publisher": "Erick Rudiak personal CV",
+              "url": "https://erick.rudiak.com/cv.pdf",
+              "date": "2026-06-15"
+            },
+            {
+              "publisher": "RocketReach (Costco management org chart)",
+              "url": "https://rocketreach.co/costco-wholesale-management_b5c4644bf42e0dc1",
+              "date": "2026-06-15"
+            }
+          ]
+        }
+      ],
       "recentActivity": [
         {
-          "date": "2026-05-29",
-          "title": "Public-source identification attempt failed",
-          "type": "Data Quality Signal",
-          "impact": "No public incumbent found; SEC 10-K is the recommended next source"
+          "date": "2026-06-15",
+          "title": "VANGUARD public-source identification (MEDIUM - aggregator/self-corroborated)",
+          "type": "Identification",
+          "impact": "Resolves prior Costco gap; flagged for High-confidence lift"
+        },
+        {
+          "date": "2026-02-15",
+          "title": "Rudiak (Costco) hiring Director, Threat Exposure Management",
+          "type": "Program signal",
+          "impact": "Costco building threat-exposure capability"
         }
       ],
       "strategicThreats": [
-        "⚠️ Incumbent unknown — no attribution possible until an analyst confirms via SEC filings or first-party sources"
+        "MEDIUM: Direct Sam's Club competitor; leadership transition (Raper to Chevron) may reshape Costco security strategy"
       ],
       "recommendations": [
-        "🔥 IMMEDIATE: Pull Costco SEC 10-K (CIK 0000909832) for named cybersecurity officer",
-        "⚡ 30-DAY: Review investor.costco.com + Gartner Security Summit speaker archives"
+        "IMMEDIATE: Lift to High via a Costco official source, press, or Evanta/Gartner roster",
+        "30-DAY: Confirm via Costco 10-K Item 1C (CIK 0000909832) governance language"
+      ]
+    },
+    {
+      "id": "tom-ratz-dollar-general",
+      "name": "Tom (Thomas) Ratz",
+      "title": "Chief Information Security Officer & SVP Technology",
+      "company": "Dollar General",
+      "threatLevel": "MEDIUM",
+      "profileImage": "",
+      "bio": "Confirmed CISO & SVP Technology of Dollar General (Med-High confidence). Named a 2025 Tennessee ORBIE Awards (Large Enterprise) CISO finalist representing Dollar General, corroborated by TheOrg org chart, TheOfficialBoard, and his LinkedIn. CEO Todd Vasos; LP/AP signal: Dollar General removed self-checkout from 50%+ of U.S. stores in H1 2024 over shrink.",
+      "keyFindings": [
+        {
+          "id": "tr-f1",
+          "type": "org_change",
+          "headline": "Confirmed Dollar General CISO & SVP Technology via 2025 Tennessee ORBIE + org sources",
+          "date": "2026-06-15",
+          "impactScore": 8,
+          "riskColor": "YELLOW",
+          "summary": "ORBIE 2025 Tennessee Awards lists Tom Ratz as Dollar General CISO (Large Enterprise finalist); TheOrg, TheOfficialBoard, and LinkedIn corroborate the CISO & SVP Technology title. Identification/attribution finding.",
+          "whyItMatters": "Identifies the verified top security incumbent at a direct value-segment competitor whose self-checkout reversal is an active LP/AP benchmark for Walmart.",
+          "sources": [
+            {
+              "publisher": "ORBIE (Inspire Leadership Network)",
+              "url": "https://orbie.org/honoree/tom-ratz/4904",
+              "date": "2026-06-15"
+            },
+            {
+              "publisher": "TheOrg",
+              "url": "https://theorg.com/org/dollar-general/offices/hq",
+              "date": "2026-06-15"
+            }
+          ]
+        },
+        {
+          "id": "tr-f2",
+          "type": "strategy",
+          "headline": "Tech-led shrink/loss-prevention: removed self-checkout from ~12,000 stores (2024) + AI self-checkout analytics",
+          "date": "2025-03-14",
+          "impactScore": 7,
+          "riskColor": "YELLOW",
+          "summary": "Dollar General removed self-checkout from ~12,000 stores in 2024 (converting ~9,000 to assisted models, fully removing from 300) and deployed AI to analyze hundreds of thousands of self-checkout transactions to combat shrink/theft (CEO Todd Vasos; CFO: shrink 'well in our control'). As SVP Technology & CISO, retail-loss technology sits within Ratz's broader remit.",
+          "whyItMatters": "Signals a tech-led loss-prevention posture at a discount peer - relevant to Walmart shrink strategy, self-checkout decisions, and CV/AI analytics.",
+          "sources": [
+            {
+              "publisher": "CNN",
+              "url": "https://www.cnn.com/2024/03/14/business/self-checkout-dollar-general",
+              "date": "2024-03-14"
+            },
+            {
+              "publisher": "Business Insider",
+              "url": "https://www.businessinsider.com/dollar-general-shutting-self-checkout-at-stores-theft-shrink-2024-6",
+              "date": "2024-06-07"
+            },
+            {
+              "publisher": "Fortune",
+              "url": "https://fortune.com/2025/03/14/dollar-general-cfo-shoplifting-shrink-problem-control-earnings/",
+              "date": "2025-03-14"
+            }
+          ]
+        }
+      ],
+      "recentActivity": [
+        {
+          "date": "2026-06-15",
+          "title": "VANGUARD public-source identification (confirmed)",
+          "type": "Identification",
+          "impact": "Resolves prior Dollar General security-leader gap"
+        }
+      ],
+      "strategicThreats": [
+        "MEDIUM: Direct value-segment competitor; self-checkout reversal is a live LP/AP benchmark",
+        "MEDIUM: Aggressive tech-led shrink/LP strategy (self-checkout removal + AI analytics) is a competitive loss-prevention signal"
+      ],
+      "recommendations": [
+        "30-DAY: Lift to High via a Dollar General official/newsroom or 10-K Item 1C confirmation"
+      ]
+    },
+    {
+      "id": "brett-mathis-coupang",
+      "name": "Brett Mathis",
+      "title": "Chief Information Security Officer",
+      "company": "Coupang",
+      "threatLevel": "MEDIUM",
+      "profileImage": "",
+      "bio": "Confirmed current CISO of Coupang (High confidence). Named across 6+ reputable English-language outlets (MK, Khan, ChosunBiz, News1, AJU Press, FN News) in connection with the 2025 data-breach National Assembly testimony, and named (with CFO Gaurav Anand and Chair Kim Beom-seok) as a defendant in the first U.S. class action over the breach. Spelling resolved: 'Brett Mattis' and 'Bran Metis' were transliteration variants. Predecessor Ben Gerber was CISO from ~2016 (now former). Background: ex-Australian Department of Defense; QUT IT master's; led Coupang's Red Team before CISO. Context: ~33.7M-record insider breach (Jun-Nov 2025); CEO resigned Dec 2025; interim CEO Harold Rogers (ex-Walmart Global CCO).",
+      "keyFindings": [
+        {
+          "id": "bm-f1",
+          "type": "incident_response",
+          "headline": "Confirmed Coupang CISO; testified on 2025 breach and named in first U.S. class action",
+          "date": "2025-12-17",
+          "impactScore": 12,
+          "riskColor": "ORANGE",
+          "summary": "Multiple reputable outlets identify Brett Mathis as Coupang's CISO during the National Assembly breach hearings; he is named as a defendant (with the CFO and Chair) in the first U.S. shareholder class action over the ~33.7M-record insider breach.",
+          "whyItMatters": "Peer-scale insider-threat / key-management precedent with CEO-level accountability and cross-border regulatory + litigation exposure relevant to Walmart International risk benchmarking.",
+          "sources": [
+            {
+              "publisher": "Maeil Business (MK)",
+              "url": "https://www.mk.co.kr/en/business/11482931",
+              "date": "2025-12-03"
+            },
+            {
+              "publisher": "The Kyunghyang Shinmun (Khan)",
+              "url": "https://www.khan.co.kr/en/article/202512171415077",
+              "date": "2025-12-17"
+            },
+            {
+              "publisher": "News1 Korea",
+              "url": "https://en.news1.kr/economy/5904202",
+              "date": "2026-01-08"
+            }
+          ]
+        },
+        {
+          "id": "bm-f2",
+          "type": "incident",
+          "headline": "South Korea's largest retail data breach (~33.7M accounts) - insider + unrevoked-credential key-management failure; ~5-month dwell time",
+          "date": "2025-12-01",
+          "impactScore": 10,
+          "riskColor": "RED",
+          "summary": "Data extraction began 24 Jun 2025 and went undetected by Coupang's SOC until 18 Nov 2025 (~5-month dwell). Traced to a former employee/engineer exploiting unrevoked internal access credentials. Exposed names, phone numbers, emails, shipping addresses and order histories; PIPC found 33.2M members + 4.3M non-members affected.",
+          "whyItMatters": "Archetypal insider + identity/key-management failure at an e-commerce peer; directly informs Walmart insider-risk, joiner-mover-leaver credential revocation, and SOC detection-gap (dwell-time) controls.",
+          "sources": [
+            {
+              "publisher": "The Register",
+              "url": "https://www.theregister.com/security/2025/12/01/south_koreas_coupang_admits_breach/",
+              "date": "2025-12-01"
+            },
+            {
+              "publisher": "CSO Online",
+              "url": "https://www.csoonline.com/article/4101486/coupang-leaks-personal-information-of-33-7-million-accounts-suspected-of-poor-authentication-key-management.html",
+              "date": "2025-12-04"
+            },
+            {
+              "publisher": "CNBC",
+              "url": "https://www.cnbc.com/2025/11/30/top-south-korean-e-commerce-firm-coupang-says-33point7-million-customer-accounts-breached.html",
+              "date": "2025-11-30"
+            }
+          ]
+        },
+        {
+          "id": "bm-f3",
+          "type": "incident",
+          "headline": "Record PIPC fine (~$409-456M) + 1.685T-won compensation; CEO resigned; HQ raided; first U.S. class action",
+          "date": "2026-06-11",
+          "impactScore": 9,
+          "riskColor": "RED",
+          "summary": "Korea's PIPC levied a record fine (reported $409M-$456M). Coupang announced a ~1.685 trillion won (~$1.15B) compensation plan (Dec 2025); the CEO resigned; Korean police raided the Songpa District HQ from 9 Dec 2025 seizing server logs/employee drives. A first U.S. class action named CISO Brett Mathis alongside the CFO and Chair.",
+          "whyItMatters": "Quantifies the regulatory/financial/leadership blast radius of a retail breach - a concrete benchmark for Walmart breach-cost modeling and board-level reporting.",
+          "sources": [
+            {
+              "publisher": "CyberInsider",
+              "url": "https://cyberinsider.com/coupang-hit-by-massive-456-million-fine-for-2025-data-breach-incident/",
+              "date": "2026-06-11"
+            },
+            {
+              "publisher": "KEIA (breach timeline)",
+              "url": "https://keia.org/analysis/the-coupang-data-breach-a-timeline/",
+              "date": "2026-02-22"
+            },
+            {
+              "publisher": "DataBreach.com",
+              "url": "https://databreach.com/news/38-coupang-ceo-resigns-after-breach-exposes-33m-users-including-door-codes",
+              "date": "2025-12-11"
+            }
+          ]
+        }
+      ],
+      "recentActivity": [
+        {
+          "date": "2025-12-17",
+          "title": "Testified at National Assembly breach hearing as Coupang CISO",
+          "type": "Public Testimony",
+          "impact": "Confirms incumbency; breach accountability at executive level"
+        },
+        {
+          "date": "2026-06-15",
+          "title": "VANGUARD public-source identification (confirmed, spelling resolved)",
+          "type": "Identification",
+          "impact": "Resolves prior Coupang security-leader gap"
+        },
+        {
+          "date": "2025-12-01",
+          "title": "Coupang discloses ~33.7M-account breach (insider, unrevoked credentials)",
+          "type": "Incident",
+          "impact": "Largest SK retail breach in over a decade"
+        },
+        {
+          "date": "2026-06-11",
+          "title": "PIPC record fine (~$409-456M) reported",
+          "type": "Regulatory",
+          "impact": "Benchmark breach financial penalty"
+        }
+      ],
+      "strategicThreats": [
+        "HIGH: ~33.7M-record insider breach is a peer-scale key-management/insider-threat precedent",
+        "MEDIUM: Cross-border regulatory + U.S. class-action exposure relevant to Walmart International",
+        "HIGH: Proven insider-threat + identity/key-management failure model; ~5-month detection gap is a direct lesson for SOC dwell-time and credential-revocation controls"
+      ],
+      "recommendations": [
+        "IMMEDIATE: Treat the Coupang insider-key-theft pattern as a tabletop scenario for Walmart key-management controls",
+        "30-DAY: Pull Coupang 20-F / PIPC findings for primary breach-governance detail",
+        "30-DAY: Use Coupang as a board case study for insider-risk + JML credential revocation + SOC dwell-time metrics"
       ]
     }
   ]

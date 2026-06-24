@@ -49,7 +49,7 @@ def test_chat_rejects_unknown_user(monkeypatch):
     )
 
     assert resp.status_code == 403
-    assert "not authorized" in resp.json()["detail"]
+    assert "Authentication failed" in resp.json()["detail"]
 
 
 def test_chat_dev_bypass_still_works_when_auth_off(monkeypatch):

@@ -172,7 +172,7 @@ class TestNonAdminRejection:
             headers={"X-Sentry-User": "hacker_eve"},
         )
         assert resp.status_code == 403
-        assert "not authorized" in resp.json()["detail"]
+        assert "Authentication failed" in resp.json()["detail"]
 
 
 # ── 4. Authenticated admin requests still work ──────────────────────────────
@@ -341,3 +341,18 @@ class TestAuthMe:
         assert body["id"] == "anonymous"
         assert body["role"] == "admin"
         assert body["is_admin"] is True
+
+    def test_authenticated_health_requires_auth(self, client_default):
+        resp = client_default.get("/api/health/authenticated")
+        assert resp.status_code == 401
+
+    def test_authenticated_health_returns_identity(self, client_default):
+        resp = client_default.get(
+            "/api/health/authenticated",
+            headers={"X-Sentry-User": "admin_alice"},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["status"] == "ok"
+        assert body["user"]["id"] == "admin_alice"
+        assert body["user"]["is_admin"] is True

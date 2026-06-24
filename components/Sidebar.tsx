@@ -9,6 +9,8 @@ interface SidebarProps {
   onNavigate: (view: ViewState) => void;
   isOpen?: boolean;
   onClose?: () => void;
+  backendState?: 'checking' | 'online' | 'offline';
+  backendDetail?: string;
 }
 
 // ── Nav items grouped into sections — easier to scan than a flat list ───────
@@ -195,9 +197,16 @@ const Spark = ({ size = 26 }: { size?: number }) => (
 );
 
 // ── Component ───────────────────────────────────────────────────────────────
-export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, isOpen = false, onClose }) => {
+export const Sidebar: React.FC<SidebarProps> = ({
+  currentView,
+  onNavigate,
+  isOpen = false,
+  onClose,
+  backendState = 'checking',
+  backendDetail = 'Checking SENTRY data connection',
+}) => {
   const { theme, toggleTheme } = useTheme();
-  const { user } = useAuth();
+  const { user, authMode, authProvider, logout } = useAuth();
   const isDark = theme === 'dark';
 
   const handleNavigate = (view: ViewState, label: string) => {
@@ -210,6 +219,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, isOpe
     trackEvent('theme_toggled', { from: theme, to: nextTheme });
     toggleTheme();
   };
+
+  const statusLabel = backendState === 'offline' ? 'Offline' : backendState === 'checking' ? 'Sync' : 'Live';
+  const statusColor = backendState === 'offline' ? '#f87171' : backendState === 'checking' ? '#93c5fd' : '#4ade80';
+  const authLabel = authProvider ?? authMode ?? 'auth';
 
   return (
     <aside
@@ -265,8 +278,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, isOpe
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
         </div>
-        <p className="text-[10px] uppercase tracking-[0.18em] mt-3" style={{ color: 'var(--s-text-dim)' }}>
-          Global Security · Aviation · Investigations
+        <p className="text-xs uppercase tracking-[0.14em] mt-3" style={{ color: 'var(--s-text-dim)' }}>
+          Global Security, Strategy &amp; Innovation
         </p>
       </div>
 
@@ -353,16 +366,36 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate, isOpe
 
       {/* Footer */}
       <div className="px-5 py-3.5 shrink-0" style={{ borderTop: '1px solid var(--s-border-light)' }}>
+        {user && (
+          <div className="mb-3 rounded-xl px-3 py-2" style={{ background: 'var(--s-input-bg)', border: '1px solid var(--s-border-mid)' }}>
+            <div className="flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="truncate text-xs font-bold" style={{ color: 'var(--s-text)' }}>{user.id}</p>
+                <p className="truncate text-[9px] uppercase tracking-widest" style={{ color: 'var(--s-text-dim)' }}>
+                  {user.role} via {authLabel}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={logout}
+                className="rounded-md px-2 py-1 text-[9px] font-bold uppercase tracking-widest"
+                style={{ background: 'rgba(234,17,0,0.12)', border: '1px solid rgba(234,17,0,0.28)', color: '#fca5a5' }}
+              >
+                Sign out
+              </button>
+            </div>
+          </div>
+        )}
         <div className="flex items-center justify-between">
-          <p className="text-[9px] font-mono uppercase tracking-[0.2em]" style={{ color: 'var(--s-text-dim)' }}>
+          <p className="text-xs font-mono uppercase tracking-[0.16em]" style={{ color: 'var(--s-text-dim)' }}>
             v2.1 · build 1126
           </p>
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5" title={backendDetail} role="status" aria-live="polite">
             <span className="relative flex h-1.5 w-1.5">
-              <span className="absolute inset-0 rounded-full bg-green-400 animate-ping-ring opacity-60" />
-              <span className="relative w-1.5 h-1.5 rounded-full bg-green-400" />
+              {backendState !== 'offline' && <span className="absolute inset-0 rounded-full animate-ping-ring opacity-60" style={{ background: statusColor }} />}
+              <span className="relative w-1.5 h-1.5 rounded-full" style={{ background: statusColor }} />
             </span>
-            <span className="text-[9px] font-bold uppercase tracking-widest text-green-400">Online</span>
+            <span className="text-xs font-bold uppercase tracking-widest" style={{ color: statusColor }}>{statusLabel}</span>
           </div>
         </div>
       </div>

@@ -325,10 +325,7 @@ export const CSORadar3D: React.FC<CSORadar3DProps> = ({
           tipRef.current.style.display  = 'block';
           tipRef.current.style.left     = `${lx}px`;
           tipRef.current.style.top      = `${ly}px`;
-          tipRef.current.innerHTML =
-            `<div style="font-weight:700;font-size:12px">${nd.exec.name}</div>` +
-            `<div style="opacity:.7;font-size:10px">${nd.exec.company}</div>` +
-            `<div style="font-size:10px;margin-top:3px;color:${THREAT_CSS[nd.exec.threat]}">${nd.exec.threat} THREAT</div>`;
+          tipRef.current.textContent = `${nd.exec.name} — ${nd.exec.company} — ${nd.exec.threat} THREAT`;
         }
       } else if (tipRef.current) {
         tipRef.current.style.display = 'none';

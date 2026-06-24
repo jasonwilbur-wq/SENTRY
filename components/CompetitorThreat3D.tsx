@@ -202,10 +202,7 @@ export const CompetitorThreat3D: React.FC<Props> = ({ nodes }) => {
           tipRef.current.style.display = 'block';
           tipRef.current.style.left    = `${(p.x * 0.5 + 0.5) * wr.width}px`;
           tipRef.current.style.top     = `${(-p.y * 0.5 + 0.5) * wr.height - 66}px`;
-          tipRef.current.innerHTML =
-            `<div style="font-weight:700;font-size:12px">${nd.name}</div>` +
-            `<div style="opacity:.7;font-size:10px">${nd.eventCount.toLocaleString()} events</div>` +
-            `<div style="font-size:10px;margin-top:3px;color:${THREAT_CSS[nd.threatLevel]}">${nd.threatLevel} THREAT</div>`;
+          tipRef.current.textContent = `${nd.name} — ${nd.eventCount.toLocaleString()} events — ${nd.threatLevel} THREAT`;
         }
       } else if (tipRef.current) {
         tipRef.current.style.display = 'none';

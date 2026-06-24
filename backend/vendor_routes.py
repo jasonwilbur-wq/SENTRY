@@ -115,6 +115,12 @@ def list_categories():
     return CategoriesResponse(categories=_cached_categories())
 
 
+@ROUTER.get("/api/categories", response_model=CategoriesResponse)
+def list_categories_alias():
+    """Backward-compatible category endpoint used by legacy smoke tests/tools."""
+    return list_categories()
+
+
 @ttl_cache(ttl_seconds=300, key_prefix="categories")
 def _cached_categories() -> list[str]:
     conn = get_connection()

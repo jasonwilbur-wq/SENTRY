@@ -46,6 +46,16 @@ function ownerFor(ev: CompetitorEvent): string {
   return ev.recommended_owner || OWNER_BY_CATEGORY[ev.category] || 'Intel Triage';
 }
 
+function safeExternalHref(value: string | null | undefined): string | null {
+  if (!value) return null;
+  try {
+    const url = new URL(value.trim());
+    return url.protocol === 'https:' || url.protocol === 'http:' ? url.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 interface Props {
   lockedCompetitor?: string;   // lock filter to one competitor
   competitors?: string[];      // for dropdown
@@ -243,16 +253,16 @@ export const CompetitorEventTable: React.FC<Props> = ({
                       {(ev.location ?? '—').slice(0, 40)}
                     </td>
                     <td className="px-3 py-2.5">
-                      {ev.source_link?.startsWith('http') ? (
+                      {safeExternalHref(ev.source_link) ? (
                         <a
-                          href={ev.source_link}
+                          href={safeExternalHref(ev.source_link) ?? undefined}
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={e => e.stopPropagation()}
                           className="text-blue-400 hover:text-blue-300 text-xs underline"
                         >View ↗</a>
                       ) : (
-                        <span className="text-slate-600 text-xs">—</span>
+                        <span className="text-slate-600 text-xs" title={ev.source_link ? 'Unsafe or invalid source URL hidden' : undefined}>—</span>
                       )}
                     </td>
                   </tr>

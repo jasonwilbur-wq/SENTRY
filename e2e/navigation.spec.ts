@@ -42,8 +42,8 @@ test.describe('Navigation — SPA Routing', () => {
     await shell.navigateTo('Market Analysis');
     await page.waitForTimeout(1200);
 
-    // The forecast page should mention "Q1" or "Forecast" or "Security Technology"
-    await expectContentContaining(page, /Q1|forecast|security technology|market analysis/i, 8000);
+    // The forecast page should mention "Q2" or "Forecast" or "Security Technology"
+    await expectContentContaining(page, /Q2|forecast|security technology|market analysis/i, 8000);
   });
 
   test('clicking a nav item does not trigger a full page reload', async ({ page }) => {

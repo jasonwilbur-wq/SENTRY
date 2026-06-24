@@ -237,9 +237,7 @@ export const Architecture3D: React.FC<Props> = ({ onSelect, selectedId }) => {
         tipRef.current.style.display = 'block';
         tipRef.current.style.left    = `${tx}px`;
         tipRef.current.style.top     = `${ty}px`;
-        tipRef.current.innerHTML     =
-          `<div style="font-weight:700;font-size:11px">${nd.label}</div>` +
-          `<div style="font-size:9px;opacity:.65;margin-top:2px">${ARCH_LAYERS[nd.layer].label}</div>`;
+        tipRef.current.textContent = `${nd.label} — ${ARCH_LAYERS[nd.layer].label}`;
         renderer.domElement.style.cursor = 'pointer';
       } else {
         if (tipRef.current) tipRef.current.style.display = 'none';

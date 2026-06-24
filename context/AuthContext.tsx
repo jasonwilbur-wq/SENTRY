@@ -39,19 +39,34 @@ export interface AuthUser {
 interface AuthContextValue {
   /** Verified user identity (null if not authenticated or still loading). */
   user: AuthUser | null;
-  /** Backend auth mode: 'header' | 'off' | null (null = loading). */
+  /** Backend auth mode: header | off | oidc | iap | trusted-header | null. */
   authMode: string | null;
-  /** True when auth mode is 'header' (secure). */
+  /** Backend provider label from /api/health. */
+  authProvider: string | null;
+  /** True when auth is enabled. */
   authEnabled: boolean;
-  /** Warning message when auth is disabled (SENTRY_AUTH_MODE=off). */
+  /** True when the app should show a local/dev user-id login form. */
+  canUseLocalIdentity: boolean;
+  /** Warning message when auth is disabled or running in a non-production-safe mode. */
   authWarning: string | null;
   /** Error message when auth is required but identity is missing/rejected. */
   authError: string | null;
   /** True once the auth flow has completed (health + identity checks). */
   isReady: boolean;
+  /** Local/dev login. Production uses SSO/IAP instead. */
+  loginWithIdentity: (userId: string) => void;
+  /** Hosted login. Usually reloads through the approved SSO/IAP entry point. */
+  loginWithSso: () => void;
+  /** Clear local auth state and, when configured, navigate to provider logout. */
+  logout: () => void;
 }
 
 export const SENTRY_USER_SESSION_KEY = 'sentry.auth.user';
+export const SENTRY_LOGGED_OUT_KEY = 'sentry.auth.logged_out';
+
+const VITE_ENV = (import.meta as any).env ?? {};
+const LOGIN_URL = String(VITE_ENV.VITE_SENTRY_LOGIN_URL ?? '').trim();
+const LOGOUT_URL = String(VITE_ENV.VITE_SENTRY_LOGOUT_URL ?? '').trim();
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -59,30 +74,77 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser]               = useState<AuthUser | null>(null);
-  const [authMode, setAuthMode]       = useState<string | null>(null);
-  const [authWarning, setAuthWarning] = useState<string | null>(null);
-  const [authError, setAuthError]     = useState<string | null>(null);
-  const [isReady, setIsReady]         = useState(false);
+  const [authMode, setAuthMode]         = useState<string | null>(null);
+  const [authProvider, setAuthProvider] = useState<string | null>(null);
+  const [authWarning, setAuthWarning]   = useState<string | null>(null);
+  const [authError, setAuthError]       = useState<string | null>(null);
+  const [isReady, setIsReady]           = useState(false);
+
+  const loginWithIdentity = (userId: string) => {
+    const trimmed = userId.trim();
+    if (!trimmed) return;
+    try {
+      window.sessionStorage.removeItem(SENTRY_LOGGED_OUT_KEY);
+      window.sessionStorage.setItem(SENTRY_USER_SESSION_KEY, trimmed);
+    } catch { /* noop */ }
+    window.location.reload();
+  };
+
+  const loginWithSso = () => {
+    try { window.sessionStorage.removeItem(SENTRY_LOGGED_OUT_KEY); } catch { /* noop */ }
+    if (LOGIN_URL) {
+      window.location.assign(LOGIN_URL);
+      return;
+    }
+    window.location.reload();
+  };
+
+  const logout = () => {
+    try {
+      window.sessionStorage.setItem(SENTRY_LOGGED_OUT_KEY, 'true');
+      window.sessionStorage.removeItem(SENTRY_USER_SESSION_KEY);
+    } catch { /* noop */ }
+    setSentryUser(null);
+    setUser(null);
+
+    if (LOGOUT_URL) {
+      const returnTo = encodeURIComponent(window.location.origin + window.location.pathname);
+      window.location.assign(LOGOUT_URL.replace('{returnTo}', returnTo));
+      return;
+    }
+
+    if (authMode === 'iap') {
+      const continueTo = encodeURIComponent(window.location.origin + window.location.pathname);
+      window.location.assign(`/_gcp_iap/clear_login_cookie?continue=${continueTo}`);
+      return;
+    }
+
+    window.location.reload();
+  };
 
   useEffect(() => {
     let cancelled = false;
 
     const run = async () => {
-      // ── Step 1: Read configured identity from env var or session login ─
+      // ── Step 1: Read configured identity/token from env var or session login ─
       let storedUser = '';
+      let localLoggedOut = false;
       try {
         storedUser = window.sessionStorage.getItem(SENTRY_USER_SESSION_KEY) ?? '';
+        localLoggedOut = window.sessionStorage.getItem(SENTRY_LOGGED_OUT_KEY) === 'true';
       } catch {
         storedUser = '';
+        localLoggedOut = false;
       }
+      setSentryUser(null);
       const ignoreEnvUser = Boolean(
         (window as typeof window & { __SENTRY_E2E_DISABLE_ENV_USER__?: boolean }).__SENTRY_E2E_DISABLE_ENV_USER__,
       );
-      const envUser = ignoreEnvUser ? '' : (import.meta.env.VITE_SENTRY_USER ?? '');
+      const envUser = ignoreEnvUser || localLoggedOut ? '' : (VITE_ENV.VITE_SENTRY_USER ?? '');
       const configuredUser = (envUser || storedUser).trim();
 
-      // Wire identity into the API client immediately
-      // (so /api/auth/me sends the header)
+      // Wire identity into the API client immediately.
+      // Header identity is local/dev only. Hosted auth should come from SSO/IAP.
       if (configuredUser) {
         setSentryUser(configuredUser);
       }
@@ -101,6 +163,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (cancelled) return;
 
       setAuthMode(health.auth_mode);
+      setAuthProvider(health.auth_provider ?? health.auth_mode);
       setAuthWarning(health.auth_warning);
 
       // ── Step 3: Handle auth_mode=off (dev bypass) ────────────────────
@@ -113,10 +176,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // ── Step 4: Auth is required — verify identity ───────────────────
       if (!configuredUser) {
+        const hostedAuth = ['oidc', 'iap', 'trusted-header'].includes(health.auth_mode);
         setAuthError(
-          'Authentication is required but no user identity is configured. ' +
-          'Enter your SENTRY user ID, or set VITE_SENTRY_USER in your .env.development file ' +
-          '(e.g. VITE_SENTRY_USER=your_userid) and restart the dev server.'
+          hostedAuth
+            ? 'SENTRY requires enterprise SSO. Use Sign in with SSO or open SENTRY through the approved GCP/IAP or Walmart SSO entry URL so the platform can assert your identity.'
+            : 'Authentication is required but no user identity is configured. Enter your SENTRY user ID, or set VITE_SENTRY_USER in your .env.development file (e.g. VITE_SENTRY_USER=your_userid) and restart the dev server.'
         );
         setIsReady(true);
         return;
@@ -134,7 +198,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (msg.includes('401')) {
             setAuthError(
               `Authentication failed. The backend rejected the identity. ` +
-              `Check that VITE_SENTRY_USER matches a user in SENTRY_ALLOWED_USERS.`
+              `For local header auth, check VITE_SENTRY_USER. For hosted auth, reopen through the approved SSO/IAP entry point.`
             );
           } else if (msg.includes('403')) {
             setAuthError(
@@ -155,15 +219,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const authEnabled = authMode !== null && authMode !== 'off';
+  const canUseLocalIdentity = authMode === 'header';
 
   return (
     <AuthContext.Provider value={{
       user,
       authMode,
+      authProvider,
       authEnabled,
+      canUseLocalIdentity,
       authWarning,
       authError,
       isReady,
+      loginWithIdentity,
+      loginWithSso,
+      logout,
     }}>
       {children}
     </AuthContext.Provider>

@@ -7,6 +7,7 @@ admin_routes.py under /api/admin to keep the broad admin surface modular.
 from __future__ import annotations
 
 import math
+import re
 from datetime import datetime, timezone
 from typing import Any
 
@@ -137,6 +138,42 @@ COMPETITOR_SCORE_COLUMNS = (
     "scored_at",
 )
 
+_IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+COMPETITOR_EVENT_UPDATE_COLUMNS = frozenset(
+    set(CompetitorEventUpdate.model_fields.keys())
+    | set(COMPETITOR_SCORE_COLUMNS)
+    | {
+        "confidence_level",
+        "source_link",
+        "walmart_actionability_context",
+        "correlation_summary",
+        "triage_status",
+        "triaged_by",
+        "triaged_at",
+        "triage_note",
+        "deleted_at",
+    }
+)
+
+
+def _quote_competitor_event_column(field: str) -> str:
+    """Return a quoted competitor_events column after strict allowlist validation."""
+    if field not in COMPETITOR_EVENT_UPDATE_COLUMNS or not _IDENTIFIER_RE.fullmatch(field):
+        raise ValueError(f"Unsupported competitor_events update column: {field!r}")
+    return f'"{field}"'
+
+
+def _build_competitor_event_update_sql(updates: dict[str, Any]) -> tuple[str, list[Any]]:
+    """Build an UPDATE assignment fragment from trusted, allowlisted columns only.
+
+    SQLite cannot parameter-bind identifiers, so every generated column name must
+    come from the local schema allowlist. Values remain parameter-bound.
+    """
+    if not updates:
+        raise ValueError("No competitor event fields to update.")
+    assignments = ", ".join(f"{_quote_competitor_event_column(field)} = ?" for field in updates)
+    return assignments, list(updates.values())
+
 
 def _score_competitor_event(row: dict[str, Any]) -> dict[str, Any]:
     """Return DB-safe scoring fields for a competitor event.
@@ -253,8 +290,8 @@ def rescore_competitor_events(
             scoring = _score_competitor_event(enriched)
             patch, _warnings = build_brief_readiness_enrichment({**enriched, **scoring})
             updates = {**scoring, **patch}
-            assignments = ", ".join(f"{field}=?" for field in updates)
-            conn.execute(f"UPDATE competitor_events SET {assignments} WHERE id=?", [*updates.values(), data["id"]])
+            assignments, update_values = _build_competitor_event_update_sql(updates)
+            conn.execute(f"UPDATE competitor_events SET {assignments} WHERE id=?", [*update_values, data["id"]])
             updated += 1
         conn.commit()
     after = competitor_scoring_summary()["distribution"]
@@ -325,8 +362,8 @@ def backfill_brief_readiness(
                 skipped_rows += 1
                 skipped_reasons["no_missing_fields"] = skipped_reasons.get("no_missing_fields", 0) + 1
                 continue
-            assignments = ", ".join(f"{field}=?" for field in patch)
-            conn.execute(f"UPDATE competitor_events SET {assignments} WHERE id=?", [*patch.values(), row["id"]])
+            assignments, update_values = _build_competitor_event_update_sql(patch)
+            conn.execute(f"UPDATE competitor_events SET {assignments} WHERE id=?", [*update_values, row["id"]])
             updated_rows += 1
             field_updates += len(patch)
         conn.commit()
@@ -401,10 +438,10 @@ def create_competitor_event(event: CompetitorEventCreate) -> CompetitorEventOut:
     if not updates.get("confidence_level") and not enriched.get("confidence_level"):
         updates["confidence_level"] = "medium"
     if updates:
-        assignments = ", ".join(f"{field}=?" for field in updates)
+        assignments, update_values = _build_competitor_event_update_sql(updates)
         conn.execute(
             f"UPDATE competitor_events SET {assignments} WHERE id=?",
-            [*updates.values(), event_id],
+            [*update_values, event_id],
         )
         conn.commit()
         row = conn.execute("SELECT * FROM competitor_events WHERE id = ?", (event_id,)).fetchone()
@@ -461,22 +498,22 @@ def update_competitor_event(
         conn.close()
         raise HTTPException(status_code=404, detail="Event not found")
 
-    # Build dynamic UPDATE query for non-None fields
-    updates = []
-    params = []
-    for field, value in update.model_dump(exclude_unset=True).items():
-        if value is not None:
-            updates.append(f"{field} = ?")
-            params.append(value)
+    # Build UPDATE query for non-None fields; column identifiers are allowlisted
+    # before interpolation because SQL drivers can only bind values.
+    updates: dict[str, Any] = {
+        field: value
+        for field, value in update.model_dump(exclude_unset=True).items()
+        if value is not None
+    }
 
     if not updates:
         # No fields to update
         conn.close()
         return get_competitor_event(event_id)
 
-    params.append(event_id)
+    assignments, update_values = _build_competitor_event_update_sql(updates)
     conn.execute(
-        f"UPDATE competitor_events SET {', '.join(updates)} WHERE id = ?", params
+        f"UPDATE competitor_events SET {assignments} WHERE id = ?", [*update_values, event_id]
     )
     conn.commit()
 
